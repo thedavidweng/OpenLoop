@@ -1,4 +1,4 @@
-import { Music4, Sparkles } from "lucide-react";
+import { AlertCircle, Music4, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { GenerationPanel } from "@/app/components/generation/GenerationPanel";
 import { useGenerationStore } from "@/app/lib/store";
@@ -9,6 +9,12 @@ export function OpenLoopStage() {
   const generationState = useGenerationStore((state) => state.generationState);
 
   const title = currentGeneration?.prompt || currentGeneration?.lyrics || null;
+  const isFailed = generationState.status === "failed";
+  const statusTone = isFailed
+    ? "border-red-500/20 bg-red-500/10 text-red-200"
+    : generationState.status === "completed"
+      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-200"
+      : "border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-text)]";
 
   return (
     <div
@@ -20,25 +26,49 @@ export function OpenLoopStage() {
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(12,14,18,0.22),rgba(11,13,16,0.54)_58%,rgba(13,15,18,0.72))]" />
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden">
-        <div className="flex min-w-0 flex-1 items-center justify-center px-8 py-10">
-          <div className="max-w-xl text-center text-[var(--color-text-dim)]">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-text)] shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
-              {currentGeneration ? <Music4 size={22} /> : <Sparkles size={22} />}
-            </div>
-            <p className="text-[15px] font-medium text-white">
-              {title ? title : t("stage.selectGeneration")}
-            </p>
-            <p className="mx-auto mt-3 max-w-md text-[13px] leading-6 text-[var(--color-text-dim)]">
-              {currentGeneration
-                ? `${currentGeneration.audioFormat.toUpperCase()} · ${Math.round(currentGeneration.durationSeconds)}s · ${t(`history.status.${currentGeneration.status}`)}`
-                : generationState.statusMessage}
-            </p>
-          </div>
-        </div>
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-5 pt-6">
+        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="mx-auto flex min-h-[280px] w-full max-w-6xl flex-1 items-center justify-center px-2 py-8">
+            <div className="w-full max-w-3xl text-center text-[var(--color-text-dim)]">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-text)] shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
+                {isFailed ? (
+                  <AlertCircle size={22} />
+                ) : currentGeneration ? (
+                  <Music4 size={22} />
+                ) : (
+                  <Sparkles size={22} />
+                )}
+              </div>
+              <p className="text-[18px] font-semibold text-white">
+                {title ? title : t("stage.selectGeneration")}
+              </p>
+              <p className="mx-auto mt-3 max-w-xl text-[13px] leading-6 text-[var(--color-text-dim)]">
+                {currentGeneration
+                  ? `${currentGeneration.audioFormat.toUpperCase()} · ${Math.round(currentGeneration.durationSeconds)}s · ${t(`history.status.${currentGeneration.status}`)}`
+                  : generationState.statusMessage}
+              </p>
 
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex w-[min(500px,40vw)] max-w-full items-stretch justify-end">
-          <div className="pointer-events-auto h-full w-full overflow-auto custom-scrollbar border-l border-[color-mix(in_srgb,var(--color-border)_86%,transparent)] bg-[color-mix(in_srgb,var(--color-sidebar)_92%,transparent)] shadow-[-12px_0_32px_rgba(0,0,0,0.22)] backdrop-blur-[20px]">
+              <div className={`mx-auto mt-6 max-w-2xl rounded-2xl border px-4 py-3 text-left text-[13px] leading-6 shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl ${statusTone}`}>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-current opacity-80" />
+                  <div className="min-w-0">
+                    <p className="font-medium">{generationState.statusMessage}</p>
+                    {generationState.error ? (
+                      <p className="mt-1 text-[12px] opacity-80">
+                        {generationState.error.message}
+                      </p>
+                    ) : currentGeneration?.seed !== undefined ? (
+                      <p className="mt-1 text-[12px] opacity-80">
+                        Seed {currentGeneration.seed}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-6xl px-2 pb-2">
             <GenerationPanel />
           </div>
         </div>

@@ -1,8 +1,8 @@
 import type { ChangeEvent } from "react";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { WandSparkles } from "lucide-react";
+import { ChevronDown, Music2, Settings2, SlidersHorizontal, WandSparkles } from "lucide-react";
 import { MODEL_VARIANTS, useGenerationStore } from "@/app/lib/store";
 import type { GenerationFormValues } from "@/app/lib/types";
 
@@ -15,17 +15,50 @@ const SELECT_OPTIONS = {
   lmModelPath: ["", "acestep-5Hz-lm-0.6B", "acestep-5Hz-lm-1.7B", "acestep-5Hz-lm-4B"] as const,
 };
 
+type TextField =
+  | "prompt"
+  | "negativePrompt"
+  | "lyrics"
+  | "vocalLanguage"
+  | "durationSeconds"
+  | "bpm"
+  | "keyScale"
+  | "model"
+  | "lmModelPath"
+  | "inferenceSteps"
+  | "guidanceScale"
+  | "seed"
+  | "referenceAudioPath"
+  | "srcAudioPath"
+  | "instruction"
+  | "repaintingStart"
+  | "repaintingEnd"
+  | "audioCoverStrength";
+
+type ToggleField =
+  | "thinking"
+  | "useRandomSeed"
+  | "useFormat"
+  | "useCotCaption"
+  | "useCotLanguage"
+  | "constrainedDecoding";
+
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
-  return <p className="text-[11px] text-red-400">{message}</p>;
+  return <p className="text-[11px] text-red-300">{message}</p>;
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] uppercase text-[var(--color-text-dim)]">{children}</span>;
+  return (
+    <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
+      {children}
+    </span>
+  );
 }
 
 export function GenerationPanel() {
   const { t } = useTranslation();
+  const [lyricsOpen, setLyricsOpen] = useState(false);
   const form = useGenerationStore((state) => state.form);
   const validationErrors = useGenerationStore((state) => state.validationErrors);
   const generationState = useGenerationStore((state) => state.generationState);
@@ -42,6 +75,17 @@ export function GenerationPanel() {
   const modelReady = settings.modelVariant
     ? settings.downloadedModels.includes(settings.modelVariant)
     : false;
+  const hasAdvancedErrors = (
+    [
+      "negativePrompt",
+      "inferenceSteps",
+      "guidanceScale",
+      "repaintingStart",
+      "repaintingEnd",
+      "audioCoverStrength",
+      "seed",
+    ] as const
+  ).some((key) => validationErrors[key]);
 
   const submitLabel = useMemo(() => {
     if (generationState.status === "validating") return t("generation.validating");
@@ -50,50 +94,22 @@ export function GenerationPanel() {
   }, [generationState.status, t]);
 
   const handleTextFieldChange =
-    (
-      field: keyof Pick<
-        GenerationFormValues,
-        | "prompt"
-        | "negativePrompt"
-        | "lyrics"
-        | "vocalLanguage"
-        | "durationSeconds"
-        | "bpm"
-        | "keyScale"
-        | "model"
-        | "lmModelPath"
-        | "inferenceSteps"
-        | "guidanceScale"
-        | "seed"
-        | "referenceAudioPath"
-        | "srcAudioPath"
-        | "instruction"
-        | "repaintingStart"
-        | "repaintingEnd"
-        | "audioCoverStrength"
-      >,
-    ) =>
+    (field: TextField) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setField(field, event.target.value);
     };
 
-  return (
-    <section className="space-y-4 p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-            {t("generation.workspace")}
-          </p>
-          <h1 className="mt-1 text-[22px] font-semibold text-white">{t("generation.title")}</h1>
-          <p className="mt-2 max-w-2xl text-[13px] leading-6 text-[var(--color-text-dim)]">
-            {t("generation.description")}
-          </p>
-        </div>
-        <div className="hidden rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-3 text-[var(--color-accent)] md:block">
-          <WandSparkles size={18} />
-        </div>
-      </div>
+  const toggleItems: readonly [ToggleField, string, string][] = [
+    ["thinking", "generation.thinking", "generation.thinkingDesc"],
+    ["useRandomSeed", "generation.randomSeed", "generation.randomSeedDesc"],
+    ["useFormat", "generation.useFormat", ""],
+    ["useCotCaption", "generation.cotCaption", ""],
+    ["useCotLanguage", "generation.cotLanguage", ""],
+    ["constrainedDecoding", "generation.constrained", ""],
+  ];
 
+  return (
+    <section className="rounded-[28px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] p-4 shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -101,11 +117,34 @@ export function GenerationPanel() {
           void runGeneration();
         }}
       >
-        <div className="space-y-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-4">
-          <label className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-accent)]">
+              <Music2 size={17} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-white">{t("generation.composerTitle")}</p>
+              <p className="truncate text-[12px] text-[var(--color-text-dim)]">
+                {t("generation.composerDescription")}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setLyricsOpen((open) => !open)}
+            disabled={isBusy}
+          >
+            <WandSparkles size={14} />
+            {form.lyrics.trim() ? t("generation.editLyrics") : t("generation.addLyrics")}
+          </button>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+          <label className="space-y-2">
             <FieldLabel>{t("generation.prompt")}</FieldLabel>
             <textarea
-              className="min-h-[112px] w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+              className="min-h-[116px] w-full resize-none rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_82%,transparent)] px-4 py-3 text-[14px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
               placeholder={t("generation.promptPlaceholder")}
               value={form.prompt}
               onChange={handleTextFieldChange("prompt")}
@@ -114,22 +153,36 @@ export function GenerationPanel() {
             <FieldError message={validationErrors.prompt} />
           </label>
 
-          <label className="space-y-1">
-            <FieldLabel>{t("generation.negativePrompt")}</FieldLabel>
-            <textarea
-              className="min-h-[80px] w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
-              placeholder={t("generation.negativePromptPlaceholder")}
-              value={form.negativePrompt}
-              onChange={handleTextFieldChange("negativePrompt")}
-              disabled={isBusy}
-            />
-            <FieldError message={validationErrors.negativePrompt} />
-          </label>
+          <div className="flex min-h-[116px] flex-col justify-between gap-3 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_68%,transparent)] p-3">
+            <div>
+              <FieldLabel>{t("generation.model")}</FieldLabel>
+              <div className="mt-2 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-white">
+                    {selectedModel?.label ?? t("model.noModel")}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--color-text-dim)]">
+                    {selectedModel?.description ?? t("model.chooseFirst")}
+                  </p>
+                </div>
+                <button type="button" onClick={openSettings} className="secondary-button shrink-0">
+                  {modelReady ? t("model.select") : t("model.download")}
+                </button>
+              </div>
+            </div>
 
-          <label className="space-y-1">
+            <button className="primary-button w-full disabled:opacity-50" type="submit" disabled={isBusy || hasErrors || !modelReady}>
+              {isBusy ? <SlidersHorizontal size={15} /> : <WandSparkles size={15} />}
+              {submitLabel}
+            </button>
+          </div>
+        </div>
+
+        {(lyricsOpen || form.lyrics.trim() || validationErrors.lyrics) ? (
+          <label className="block space-y-2 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_62%,transparent)] p-3">
             <FieldLabel>{t("generation.lyrics")}</FieldLabel>
             <textarea
-              className="min-h-[160px] w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+              className="min-h-[120px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
               placeholder={t("generation.lyricsPlaceholder")}
               value={form.lyrics}
               onChange={handleTextFieldChange("lyrics")}
@@ -137,30 +190,71 @@ export function GenerationPanel() {
             />
             <FieldError message={validationErrors.lyrics} />
           </label>
+        ) : null}
+
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_repeat(4,minmax(112px,0.55fr))]">
+          <label className="space-y-1">
+            <FieldLabel>{t("generation.taskType")}</FieldLabel>
+            <select className="select-input" value={form.taskType} onChange={(event) => setField("taskType", event.target.value as GenerationFormValues["taskType"])} disabled={isBusy}>
+              {SELECT_OPTIONS.taskType.map((option) => (
+                <option key={option} value={option}>
+                  {t(`generation.taskTypes.${option}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <FieldLabel>{t("generation.duration")}</FieldLabel>
+            <input className="text-input" type="number" min="10" max="600" step="1" value={form.durationSeconds} onChange={handleTextFieldChange("durationSeconds")} disabled={isBusy} />
+            <FieldError message={validationErrors.durationSeconds} />
+          </label>
+          <label className="space-y-1">
+            <FieldLabel>{t("generation.bpm")}</FieldLabel>
+            <input className="text-input" type="number" min="30" max="300" step="1" placeholder={t("generation.optional")} value={form.bpm} onChange={handleTextFieldChange("bpm")} disabled={isBusy} />
+            <FieldError message={validationErrors.bpm} />
+          </label>
+          <label className="space-y-1">
+            <FieldLabel>{t("generation.language")}</FieldLabel>
+            <select className="select-input" value={form.vocalLanguage} onChange={(event) => setField("vocalLanguage", event.target.value)} disabled={isBusy}>
+              {SELECT_OPTIONS.vocalLanguage.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <FieldLabel>{t("generation.format")}</FieldLabel>
+            <select className="select-input" value={form.audioFormat} onChange={(event) => setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])} disabled={isBusy}>
+              {SELECT_OPTIONS.audioFormat.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+            </select>
+          </label>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <div className="space-y-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-              {t("generation.musicalControls")}
-            </p>
-            <div className="grid gap-3 md:grid-cols-3">
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.language")}</FieldLabel>
-                <select className="select-input" value={form.vocalLanguage} onChange={(event) => setField("vocalLanguage", event.target.value)} disabled={isBusy}>
-                  {SELECT_OPTIONS.vocalLanguage.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
-                </select>
+        <details className="group rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_58%,transparent)]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[13px] font-semibold text-white">
+            <span className="flex items-center gap-2">
+              <Settings2 size={15} />
+              {t("generation.advancedControls")}
+              {hasAdvancedErrors ? (
+                <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-300">
+                  {t("generation.needsReview")}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
+          </summary>
+
+          <div className="space-y-4 border-t border-[var(--color-border-light)] p-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-1 md:col-span-2">
+                <FieldLabel>{t("generation.negativePrompt")}</FieldLabel>
+                <textarea
+                  className="min-h-[76px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+                  placeholder={t("generation.negativePromptPlaceholder")}
+                  value={form.negativePrompt}
+                  onChange={handleTextFieldChange("negativePrompt")}
+                  disabled={isBusy}
+                />
+                <FieldError message={validationErrors.negativePrompt} />
               </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.duration")}</FieldLabel>
-                <input className="text-input" type="number" min="10" max="600" step="1" value={form.durationSeconds} onChange={handleTextFieldChange("durationSeconds")} disabled={isBusy} />
-                <FieldError message={validationErrors.durationSeconds} />
-              </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.bpm")}</FieldLabel>
-                <input className="text-input" type="number" min="30" max="300" step="1" placeholder={t("generation.optional")} value={form.bpm} onChange={handleTextFieldChange("bpm")} disabled={isBusy} />
-                <FieldError message={validationErrors.bpm} />
-              </label>
+
               <label className="space-y-1">
                 <FieldLabel>{t("generation.keyScale")}</FieldLabel>
                 <input className="text-input" placeholder={t("generation.keyScalePlaceholder")} value={form.keyScale} onChange={handleTextFieldChange("keyScale")} disabled={isBusy} />
@@ -171,38 +265,6 @@ export function GenerationPanel() {
                   {SELECT_OPTIONS.timeSignature.map((option) => <option key={option} value={option}>{option}/4</option>)}
                 </select>
               </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.format")}</FieldLabel>
-                <select className="select-input" value={form.audioFormat} onChange={(event) => setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])} disabled={isBusy}>
-                  {SELECT_OPTIONS.audioFormat.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-              {t("generation.modelAdvanced")}
-            </p>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.taskType")}</FieldLabel>
-                <select className="select-input" value={form.taskType} onChange={(event) => setField("taskType", event.target.value as GenerationFormValues["taskType"])} disabled={isBusy}>
-                  {SELECT_OPTIONS.taskType.map((option) => <option key={option} value={option}>{option}</option>)}
-                </select>
-              </label>
-              <div className="space-y-1 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3">
-                <FieldLabel>{t("generation.model")}</FieldLabel>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[13px] font-medium text-white">{selectedModel?.label ?? t("model.noModel")}</p>
-                    <p className="text-[12px] text-[var(--color-text-dim)]">{selectedModel?.description ?? t("model.chooseFirst")}</p>
-                  </div>
-                  <button type="button" onClick={openSettings} className="secondary-button">
-                    {modelReady ? t("model.select") : t("model.download")}
-                  </button>
-                </div>
-              </div>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.lmModel")}</FieldLabel>
                 <select className="select-input" value={form.lmModelPath} onChange={(event) => setField("lmModelPath", event.target.value)} disabled={isBusy || !form.thinking}>
@@ -225,23 +287,11 @@ export function GenerationPanel() {
                 <input className="text-input" type="number" min="0.1" step="0.1" value={form.guidanceScale} onChange={handleTextFieldChange("guidanceScale")} disabled={isBusy} />
                 <FieldError message={validationErrors.guidanceScale} />
               </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.seed")}</FieldLabel>
-                <input className="text-input disabled:opacity-60" type="number" step="1" placeholder={form.useRandomSeed ? t("generation.randomSeedEnabled") : t("generation.optional")} value={form.seed} onChange={handleTextFieldChange("seed")} disabled={isBusy || form.useRandomSeed} />
-                <FieldError message={validationErrors.seed} />
-              </label>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              {([
-                ["thinking", "generation.thinking", "generation.thinkingDesc"],
-                ["useRandomSeed", "generation.randomSeed", "generation.randomSeedDesc"],
-                ["useFormat", "generation.useFormat", ""],
-                ["useCotCaption", "generation.cotCaption", ""],
-                ["useCotLanguage", "generation.cotLanguage", ""],
-                ["constrainedDecoding", "generation.constrained", ""],
-              ] as const).map(([field, titleKey, descriptionKey]) => (
-                <label key={field} className="flex items-start gap-3 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3">
+              {toggleItems.map(([field, titleKey, descriptionKey]) => (
+                <label key={field} className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3">
                   <input type="checkbox" className="mt-0.5" checked={Boolean(form[field])} onChange={(event) => setField(field, event.target.checked)} disabled={isBusy} />
                   <div>
                     <p className="text-[13px] font-medium text-white">{t(titleKey)}</p>
@@ -279,14 +329,16 @@ export function GenerationPanel() {
                 <input className="text-input" type="number" min="0" max="1" step="0.05" value={form.audioCoverStrength} onChange={handleTextFieldChange("audioCoverStrength")} disabled={isBusy} />
                 <FieldError message={validationErrors.audioCoverStrength} />
               </label>
+              <label className="space-y-1">
+                <FieldLabel>{t("generation.seed")}</FieldLabel>
+                <input className="text-input disabled:opacity-60" type="number" step="1" placeholder={form.useRandomSeed ? t("generation.randomSeedEnabled") : t("generation.optional")} value={form.seed} onChange={handleTextFieldChange("seed")} disabled={isBusy || form.useRandomSeed} />
+                <FieldError message={validationErrors.seed} />
+              </label>
             </div>
           </div>
-        </div>
+        </details>
 
-        <div className="flex flex-wrap gap-2">
-          <button className="primary-button disabled:opacity-50" type="submit" disabled={isBusy || hasErrors || !modelReady}>
-            {submitLabel}
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
           {isBusy ? (
             <button
               className="secondary-button"
@@ -301,8 +353,10 @@ export function GenerationPanel() {
           <button className="secondary-button" type="button" onClick={resetForm} disabled={isBusy}>
             {t("generation.reset")}
           </button>
+          <span className="text-[12px] text-[var(--color-text-dim)]">
+            {modelReady ? t("generation.localReady") : t("model.chooseFirst")}
+          </span>
         </div>
-        {!modelReady ? <p className="text-[12px] text-[var(--color-text-dim)]">{t("model.chooseFirst")}</p> : null}
       </form>
     </section>
   );

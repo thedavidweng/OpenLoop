@@ -1,31 +1,18 @@
-<h1 align="center">OpenLoop</h1>
+<div align="center">
 
-<p align="center">
-  Generate music locally on your Mac.
-</p>
+# OpenLoop
 
-<p align="center">
-  An open-source desktop AI music generator powered by local inference, built for the OpenMusic series.
-</p>
+**Generate music locally on your Mac.**
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <img src="https://img.shields.io/badge/Platform-macOS%20Apple%20Silicon-blue" alt="Platform: macOS Apple Silicon">
-  <img src="https://img.shields.io/badge/Status-Alpha%20in%20development-orange" alt="Status: Alpha in development">
-  <img src="https://img.shields.io/badge/OpenMusic-Series-purple" alt="OpenMusic Series">
-</p>
+An open-source desktop AI music generator powered by local inference, built for the OpenMusic series.
 
----
+[![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
+![Status](https://img.shields.io/badge/Status-Alpha%20in%20development-orange)
+![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
-## Overview
-
-OpenLoop is an open-source macOS desktop app for generating music locally from text prompts, lyrics, duration, BPM, and other musical controls.
-
-It is part of the **OpenMusic** series, alongside [OpenKara](https://github.com/thedavidweng/OpenKara). OpenKara turns your existing music library into a karaoke system. OpenLoop focuses on the other side of the workflow: creating new AI-generated musical ideas directly on your Mac.
-
-OpenLoop is designed for users who want AI music generation without accounts, subscriptions, cloud uploads, or opaque creative pipelines.
-
-> Development status: OpenLoop is currently in alpha development. The desktop shell, setup flow, SQLite persistence, backend manager, ACE-Step client, generation command path, playback, and file actions are already wired; packaging and final QA are the main remaining release tasks.
+</div>
 
 ---
 
@@ -33,6 +20,7 @@ OpenLoop is designed for users who want AI music generation without accounts, su
 
 | Project | Purpose | Status |
 |---|---|---|
+
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active |
 | OpenLoop | Generate new music locally from prompts, lyrics, and musical parameters | Alpha in development |
 
@@ -49,11 +37,6 @@ AI music tools are powerful, but many of them share the same problems:
 3. They hide model behavior behind closed platforms.
 4. They make export, ownership, and reproducibility harder than they should be.
 
-OpenLoop is built around a different assumption: creative tools should run where the creator works.
-
-local AI music generation is becoming practical. OpenLoop wraps that capability in a desktop app so users can generate, preview, export, and revisit musical ideas without touching Python, terminal commands, or Gradio interfaces.
-
----
 
 ## Features
 
@@ -69,7 +52,6 @@ local AI music generation is becoming practical. OpenLoop wraps that capability 
 - **Built-in Preview Player** — Play generated audio inside the app.
 - **Local Generation History** — Store prompt, lyrics, model settings, seed, and output path in a local SQLite database.
 - **Export** — Save generated audio to a local output folder.
-- **Local-First Privacy** — No account system, no telemetry, no prompt upload by default.
 
 ### Planned after v0.1
 
@@ -83,28 +65,10 @@ local AI music generation is becoming practical. OpenLoop wraps that capability 
 
 ---
 
-## Quick Start
-
-### Install from Release
-
-Prebuilt releases will be published on GitHub once the v0.1 Alpha is ready.
-
-Target release format:
-
-| Platform | Format | Status |
-|---|---|---|
-| macOS Apple Silicon | `.dmg` | Planned |
-| macOS Intel | `.dmg` | Experimental / unsupported |
-| Windows | N/A | Out of scope |
-| Linux | N/A | Out of scope |
-
-Until the first release is available, build from source.
-
----
-
 ## Build from Source
 
 ### Prerequisites
+
 
 - macOS 14+ recommended
 - Apple Silicon Mac recommended
@@ -115,7 +79,9 @@ Until the first release is available, build from source.
 - Python 3.11–3.12 for the local ACE-Step backend
 - `uv` for Python environment management
 
+
 ### Clone and run
+
 
 ```bash
 git clone https://github.com/thedavidweng/OpenLoop.git
@@ -124,7 +90,9 @@ pnpm install
 pnpm tauri dev
 ```
 
+
 ### Development checks
+
 
 ```bash
 pnpm install
@@ -137,29 +105,8 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Detailed manual QA notes live in [`docs/testing.md`](docs/testing.md).
 
-### Current implementation status
 
-- Three-column desktop shell is live.
-- First-run setup and device profile detection are implemented.
-- Settings, backend controls, history, and preview panels are connected.
-- SQLite stores settings and generation history locally.
-- The Rust backend manager, ACE-Step client, and generation command path are in place.
-- Audio preview, Reveal in Finder, export copy, and delete-file actions are available.
-- Final packaging and release polish remain in progress.
-
-### Backend setup
-
-OpenLoop is designed to manage the local ACE-Step backend automatically, but during early development you may need to prepare the backend manually.
-
-```bash
-# Example development flow; exact scripts may change during Alpha.
-uv sync
-uv run acestep-api
-```
-
-The app expects the backend to expose a local HTTP API on `127.0.0.1`, with task creation, task polling, and audio download endpoints.
-
----
+For the current implementation status and more development details, see [Implementation Status](./docs/implementation-status.md).
 
 ## System Requirements
 
@@ -174,6 +121,7 @@ The app expects the backend to expose a local HTTP API on `127.0.0.1`, with task
 Intel Mac support is experimental and outside the v0.1 acceptance target.
 
 ---
+
 
 ## AI Models
 
@@ -191,6 +139,7 @@ Model files are downloaded or selected during first setup and stored locally. Th
 
 ---
 
+
 ## Tech Stack
 
 | Layer | Technology | Purpose |
@@ -205,6 +154,7 @@ Model files are downloaded or selected during first setup and stored locally. Th
 | Packaging | Tauri bundler | macOS `.dmg` release |
 
 ---
+
 
 ## Architecture
 
@@ -243,6 +193,7 @@ OpenLoop uses a local API server model instead of making the UI talk directly to
 
 ---
 
+
 ## Data and Privacy
 
 OpenLoop is local-first by design.
@@ -259,6 +210,7 @@ Logs should avoid storing full lyrics or complete sensitive prompts. Backend err
 
 ---
 
+
 ## Responsible Use
 
 OpenLoop does not provide legal clearance for generated music.
@@ -267,76 +219,6 @@ Users are responsible for checking whether generated output is appropriate for p
 
 ---
 
-## Project Structure
-
-Planned repository layout:
-
-```text
-openloop/
-  README.md
-  LICENSE
-  package.json
-  src/
-    app/
-      components/
-        generation/
-        history/
-        player/
-        settings/
-      lib/
-        api.ts
-        types.ts
-        validation.ts
-        store.ts
-  src-tauri/
-    src/
-      commands/
-      services/
-      models/
-    migrations/
-    capabilities/
-  docs/
-    OpenLoop_PRD_Formal.md
-    OpenLoop_Codex_Development_Plan.md
-    architecture.md
-    testing.md
-```
-
----
-
-## Roadmap
-
-### v0.1 Alpha
-
-- Tauri + React desktop shell
-- First-launch setup flow
-- Local backend health check
-- Text-to-music generation
-- Lyrics input
-- Duration, BPM, language, format, and seed controls
-- Built-in audio preview
-- Local generation history
-- Export to user output folder
-- Basic error handling and logs
-
-### v0.2 Beta
-
-- Repaint / local region regeneration
-- Better waveform visualization
-- Improved model management
-- Better low-memory profile handling
-- More complete export options
-- Homebrew Cask evaluation
-
-### v1.0
-
-- Stable signed macOS release
-- Notarized `.dmg`
-- Reliable first-launch setup
-- Complete privacy and license documentation
-- Reproducible release workflow
-
----
 
 ## Known Limitations
 
@@ -349,6 +231,7 @@ openloop/
 - The current UI favors local workflow coverage and technical completeness over final visual polish.
 
 ---
+
 
 ## Contributing
 
@@ -368,6 +251,7 @@ Before opening a large PR, please open an issue describing the proposed change.
 
 ---
 
+
 ## License
 
 OpenLoop application code is released under the [MIT License](LICENSE).
@@ -375,6 +259,7 @@ OpenLoop application code is released under the [MIT License](LICENSE).
 Third-party models, libraries, and tools retain their own licenses. In particular, ACE-Step, MLX, FFmpeg, Tauri, and other dependencies should be reviewed according to their upstream license terms before redistribution.
 
 ---
+
 
 ## Acknowledgements
 
@@ -386,3 +271,14 @@ OpenLoop builds on work from the open-source music and local AI ecosystem, inclu
 - The broader open-source audio tooling community
 
 OpenLoop is part of the OpenMusic series by [David Weng](https://github.com/thedavidweng).
+
+
+## Roadmap
+
+For the detailed development roadmap and planning documents, see:
+
+- **[Implementation Status](./docs/implementation-status.md)** — Current implementation status and completed milestones
+- **[Development Plan](./docs/plans/Development_Plan.md)** — Full development timeline, phases, and technical planning
+- **[Testing Guide](./testing.md)** — QA procedures and manual test coverage notes
+
+---

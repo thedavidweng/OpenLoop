@@ -1,0 +1,42 @@
+[package]
+name = "openloop"
+version = "0.1.0"
+description = "OpenLoop desktop shell"
+authors = ["OpenLoop contributors"]
+license = "MIT"
+edition = "2021"
+default-run = "openloop"
+
+[lib]
+name = "openloop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+doctest = false
+
+[[bin]]
+name = "openloop"
+path = "src/main.rs"
+
+[build-dependencies]
+cc = "1"
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+anyhow = "1"
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+rusqlite = { version = "0.39.0", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+symphonia = { version = "0.5.5", default-features = false, features = ["flac", "mp3", "ogg", "pcm", "vorbis", "wav"] }
+tauri = { version = "2", features = ["unstable"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+vorbis_rs = "0.5.5"
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
+[dev-dependencies]
+mockito = "1.7.0"
+tempfile = "3.27.0"

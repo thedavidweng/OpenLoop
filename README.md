@@ -20,7 +20,6 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 | Project | Purpose | Status |
 |---|---|---|
-
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active |
 | OpenLoop | Generate new music locally from prompts, lyrics, and musical parameters | Alpha in development |
 

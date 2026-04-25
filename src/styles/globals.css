@@ -229,7 +229,9 @@
     transition:
       border-color var(--motion-duration-quick) var(--motion-ease-soft-out),
       background-color var(--motion-duration-quick) var(--motion-ease-soft-out),
-      opacity var(--motion-duration-quick) var(--motion-ease-soft-out);
+      box-shadow var(--motion-duration-standard) var(--motion-ease-soft-out),
+      opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
+      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out);
   }
 
   .select-input {
@@ -252,10 +254,17 @@
     color: var(--color-text-dimmer);
   }
 
+  .text-input:hover:not(:disabled),
+  .select-input:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-border-light) 76%, white 24%);
+    background: var(--color-hover);
+  }
+
   .text-input:focus,
   .select-input:focus {
     border-color: var(--color-accent);
     background: color-mix(in srgb, var(--color-surface-muted) 96%, white 4%);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
   }
 
   .text-input:disabled,

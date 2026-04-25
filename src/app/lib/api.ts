@@ -1,5 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import type {
   AppSettings,
   BackendStatus,
@@ -12,6 +13,12 @@ import type {
   ModelVariant,
   WindowShellStateSnapshot,
 } from "@/app/lib/types";
+
+export type DefaultAppPaths = {
+  outputDirectory: string;
+  modelDirectory: string;
+  logDirectory: string;
+};
 
 export function isTauriRuntime() {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -34,6 +41,23 @@ export function setSetting<K extends keyof AppSettings>(
   value: AppSettings[K],
 ): Promise<AppSettings> {
   return invoke<AppSettings>("set_setting", { key, value });
+}
+
+export function resetRuntimeSettings(): Promise<AppSettings> {
+  return invoke<AppSettings>("reset_runtime_settings");
+}
+
+export function getDefaultAppPaths(): Promise<DefaultAppPaths> {
+  return invoke<DefaultAppPaths>("get_default_app_paths");
+}
+
+export async function selectDirectory(defaultPath?: string | null): Promise<string | null> {
+  const selected = await open({
+    directory: true,
+    multiple: false,
+    defaultPath: defaultPath ?? undefined,
+  });
+  return typeof selected === "string" ? selected : null;
 }
 
 export function listGenerations(query?: string): Promise<GenerationRecord[]> {

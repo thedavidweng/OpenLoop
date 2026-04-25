@@ -5,6 +5,14 @@ import * as api from "@/app/lib/api";
 import { useGenerationStore } from "@/app/lib/store";
 import { useAppMenuRuntime } from "@/app/runtime/menu-runtime";
 
+function BootShell() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-[#121212] text-[12px] tracking-wide text-[rgba(255,255,255,0.55)]">
+      OpenLoop
+    </div>
+  );
+}
+
 function App() {
   const hydrateFromPersistence = useGenerationStore(
     (state) => state.hydrateFromPersistence,
@@ -66,7 +74,7 @@ function App() {
   }, [applyModelStatus]);
 
   if (!hydrated) {
-    return null;
+    return <BootShell />;
   }
 
   if (

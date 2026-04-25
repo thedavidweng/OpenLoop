@@ -2,7 +2,15 @@ import type { ChangeEvent } from "react";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Music2, Settings2, SlidersHorizontal, WandSparkles } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  Music2,
+  Settings2,
+  WandSparkles,
+} from "lucide-react";
 import { MODEL_VARIANTS, useGenerationStore } from "@/app/lib/store";
 import type { GenerationFormValues } from "@/app/lib/types";
 
@@ -72,6 +80,9 @@ export function GenerationPanel() {
   const isBusy = generationState.status === "validating" || generationState.status === "running";
   const hasErrors = Object.keys(validationErrors).length > 0;
   const selectedModel = settings.modelVariant ? MODEL_VARIANTS[settings.modelVariant] : null;
+  const selectedModelDescription = settings.modelVariant
+    ? t(`modelProfiles.${settings.modelVariant}.description`)
+    : t("model.chooseFirst");
   const modelReady = settings.modelVariant
     ? settings.downloadedModels.includes(settings.modelVariant)
     : false;
@@ -117,26 +128,30 @@ export function GenerationPanel() {
           void runGeneration();
         }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3 px-1">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-accent)]">
               <Music2 size={17} />
             </div>
-            <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-white">{t("generation.composerTitle")}</p>
-              <p className="truncate text-[12px] text-[var(--color-text-dim)]">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-white">
+                {t("generation.composerTitle")}
+              </p>
+              <p className="text-[12px] leading-5 text-[var(--color-text-dim)]">
                 {t("generation.composerDescription")}
               </p>
             </div>
           </div>
           <button
             type="button"
-            className="secondary-button"
+            className="secondary-button shrink-0"
             onClick={() => setLyricsOpen((open) => !open)}
             disabled={isBusy}
           >
             <WandSparkles size={14} />
-            {form.lyrics.trim() ? t("generation.editLyrics") : t("generation.addLyrics")}
+            {form.lyrics.trim()
+              ? t("generation.editLyrics")
+              : t("generation.addLyrics")}
           </button>
         </div>
 
@@ -154,25 +169,51 @@ export function GenerationPanel() {
           </label>
 
           <div className="flex min-h-[116px] flex-col justify-between gap-3 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_68%,transparent)] p-3">
-            <div>
-              <FieldLabel>{t("generation.model")}</FieldLabel>
-              <div className="mt-2 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-white">
-                    {selectedModel?.label ?? t("model.noModel")}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[var(--color-text-dim)]">
-                    {selectedModel?.description ?? t("model.chooseFirst")}
-                  </p>
-                </div>
-                <button type="button" onClick={openSettings} className="secondary-button shrink-0">
-                  {modelReady ? t("model.select") : t("model.download")}
-                </button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel>{t("generation.model")}</FieldLabel>
+                {selectedModel ? (
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                      modelReady
+                        ? "bg-emerald-500/14 text-emerald-200"
+                        : "bg-amber-500/14 text-amber-200"
+                    }`}
+                  >
+                    {modelReady ? (
+                      <CheckCircle2 size={9} />
+                    ) : (
+                      <AlertCircle size={9} />
+                    )}
+                    {modelReady ? t("model.ready") : t("model.notInstalled")}
+                  </span>
+                ) : null}
               </div>
+              <p className="text-[13px] font-semibold leading-tight text-white">
+                {selectedModel?.label ?? t("model.noModel")}
+              </p>
+              <p className="line-clamp-2 text-[11px] leading-[1.4] text-[var(--color-text-dim)]">
+                {selectedModelDescription}
+              </p>
+              <button
+                type="button"
+                onClick={openSettings}
+                className="text-left text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)] transition-colors hover:text-white"
+              >
+                {t("model.openSettings")} →
+              </button>
             </div>
 
-            <button className="primary-button w-full disabled:opacity-50" type="submit" disabled={isBusy || hasErrors || !modelReady}>
-              {isBusy ? <SlidersHorizontal size={15} /> : <WandSparkles size={15} />}
+            <button
+              className="primary-button w-full disabled:opacity-50"
+              type="submit"
+              disabled={isBusy || hasErrors || !modelReady}
+            >
+              {isBusy ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <WandSparkles size={15} />
+              )}
               {submitLabel}
             </button>
           </div>
@@ -338,7 +379,7 @@ export function GenerationPanel() {
           </div>
         </details>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 px-1">
           {isBusy ? (
             <button
               className="secondary-button"
@@ -350,12 +391,17 @@ export function GenerationPanel() {
               {t("common.cancel")}
             </button>
           ) : null}
-          <button className="secondary-button" type="button" onClick={resetForm} disabled={isBusy}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={resetForm}
+            disabled={isBusy}
+          >
             {t("generation.reset")}
           </button>
-          <span className="text-[12px] text-[var(--color-text-dim)]">
+          <p className="min-w-0 flex-1 text-[11px] leading-[1.4] text-[var(--color-text-dim)]">
             {modelReady ? t("generation.localReady") : t("model.chooseFirst")}
-          </span>
+          </p>
         </div>
       </form>
     </section>

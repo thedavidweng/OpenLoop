@@ -179,16 +179,20 @@ export type BackendStatus =
 
 export type ModelBootstrapStatus =
   | { state: "pending"; message: string }
-  | { state: "downloading"; message: string; downloadedBytes?: number; totalBytes?: number }
+  | {
+      state: "downloading";
+      message: string;
+      downloadedBytes?: number;
+      totalBytes?: number;
+    }
   | { state: "ready"; message: string }
-  | { state: "outdated"; message: string }
+  | { state: "experimental"; message: string }
   | { state: "failed"; message: string; error?: AppError | null };
 
 export type ModelDownloadState =
   | "not_installed"
   | "downloading"
   | "ready"
-  | "outdated"
   | "failed";
 
 export type ModelStatusSnapshot = {
@@ -199,8 +203,7 @@ export type ModelStatusSnapshot = {
   description: string;
   downloadedBytes: number;
   totalBytes?: number | null;
-  installedRevision?: string | null;
-  runtimeRevision?: string | null;
+  installedAt?: string | null;
   error?: AppError | null;
 };
 

@@ -383,6 +383,7 @@ mod tests {
     fn sample_request() -> GenerationRequest {
         GenerationRequest {
             prompt: "warm piano".to_owned(),
+            negative_prompt: None,
             lyrics: "".to_owned(),
             vocal_language: "en".to_owned(),
             duration_seconds: 30.0,

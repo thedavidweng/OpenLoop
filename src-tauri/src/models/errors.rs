@@ -80,6 +80,15 @@ impl AppError {
         )
     }
 
+    pub fn model_download_failed(details: impl Into<String>) -> Self {
+        Self::new(
+            "MODEL_DOWNLOAD_FAILED",
+            "OpenLoop could not download the selected model.",
+            Some(details.into()),
+            true,
+        )
+    }
+
     pub fn task_submit_failed(details: impl Into<String>) -> Self {
         Self::new(
             "TASK_SUBMIT_FAILED",

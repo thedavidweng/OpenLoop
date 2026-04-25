@@ -17,6 +17,7 @@ import type {
   ModelStatusSnapshot,
   ModelVariant,
   ModelBootstrapStatus,
+  ModelDownloadState,
   ValidationErrors,
 } from "@/app/lib/types";
 import i18next, { detectSystemLanguage } from "@/app/lib/i18n";
@@ -107,6 +108,27 @@ export const MODEL_VARIANTS = {
   ModelVariant,
   { id: ModelVariant; label: string; description: string; modelName: string }
 >;
+
+export const MODEL_PACKS = {
+  standard: {
+    id: "standard",
+    label: "Standard",
+    description: "Shared ACE-Step turbo DiT + 0.6B LM pack used by Lite and Turbo profiles.",
+    variants: ["lite", "turbo"] as ModelVariant[],
+    primaryVariant: "turbo" as ModelVariant,
+    estimatedSizeBytes: 8 * 1024 * 1024 * 1024,
+  },
+  xl: {
+    id: "xl",
+    label: "XL",
+    description: "ACE-Step XL turbo DiT + 1.7B LM pack used by Pro profile.",
+    variants: ["pro"] as ModelVariant[],
+    primaryVariant: "pro" as ModelVariant,
+    estimatedSizeBytes: 22 * 1024 * 1024 * 1024,
+  },
+} as const;
+
+export type ModelPackId = keyof typeof MODEL_PACKS;
 
 const IDLE_GENERATION_STATE: GenerationState = {
   status: "idle",
@@ -218,11 +240,90 @@ function createModelRequiredError(): AppError {
 }
 
 function isModelDownloaded(settings: AppSettings, variant: ModelVariant | null): boolean {
-  return variant ? settings.downloadedModels.includes(variant) : false;
+  if (!variant) {
+    return false;
+  }
+  const packId = packIdForVariant(variant);
+  return MODEL_PACKS[packId].variants.some((candidate) =>
+    settings.downloadedModels.includes(candidate),
+  );
 }
 
 function modelNameForVariant(variant: ModelVariant): string {
   return MODEL_VARIANTS[variant].modelName;
+}
+
+function packIdForVariant(variant: ModelVariant): ModelPackId {
+  return variant === "pro" ? "xl" : "standard";
+}
+
+function primaryVariantForPack(packId: ModelPackId): ModelVariant {
+  return MODEL_PACKS[packId].primaryVariant;
+}
+
+function profileForVariant(variant: ModelVariant): AppSettings["profile"] {
+  if (variant === "lite") return "low-memory";
+  if (variant === "pro") return "quality";
+  return "standard";
+}
+
+function expandDownloadedVariantsFromStatuses(statuses: ModelStatusSnapshot[]): ModelVariant[] {
+  const readyPacks = new Set<ModelPackId>();
+  for (const status of statuses) {
+    if (status.state === "ready") {
+      readyPacks.add(packIdForVariant(status.variant));
+    }
+  }
+  const next: ModelVariant[] = [];
+  for (const packId of readyPacks) {
+    next.push(...MODEL_PACKS[packId].variants);
+  }
+  return next;
+}
+
+function aggregatePackStatus(
+  statuses: ModelStatusSnapshot[],
+  packId: ModelPackId,
+): {
+  state: ModelDownloadState;
+  downloadedBytes: number;
+  totalBytes?: number;
+  label: string;
+  error: ModelStatusSnapshot["error"];
+} {
+  const entries = statuses.filter((status) =>
+    MODEL_PACKS[packId].variants.includes(status.variant),
+  );
+  if (entries.length === 0) {
+    return {
+      state: "not_installed",
+      downloadedBytes: 0,
+      totalBytes: MODEL_PACKS[packId].estimatedSizeBytes,
+      label: MODEL_PACKS[packId].label,
+      error: null,
+    };
+  }
+
+  const rank: Record<ModelDownloadState, number> = {
+    failed: 4,
+    downloading: 3,
+    ready: 2,
+    not_installed: 1,
+  };
+  const winner = entries.reduce((acc, cur) =>
+    rank[cur.state] > rank[acc.state] ? cur : acc,
+  );
+  const downloadedBytes = Math.max(...entries.map((entry) => entry.downloadedBytes));
+  const totalBytes = entries.find((entry) => entry.totalBytes)?.totalBytes ??
+    MODEL_PACKS[packId].estimatedSizeBytes;
+
+  return {
+    state: winner.state,
+    downloadedBytes,
+    totalBytes: totalBytes ?? undefined,
+    label: MODEL_PACKS[packId].label,
+    error: winner.error ?? null,
+  };
 }
 
 async function resolveBootstrapStatus(
@@ -257,7 +358,7 @@ async function resolveBootstrapStatus(
     settings.profile === "unsupported"
   ) {
     return {
-      state: "outdated",
+      state: "experimental",
       message: tr("status.experimentalMac"),
     };
   }
@@ -366,7 +467,10 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     modelName: variant.modelName,
     lmModel: variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
     lmBackend: "mlx",
-    estimatedSizeBytes: variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : variant.id === "lite" ? 8 * 1024 * 1024 * 1024 : 10 * 1024 * 1024 * 1024,
+    estimatedSizeBytes:
+      variant.id === "pro"
+        ? 22 * 1024 * 1024 * 1024
+        : 8 * 1024 * 1024 * 1024,
     description: variant.description,
     recommendedMemoryGb: variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
   })),
@@ -513,49 +617,85 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	    set({ isSettingsOpen: false });
 	  },
 	  downloadModelVariant: async (variant) => {
+    const packId = packIdForVariant(variant);
+    const downloadTarget = primaryVariantForPack(packId);
+    const packAggregate = aggregatePackStatus(get().modelStatuses, packId);
     set({
       bootstrapStatus: {
         state: "downloading",
         message: tr("status.preparingModel", {
-          model: MODEL_VARIANTS[variant].label,
+          model: MODEL_PACKS[packId].label,
         }),
+        downloadedBytes: packAggregate.downloadedBytes,
+        totalBytes: packAggregate.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes,
       },
     });
 
 	    if (api.isTauriRuntime()) {
-	      await api.downloadModel(variant);
-	      await api.setSetting("modelVariant", variant);
-	      await get().hydrateFromPersistence();
+	      const initialStatus = await api.downloadModel(downloadTarget);
+        get().applyModelStatus(initialStatus);
+	      await Promise.all([
+          api.setSetting("modelVariant", variant),
+          api.setSetting("profile", profileForVariant(variant)),
+          api.setSetting(
+            "defaultThinking",
+            PROFILE_FORM_PRESETS[profileForVariant(variant)].thinking,
+          ),
+        ]);
+        const profile = profileForVariant(variant);
+        const nextForm = applyModelVariantToForm(
+          applyProfilePreset(get().form, profile),
+          variant,
+        );
+        set((state) => ({
+          settings: {
+            ...state.settings,
+            profile,
+            modelVariant: variant,
+            defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
+          },
+          form: nextForm,
+          ...computeValidationState(nextForm),
+        }));
 	      return;
 	    }
 
-	    const nextDownloadedModels = Array.from(
-	      new Set([...get().settings.downloadedModels, variant]),
-	    );
+	    const nextDownloadedModels = Array.from(new Set([
+      ...get().settings.downloadedModels,
+      ...MODEL_PACKS[packId].variants,
+    ]));
 
     const nextSettings = {
       ...get().settings,
+      profile: profileForVariant(variant),
       modelVariant: variant,
       downloadedModels: nextDownloadedModels,
     };
-    const nextForm = applyModelVariantToForm(get().form, variant);
+    const nextForm = applyModelVariantToForm(
+      applyProfilePreset(get().form, nextSettings.profile),
+      variant,
+    );
     set({
       settings: nextSettings,
       form: nextForm,
       ...computeValidationState(nextForm),
       bootstrapStatus: {
         state: "ready",
-        message: tr("status.modelReady", { model: MODEL_VARIANTS[variant].label }),
+        message: tr("status.modelReady", { model: MODEL_PACKS[packId].label }),
       },
 	    });
 	  },
 	  deleteModelVariant: async (variant) => {
+    const packId = packIdForVariant(variant);
+    const deleteTarget = primaryVariantForPack(packId);
 	    if (api.isTauriRuntime()) {
-	      const statuses = await api.deleteModel(variant);
-	      const nextDownloadedModels = statuses
-	        .filter((status) => status.state === "ready")
-	        .map((status) => status.variant);
-	      const nextSelected = get().settings.modelVariant === variant ? null : get().settings.modelVariant;
+	      const statuses = await api.deleteModel(deleteTarget);
+	      const nextDownloadedModels = expandDownloadedVariantsFromStatuses(statuses);
+	      const currentSelected = get().settings.modelVariant;
+	      const nextSelected =
+        currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
+	          ? null
+	          : currentSelected;
 	      await Promise.all([
 	        api.setSetting("downloadedModels", nextDownloadedModels),
 	        api.setSetting("modelVariant", nextSelected),
@@ -565,9 +705,13 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	    }
 
 	    const nextDownloadedModels = get().settings.downloadedModels.filter(
-	      (downloaded) => downloaded !== variant,
-	    );
-	    const nextSelected = get().settings.modelVariant === variant ? null : get().settings.modelVariant;
+      (downloaded) => !MODEL_PACKS[packId].variants.includes(downloaded),
+    );
+	    const currentSelected = get().settings.modelVariant;
+	    const nextSelected =
+      currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
+        ? null
+        : currentSelected;
 	    set((state) => ({
 	      settings: {
 	        ...state.settings,
@@ -590,9 +734,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	      api.listModelCatalog(),
 	      api.getModelStatus(),
 	    ]);
-	    const downloadedModels = modelStatuses
-	      .filter((status) => status.state === "ready")
-	      .map((status) => status.variant);
+	    const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
 	    set((state) => ({
 	      modelCatalog,
 	      modelStatuses,
@@ -612,9 +754,13 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	        ...state.modelStatuses.filter((current) => current.variant !== status.variant),
 	        status,
 	      ];
-	      const downloadedModels = modelStatuses
-	        .filter((current) => current.state === "ready")
-	        .map((current) => current.variant);
+	      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
+        const selectedPack =
+          state.settings.modelVariant
+            ? packIdForVariant(state.settings.modelVariant)
+            : null;
+        const eventPack = packIdForVariant(status.variant);
+        const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
 	      return {
 	        modelStatuses,
 	        settings: {
@@ -622,14 +768,36 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	          downloadedModels,
 	        },
 	        bootstrapStatus:
-	          status.variant === state.settings.modelVariant && status.state === "downloading"
-	            ? {
-	                state: "downloading",
-	                message: tr("status.downloadingModel", { model: status.label }),
-	                downloadedBytes: status.downloadedBytes,
-	                totalBytes: status.totalBytes ?? undefined,
-	              }
-	            : state.bootstrapStatus,
+            selectedPack === eventPack
+              ? packAggregate.state === "downloading"
+                ? {
+                    state: "downloading",
+                    message: tr("status.downloadingModel", {
+                      model: MODEL_PACKS[eventPack].label,
+                    }),
+                    downloadedBytes: packAggregate.downloadedBytes,
+                    totalBytes: packAggregate.totalBytes,
+                  }
+                : packAggregate.state === "failed"
+                  ? {
+                      state: "failed",
+                      message: tr("status.stackReportedError"),
+                      error: packAggregate.error ?? null,
+                    }
+                  : packAggregate.state === "ready"
+                    ? {
+                        state: "ready",
+                        message: tr("status.modelReady", {
+                          model: MODEL_PACKS[eventPack].label,
+                        }),
+                      }
+                    : {
+                        state: "pending",
+                        message: tr("status.downloadModelToStart", {
+                          model: MODEL_PACKS[eventPack].label,
+                        }),
+                      }
+              : state.bootstrapStatus,
 	      };
 	    });
 	  },
@@ -659,8 +827,13 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     set({ bootstrapStatus });
   },
   selectModelVariant: async (variant) => {
+    const profile = profileForVariant(variant);
     if (api.isTauriRuntime()) {
-      await api.setSetting("modelVariant", variant);
+      await Promise.all([
+        api.setSetting("modelVariant", variant),
+        api.setSetting("profile", profile),
+        api.setSetting("defaultThinking", PROFILE_FORM_PRESETS[profile].thinking),
+      ]);
       await get().hydrateFromPersistence();
       await get().refreshBootstrapStatus();
       return;
@@ -668,9 +841,14 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 
     const nextSettings = {
       ...get().settings,
+      profile,
+      defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
       modelVariant: variant,
     };
-    const nextForm = applyModelVariantToForm(get().form, variant);
+    const nextForm = applyModelVariantToForm(
+      applyProfilePreset(get().form, profile),
+      variant,
+    );
     set({
       settings: nextSettings,
       form: nextForm,
@@ -742,9 +920,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	        ...persistedSettings,
 	        profile,
 	        defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-	        downloadedModels: modelStatuses
-	          .filter((status) => status.state === "ready")
-	          .map((status) => status.variant),
+	        downloadedModels: expandDownloadedVariantsFromStatuses(modelStatuses),
 	      };
 	      const language = mergedSettings.language ?? detectSystemLanguage();
 	      await i18next.changeLanguage(language);

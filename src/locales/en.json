@@ -6,16 +6,16 @@
     "model": "Choose a model",
     "output": "Output folder",
     "done": "Done",
-    "welcomeBody": "OpenLoop keeps local generation simple: choose a model, pick where exports go, and start creating music. The generation engine is managed automatically.",
+    "welcomeBody": "OpenLoop keeps local music generation simple. Pick a model, choose where files go, and start creating. The engine is managed for you.",
     "downloadModel": "Download a model",
-    "downloadModelDesc": "Prepare one official ACE-Step 1.5 model profile and let OpenLoop handle the local generation engine.",
+    "downloadModelDesc": "Prepare an official ACE-Step 1.5 weight pack. OpenLoop manages the local engine for you.",
     "pickOutput": "Pick an output folder",
     "pickOutputDesc": "Choose where generated audio should be saved by default.",
-    "deviceBody": "OpenLoop adapts defaults to your Mac, but no model is selected until you choose one.",
+    "deviceBody": "OpenLoop adapts defaults to your Mac, but no model is selected until you pick one.",
     "recommended": "Recommended for this Mac: {{model}}",
-    "modelBody": "Download one official model profile to get started. You can switch between downloaded models later in Settings.",
+    "modelBody": "Download a weight pack, then pick the runtime profile that fits your Mac. Lite and Turbo share the Standard pack, so they only download once.",
     "outputBody": "Choose where OpenLoop should save generated audio files.",
-    "doneBody": "Your model choice and output location are ready. OpenLoop will prepare the local engine when you generate.",
+    "doneBody": "Your model and output location are ready. OpenLoop will start the local engine the first time you generate.",
     "openSetup": "Open setup",
     "close": "Close",
     "back": "Back",
@@ -23,18 +23,26 @@
     "finish": "Finish setup",
     "downloaded": "Downloaded",
     "notDownloaded": "Not downloaded",
-    "preparing": "Preparing...",
-    "downloadModelButton": "Download model",
+    "preparing": "Preparing\u2026",
+    "downloadModelButton": "Download",
+    "downloadingButton": "Downloading\u2026",
+    "reinstallButton": "Reinstall",
     "os": "OS",
     "architecture": "Architecture",
     "memory": "Memory",
-    "recommendedProfile": "Recommended profile"
+    "recommendedProfile": "Recommended profile",
+    "modelPackHeading": "Weight packs",
+    "modelProfileHeading": "Runtime profiles",
+    "downloadAccent": "{{percent}}% downloaded",
+    "downloadComplete": "Pack downloaded"
   },
   "settings": {
     "title": "Settings",
     "description": "Manage language, models, and default generation preferences.",
     "models": "Models",
-    "modelsDescription": "Download official ACE-Step 1.5 profiles, monitor progress, delete outdated copies, and reinstall when the upstream runtime changes.",
+    "modelsDescription": "Download official ACE-Step 1.5 weight packs, watch progress, and remove the ones you don't need.",
+    "modelPacks": "Model packs",
+    "runProfiles": "Runtime profiles",
     "defaults": "Defaults",
     "defaultsDescription": "Set the generation defaults used for new requests.",
     "language": "Language",
@@ -44,6 +52,9 @@
     "audioFormat": "Audio format",
     "outputDirectory": "Output directory",
     "modelDirectory": "Model directory",
+    "chooseFolder": "Choose",
+    "useDefault": "Default",
+    "defaultPath": "Default",
     "defaultThinking": "Default thinking",
     "defaultThinkingDescription": "Enable ACE-Step 5Hz LM planning for new requests.",
     "backend": "Backend",
@@ -54,6 +65,11 @@
     "backendRestarted": "Backend restarted.",
     "openBackendLog": "Open backend log",
     "noBackendLog": "No backend log has been created yet.",
+    "backendPortInvalid": "Backend port must be between 1024 and 65535.",
+    "resetDefaultPort": "Reset default port",
+    "backendPortReset": "Backend port reset to 8001.",
+    "repairRuntime": "Repair runtime config",
+    "runtimeSettingsRepaired": "Runtime configuration repaired.",
     "save": "Save changes",
     "saved": "Settings saved.",
     "reopenSetup": "Reopen setup",
@@ -73,18 +89,42 @@
     "notInstalled": "Not installed",
     "downloading": "Downloading",
     "ready": "Ready",
-    "outdated": "Outdated",
-    "failed": "Failed",
+    "failed": "Download failed",
     "selected": "Selected",
     "select": "Select",
     "download": "Download",
     "delete": "Delete",
     "reinstall": "Reinstall",
+    "cancel": "Cancel",
+    "retry": "Retry download",
     "size": "{{size}}",
     "progress": "{{done}} / {{total}}",
+    "downloadProgress": "{{percent}}%",
     "noModel": "No model selected",
     "chooseFirst": "Choose and download a model before generating.",
-    "chooseModel": "Choose model"
+    "chooseModel": "Choose model",
+    "openSettings": "Open settings",
+    "active": "Active",
+    "ready_short": "Ready"
+  },
+  "modelPacks": {
+    "standard": {
+      "description": "Shared ACE-Step turbo DiT + 0.6B LM pack used by Lite and Turbo profiles."
+    },
+    "xl": {
+      "description": "ACE-Step XL turbo DiT + 1.7B LM pack used by the XL Turbo profile."
+    }
+  },
+  "modelProfiles": {
+    "lite": {
+      "description": "Lower-memory profile for smaller Apple Silicon Macs. Uses the Standard model pack."
+    },
+    "turbo": {
+      "description": "Recommended balanced profile for 16 GB Apple Silicon Macs. Uses the Standard model pack."
+    },
+    "pro": {
+      "description": "Higher-quality XL profile for larger-memory machines. Uses the XL model pack."
+    }
   },
   "generation": {
     "workspace": "Generation workspace",

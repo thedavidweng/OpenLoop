@@ -26,6 +26,7 @@ pub struct AppState {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             fs::create_dir_all(&app_data_dir)?;
@@ -60,6 +61,8 @@ pub fn run() {
             commands::files::delete_generation_file,
             commands::settings::get_settings,
             commands::settings::set_setting,
+            commands::settings::reset_runtime_settings,
+            commands::settings::get_default_app_paths,
             commands::models::list_model_catalog,
             commands::models::get_model_status,
             commands::models::download_model,

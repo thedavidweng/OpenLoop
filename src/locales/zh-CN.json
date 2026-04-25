@@ -13,7 +13,7 @@
     "pickOutputDesc": "选择生成音频默认保存的位置。",
     "deviceBody": "OpenLoop 会根据 Mac 调整默认值，但在你选择之前不会默认选中任何模型。",
     "recommended": "当前 Mac 推荐：{{model}}",
-    "modelBody": "先下载一个官方模型配置。之后可以在设置中切换已经下载的模型。",
+    "modelBody": "先下载需要的官方权重包，然后选择运行配置档。Lite 和 Turbo 共用 Standard 权重包，不会重复下载。",
     "outputBody": "选择 OpenLoop 保存生成音频文件的位置。",
     "doneBody": "模型和输出位置已经准备好。生成时 OpenLoop 会启动本地引擎。",
     "openSetup": "打开设置向导",
@@ -23,18 +23,26 @@
     "finish": "完成设置",
     "downloaded": "已下载",
     "notDownloaded": "未下载",
-    "preparing": "准备中...",
-    "downloadModelButton": "下载模型",
+    "preparing": "准备中…",
+    "downloadModelButton": "下载",
+    "downloadingButton": "下载中…",
+    "reinstallButton": "重新安装",
     "os": "系统",
     "architecture": "架构",
     "memory": "内存",
-    "recommendedProfile": "推荐配置"
+    "recommendedProfile": "推荐配置",
+    "modelPackHeading": "权重包",
+    "modelProfileHeading": "运行配置档",
+    "downloadAccent": "已下载 {{percent}}%",
+    "downloadComplete": "权重已下载"
   },
   "settings": {
     "title": "设置",
     "description": "管理语言、模型和默认生成参数。",
     "models": "模型",
-    "modelsDescription": "下载官方 ACE-Step 1.5 配置，查看进度，删除过期副本，并在上游运行时更新后重装。",
+    "modelsDescription": "下载官方 ACE-Step 1.5 权重包，跟踪进度，并删除不再需要的副本。",
+    "modelPacks": "模型权重包",
+    "runProfiles": "运行配置档",
     "defaults": "默认值",
     "defaultsDescription": "设置新生成请求使用的默认参数。",
     "language": "语言",
@@ -44,6 +52,9 @@
     "audioFormat": "音频格式",
     "outputDirectory": "输出目录",
     "modelDirectory": "模型目录",
+    "chooseFolder": "选择",
+    "useDefault": "默认",
+    "defaultPath": "默认",
     "defaultThinking": "默认启用 Thinking",
     "defaultThinkingDescription": "为新的请求启用 ACE-Step 5Hz LM 规划。",
     "backend": "后端",
@@ -54,6 +65,11 @@
     "backendRestarted": "后端已重启。",
     "openBackendLog": "打开后端日志",
     "noBackendLog": "尚未创建后端日志。",
+    "backendPortInvalid": "后端端口必须在 1024 到 65535 之间。",
+    "resetDefaultPort": "恢复默认端口",
+    "backendPortReset": "后端端口已恢复为 8001。",
+    "repairRuntime": "一键修复运行配置",
+    "runtimeSettingsRepaired": "运行配置已修复。",
     "save": "保存更改",
     "saved": "设置已保存。",
     "reopenSetup": "重新打开设置向导",
@@ -73,18 +89,42 @@
     "notInstalled": "未安装",
     "downloading": "下载中",
     "ready": "已就绪",
-    "outdated": "已过期",
-    "failed": "失败",
-    "selected": "已选择",
+    "failed": "下载失败",
+    "selected": "当前使用",
     "select": "选择",
     "download": "下载",
     "delete": "删除",
-    "reinstall": "重装",
+    "reinstall": "重新安装",
+    "cancel": "取消",
+    "retry": "重试下载",
     "size": "{{size}}",
     "progress": "{{done}} / {{total}}",
+    "downloadProgress": "{{percent}}%",
     "noModel": "未选择模型",
     "chooseFirst": "生成前请先选择并下载模型。",
-    "chooseModel": "选择模型"
+    "chooseModel": "选择模型",
+    "openSettings": "打开设置",
+    "active": "正在使用",
+    "ready_short": "可用"
+  },
+  "modelPacks": {
+    "standard": {
+      "description": "Lite 和 Turbo 共用的 ACE-Step turbo DiT + 0.6B LM 权重包。"
+    },
+    "xl": {
+      "description": "XL Turbo 配置使用的 ACE-Step XL turbo DiT + 1.7B LM 权重包。"
+    }
+  },
+  "modelProfiles": {
+    "lite": {
+      "description": "面向较低内存 Apple Silicon Mac 的轻量配置，使用 Standard 权重包。"
+    },
+    "turbo": {
+      "description": "推荐给 16GB Apple Silicon Mac 的均衡配置，使用 Standard 权重包。"
+    },
+    "pro": {
+      "description": "面向更大内存设备的高质量 XL 配置，使用 XL 权重包。"
+    }
   },
   "generation": {
     "workspace": "生成工作区",

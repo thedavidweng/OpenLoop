@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />
+
+[简体中文](./README_CN.md)
+
 # OpenLoop
 
 **Generate music locally on your Mac.**
@@ -157,35 +161,24 @@ Model files are downloaded or selected during first setup and stored locally. Th
 
 ## Architecture
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                        OpenLoop UI                          │
-│  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐ │
-│  │ History        │  │ Generation     │  │ Preview       │ │
-│  │ Sidebar        │  │ Form           │  │ Player        │ │
-│  └────────────────┘  └────────────────┘  └───────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Tauri Rust Backend                      │
-│  ┌────────────────┐  ┌────────────────┐  ┌───────────────┐ │
-│  │ Backend        │  │ ACE-Step API   │  │ SQLite +     │ │
-│  │ Manager        │  │ Client         │  │ File Store   │ │
-│  └────────────────┘  └────────────────┘  └───────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Local ACE-Step API Server                   │
-│       Model loading · Task queue · Audio generation          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Local Output Files                     │
-│        WAV / MP3 / FLAC / OGG + generation metadata         │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+  subgraph UI["OpenLoop UI"]
+    H["History Sidebar"]
+    G["Generation Form"]
+    P["Preview Player"]
+  end
+
+  subgraph BE["Tauri Rust Backend"]
+    BM["Backend Manager"]
+    AC["ACE-Step Client"]
+    SF["SQLite / File Store"]
+  end
+
+  H --> BM
+  G --> BM
+  P --> BM
+  BM --> AC --> SF --> API["Local ACE-Step API Server<br/>Model loading · Task queue"] --> OUT["Local Output Files<br/>WAV / MP3 / FLAC / OGG + metadata"]
 ```
 
 OpenLoop uses a local API server model instead of making the UI talk directly to Python. The Rust backend owns process lifecycle, health checks, request validation, file paths, local history, and user-facing error mapping.

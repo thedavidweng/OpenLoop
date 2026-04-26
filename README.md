@@ -1,8 +1,8 @@
+[简体中文](./README_CN.md)
+
 <div align="center">
 
 <img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />
-
-[简体中文](./README_CN.md)
 
 # OpenLoop
 

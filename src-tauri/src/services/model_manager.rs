@@ -628,11 +628,7 @@ fn pack_for_descriptor(descriptor: &AceModelDescriptor) -> Vec<ModelFileSpec> {
 fn unique_model_dirs(files: Vec<ModelFileSpec>) -> Vec<&'static str> {
     let mut dirs: Vec<&'static str> = Vec::new();
     for spec in files {
-        let top = spec
-            .local_path
-            .split('/')
-            .next()
-            .unwrap_or(spec.local_path);
+        let top = spec.local_path.split('/').next().unwrap_or(spec.local_path);
         if !dirs.contains(&top) {
             dirs.push(top);
         }
@@ -949,13 +945,8 @@ async fn download_pack(
             false
         };
         if should_emit {
-            let snapshot = downloading_snapshot(
-                app_data_dir,
-                settings,
-                descriptor,
-                total,
-                Some(total_bytes),
-            );
+            let snapshot =
+                downloading_snapshot(app_data_dir, settings, descriptor, total, Some(total_bytes));
             publish_snapshot(app, status, snapshot);
         }
     };
@@ -1122,7 +1113,10 @@ where
             if attempt >= MAX_ATTEMPTS {
                 return Err(error);
             }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", error.message);
+            eprintln!(
+                "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
+                error.message
+            );
             last_error = Some(error);
             tokio::time::sleep(retry_delay(attempt)).await;
             // Reflect actual on-disk progress before retrying.
@@ -1257,7 +1251,9 @@ mod tests {
     fn standard_pack_includes_required_layers() {
         let descriptor = descriptor_for(ModelVariant::Turbo).expect("turbo descriptor");
         let pack = pack_for_descriptor(descriptor);
-        assert!(pack.iter().any(|f| f.local_path == "acestep-v15-turbo/model.safetensors"));
+        assert!(pack
+            .iter()
+            .any(|f| f.local_path == "acestep-v15-turbo/model.safetensors"));
         assert!(pack
             .iter()
             .any(|f| f.local_path == "acestep-5Hz-lm-0.6B/model.safetensors"));

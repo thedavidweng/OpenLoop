@@ -1,6 +1,6 @@
 use std::{
     fs::{self, OpenOptions},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     thread,
     time::{Duration, Instant},
@@ -21,15 +21,17 @@ use crate::services::model_manager::{
 #[derive(Debug)]
 pub struct BackendManager {
     app_data_dir: PathBuf,
+    sidecar_dir: PathBuf,
     child: Option<Child>,
     status: BackendStatus,
     logs_path: Option<PathBuf>,
 }
 
 impl BackendManager {
-    pub fn new(app_data_dir: PathBuf) -> Self {
+    pub fn new(app_data_dir: PathBuf, sidecar_dir: PathBuf) -> Self {
         Self {
             app_data_dir,
+            sidecar_dir,
             child: None,
             status: BackendStatus::Stopped,
             logs_path: None,
@@ -100,29 +102,20 @@ impl BackendManager {
             .open(&log_path)
             .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
 
-        let mut command = if let Some(command_path) = settings
-            .backend_command_path
-            .as_deref()
-            .filter(|value| !value.trim().is_empty())
-        {
-            Command::new(command_path)
-        } else {
-            let mut command = Command::new("uv");
+        let mut command = Command::new(self.bundled_uv_command()?);
+        command
+            .arg("run")
+            .arg("acestep-api")
+            .arg("--host")
+            .arg("127.0.0.1")
+            .arg("--port")
+            .arg(settings.backend_port.to_string());
+        if let Some(lm_model) = descriptor.lm_model {
             command
-                .arg("run")
-                .arg("acestep-api")
-                .arg("--host")
-                .arg("127.0.0.1")
-                .arg("--port")
-                .arg(settings.backend_port.to_string());
-            if let Some(lm_model) = descriptor.lm_model {
-                command
-                    .arg("--init-llm")
-                    .arg("--lm-model-path")
-                    .arg(lm_model);
-            }
-            command
-        };
+                .arg("--init-llm")
+                .arg("--lm-model-path")
+                .arg(lm_model);
+        }
         command
             .current_dir(&working_directory)
             .env("ACESTEP_API_HOST", "127.0.0.1")
@@ -215,6 +208,40 @@ impl BackendManager {
         self.stop()?;
         self.start(settings)
     }
+
+    fn bundled_uv_command(&self) -> AppResult<PathBuf> {
+        let path = self.sidecar_dir.join(BUNDLED_UV_EXECUTABLE_NAME);
+        if is_executable_file(&path) {
+            return Ok(path);
+        }
+
+        Err(AppError::backend_start_failed(format!(
+            "OpenLoop's bundled uv sidecar is missing or not executable at {}. Rebuild the app with pnpm prepare:sidecars before packaging.",
+            path.display()
+        )))
+    }
+}
+
+#[cfg(windows)]
+const BUNDLED_UV_EXECUTABLE_NAME: &str = "uv.exe";
+
+#[cfg(not(windows))]
+const BUNDLED_UV_EXECUTABLE_NAME: &str = "uv";
+
+#[cfg(unix)]
+fn is_executable_file(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+
+    fs::metadata(path)
+        .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(not(unix))]
+fn is_executable_file(path: &Path) -> bool {
+    fs::metadata(path)
+        .map(|metadata| metadata.is_file())
+        .unwrap_or(false)
 }
 
 impl Drop for BackendManager {
@@ -225,7 +252,7 @@ impl Drop for BackendManager {
 
 #[cfg(test)]
 mod tests {
-    use super::BackendManager;
+    use super::{BackendManager, BUNDLED_UV_EXECUTABLE_NAME};
     use crate::models::{
         backend::BackendStatus,
         settings::{AppSettings, ModelVariant},
@@ -235,6 +262,8 @@ mod tests {
     #[test]
     fn mock_backend_becomes_healthy_and_stops_cleanly() {
         let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
         let script_path = temp_dir.path().join("mock-backend.sh");
         fs::write(
             &script_path,
@@ -268,20 +297,61 @@ PY
             .permissions();
         permissions.set_mode(0o755);
         fs::set_permissions(&script_path, permissions).expect("permissions should set");
+        fs::copy(&script_path, sidecar_dir.join(BUNDLED_UV_EXECUTABLE_NAME))
+            .expect("mock sidecar should copy");
 
         let mut settings = AppSettings::default();
-        settings.backend_command_path = Some(script_path.display().to_string());
         settings.backend_working_directory = Some(temp_dir.path().display().to_string());
         settings.log_directory = Some(temp_dir.path().join("logs").display().to_string());
         settings.model_variant = Some(ModelVariant::Turbo);
         settings.backend_port = 18081;
 
-        let mut manager = BackendManager::new(temp_dir.path().to_path_buf());
+        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
         let status = manager.start(&settings).expect("backend should start");
         assert!(matches!(status, BackendStatus::Healthy { port: 18081 }));
         assert!(manager.logs_path().is_some());
 
         let stopped = manager.stop().expect("backend should stop");
         assert!(matches!(stopped, BackendStatus::Stopped));
+    }
+
+    #[test]
+    fn uses_bundled_uv_sidecar_from_resource_dir() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
+        let uv_path = sidecar_dir.join(BUNDLED_UV_EXECUTABLE_NAME);
+        fs::write(&uv_path, "#!/bin/sh\n").expect("uv fixture should write");
+        let mut permissions = fs::metadata(&uv_path)
+            .expect("metadata should load")
+            .permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(&uv_path, permissions).expect("permissions should set");
+
+        let manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let resolved = manager
+            .bundled_uv_command()
+            .expect("bundled uv should resolve");
+
+        assert_eq!(resolved, uv_path);
+    }
+
+    #[test]
+    fn fails_when_bundled_uv_sidecar_is_missing() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
+        let manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+
+        let error = manager
+            .bundled_uv_command()
+            .expect_err("bundled uv should be missing");
+
+        assert_eq!(error.code, "BACKEND_START_FAILED");
+        assert!(error
+            .details
+            .as_deref()
+            .unwrap_or_default()
+            .contains("bundled uv sidecar is missing"));
     }
 }

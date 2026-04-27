@@ -7,7 +7,7 @@ pub mod window_shell;
 
 use std::{
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{atomic::AtomicBool, Arc, Mutex},
 };
 
@@ -29,10 +29,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
+            let sidecar_dir = current_executable_dir()?;
             fs::create_dir_all(&app_data_dir)?;
             let db = Database::new(&app_data_dir)
                 .map_err(|error| std::io::Error::other(error.message.clone()))?;
-            let backend = Arc::new(Mutex::new(BackendManager::new(app_data_dir.clone())));
+            let backend = Arc::new(Mutex::new(BackendManager::new(
+                app_data_dir.clone(),
+                sidecar_dir,
+            )));
             let models = Arc::new(Mutex::new(ModelManager::new(app_data_dir.clone())));
             let generation_cancelled = Arc::new(AtomicBool::new(false));
             let window_shell_state = window_shell::initialize_main_window(app);
@@ -84,4 +88,12 @@ pub fn run() {
     builder
         .run(tauri::generate_context!())
         .expect("error while running OpenLoop");
+}
+
+fn current_executable_dir() -> std::io::Result<PathBuf> {
+    std::env::current_exe().and_then(|path| {
+        path.parent()
+            .map(Path::to_path_buf)
+            .ok_or_else(|| std::io::Error::other("current executable has no parent directory"))
+    })
 }

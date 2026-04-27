@@ -40,6 +40,8 @@ coverage
 
 # Rust / Tauri
 src-tauri/target/
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
 
 # Other
 reference

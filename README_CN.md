@@ -77,8 +77,6 @@ AI 音乐工具很强，但它们常见的问题也很一致：
 - pnpm 10+
 - Rust stable toolchain
 - Tauri 2 平台依赖
-- Python 3.11 - 3.12，用于本地 ACE-Step 后端
-- `uv`，用于 Python 环境管理
 
 ### 克隆并运行
 
@@ -143,7 +141,7 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 | 后端编排 | Rust | 进程管理、API 代理、文件操作、SQLite |
 | AI 后端 | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | 本地音乐生成 |
 | Apple Silicon 推理 | [MLX](https://github.com/ml-explore/mlx) | Apple Silicon CPU/GPU 执行和统一内存 |
-| Python 环境 | `uv` | 可复现的本地后端环境 |
+| Python 环境 | 内置 `uv` sidecar | 可复现的本地后端环境，不依赖用户已安装的 Python 或 `uv` |
 | 数据库 | SQLite | 设置、生成历史、后端事件 |
 | 打包 | Tauri bundler | macOS `.dmg` 发布 |
 

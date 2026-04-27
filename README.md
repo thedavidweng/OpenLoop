@@ -79,8 +79,6 @@ AI music tools are powerful, but many of them share the same problems:
 - pnpm 10+
 - Rust stable toolchain
 - Tauri 2 platform dependencies
-- Python 3.11–3.12 for the local ACE-Step backend
-- `uv` for Python environment management
 
 
 ### Clone and run
@@ -152,7 +150,7 @@ Model files are downloaded or selected during first setup and stored locally. Th
 | Backend orchestration | Rust | Process management, API proxy, file operations, SQLite |
 | AI backend | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | Local music generation |
 | Apple Silicon inference | [MLX](https://github.com/ml-explore/mlx) | Apple Silicon CPU/GPU execution and unified memory |
-| Python environment | `uv` | Reproducible local backend environment |
+| Python environment | bundled `uv` sidecar | Reproducible local backend environment without relying on user-installed Python or `uv` |
 | Database | SQLite | Settings, generation history, backend events |
 | Packaging | Tauri bundler | macOS `.dmg` release |
 

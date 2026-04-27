@@ -103,7 +103,7 @@ v0.1 不实现以下能力：
 | 后端管理 | Rust Tauri Commands | 进程管理、文件系统、SQLite、API proxy |
 | 推理服务 | ACE-Step 1.5 local API server | 本机 HTTP API，作为 sidecar/subprocess 管理 |
 | 推理加速 | Apple MLX | Apple Silicon CPU/GPU + unified memory |
-| 依赖环境 | uv-managed Python environment | 隔离 ACE-Step 运行环境 |
+| 依赖环境 | bundled uv-managed Python environment | 隔离 ACE-Step 运行环境，不依赖用户已安装的 uv |
 | 数据库 | SQLite | 生成历史、设置、模型 manifest |
 | 音频处理 | Native audio element + optional FFmpeg sidecar | MVP 优先播放和 WAV/MP3 导出 |
 | 打包 | Tauri bundler | `.dmg` release |
@@ -254,7 +254,7 @@ v0.1 的完整性检测至少包含：
 1. 用户首次打开 OpenLoop。
 2. 应用检测 Apple Silicon、macOS 版本、可用内存。
 3. 用户选择模型/缓存目录。
-4. 应用创建或检测 Python/uv 后端环境。
+4. 应用使用随包 uv sidecar 创建或检测 Python 后端环境。
 5. 应用启动 ACE-Step API server。
 6. 应用检测 `/health` 与 `/v1/models`。
 7. 完成后进入主界面。
@@ -274,7 +274,7 @@ v0.1 的完整性检测至少包含：
 |---|---|
 | 非 Apple Silicon | 显示 unsupported/experimental 提示，允许退出 |
 | 内存低于 8GB | 显示 unsupported 提示 |
-| Python/uv 环境创建失败 | 显示失败阶段、stderr 摘要、日志路径 |
+| 内置 uv / Python 环境创建失败 | 显示失败阶段、stderr 摘要、日志路径 |
 | 后端端口被占用 | 提示换端口或关闭占用进程 |
 | 模型缺失 | 提示选择已有目录或进入下载/安装流程 |
 

@@ -13,6 +13,8 @@ import { useTranslation } from "react-i18next";
 import { GenerationPanel } from "@/app/components/generation/GenerationPanel";
 import {
   MODEL_VARIANTS,
+  isModelDownloaded,
+  modelDownloadStateForVariant,
   useGenerationStore,
 } from "@/app/lib/store";
 
@@ -34,7 +36,7 @@ export function OpenLoopStage() {
   );
   const generationState = useGenerationStore((state) => state.generationState);
   const settings = useGenerationStore((state) => state.settings);
-  const bootstrapStatus = useGenerationStore((state) => state.bootstrapStatus);
+  const modelStatuses = useGenerationStore((state) => state.modelStatuses);
 
   const title = currentGeneration?.prompt || currentGeneration?.lyrics || null;
   const status = generationState.status;
@@ -61,7 +63,25 @@ export function OpenLoopStage() {
   const variantLabel = settings.modelVariant
     ? MODEL_VARIANTS[settings.modelVariant].label
     : null;
-  const modelReady = bootstrapStatus.state === "ready";
+  const modelReady = isModelDownloaded(settings, settings.modelVariant);
+  const selectedModelState = modelDownloadStateForVariant(
+    modelStatuses,
+    settings.modelVariant,
+  );
+  const selectedModelStatusLabel = modelReady
+    ? t("model.ready")
+    : selectedModelState === "failed"
+      ? t("model.failed")
+      : selectedModelState === "downloading"
+        ? t("model.downloading")
+        : t("model.notInstalled");
+  const selectedModelStatusClass = modelReady
+    ? "text-emerald-300/85"
+    : selectedModelState === "failed"
+      ? "text-red-300/85"
+      : selectedModelState === "downloading"
+        ? "text-[var(--color-accent)]"
+        : "text-[var(--color-text-dim)]";
 
   return (
     <div
@@ -164,15 +184,9 @@ export function OpenLoopStage() {
                         {variantLabel ?? t("model.noModel")}
                       </p>
                       <p
-                        className={`mt-0.5 text-[11px] ${
-                          modelReady
-                            ? "text-emerald-300/85"
-                            : "text-[var(--color-text-dim)]"
-                        }`}
+                        className={`mt-0.5 text-[11px] ${selectedModelStatusClass}`}
                       >
-                        {modelReady
-                          ? t("model.ready")
-                          : t("model.notInstalled")}
+                        {selectedModelStatusLabel}
                       </p>
                     </div>
                   </div>

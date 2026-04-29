@@ -102,9 +102,11 @@ export function ModelBootstrapBanner() {
         </div>
       ) : null}
 
-      {bootstrapStatus.state === "failed" && bootstrapStatus.error?.message ? (
+      {bootstrapStatus.state === "failed" &&
+      bootstrapStatus.error?.details &&
+      bootstrapStatus.error.details !== bootstrapStatus.message ? (
         <p className="border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-[11px] text-red-200/80">
-          {bootstrapStatus.error.message}
+          {bootstrapStatus.error.details}
         </p>
       ) : null}
     </div>

@@ -238,6 +238,17 @@
     "missingFile": "音频文件不存在",
     "prompt": "提示词"
   },
+  "validation": {
+    "promptOrLyrics": "请输入提示词、歌词，或同时输入两者。",
+    "duration": "时长必须在 10 到 600 秒之间。",
+    "bpm": "BPM 可以留空，或填写 30 到 300 之间的整数。",
+    "inferenceSteps": "推理步数必须是正整数。",
+    "guidanceScale": "引导强度必须是正数。",
+    "repaintingStart": "重绘开始时间可以留空，或填写大于等于 0 的数值。",
+    "repaintingEnd": "重绘结束时间可以留空、填写 -1，或填写大于等于 0 的数值。",
+    "audioCoverStrength": "翻唱强度可以留空，或填写 0 到 1 之间的数值。",
+    "seed": "种子必须是有效的 32 位整数。"
+  },
   "status": {
     "ready": "可以校验下一个本地生成请求。",
     "setupRequired": "完成设置以准备本地生成栈。",
@@ -282,7 +293,65 @@
     "modelRequiredDetails": "请先在设置向导或设置中选择并下载模型。",
     "persistenceHydrationFailed": "OpenLoop 无法加载保存的设置或生成历史。",
     "requestNotReady": "生成请求尚未准备好提交。",
-    "generationFailed": "OpenLoop 无法完成生成请求。"
+    "generationFailed": "OpenLoop 无法完成生成请求。",
+    "codes": {
+      "INTERNAL_ERROR": {
+        "message": "OpenLoop 遇到内部错误。"
+      },
+      "VALIDATION_FAILED": {
+        "message": "生成请求无效。"
+      },
+      "NOT_FOUND": {
+        "message": "未找到请求的资源。"
+      },
+      "BACKEND_START_FAILED": {
+        "message": "无法启动本地 ACE-Step 后端。",
+        "details": "请检查后端日志、端口占用和运行目录设置。"
+      },
+      "BACKEND_HEALTH_TIMEOUT": {
+        "message": "本地 ACE-Step 后端未能按时就绪。",
+        "details": "后端进程已启动但健康检查超时，请查看后端日志。"
+      },
+      "MODEL_NOT_FOUND": {
+        "message": "未找到当前选择的模型。",
+        "details": "请在设置中重新下载或重新选择模型。"
+      },
+      "MODEL_DOWNLOAD_FAILED": {
+        "message": "无法下载所选模型。",
+        "details": "模型文件不完整或下载中断，请在设置中重新下载。"
+      },
+      "TASK_SUBMIT_FAILED": {
+        "message": "无法提交生成任务。",
+        "details": "本地后端已响应，但没有接受该生成请求，请检查参数和后端日志。"
+      },
+      "TASK_FAILED": {
+        "message": "生成任务执行失败。",
+        "details": "ACE-Step 返回了失败状态，请调整参数后重试。"
+      },
+      "AUDIO_DOWNLOAD_FAILED": {
+        "message": "无法保存生成的音频。",
+        "details": "生成完成后下载音频失败，请检查输出目录和后端日志。"
+      },
+      "OUTPUT_WRITE_FAILED": {
+        "message": "无法写入输出音频文件。",
+        "details": "请检查输出目录权限和可用磁盘空间。"
+      },
+      "DB_WRITE_FAILED": {
+        "message": "无法写入本地数据库。"
+      },
+      "DB_READ_FAILED": {
+        "message": "无法读取本地数据库。"
+      },
+      "GENERATION_FAILED": {
+        "message": "OpenLoop 无法完成生成请求。"
+      },
+      "BOOTSTRAP_STATUS_FAILED": {
+        "message": "无法检查本地生成环境。"
+      },
+      "MODEL_REQUIRED": {
+        "message": "生成音频前请先下载模型。"
+      }
+    }
   },
   "common": {
     "cancel": "取消",

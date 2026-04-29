@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
@@ -11,7 +11,12 @@ import {
   Settings2,
   WandSparkles,
 } from "lucide-react";
-import { MODEL_VARIANTS, useGenerationStore } from "@/app/lib/store";
+import {
+  MODEL_VARIANTS,
+  isModelDownloaded,
+  modelDownloadStateForVariant,
+  useGenerationStore,
+} from "@/app/lib/store";
 import type { GenerationFormValues } from "@/app/lib/types";
 
 const SELECT_OPTIONS = {
@@ -68,6 +73,7 @@ export function GenerationPanel() {
   const { t } = useTranslation();
   const [lyricsOpen, setLyricsOpen] = useState(false);
   const form = useGenerationStore((state) => state.form);
+  const modelStatuses = useGenerationStore((state) => state.modelStatuses);
   const validationErrors = useGenerationStore((state) => state.validationErrors);
   const generationState = useGenerationStore((state) => state.generationState);
   const settings = useGenerationStore((state) => state.settings);
@@ -83,9 +89,25 @@ export function GenerationPanel() {
   const selectedModelDescription = settings.modelVariant
     ? t(`modelProfiles.${settings.modelVariant}.description`)
     : t("model.chooseFirst");
-  const modelReady = settings.modelVariant
-    ? settings.downloadedModels.includes(settings.modelVariant)
-    : false;
+  const modelReady = isModelDownloaded(settings, settings.modelVariant);
+  const selectedModelState = modelDownloadStateForVariant(
+    modelStatuses,
+    settings.modelVariant,
+  );
+  const selectedModelStatusLabel = modelReady
+    ? t("model.ready")
+    : selectedModelState === "failed"
+      ? t("model.failed")
+      : selectedModelState === "downloading"
+        ? t("model.downloading")
+        : t("model.notInstalled");
+  const selectedModelStatusTone = modelReady
+    ? "bg-emerald-500/14 text-emerald-200"
+    : selectedModelState === "failed"
+      ? "bg-red-500/14 text-red-200"
+      : selectedModelState === "downloading"
+        ? "bg-[var(--color-accent)]/14 text-[var(--color-accent)]"
+        : "bg-amber-500/14 text-amber-200";
   const hasAdvancedErrors = (
     [
       "negativePrompt",
@@ -109,6 +131,12 @@ export function GenerationPanel() {
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setField(field, event.target.value);
     };
+
+  useEffect(() => {
+    if (form.lyrics.trim() || validationErrors.lyrics) {
+      setLyricsOpen(true);
+    }
+  }, [form.lyrics, validationErrors.lyrics]);
 
   const toggleItems: readonly [ToggleField, string, string][] = [
     ["thinking", "generation.thinking", "generation.thinkingDesc"],
@@ -174,18 +202,14 @@ export function GenerationPanel() {
                 <FieldLabel>{t("generation.model")}</FieldLabel>
                 {selectedModel ? (
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
-                      modelReady
-                        ? "bg-emerald-500/14 text-emerald-200"
-                        : "bg-amber-500/14 text-amber-200"
-                    }`}
+                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${selectedModelStatusTone}`}
                   >
                     {modelReady ? (
                       <CheckCircle2 size={9} />
                     ) : (
                       <AlertCircle size={9} />
                     )}
-                    {modelReady ? t("model.ready") : t("model.notInstalled")}
+                    {selectedModelStatusLabel}
                   </span>
                 ) : null}
               </div>

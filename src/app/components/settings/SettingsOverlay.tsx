@@ -105,12 +105,14 @@ function DirectoryPickerRow({
   label,
   value,
   defaultValue,
+  disabled = false,
   onPick,
   onReset,
 }: {
   label: string;
   value: string;
   defaultValue: string;
+  disabled?: boolean;
   onPick: () => void;
   onReset: () => void;
 }) {
@@ -137,7 +139,8 @@ function DirectoryPickerRow({
           <button
             type="button"
             onClick={onPick}
-            className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+            disabled={disabled}
+            className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <FolderOpen size={12} />
             {t("settings.chooseFolder")}
@@ -146,7 +149,8 @@ function DirectoryPickerRow({
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex h-8 items-center rounded-md px-2 text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-white"
+              disabled={disabled}
+              className="inline-flex h-8 items-center rounded-md px-2 text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t("settings.useDefault")}
             </button>
@@ -419,7 +423,15 @@ export function SettingsOverlay() {
       defaultAudioFormat: settings.defaultAudioFormat,
       defaultThinking: settings.defaultThinking,
     });
-  }, [settings]);
+  }, [
+    settings.outputDirectory,
+    settings.modelDirectory,
+    settings.backendPort,
+    settings.logDirectory,
+    settings.defaultDurationSeconds,
+    settings.defaultAudioFormat,
+    settings.defaultThinking,
+  ]);
 
   useEffect(() => {
     void refreshModelStatuses();
@@ -449,6 +461,9 @@ export function SettingsOverlay() {
     Number.isInteger(backendPortNumber) &&
     backendPortNumber >= 1024 &&
     backendPortNumber <= 65535;
+  const modelDirectoryLocked = modelStatuses.some(
+    (status) => status.state === "downloading",
+  );
   const pickDirectory = async (key: DirectorySettingKey) => {
     const selected = await api.selectDirectory(
       draft[key] ||
@@ -563,24 +578,6 @@ export function SettingsOverlay() {
               title={t("settings.defaults")}
               description={t("settings.defaultsDescription")}
             >
-              <label className="space-y-1.5 block">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
-                  {t("settings.language")}
-                </span>
-                <select
-                  className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
-                  value={settings.language ?? i18n.resolvedLanguage ?? "en"}
-                  onChange={(event) => {
-                    void setLanguage(event.target.value);
-                  }}
-                >
-                  {SUPPORTED_LANGUAGES.map((language) => (
-                    <option key={language.code} value={language.code}>
-                      {language.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="space-y-1.5 block">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
@@ -637,6 +634,7 @@ export function SettingsOverlay() {
                 label={t("settings.modelDirectory")}
                 value={draft.modelDirectory}
                 defaultValue={defaultPaths?.modelDirectory ?? ""}
+                disabled={modelDirectoryLocked}
                 onPick={() => {
                   void pickDirectory("modelDirectory");
                 }}
@@ -674,6 +672,24 @@ export function SettingsOverlay() {
               title={t("settings.general")}
               description={t("settings.generalDescription")}
             >
+              <label className="space-y-1.5 block">
+                <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
+                  {t("settings.language")}
+                </span>
+                <select
+                  className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+                  value={settings.language ?? i18n.resolvedLanguage ?? "en"}
+                  onChange={(event) => {
+                    void setLanguage(event.target.value);
+                  }}
+                >
+                  {SUPPORTED_LANGUAGES.map((language) => (
+                    <option key={language.code} value={language.code}>
+                      {language.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {saveNotice ? (
                 <div className="rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-2 text-[12px] text-white">
                   {saveNotice}
@@ -700,7 +716,9 @@ export function SettingsOverlay() {
                         ),
                         persistSetting(
                           "modelDirectory",
-                          draft.modelDirectory || null,
+                          modelDirectoryLocked
+                            ? (settings.modelDirectory ?? null)
+                            : draft.modelDirectory || null,
                         ),
                         persistSetting(
                           "backendPort",

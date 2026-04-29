@@ -795,12 +795,21 @@ fn inspect_descriptor_for(
     }
 
     let manifest = read_manifest(app_data_dir).unwrap_or_default();
-    let installed = manifest.installed.get(&variant_key(descriptor.variant));
-
+    let installed = installed_manifest_for_pack(&manifest, descriptor);
     let state = if all_present {
         ModelDownloadState::Ready
+    } else if installed.is_some() {
+        ModelDownloadState::Failed
     } else {
         ModelDownloadState::NotInstalled
+    };
+    let error = if matches!(&state, ModelDownloadState::Failed) {
+        Some(AppError::model_download_failed(format!(
+            "{} model files are incomplete. Download the model again.",
+            descriptor.label
+        )))
+    } else {
+        None
     };
 
     ModelStatusSnapshot {
@@ -812,8 +821,29 @@ fn inspect_descriptor_for(
         downloaded_bytes: downloaded.min(total_bytes),
         total_bytes: Some(total_bytes),
         installed_at: installed.map(|entry| entry.installed_at.clone()),
-        error: None,
+        error,
     }
+}
+
+fn installed_manifest_for_pack<'a>(
+    manifest: &'a ModelManifest,
+    descriptor: &AceModelDescriptor,
+) -> Option<&'a InstalledModelManifest> {
+    manifest
+        .installed
+        .get(&variant_key(descriptor.variant))
+        .or_else(|| {
+            ACE_MODEL_DESCRIPTORS
+                .iter()
+                .find(|candidate| {
+                    candidate.model_name == descriptor.model_name
+                        && candidate.lm_model == descriptor.lm_model
+                        && manifest
+                            .installed
+                            .contains_key(&variant_key(candidate.variant))
+                })
+                .and_then(|candidate| manifest.installed.get(&variant_key(candidate.variant)))
+        })
 }
 
 fn downloading_snapshot(

@@ -151,6 +151,7 @@ interface GenerationStore {
   sidebarVisible: boolean;
   sidebarWidth: number;
   setupOverride: boolean;
+  lyricsPanelOpen: boolean;
   form: GenerationFormValues;
   validationErrors: ValidationErrors;
   generationState: GenerationState;
@@ -181,6 +182,7 @@ interface GenerationStore {
   setHistoryQuery: (query: string) => void;
   toggleSettings: () => void;
   toggleSidebar: () => void;
+  toggleLyricsPanel: () => void;
   hydrateFromPersistence: () => Promise<void>;
   runGeneration: () => Promise<void>;
   cancelGeneration: () => Promise<void>;
@@ -225,7 +227,7 @@ function createBootstrapRuntimeError(error: unknown): AppError {
   return {
     code: "BOOTSTRAP_STATUS_FAILED",
     message: tr("errors.bootstrapInspectFailed"),
-    details: error instanceof Error ? error.message : String(error),
+    details: stringifyUnknownError(error),
     recoverable: true,
   };
 }
@@ -239,13 +241,94 @@ function createModelRequiredError(): AppError {
   };
 }
 
-function isModelDownloaded(settings: AppSettings, variant: ModelVariant | null): boolean {
+export function isModelDownloaded(
+  settings: AppSettings,
+  variant: ModelVariant | null,
+): boolean {
   if (!variant) {
     return false;
   }
   const packId = packIdForVariant(variant);
   return MODEL_PACKS[packId].variants.some((candidate) =>
     settings.downloadedModels.includes(candidate),
+  );
+}
+
+function stringifyUnknownError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function readStringProperty(value: object, key: string): string | null {
+  if (!(key in value)) {
+    return null;
+  }
+  const property = (value as Record<string, unknown>)[key];
+  return typeof property === "string" ? property : null;
+}
+
+function readBooleanProperty(value: object, key: string): boolean | null {
+  if (!(key in value)) {
+    return null;
+  }
+  const property = (value as Record<string, unknown>)[key];
+  return typeof property === "boolean" ? property : null;
+}
+
+function coerceAppError(error: unknown, fallbackCode: string): AppError {
+  if (typeof error === "object" && error !== null) {
+    const code = readStringProperty(error, "code") ?? fallbackCode;
+    const message = readStringProperty(error, "message");
+    const details = readStringProperty(error, "details");
+    return {
+      code,
+      message: message ?? tr("errors.generationFailed"),
+      details: details ?? undefined,
+      recoverable: readBooleanProperty(error, "recoverable") ?? true,
+    };
+  }
+
+  return {
+    code: fallbackCode,
+    message: tr("errors.generationFailed"),
+    details: stringifyUnknownError(error),
+    recoverable: true,
+  };
+}
+
+function localizeAppError(error: unknown, fallbackCode = "GENERATION_FAILED"): AppError {
+  const coerced = coerceAppError(error, fallbackCode);
+  const message = tr(`errors.codes.${coerced.code}.message`, {
+    defaultValue: coerced.message,
+  });
+  const details =
+    coerced.details && coerced.details !== coerced.message
+      ? tr(`errors.codes.${coerced.code}.details`, {
+          defaultValue: coerced.details,
+        })
+      : undefined;
+
+  return {
+    ...coerced,
+    message,
+    details,
+  };
+}
+
+function shouldMarkBootstrapFailed(code: string): boolean {
+  return (
+    code === "BACKEND_START_FAILED" ||
+    code === "BACKEND_HEALTH_TIMEOUT" ||
+    code === "MODEL_NOT_FOUND"
   );
 }
 
@@ -326,10 +409,21 @@ function aggregatePackStatus(
   };
 }
 
-async function resolveBootstrapStatus(
+export function modelDownloadStateForVariant(
+  statuses: ModelStatusSnapshot[],
+  variant: ModelVariant | null,
+): ModelDownloadState {
+  if (!variant) {
+    return "not_installed";
+  }
+  return aggregatePackStatus(statuses, packIdForVariant(variant)).state;
+}
+
+function resolveBootstrapStatus(
   settings: AppSettings,
   deviceInfo: DeviceInfo | null,
-): Promise<ModelBootstrapStatus> {
+  statuses: ModelStatusSnapshot[] = [],
+): ModelBootstrapStatus {
   if (!settings.firstRunCompleted) {
     return {
       state: "pending",
@@ -342,6 +436,32 @@ async function resolveBootstrapStatus(
       state: "pending",
       message: tr("status.chooseAndDownload"),
     };
+  }
+
+  if (statuses.length > 0) {
+    const selectedPackStatus = aggregatePackStatus(
+      statuses,
+      packIdForVariant(settings.modelVariant),
+    );
+    if (selectedPackStatus.state === "failed") {
+      return {
+        state: "failed",
+        message:
+          selectedPackStatus.error?.message ??
+          tr("errors.codes.MODEL_DOWNLOAD_FAILED.message"),
+        error: selectedPackStatus.error,
+      };
+    }
+    if (selectedPackStatus.state === "downloading") {
+      return {
+        state: "downloading",
+        message: tr("status.downloadingModel", {
+          model: selectedPackStatus.label,
+        }),
+        downloadedBytes: selectedPackStatus.downloadedBytes,
+        totalBytes: selectedPackStatus.totalBytes,
+      };
+    }
   }
 
   if (!isModelDownloaded(settings, settings.modelVariant)) {
@@ -479,6 +599,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   sidebarVisible: true,
   sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
   setupOverride: false,
+  lyricsPanelOpen: false,
   form: DEFAULT_GENERATION_FORM_VALUES,
   validationErrors: {},
   generationState: IDLE_GENERATION_STATE,
@@ -561,18 +682,26 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
         });
         break;
       case "failed":
+        {
+          const error = localizeAppError(event.error);
         set({
-          bootstrapStatus: {
-            state: "failed",
-            message: tr("status.stackReportedError"),
-            error: event.error,
-          },
+          bootstrapStatus: shouldMarkBootstrapFailed(error.code)
+            ? {
+                state: "failed",
+                message: error.message,
+                error,
+              }
+            : {
+                state: "ready",
+                message: tr("status.localStackReady"),
+              },
           generationState: {
             status: "failed",
             statusMessage: tr("status.failed"),
-            error: event.error,
+            error,
           },
         });
+        }
         break;
     }
   },
@@ -736,23 +865,39 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
 	    ]);
 	    const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
 	    set((state) => ({
-	      modelCatalog,
-	      modelStatuses,
-	      settings: {
+        modelCatalog,
+        modelStatuses,
+        settings: {
 	        ...state.settings,
 	        downloadedModels,
 	        modelVariant:
 	          state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
 	            ? state.settings.modelVariant
 	            : state.settings.modelVariant,
-	      },
+        },
+        bootstrapStatus: resolveBootstrapStatus(
+          {
+            ...state.settings,
+            downloadedModels,
+            modelVariant:
+              state.settings.modelVariant &&
+              downloadedModels.includes(state.settings.modelVariant)
+                ? state.settings.modelVariant
+                : state.settings.modelVariant,
+          },
+          state.deviceInfo,
+          modelStatuses,
+        ),
 	    }));
 	  },
 	  applyModelStatus: (status) => {
 	    set((state) => {
 	      const modelStatuses = [
 	        ...state.modelStatuses.filter((current) => current.variant !== status.variant),
-	        status,
+	        {
+            ...status,
+            error: status.error ? localizeAppError(status.error) : status.error,
+          },
 	      ];
 	      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
         const selectedPack =
@@ -761,12 +906,13 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
             : null;
         const eventPack = packIdForVariant(status.variant);
         const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
+        const nextSettings = {
+          ...state.settings,
+          downloadedModels,
+        };
 	      return {
 	        modelStatuses,
-	        settings: {
-	          ...state.settings,
-	          downloadedModels,
-	        },
+	        settings: nextSettings,
 	        bootstrapStatus:
             selectedPack === eventPack
               ? packAggregate.state === "downloading"
@@ -781,7 +927,9 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
                 : packAggregate.state === "failed"
                   ? {
                       state: "failed",
-                      message: tr("status.stackReportedError"),
+                      message:
+                        packAggregate.error?.message ??
+                        tr("status.stackReportedError"),
                       error: packAggregate.error ?? null,
                     }
                   : packAggregate.state === "ready"
@@ -797,7 +945,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
                           model: MODEL_PACKS[eventPack].label,
                         }),
                       }
-              : state.bootstrapStatus,
+              : resolveBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses),
 	      };
 	    });
 	  },
@@ -823,6 +971,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     const bootstrapStatus = await resolveBootstrapStatus(
       get().settings,
       get().deviceInfo,
+      get().modelStatuses,
     );
     set({ bootstrapStatus });
   },
@@ -890,6 +1039,9 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   toggleSidebar: () => {
     set({ sidebarVisible: !get().sidebarVisible });
   },
+  toggleLyricsPanel: () => {
+    set({ lyricsPanelOpen: !get().lyricsPanelOpen });
+  },
 	  hydrateFromPersistence: async () => {
 	    if (!api.isTauriRuntime()) {
 	      await i18next.changeLanguage(detectSystemLanguage());
@@ -955,7 +1107,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           error: {
             code: "PERSISTENCE_HYDRATION_FAILED",
             message: tr("errors.persistenceHydrationFailed"),
-            details: error instanceof Error ? error.message : String(error),
+            details: stringifyUnknownError(error),
             recoverable: true,
           },
         },
@@ -1018,27 +1170,22 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
         }));
         await get().refreshBootstrapStatus();
       } catch (error) {
+        const appError = localizeAppError(error);
         set({
-          bootstrapStatus: {
-            state: "failed",
-            message: tr("status.submissionFailed"),
-            error: createBootstrapRuntimeError(error),
-          },
+          bootstrapStatus: shouldMarkBootstrapFailed(appError.code)
+            ? {
+                state: "failed",
+                message: appError.message,
+                error: appError,
+              }
+            : {
+                state: "ready",
+                message: tr("status.localStackReady"),
+              },
           generationState: {
             status: "failed",
             statusMessage: tr("status.failed"),
-            error: {
-              code:
-                typeof error === "object" && error !== null && "code" in error
-                  ? String((error as { code: unknown }).code)
-                  : "GENERATION_FAILED",
-              message:
-                typeof error === "object" && error !== null && "message" in error
-                  ? String((error as { message: unknown }).message)
-                  : tr("errors.generationFailed"),
-              details: error instanceof Error ? error.message : String(error),
-              recoverable: true,
-            },
+            error: appError,
           },
         });
       }
@@ -1165,6 +1312,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       validationErrors: {},
       currentRequest: validateGenerationForm(DEFAULT_GENERATION_FORM_VALUES).request,
       generationState: IDLE_GENERATION_STATE,
+      lyricsPanelOpen: false,
     });
   },
 }));

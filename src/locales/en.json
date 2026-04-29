@@ -238,6 +238,17 @@
     "missingFile": "Audio file is missing",
     "prompt": "Prompt"
   },
+  "validation": {
+    "promptOrLyrics": "Enter a prompt, lyrics, or both.",
+    "duration": "Duration must be between 10 and 600 seconds.",
+    "bpm": "BPM can be empty or an integer from 30 to 300.",
+    "inferenceSteps": "Inference steps must be a positive integer.",
+    "guidanceScale": "Guidance scale must be a positive number.",
+    "repaintingStart": "Repaint start can be empty or zero and above.",
+    "repaintingEnd": "Repaint end can be empty, -1, or zero and above.",
+    "audioCoverStrength": "Cover strength can be empty or between 0 and 1.",
+    "seed": "Seed must be a valid 32-bit integer."
+  },
   "status": {
     "ready": "Ready to validate your next local generation request.",
     "setupRequired": "Complete setup to prepare the local generation stack.",
@@ -282,7 +293,65 @@
     "modelRequiredDetails": "Choose a model and download it from setup or settings first.",
     "persistenceHydrationFailed": "OpenLoop could not load saved settings or generation history.",
     "requestNotReady": "The generation request is not ready to submit.",
-    "generationFailed": "OpenLoop could not complete the generation request."
+    "generationFailed": "OpenLoop could not complete the generation request.",
+    "codes": {
+      "INTERNAL_ERROR": {
+        "message": "OpenLoop hit an internal error."
+      },
+      "VALIDATION_FAILED": {
+        "message": "The generation request is invalid."
+      },
+      "NOT_FOUND": {
+        "message": "The requested resource was not found."
+      },
+      "BACKEND_START_FAILED": {
+        "message": "OpenLoop could not start the local ACE-Step backend.",
+        "details": "Check the backend log, port usage, and runtime directory settings."
+      },
+      "BACKEND_HEALTH_TIMEOUT": {
+        "message": "The local ACE-Step backend did not become ready in time.",
+        "details": "The backend process started, but its health check timed out. Check the backend log."
+      },
+      "MODEL_NOT_FOUND": {
+        "message": "OpenLoop could not find the selected model.",
+        "details": "Download the model again or choose a different model in Settings."
+      },
+      "MODEL_DOWNLOAD_FAILED": {
+        "message": "OpenLoop could not download the selected model.",
+        "details": "The model files are incomplete or the download was interrupted. Download the model again in Settings."
+      },
+      "TASK_SUBMIT_FAILED": {
+        "message": "OpenLoop could not submit the generation task.",
+        "details": "The local backend responded but did not accept this generation request. Check the parameters and backend log."
+      },
+      "TASK_FAILED": {
+        "message": "The generation task failed.",
+        "details": "ACE-Step returned a failed task state. Adjust the parameters and try again."
+      },
+      "AUDIO_DOWNLOAD_FAILED": {
+        "message": "OpenLoop could not save the generated audio.",
+        "details": "The audio was generated but could not be downloaded. Check the output directory and backend log."
+      },
+      "OUTPUT_WRITE_FAILED": {
+        "message": "OpenLoop could not write the output audio file.",
+        "details": "Check the output directory permissions and available disk space."
+      },
+      "DB_WRITE_FAILED": {
+        "message": "OpenLoop could not write to the local database."
+      },
+      "DB_READ_FAILED": {
+        "message": "OpenLoop could not read from the local database."
+      },
+      "GENERATION_FAILED": {
+        "message": "OpenLoop could not complete the generation request."
+      },
+      "BOOTSTRAP_STATUS_FAILED": {
+        "message": "OpenLoop could not inspect the local generation environment."
+      },
+      "MODEL_REQUIRED": {
+        "message": "Download a model before generating audio."
+      }
+    }
   },
   "common": {
     "cancel": "Cancel",

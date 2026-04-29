@@ -4,6 +4,7 @@ import type {
   ValidationErrors,
   ValidationResult,
 } from "@/app/lib/types";
+import i18next from "@/app/lib/i18n";
 
 const MIN_DURATION_SECONDS = 10;
 const MAX_DURATION_SECONDS = 600;
@@ -74,6 +75,10 @@ function trimOptional(value: string): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+function validationMessage(key: string) {
+  return i18next.t(`validation.${key}`);
+}
+
 export function validateGenerationForm(
   form: GenerationFormValues,
 ): ValidationResult {
@@ -83,7 +88,7 @@ export function validateGenerationForm(
   const lyrics = form.lyrics.trim();
 
   if (!prompt && !lyrics) {
-    const message = "Enter a prompt, lyrics, or both.";
+    const message = validationMessage("promptOrLyrics");
     errors.prompt = message;
     errors.lyrics = message;
   }
@@ -94,7 +99,7 @@ export function validateGenerationForm(
     durationSeconds < MIN_DURATION_SECONDS ||
     durationSeconds > MAX_DURATION_SECONDS
   ) {
-    errors.durationSeconds = "Duration must be between 10 and 600 seconds.";
+    errors.durationSeconds = validationMessage("duration");
   }
 
   const bpm = parseOptionalInteger(form.bpm);
@@ -102,7 +107,7 @@ export function validateGenerationForm(
     bpm !== null &&
     (!Number.isFinite(bpm) || bpm < MIN_BPM || bpm > MAX_BPM)
   ) {
-    errors.bpm = "BPM must be empty or between 30 and 300.";
+    errors.bpm = validationMessage("bpm");
   }
 
   const parsedInferenceSteps = parseOptionalInteger(form.inferenceSteps);
@@ -111,22 +116,22 @@ export function validateGenerationForm(
     !Number.isFinite(parsedInferenceSteps) ||
     parsedInferenceSteps <= 0
   ) {
-    errors.inferenceSteps = "Inference steps must be a positive integer.";
+    errors.inferenceSteps = validationMessage("inferenceSteps");
   }
 
   const guidanceScale = parseRequiredNumber(form.guidanceScale);
   if (!Number.isFinite(guidanceScale) || guidanceScale <= 0) {
-    errors.guidanceScale = "Guidance scale must be a positive number.";
+    errors.guidanceScale = validationMessage("guidanceScale");
   }
 
   const repaintingStart = parseOptionalNumber(form.repaintingStart);
   if (Number.isNaN(repaintingStart) || (repaintingStart !== null && repaintingStart < 0)) {
-    errors.repaintingStart = "Repaint start must be empty or zero and above.";
+    errors.repaintingStart = validationMessage("repaintingStart");
   }
 
   const repaintingEnd = parseOptionalNumber(form.repaintingEnd);
   if (Number.isNaN(repaintingEnd) || (repaintingEnd !== null && repaintingEnd < -1)) {
-    errors.repaintingEnd = "Repaint end must be empty, -1, or zero and above.";
+    errors.repaintingEnd = validationMessage("repaintingEnd");
   }
 
   const audioCoverStrength = parseOptionalNumber(form.audioCoverStrength);
@@ -134,7 +139,7 @@ export function validateGenerationForm(
     Number.isNaN(audioCoverStrength) ||
     (audioCoverStrength !== null && (audioCoverStrength < 0 || audioCoverStrength > 1))
   ) {
-    errors.audioCoverStrength = "Cover strength must be empty or between 0 and 1.";
+    errors.audioCoverStrength = validationMessage("audioCoverStrength");
   }
 
   let seed: number | undefined;
@@ -146,7 +151,7 @@ export function validateGenerationForm(
         parsedSeed < INT32_MIN ||
         parsedSeed > INT32_MAX)
     ) {
-      errors.seed = "Seed must be a valid 32-bit integer.";
+      errors.seed = validationMessage("seed");
     } else if (parsedSeed !== null) {
       seed = parsedSeed;
     }

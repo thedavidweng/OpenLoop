@@ -38,6 +38,9 @@ jobs:
       - name: Rust format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
+      - name: Prepare sidecars
+        run: pnpm prepare:sidecars
+
       - name: Rust compile check
         run: pnpm rust:check
 

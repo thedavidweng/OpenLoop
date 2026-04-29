@@ -125,6 +125,15 @@ impl AppError {
         )
     }
 
+    pub fn output_read_failed(details: impl Into<String>) -> Self {
+        Self::new(
+            "OUTPUT_READ_FAILED",
+            "OpenLoop could not read the output audio file.",
+            Some(details.into()),
+            true,
+        )
+    }
+
     pub fn db_write_failed(details: impl Into<String>) -> Self {
         Self::new(
             "DB_WRITE_FAILED",

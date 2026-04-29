@@ -773,6 +773,17 @@ fn inspect_descriptor_for(
     let mut downloaded: u64 = 0;
     let mut all_present = true;
     for spec in &pack {
+        if is_runtime_synced_model_code(spec) {
+            let target = checkpoints_dir.join(spec.local_path);
+            if fs::metadata(&target)
+                .map(|metadata| metadata.is_file() && metadata.len() > 0)
+                .unwrap_or(false)
+            {
+                downloaded += spec.size;
+            }
+            continue;
+        }
+
         let target = checkpoints_dir.join(spec.local_path);
         match fs::metadata(&target) {
             Ok(metadata) if metadata.is_file() => {
@@ -811,6 +822,11 @@ fn inspect_descriptor_for(
     } else {
         None
     };
+    let downloaded_bytes = if all_present {
+        total_bytes
+    } else {
+        downloaded.min(total_bytes)
+    };
 
     ModelStatusSnapshot {
         variant: descriptor.variant,
@@ -818,11 +834,15 @@ fn inspect_descriptor_for(
         model_name: descriptor.model_name.to_owned(),
         label: descriptor.label.to_owned(),
         description: descriptor.description.to_owned(),
-        downloaded_bytes: downloaded.min(total_bytes),
+        downloaded_bytes,
         total_bytes: Some(total_bytes),
         installed_at: installed.map(|entry| entry.installed_at.clone()),
         error,
     }
+}
+
+fn is_runtime_synced_model_code(spec: &ModelFileSpec) -> bool {
+    spec.local_path.ends_with(".py")
 }
 
 fn installed_manifest_for_pack<'a>(
@@ -1305,6 +1325,33 @@ mod tests {
         assert!(pack
             .iter()
             .any(|f| f.local_path == "acestep-5Hz-lm-1.7B/model.safetensors"));
+    }
+
+    #[test]
+    fn runtime_synced_model_code_size_does_not_make_installed_pack_failed() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let settings = AppSettings::default();
+        let descriptor = descriptor_for(ModelVariant::Turbo).expect("turbo descriptor");
+        let checkpoints_dir = checkpoints_dir_for(temp.path(), &settings);
+
+        for spec in pack_for_descriptor(descriptor) {
+            let path = checkpoints_dir.join(spec.local_path);
+            fs::create_dir_all(path.parent().expect("spec should have parent"))
+                .expect("parent dir");
+            let file = fs::File::create(&path).expect("model file");
+            if is_runtime_synced_model_code(&spec) {
+                file.set_len(1).expect("runtime synced code marker");
+            } else {
+                file.set_len(spec.size).expect("model asset size");
+            }
+        }
+        record_install(temp.path(), descriptor).expect("install manifest");
+
+        let snapshot = inspect_descriptor_for(temp.path(), &settings, descriptor);
+
+        assert!(matches!(snapshot.state, ModelDownloadState::Ready));
+        assert_eq!(snapshot.downloaded_bytes, snapshot.total_bytes.unwrap());
+        assert!(snapshot.error.is_none());
     }
 
     #[test]

@@ -1,4 +1,4 @@
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import type {
@@ -158,8 +158,8 @@ export function deleteGenerationFile(path: string): Promise<void> {
   return invoke<void>("delete_generation_file", { path });
 }
 
-export function toFileUrl(path: string) {
-  return convertFileSrc(path);
+export function readGenerationAudio(id: string): Promise<ArrayBuffer | number[]> {
+  return invoke<ArrayBuffer | number[]>("read_generation_audio", { id });
 }
 
 export function deleteGeneration(id: string): Promise<void> {

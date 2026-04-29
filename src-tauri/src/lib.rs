@@ -62,6 +62,7 @@ pub fn run() {
             commands::files::reveal_in_finder,
             commands::files::copy_audio_to,
             commands::files::file_exists,
+            commands::files::read_generation_audio,
             commands::files::delete_generation_file,
             commands::settings::get_settings,
             commands::settings::set_setting,

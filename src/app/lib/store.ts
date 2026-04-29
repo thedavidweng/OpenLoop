@@ -130,16 +130,20 @@ export const MODEL_PACKS = {
 
 export type ModelPackId = keyof typeof MODEL_PACKS;
 
-const IDLE_GENERATION_STATE: GenerationState = {
-  status: "idle",
-  statusMessage: i18next.t("status.ready"),
-  error: null,
-};
+function createIdleGenerationState(): GenerationState {
+  return {
+    status: "idle",
+    statusMessage: tr("status.ready"),
+    error: null,
+  };
+}
 
-const DEFAULT_BOOTSTRAP_STATUS: ModelBootstrapStatus = {
-  state: "pending",
-  message: i18next.t("status.setupRequired"),
-};
+function createDefaultBootstrapStatus(): ModelBootstrapStatus {
+  return {
+    state: "pending",
+    message: tr("status.setupRequired"),
+  };
+}
 
 interface GenerationStore {
   hydrated: boolean;
@@ -322,6 +326,15 @@ function localizeAppError(error: unknown, fallbackCode = "GENERATION_FAILED"): A
     message,
     details,
   };
+}
+
+function localizeModelStatuses(
+  statuses: ModelStatusSnapshot[],
+): ModelStatusSnapshot[] {
+  return statuses.map((status) => ({
+    ...status,
+    error: status.error ? localizeAppError(status.error) : status.error,
+  }));
 }
 
 function shouldMarkBootstrapFailed(code: string): boolean {
@@ -540,10 +553,13 @@ function createGenerationRecord(
   };
 }
 
-function computeValidationState(form: GenerationFormValues) {
+function computeValidationState(
+  form: GenerationFormValues,
+  options: { showErrors?: boolean } = {},
+) {
   const result = validateGenerationForm(form);
   return {
-    validationErrors: result.errors,
+    validationErrors: options.showErrors === false ? {} : result.errors,
     currentRequest: result.request,
   };
 }
@@ -580,7 +596,7 @@ function applyModelVariantToForm(
 export const useGenerationStore = create<GenerationStore>((set, get) => ({
   hydrated: false,
   deviceInfo: null,
-  bootstrapStatus: DEFAULT_BOOTSTRAP_STATUS,
+  bootstrapStatus: createDefaultBootstrapStatus(),
   modelCatalog: Object.values(MODEL_VARIANTS).map((variant) => ({
     variant: variant.id,
     label: variant.label,
@@ -602,7 +618,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   lyricsPanelOpen: false,
   form: DEFAULT_GENERATION_FORM_VALUES,
   validationErrors: {},
-  generationState: IDLE_GENERATION_STATE,
+  generationState: createIdleGenerationState(),
   currentRequest: validateGenerationForm(DEFAULT_GENERATION_FORM_VALUES).request,
   currentGeneration: null,
   history: [],
@@ -684,42 +700,42 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       case "failed":
         {
           const error = localizeAppError(event.error);
-        set({
-          bootstrapStatus: shouldMarkBootstrapFailed(error.code)
-            ? {
-                state: "failed",
-                message: error.message,
-                error,
-              }
-            : {
-                state: "ready",
-                message: tr("status.localStackReady"),
-              },
-          generationState: {
-            status: "failed",
-            statusMessage: tr("status.failed"),
-            error,
-          },
-        });
+          set({
+            bootstrapStatus: shouldMarkBootstrapFailed(error.code)
+              ? {
+                  state: "failed",
+                  message: error.message,
+                  error,
+                }
+              : {
+                  state: "ready",
+                  message: tr("status.localStackReady"),
+                },
+            generationState: {
+              status: "failed",
+              statusMessage: tr("status.failed"),
+              error,
+            },
+          });
         }
         break;
     }
   },
-	  completeSetup: async () => {
-	    const profile = get().deviceInfo?.recommendedProfile ?? get().settings.profile;
-	    const nextSettings = {
-	      ...get().settings,
-	      profile,
-	      firstRunCompleted: true,
-	      defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-	    };
+  completeSetup: async () => {
+    const profile = get().deviceInfo?.recommendedProfile ?? get().settings.profile;
+    const nextSettings = {
+      ...get().settings,
+      profile,
+      firstRunCompleted: true,
+      defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
+    };
 
     if (api.isTauriRuntime()) {
       await Promise.all([
-	        api.setSetting("profile", profile),
-	        api.setSetting("firstRunCompleted", true),
-	        api.setSetting("defaultThinking", nextSettings.defaultThinking),
-	      ]);
+        api.setSetting("profile", profile),
+        api.setSetting("firstRunCompleted", true),
+        api.setSetting("defaultThinking", nextSettings.defaultThinking),
+      ]);
 
       await get().hydrateFromPersistence();
       set({ setupOverride: false });
@@ -727,25 +743,25 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       return;
     }
 
-	    const nextForm = applyModelVariantToForm(
-	      applyProfilePreset(get().form, profile),
-	      nextSettings.modelVariant,
-	    );
+    const nextForm = applyModelVariantToForm(
+      applyProfilePreset(get().form, profile),
+      nextSettings.modelVariant,
+    );
     set({
       setupOverride: false,
       settings: nextSettings,
       form: nextForm,
-      ...computeValidationState(nextForm),
+      ...computeValidationState(nextForm, { showErrors: false }),
     });
     await get().refreshBootstrapStatus();
   },
   closeSetup: () => {
     set({ setupOverride: false });
   },
-	  closeSettings: () => {
-	    set({ isSettingsOpen: false });
-	  },
-	  downloadModelVariant: async (variant) => {
+  closeSettings: () => {
+    set({ isSettingsOpen: false });
+  },
+  downloadModelVariant: async (variant) => {
     const packId = packIdForVariant(variant);
     const downloadTarget = primaryVariantForPack(packId);
     const packAggregate = aggregatePackStatus(get().modelStatuses, packId);
@@ -760,36 +776,36 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       },
     });
 
-	    if (api.isTauriRuntime()) {
-	      const initialStatus = await api.downloadModel(downloadTarget);
-        get().applyModelStatus(initialStatus);
-	      await Promise.all([
-          api.setSetting("modelVariant", variant),
-          api.setSetting("profile", profileForVariant(variant)),
-          api.setSetting(
-            "defaultThinking",
-            PROFILE_FORM_PRESETS[profileForVariant(variant)].thinking,
-          ),
-        ]);
-        const profile = profileForVariant(variant);
-        const nextForm = applyModelVariantToForm(
-          applyProfilePreset(get().form, profile),
-          variant,
-        );
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            profile,
-            modelVariant: variant,
-            defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-          },
-          form: nextForm,
-          ...computeValidationState(nextForm),
-        }));
-	      return;
-	    }
+    if (api.isTauriRuntime()) {
+      const initialStatus = await api.downloadModel(downloadTarget);
+      get().applyModelStatus(initialStatus);
+      await Promise.all([
+        api.setSetting("modelVariant", variant),
+        api.setSetting("profile", profileForVariant(variant)),
+        api.setSetting(
+          "defaultThinking",
+          PROFILE_FORM_PRESETS[profileForVariant(variant)].thinking,
+        ),
+      ]);
+      const profile = profileForVariant(variant);
+      const nextForm = applyModelVariantToForm(
+        applyProfilePreset(get().form, profile),
+        variant,
+      );
+      set((state) => ({
+        settings: {
+          ...state.settings,
+          profile,
+          modelVariant: variant,
+          defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
+        },
+        form: nextForm,
+        ...computeValidationState(nextForm, { showErrors: false }),
+      }));
+      return;
+    }
 
-	    const nextDownloadedModels = Array.from(new Set([
+    const nextDownloadedModels = Array.from(new Set([
       ...get().settings.downloadedModels,
       ...MODEL_PACKS[packId].variants,
     ]));
@@ -807,160 +823,174 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     set({
       settings: nextSettings,
       form: nextForm,
-      ...computeValidationState(nextForm),
+      ...computeValidationState(nextForm, { showErrors: false }),
       bootstrapStatus: {
         state: "ready",
         message: tr("status.modelReady", { model: MODEL_PACKS[packId].label }),
       },
-	    });
-	  },
-	  deleteModelVariant: async (variant) => {
+    });
+  },
+  deleteModelVariant: async (variant) => {
     const packId = packIdForVariant(variant);
     const deleteTarget = primaryVariantForPack(packId);
-	    if (api.isTauriRuntime()) {
-	      const statuses = await api.deleteModel(deleteTarget);
-	      const nextDownloadedModels = expandDownloadedVariantsFromStatuses(statuses);
-	      const currentSelected = get().settings.modelVariant;
-	      const nextSelected =
+    if (api.isTauriRuntime()) {
+      const statuses = await api.deleteModel(deleteTarget);
+      const nextDownloadedModels = expandDownloadedVariantsFromStatuses(statuses);
+      const currentSelected = get().settings.modelVariant;
+      const nextSelected =
         currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
-	          ? null
-	          : currentSelected;
-	      await Promise.all([
-	        api.setSetting("downloadedModels", nextDownloadedModels),
-	        api.setSetting("modelVariant", nextSelected),
-	      ]);
-	      await get().hydrateFromPersistence();
-	      return;
-	    }
+          ? null
+          : currentSelected;
+      await Promise.all([
+        api.setSetting("downloadedModels", nextDownloadedModels),
+        api.setSetting("modelVariant", nextSelected),
+      ]);
+      await get().hydrateFromPersistence();
+      return;
+    }
 
-	    const nextDownloadedModels = get().settings.downloadedModels.filter(
+    const nextDownloadedModels = get().settings.downloadedModels.filter(
       (downloaded) => !MODEL_PACKS[packId].variants.includes(downloaded),
     );
-	    const currentSelected = get().settings.modelVariant;
-	    const nextSelected =
+    const currentSelected = get().settings.modelVariant;
+    const nextSelected =
       currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
         ? null
         : currentSelected;
-	    set((state) => ({
-	      settings: {
-	        ...state.settings,
-	        downloadedModels: nextDownloadedModels,
-	        modelVariant: nextSelected,
-	      },
-	      bootstrapStatus: nextSelected
-	        ? state.bootstrapStatus
-	        : {
-	            state: "pending",
-	            message: tr("status.chooseAndDownload"),
-	          },
-	    }));
-	  },
-	  refreshModelStatuses: async () => {
-	    if (!api.isTauriRuntime()) {
-	      return;
-	    }
-	    const [modelCatalog, modelStatuses] = await Promise.all([
-	      api.listModelCatalog(),
-	      api.getModelStatus(),
-	    ]);
-	    const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-	    set((state) => ({
-        modelCatalog,
-        modelStatuses,
-        settings: {
-	        ...state.settings,
-	        downloadedModels,
-	        modelVariant:
-	          state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
-	            ? state.settings.modelVariant
-	            : state.settings.modelVariant,
-        },
-        bootstrapStatus: resolveBootstrapStatus(
-          {
-            ...state.settings,
-            downloadedModels,
-            modelVariant:
-              state.settings.modelVariant &&
-              downloadedModels.includes(state.settings.modelVariant)
-                ? state.settings.modelVariant
-                : state.settings.modelVariant,
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        downloadedModels: nextDownloadedModels,
+        modelVariant: nextSelected,
+      },
+      bootstrapStatus: nextSelected
+        ? state.bootstrapStatus
+        : {
+            state: "pending",
+            message: tr("status.chooseAndDownload"),
           },
+    }));
+  },
+  refreshModelStatuses: async () => {
+    if (!api.isTauriRuntime()) {
+      return;
+    }
+    const [modelCatalog, rawModelStatuses] = await Promise.all([
+      api.listModelCatalog(),
+      api.getModelStatus(),
+    ]);
+    const modelStatuses = localizeModelStatuses(rawModelStatuses);
+    const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
+    set((state) => ({
+      modelCatalog,
+      modelStatuses,
+      settings: {
+        ...state.settings,
+        downloadedModels,
+        modelVariant:
+          state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
+            ? state.settings.modelVariant
+            : state.settings.modelVariant,
+      },
+      bootstrapStatus: resolveBootstrapStatus(
+        {
+          ...state.settings,
+          downloadedModels,
+          modelVariant:
+            state.settings.modelVariant &&
+            downloadedModels.includes(state.settings.modelVariant)
+              ? state.settings.modelVariant
+              : state.settings.modelVariant,
+        },
+        state.deviceInfo,
+        modelStatuses,
+      ),
+    }));
+  },
+  applyModelStatus: (status) => {
+    set((state) => {
+      const modelStatuses = [
+        ...state.modelStatuses.filter((current) => current.variant !== status.variant),
+        {
+          ...status,
+          error: status.error ? localizeAppError(status.error) : status.error,
+        },
+      ];
+      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
+      const selectedPack = state.settings.modelVariant
+        ? packIdForVariant(state.settings.modelVariant)
+        : null;
+      const eventPack = packIdForVariant(status.variant);
+      const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
+      const nextSettings = {
+        ...state.settings,
+        downloadedModels,
+      };
+      return {
+        modelStatuses,
+        settings: nextSettings,
+        bootstrapStatus:
+          selectedPack === eventPack
+            ? packAggregate.state === "downloading"
+              ? {
+                  state: "downloading",
+                  message: tr("status.downloadingModel", {
+                    model: MODEL_PACKS[eventPack].label,
+                  }),
+                  downloadedBytes: packAggregate.downloadedBytes,
+                  totalBytes: packAggregate.totalBytes,
+                }
+              : packAggregate.state === "failed"
+                ? {
+                    state: "failed",
+                    message:
+                      packAggregate.error?.message ??
+                      tr("status.stackReportedError"),
+                    error: packAggregate.error ?? null,
+                  }
+                : packAggregate.state === "ready"
+                  ? {
+                      state: "ready",
+                      message: tr("status.modelReady", {
+                        model: MODEL_PACKS[eventPack].label,
+                      }),
+                    }
+                  : {
+                      state: "pending",
+                      message: tr("status.downloadModelToStart", {
+                        model: MODEL_PACKS[eventPack].label,
+                      }),
+                    }
+            : resolveBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses),
+      };
+    });
+  },
+  setLanguage: async (language) => {
+    await i18next.changeLanguage(language);
+    if (api.isTauriRuntime()) {
+      await api.setSetting("language", language);
+    }
+    set((state) => {
+      const settings = {
+        ...state.settings,
+        language,
+      };
+      const modelStatuses = localizeModelStatuses(state.modelStatuses);
+      return {
+        settings,
+        modelStatuses,
+        generationState:
+          state.generationState.status === "idle"
+            ? createIdleGenerationState()
+            : state.generationState,
+        bootstrapStatus: resolveBootstrapStatus(
+          settings,
           state.deviceInfo,
           modelStatuses,
         ),
-	    }));
-	  },
-	  applyModelStatus: (status) => {
-	    set((state) => {
-	      const modelStatuses = [
-	        ...state.modelStatuses.filter((current) => current.variant !== status.variant),
-	        {
-            ...status,
-            error: status.error ? localizeAppError(status.error) : status.error,
-          },
-	      ];
-	      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-        const selectedPack =
-          state.settings.modelVariant
-            ? packIdForVariant(state.settings.modelVariant)
-            : null;
-        const eventPack = packIdForVariant(status.variant);
-        const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
-        const nextSettings = {
-          ...state.settings,
-          downloadedModels,
-        };
-	      return {
-	        modelStatuses,
-	        settings: nextSettings,
-	        bootstrapStatus:
-            selectedPack === eventPack
-              ? packAggregate.state === "downloading"
-                ? {
-                    state: "downloading",
-                    message: tr("status.downloadingModel", {
-                      model: MODEL_PACKS[eventPack].label,
-                    }),
-                    downloadedBytes: packAggregate.downloadedBytes,
-                    totalBytes: packAggregate.totalBytes,
-                  }
-                : packAggregate.state === "failed"
-                  ? {
-                      state: "failed",
-                      message:
-                        packAggregate.error?.message ??
-                        tr("status.stackReportedError"),
-                      error: packAggregate.error ?? null,
-                    }
-                  : packAggregate.state === "ready"
-                    ? {
-                        state: "ready",
-                        message: tr("status.modelReady", {
-                          model: MODEL_PACKS[eventPack].label,
-                        }),
-                      }
-                    : {
-                        state: "pending",
-                        message: tr("status.downloadModelToStart", {
-                          model: MODEL_PACKS[eventPack].label,
-                        }),
-                      }
-              : resolveBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses),
-	      };
-	    });
-	  },
-	  setLanguage: async (language) => {
-	    await i18next.changeLanguage(language);
-	    if (api.isTauriRuntime()) {
-	      await api.setSetting("language", language);
-	    }
-	    set((state) => ({
-	      settings: {
-	        ...state.settings,
-	        language,
-	      },
-	    }));
-	  },
+      };
+    });
+  },
   openSettings: () => {
     set({ isSettingsOpen: true });
   },
@@ -1001,7 +1031,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     set({
       settings: nextSettings,
       form: nextForm,
-      ...computeValidationState(nextForm),
+      ...computeValidationState(nextForm, { showErrors: false }),
     });
     await get().refreshBootstrapStatus();
   },
@@ -1018,7 +1048,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
         get().generationState.status === "running" ||
         get().generationState.status === "validating"
           ? get().generationState
-          : IDLE_GENERATION_STATE,
+          : createIdleGenerationState(),
     });
   },
   selectGenerationRecord: (id) => {
@@ -1042,10 +1072,10 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   toggleLyricsPanel: () => {
     set({ lyricsPanelOpen: !get().lyricsPanelOpen });
   },
-	  hydrateFromPersistence: async () => {
-	    if (!api.isTauriRuntime()) {
-	      await i18next.changeLanguage(detectSystemLanguage());
-	      set({
+  hydrateFromPersistence: async () => {
+    if (!api.isTauriRuntime()) {
+      await i18next.changeLanguage(detectSystemLanguage());
+      set({
         hydrated: true,
         bootstrapStatus: {
           state: "ready",
@@ -1056,39 +1086,47 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     }
 
     try {
-	      const [persistedSettings, persistedHistory, deviceInfo, modelCatalog, modelStatuses] = await Promise.all([
-	        api.getSettings(),
-	        api.listGenerations(),
-	        api.getDeviceInfo(),
-	        api.listModelCatalog(),
-	        api.getModelStatus(),
-	      ]);
+      const [
+        persistedSettings,
+        persistedHistory,
+        deviceInfo,
+        modelCatalog,
+        rawModelStatuses,
+      ] = await Promise.all([
+        api.getSettings(),
+        api.listGenerations(),
+        api.getDeviceInfo(),
+        api.listModelCatalog(),
+        api.getModelStatus(),
+      ]);
 
       const profile = persistedSettings.firstRunCompleted
         ? persistedSettings.profile
         : deviceInfo.recommendedProfile;
-	      const mergedSettings = {
-	        ...get().settings,
-	        ...persistedSettings,
-	        profile,
-	        defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-	        downloadedModels: expandDownloadedVariantsFromStatuses(modelStatuses),
-	      };
-	      const language = mergedSettings.language ?? detectSystemLanguage();
-	      await i18next.changeLanguage(language);
-	      const nextForm = applyModelVariantToForm(
-	        applyProfilePreset(get().form, profile),
-	        mergedSettings.modelVariant,
-	      );
+      const mergedSettings = {
+        ...get().settings,
+        ...persistedSettings,
+        profile,
+        defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
+        downloadedModels: expandDownloadedVariantsFromStatuses(rawModelStatuses),
+      };
+      const language = mergedSettings.language ?? detectSystemLanguage();
+      await i18next.changeLanguage(language);
+      const modelStatuses = localizeModelStatuses(rawModelStatuses);
+      const nextForm = applyModelVariantToForm(
+        applyProfilePreset(get().form, profile),
+        mergedSettings.modelVariant,
+      );
 
       set({
         hydrated: true,
-	        deviceInfo,
-	        modelCatalog,
-	        modelStatuses,
-	        settings: mergedSettings,
+        deviceInfo,
+        modelCatalog,
+        modelStatuses,
+        settings: mergedSettings,
         form: nextForm,
-        ...computeValidationState(nextForm),
+        ...computeValidationState(nextForm, { showErrors: false }),
+        generationState: createIdleGenerationState(),
         history: persistedHistory,
         currentGeneration: persistedHistory[0] ?? null,
       });
@@ -1287,7 +1325,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       form: nextForm,
       currentGeneration: record,
       ...computeValidationState(nextForm),
-      generationState: IDLE_GENERATION_STATE,
+      generationState: createIdleGenerationState(),
     });
   },
   deleteGenerationRecord: async (id) => {
@@ -1311,7 +1349,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       form: DEFAULT_GENERATION_FORM_VALUES,
       validationErrors: {},
       currentRequest: validateGenerationForm(DEFAULT_GENERATION_FORM_VALUES).request,
-      generationState: IDLE_GENERATION_STATE,
+      generationState: createIdleGenerationState(),
       lyricsPanelOpen: false,
     });
   },

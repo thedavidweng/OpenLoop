@@ -50,6 +50,20 @@ impl BackendManager {
             }
         }
 
+        if let BackendStatus::Healthy { port } = self.status.clone() {
+            if let Ok(client) = backend_health_client() {
+                if !backend_is_healthy(&client, port) {
+                    self.terminate_child();
+                    self.status = BackendStatus::Failed {
+                        error: AppError::backend_health_timeout(format!(
+                            "health endpoint {} stopped responding",
+                            backend_health_url(port)
+                        )),
+                    };
+                }
+            }
+        }
+
         self.status.clone()
     }
 
@@ -71,6 +85,27 @@ impl BackendManager {
             AppError::model_not_found("select and download a model before starting the backend")
         })?;
         let descriptor = descriptor_for(selected_variant)?;
+        let client = backend_health_client()
+            .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
+
+        match self.status() {
+            BackendStatus::Healthy { .. } => return Ok(self.status.clone()),
+            BackendStatus::Starting => {
+                return self.wait_until_healthy(
+                    &client,
+                    settings.backend_port,
+                    Duration::from_secs(60),
+                )
+            }
+            BackendStatus::Stopped | BackendStatus::Failed { .. } => {}
+        }
+
+        if backend_is_healthy(&client, settings.backend_port) {
+            self.status = BackendStatus::Healthy {
+                port: settings.backend_port,
+            };
+            return Ok(self.status.clone());
+        }
 
         let working_directory = runtime_dir_for(&self.app_data_dir, settings);
         let logs_directory = settings
@@ -151,55 +186,11 @@ impl BackendManager {
         self.child = Some(child);
         self.status = BackendStatus::Starting;
 
-        let started = Instant::now();
-        let client = Client::builder()
-            .timeout(Duration::from_secs(2))
-            .build()
-            .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
-        let health_url = format!("http://127.0.0.1:{}/health", settings.backend_port);
-
-        while started.elapsed() < Duration::from_secs(60) {
-            if let Some(child) = &mut self.child {
-                if let Ok(Some(exit_status)) = child.try_wait() {
-                    self.child = None;
-                    let error = AppError::backend_start_failed(format!(
-                        "backend exited before becoming healthy with status {exit_status}"
-                    ));
-                    self.status = BackendStatus::Failed {
-                        error: error.clone(),
-                    };
-                    return Err(error);
-                }
-            }
-
-            if let Ok(response) = client.get(&health_url).send() {
-                if response.status().is_success() {
-                    self.status = BackendStatus::Healthy {
-                        port: settings.backend_port,
-                    };
-                    return Ok(self.status.clone());
-                }
-            }
-
-            thread::sleep(Duration::from_secs(1));
-        }
-
-        self.stop()?;
-        let error = AppError::backend_health_timeout(format!(
-            "health endpoint {health_url} did not become ready within 60 seconds"
-        ));
-        self.status = BackendStatus::Failed {
-            error: error.clone(),
-        };
-        Err(error)
+        self.wait_until_healthy(&client, settings.backend_port, Duration::from_secs(60))
     }
 
     pub fn stop(&mut self) -> AppResult<BackendStatus> {
-        if let Some(mut child) = self.child.take() {
-            let _ = child.kill();
-            let _ = child.wait();
-        }
-
+        self.terminate_child();
         self.status = BackendStatus::Stopped;
         Ok(self.status.clone())
     }
@@ -220,6 +211,76 @@ impl BackendManager {
             path.display()
         )))
     }
+
+    fn wait_until_healthy(
+        &mut self,
+        client: &Client,
+        port: u16,
+        timeout: Duration,
+    ) -> AppResult<BackendStatus> {
+        if backend_is_healthy(client, port) {
+            self.status = BackendStatus::Healthy { port };
+            return Ok(self.status.clone());
+        }
+
+        let started = Instant::now();
+        let health_url = backend_health_url(port);
+
+        while started.elapsed() < timeout {
+            if let Some(child) = &mut self.child {
+                if let Ok(Some(exit_status)) = child.try_wait() {
+                    self.child = None;
+                    let error = AppError::backend_start_failed(format!(
+                        "backend exited before becoming healthy with status {exit_status}"
+                    ));
+                    self.status = BackendStatus::Failed {
+                        error: error.clone(),
+                    };
+                    return Err(error);
+                }
+            }
+
+            if backend_is_healthy(client, port) {
+                self.status = BackendStatus::Healthy { port };
+                return Ok(self.status.clone());
+            }
+
+            thread::sleep(Duration::from_secs(1));
+        }
+
+        self.terminate_child();
+        let error = AppError::backend_health_timeout(format!(
+            "health endpoint {health_url} did not become ready within {} seconds",
+            timeout.as_secs()
+        ));
+        self.status = BackendStatus::Failed {
+            error: error.clone(),
+        };
+        Err(error)
+    }
+
+    fn terminate_child(&mut self) {
+        if let Some(mut child) = self.child.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
+
+fn backend_health_url(port: u16) -> String {
+    format!("http://127.0.0.1:{port}/health")
+}
+
+fn backend_health_client() -> Result<Client, reqwest::Error> {
+    Client::builder().timeout(Duration::from_secs(2)).build()
+}
+
+fn backend_is_healthy(client: &Client, port: u16) -> bool {
+    client
+        .get(backend_health_url(port))
+        .send()
+        .map(|response| response.status().is_success())
+        .unwrap_or(false)
 }
 
 #[cfg(windows)]
@@ -257,7 +318,85 @@ mod tests {
         backend::BackendStatus,
         settings::{AppSettings, ModelVariant},
     };
-    use std::{fs, os::unix::fs::PermissionsExt};
+    use std::{
+        fs,
+        io::{Read, Write},
+        net::TcpListener,
+        os::unix::fs::PermissionsExt,
+        thread,
+    };
+
+    #[test]
+    fn reuses_existing_healthy_backend_on_configured_port() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
+        let listener = TcpListener::bind("127.0.0.1:0").expect("test health server should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should have local addr")
+            .port();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("health request should arrive");
+            let mut buffer = [0_u8; 512];
+            let _ = stream.read(&mut buffer);
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                .expect("health response should write");
+        });
+
+        let mut settings = AppSettings::default();
+        settings.backend_working_directory = Some(temp_dir.path().display().to_string());
+        settings.log_directory = Some(temp_dir.path().join("logs").display().to_string());
+        settings.model_variant = Some(ModelVariant::Turbo);
+        settings.backend_port = port;
+
+        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let status = manager
+            .start(&settings)
+            .expect("healthy configured backend should be reused");
+
+        assert!(matches!(status, BackendStatus::Healthy { port: actual } if actual == port));
+        assert!(manager.logs_path().is_none());
+        server.join().expect("health server should exit");
+    }
+
+    #[test]
+    fn marks_previously_healthy_backend_failed_when_health_disappears() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
+        let listener = TcpListener::bind("127.0.0.1:0").expect("test health server should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should have local addr")
+            .port();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("health request should arrive");
+            let mut buffer = [0_u8; 512];
+            let _ = stream.read(&mut buffer);
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                .expect("health response should write");
+        });
+
+        let mut settings = AppSettings::default();
+        settings.backend_working_directory = Some(temp_dir.path().display().to_string());
+        settings.log_directory = Some(temp_dir.path().join("logs").display().to_string());
+        settings.model_variant = Some(ModelVariant::Turbo);
+        settings.backend_port = port;
+
+        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let status = manager
+            .start(&settings)
+            .expect("healthy configured backend should be reused");
+
+        assert!(matches!(status, BackendStatus::Healthy { port: actual } if actual == port));
+        server.join().expect("health server should exit");
+
+        let status = manager.status();
+        assert!(matches!(status, BackendStatus::Failed { .. }));
+    }
 
     #[test]
     fn mock_backend_becomes_healthy_and_stops_cleanly() {

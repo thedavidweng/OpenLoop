@@ -8,12 +8,18 @@ use crate::models::{
     generation::GenerationRequest,
 };
 
+const HEALTH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
+const LIST_MODELS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+const RELEASE_TASK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(900);
+const TASK_QUERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(900);
+const AUDIO_DOWNLOAD_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(180);
+
 #[derive(Debug, Deserialize)]
 struct AceEnvelope<T> {
     data: T,
     code: i64,
     error: Option<String>,
-    timestamp: Option<String>,
+    timestamp: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -44,7 +50,6 @@ pub struct AceClient {
 impl AceClient {
     pub fn new(port: u16) -> AppResult<Self> {
         let http = Client::builder()
-            .timeout(std::time::Duration::from_secs(20))
             .build()
             .map_err(|error| AppError::task_submit_failed(error.to_string()))?;
 
@@ -57,7 +62,6 @@ impl AceClient {
     #[cfg(test)]
     fn from_base_url(base_url: String) -> AppResult<Self> {
         let http = Client::builder()
-            .timeout(std::time::Duration::from_secs(20))
             .build()
             .map_err(|error| AppError::task_submit_failed(error.to_string()))?;
 
@@ -68,6 +72,7 @@ impl AceClient {
         let response = self
             .http
             .get(format!("{}/health", self.base_url))
+            .timeout(HEALTH_TIMEOUT)
             .send()
             .map_err(|error| AppError::backend_health_timeout(error.to_string()))?;
 
@@ -142,7 +147,12 @@ impl AceClient {
             "batch_size": 1,
         });
 
-        let envelope: AceEnvelope<Value> = self.post_envelope("/release_task", &payload)?;
+        let envelope: AceEnvelope<Value> = self.post_envelope(
+            "/release_task",
+            &payload,
+            RELEASE_TASK_TIMEOUT,
+            AppError::task_submit_failed,
+        )?;
         Self::ensure_success(&envelope, AppError::task_submit_failed)?;
 
         let task_id = envelope
@@ -169,8 +179,12 @@ impl AceClient {
     }
 
     pub fn query_result(&self, task_ids: Vec<String>) -> AppResult<Vec<AceTaskResult>> {
-        let envelope: AceEnvelope<Vec<Value>> =
-            self.post_envelope("/query_result", &json!({ "task_id_list": task_ids }))?;
+        let envelope: AceEnvelope<Vec<Value>> = self.post_envelope(
+            "/query_result",
+            &json!({ "task_id_list": task_ids }),
+            TASK_QUERY_TIMEOUT,
+            AppError::task_failed,
+        )?;
         Self::ensure_success(&envelope, AppError::task_failed)?;
 
         envelope
@@ -185,6 +199,7 @@ impl AceClient {
             .http
             .get(format!("{}/v1/audio", self.base_url))
             .query(&[("path", path)])
+            .timeout(AUDIO_DOWNLOAD_TIMEOUT)
             .send()
             .map_err(|error| AppError::audio_download_failed(error.to_string()))?;
 
@@ -204,20 +219,28 @@ impl AceClient {
     fn get_envelope<T: DeserializeOwned>(&self, path: &str) -> AppResult<T> {
         self.http
             .get(format!("{}{}", self.base_url, path))
+            .timeout(LIST_MODELS_TIMEOUT)
             .send()
             .map_err(|error| AppError::task_submit_failed(error.to_string()))?
             .json::<T>()
             .map_err(|error| AppError::task_submit_failed(error.to_string()))
     }
 
-    fn post_envelope<T: DeserializeOwned>(&self, path: &str, body: &Value) -> AppResult<T> {
+    fn post_envelope<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &Value,
+        timeout: std::time::Duration,
+        error: fn(String) -> AppError,
+    ) -> AppResult<T> {
         self.http
             .post(format!("{}{}", self.base_url, path))
             .json(body)
+            .timeout(timeout)
             .send()
-            .map_err(|error| AppError::task_submit_failed(error.to_string()))?
+            .map_err(|send_error| error(send_error.to_string()))?
             .json::<T>()
-            .map_err(|error| AppError::task_submit_failed(error.to_string()))
+            .map_err(|json_error| error(json_error.to_string()))
     }
 
     fn ensure_success<T>(
@@ -228,7 +251,8 @@ impl AceClient {
             return Ok(());
         }
 
-        let details = match (&envelope.error, &envelope.timestamp) {
+        let timestamp = envelope.timestamp.as_ref().map(timestamp_to_string);
+        let details = match (&envelope.error, &timestamp) {
             (Some(error), Some(timestamp)) => format!("{error} at {timestamp}"),
             (Some(error), None) => error.clone(),
             (None, Some(timestamp)) => {
@@ -374,6 +398,13 @@ fn hex_value(byte: u8) -> Option<u8> {
     }
 }
 
+fn timestamp_to_string(value: &Value) -> String {
+    value
+        .as_str()
+        .map(str::to_owned)
+        .unwrap_or_else(|| value.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{AceClient, AceTaskState};
@@ -442,7 +473,7 @@ mod tests {
         let _mock = server
             .mock("POST", "/release_task")
             .with_status(200)
-            .with_body(r#"{"data":{"task_id":"task-123"},"code":0,"error":null,"timestamp":"2026-04-23T00:00:00Z"}"#)
+            .with_body(r#"{"data":{"task_id":"task-123"},"code":200,"error":null,"timestamp":1770000000000,"extra":null}"#)
             .create();
         let client = AceClient::from_base_url(server.url()).expect("client should create");
 

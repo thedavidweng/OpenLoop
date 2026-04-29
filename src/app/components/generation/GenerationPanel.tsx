@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
@@ -71,16 +71,18 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 export function GenerationPanel() {
   const { t } = useTranslation();
-  const [lyricsOpen, setLyricsOpen] = useState(false);
   const form = useGenerationStore((state) => state.form);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
   const validationErrors = useGenerationStore((state) => state.validationErrors);
   const generationState = useGenerationStore((state) => state.generationState);
+  const currentRequest = useGenerationStore((state) => state.currentRequest);
   const settings = useGenerationStore((state) => state.settings);
+  const lyricsPanelOpen = useGenerationStore((state) => state.lyricsPanelOpen);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
   const cancelGeneration = useGenerationStore((state) => state.cancelGeneration);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const setField = useGenerationStore((state) => state.setField);
+  const toggleLyricsPanel = useGenerationStore((state) => state.toggleLyricsPanel);
   const openSettings = useGenerationStore((state) => state.openSettings);
 
   const isBusy = generationState.status === "validating" || generationState.status === "running";
@@ -90,6 +92,7 @@ export function GenerationPanel() {
     ? t(`modelProfiles.${settings.modelVariant}.description`)
     : t("model.chooseFirst");
   const modelReady = isModelDownloaded(settings, settings.modelVariant);
+  const canSubmit = currentRequest !== null && !hasErrors && modelReady;
   const selectedModelState = modelDownloadStateForVariant(
     modelStatuses,
     settings.modelVariant,
@@ -133,10 +136,10 @@ export function GenerationPanel() {
     };
 
   useEffect(() => {
-    if (form.lyrics.trim() || validationErrors.lyrics) {
-      setLyricsOpen(true);
+    if (form.lyrics.trim() && !lyricsPanelOpen) {
+      toggleLyricsPanel();
     }
-  }, [form.lyrics, validationErrors.lyrics]);
+  }, [form.lyrics, lyricsPanelOpen, toggleLyricsPanel]);
 
   const toggleItems: readonly [ToggleField, string, string][] = [
     ["thinking", "generation.thinking", "generation.thinkingDesc"],
@@ -173,7 +176,7 @@ export function GenerationPanel() {
           <button
             type="button"
             className="secondary-button shrink-0"
-            onClick={() => setLyricsOpen((open) => !open)}
+            onClick={toggleLyricsPanel}
             disabled={isBusy}
           >
             <WandSparkles size={14} />
@@ -231,7 +234,7 @@ export function GenerationPanel() {
             <button
               className="primary-button w-full disabled:opacity-50"
               type="submit"
-              disabled={isBusy || hasErrors || !modelReady}
+              disabled={isBusy || !canSubmit}
             >
               {isBusy ? (
                 <Loader2 size={15} className="animate-spin" />
@@ -243,7 +246,7 @@ export function GenerationPanel() {
           </div>
         </div>
 
-        {(lyricsOpen || form.lyrics.trim() || validationErrors.lyrics) ? (
+        {(lyricsPanelOpen || form.lyrics.trim()) ? (
           <label className="block space-y-2 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_62%,transparent)] p-3">
             <FieldLabel>{t("generation.lyrics")}</FieldLabel>
             <textarea

@@ -17,11 +17,31 @@ import {
   type PlaybackBarDensity,
 } from "@/app/components/player/playback-bar-layout";
 
+function audioPayloadToBytes(payload: ArrayBuffer | number[]) {
+  return payload instanceof ArrayBuffer
+    ? new Uint8Array(payload)
+    : Uint8Array.from(payload);
+}
+
+function audioMimeType(format: string) {
+  switch (format) {
+    case "flac":
+      return "audio/flac";
+    case "ogg":
+      return "audio/ogg";
+    case "wav":
+    default:
+      return "audio/wav";
+  }
+}
+
 export function PlaybackBar() {
   const { t } = useTranslation();
   const currentGeneration = useGenerationStore((state) => state.currentGeneration);
   const deleteGenerationRecord = useGenerationStore((state) => state.deleteGenerationRecord);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -30,17 +50,55 @@ export function PlaybackBar() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const audioSrc = currentGeneration?.outputPath ? api.toFileUrl(currentGeneration.outputPath) : null;
-
   useEffect(() => {
     setIsPlaying(false);
     setPosition(0);
     setDuration(0);
+    setPlaybackStatus(null);
+    setAudioSrc(null);
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.load();
     }
-  }, [audioSrc]);
+
+    if (!currentGeneration?.id || !currentGeneration.outputPath) {
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    void api
+      .readGenerationAudio(currentGeneration.id)
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        const bytes = audioPayloadToBytes(payload);
+        objectUrl = URL.createObjectURL(
+          new Blob([bytes], { type: audioMimeType(currentGeneration.audioFormat) }),
+        );
+        setAudioSrc(objectUrl);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlaybackStatus(t("player.missingFile"));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [
+    currentGeneration?.audioFormat,
+    currentGeneration?.id,
+    currentGeneration?.outputPath,
+    t,
+  ]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -110,6 +168,10 @@ export function PlaybackBar() {
         onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onError={() => {
+          setIsPlaying(false);
+          setPlaybackStatus(t("player.missingFile"));
+        }}
         className="hidden"
       />
 
@@ -258,8 +320,8 @@ export function PlaybackBar() {
         </div>
       </div>
 
-      {copyStatus ? (
-        <div className="mt-2 text-right text-[11px] text-[var(--color-text-dim)]">{copyStatus}</div>
+      {playbackStatus || copyStatus ? (
+        <div className="mt-2 text-right text-[11px] text-[var(--color-text-dim)]">{playbackStatus ?? copyStatus}</div>
       ) : null}
     </div>
   );

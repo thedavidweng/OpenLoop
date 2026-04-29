@@ -336,6 +336,10 @@
         "message": "OpenLoop could not write the output audio file.",
         "details": "Check the output directory permissions and available disk space."
       },
+      "OUTPUT_READ_FAILED": {
+        "message": "OpenLoop could not read the output audio file.",
+        "details": "The generated file is missing or cannot be opened from the local output directory."
+      },
       "DB_WRITE_FAILED": {
         "message": "OpenLoop could not write to the local database."
       },

@@ -336,6 +336,10 @@
         "message": "无法写入输出音频文件。",
         "details": "请检查输出目录权限和可用磁盘空间。"
       },
+      "OUTPUT_READ_FAILED": {
+        "message": "无法读取输出音频文件。",
+        "details": "生成文件不存在，或无法从本地输出目录打开。"
+      },
       "DB_WRITE_FAILED": {
         "message": "无法写入本地数据库。"
       },

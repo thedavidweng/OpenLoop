@@ -504,9 +504,33 @@ export function SettingsOverlay() {
           </button>
         </div>
 
+        {/* Section navigation */}
+        <div className="flex flex-wrap gap-2 border-b border-[var(--color-border-light)] pb-3">
+          {[
+            { id: "models", label: t("settings.models") },
+            { id: "defaults", label: t("settings.defaults") },
+            { id: "general", label: t("settings.general") },
+            { id: "backend", label: t("settings.backend") },
+            { id: "danger", label: t("settings.danger") },
+          ].map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => {
+                const el = document.getElementById(`settings-section-${section.id}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
           <div className="space-y-6">
             <SettingsSectionCard
+              id="settings-section-models"
               title={t("settings.models")}
               description={t("settings.modelsDescription")}
             >
@@ -575,6 +599,7 @@ export function SettingsOverlay() {
             </SettingsSectionCard>
 
             <SettingsSectionCard
+              id="settings-section-defaults"
               title={t("settings.defaults")}
               description={t("settings.defaultsDescription")}
             >
@@ -669,6 +694,7 @@ export function SettingsOverlay() {
 
           <div className="space-y-6">
             <SettingsSectionCard
+              id="settings-section-general"
               title={t("settings.general")}
               description={t("settings.generalDescription")}
             >
@@ -764,6 +790,7 @@ export function SettingsOverlay() {
             </SettingsSectionCard>
 
             <SettingsSectionCard
+              id="settings-section-backend"
               title={t("settings.backend")}
               description={t("settings.backendDescription")}
             >
@@ -875,6 +902,7 @@ export function SettingsOverlay() {
             </SettingsSectionCard>
 
             <SettingsSectionCard
+              id="settings-section-danger"
               title={t("settings.danger")}
               description={t("settings.dangerDescription")}
               tone="danger"

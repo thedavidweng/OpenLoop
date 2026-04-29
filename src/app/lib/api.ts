@@ -60,6 +60,16 @@ export async function selectDirectory(defaultPath?: string | null): Promise<stri
   return typeof selected === "string" ? selected : null;
 }
 
+export async function openFileDialog(options?: {
+  multiple?: boolean;
+  filters?: { name: string; extensions: string[] }[];
+}): Promise<string | string[] | null> {
+  return open({
+    multiple: options?.multiple ?? false,
+    filters: options?.filters,
+  });
+}
+
 export function listGenerations(query?: string): Promise<GenerationRecord[]> {
   return invoke<GenerationRecord[]>("list_generations", {
     query: query?.trim() ? query : null,

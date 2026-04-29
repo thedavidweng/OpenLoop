@@ -72,6 +72,8 @@ export type GenerationFormValues = {
   audioCoverStrength: string;
   useRandomSeed: boolean;
   seed: string;
+  instrumental: boolean;
+  variations: number;
 };
 
 export type ValidationField =
@@ -102,6 +104,7 @@ export type GenerationRecord = {
   id: string;
   createdAt: string;
   prompt: string;
+  negativePrompt?: string;
   lyrics: string;
   vocalLanguage: string;
   durationSeconds: number;
@@ -109,9 +112,22 @@ export type GenerationRecord = {
   keyScale?: string;
   timeSignature: TimeSignature;
   model?: string;
+  taskType: TaskType;
+  lmModelPath?: string;
+  lmBackend?: LmBackend;
   thinking: boolean;
   inferenceSteps: number;
   guidanceScale: number;
+  useFormat: boolean;
+  useCotCaption: boolean;
+  useCotLanguage: boolean;
+  constrainedDecoding: boolean;
+  referenceAudioPath?: string;
+  srcAudioPath?: string;
+  instruction?: string;
+  repaintingStart?: number;
+  repaintingEnd?: number;
+  audioCoverStrength?: number;
   useRandomSeed: boolean;
   seed?: number;
   audioFormat: AudioFormat;

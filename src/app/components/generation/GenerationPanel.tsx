@@ -1,15 +1,18 @@
 import type { ChangeEvent } from "react";
 import type React from "react";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  AlertCircle,
   CheckCircle2,
-  ChevronDown,
+  Dice5,
+  FileAudio,
   Loader2,
   Music2,
+  Music4,
+  Play,
   Settings2,
   WandSparkles,
+  X,
 } from "lucide-react";
 import {
   MODEL_VARIANTS,
@@ -18,6 +21,9 @@ import {
   useGenerationStore,
 } from "@/app/lib/store";
 import type { GenerationFormValues } from "@/app/lib/types";
+import { Collapsible } from "@/app/components/ui/Collapsible";
+import { Tooltip } from "@/app/components/overlay/Tooltip";
+import * as api from "@/app/lib/api";
 
 const SELECT_OPTIONS = {
   vocalLanguage: ["en", "zh", "ja", "ko", "auto"] as const,
@@ -27,6 +33,15 @@ const SELECT_OPTIONS = {
   lmBackend: ["mlx", "pt", "vllm"] as const,
   lmModelPath: ["", "acestep-5Hz-lm-0.6B", "acestep-5Hz-lm-1.7B", "acestep-5Hz-lm-4B"] as const,
 };
+
+const STRUCTURE_TAGS = [
+  "tagVerse",
+  "tagPreChorus",
+  "tagChorus",
+  "tagBridge",
+  "tagOutro",
+  "tagInstrumental",
+] as const;
 
 type TextField =
   | "prompt"
@@ -69,6 +84,75 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FilePickerField({
+  label,
+  value,
+  onChange,
+  disabled,
+  filters,
+}: {
+  label: string;
+  value: string;
+  onChange: (path: string) => void;
+  disabled?: boolean;
+  filters?: { name: string; extensions: string[] }[];
+}) {
+  const { t } = useTranslation();
+
+  const handleBrowse = useCallback(async () => {
+    if (!api.isTauriRuntime()) return;
+    try {
+      const selected = await api.openFileDialog({
+        multiple: false,
+        filters: filters ?? [
+          { name: "Audio", extensions: ["mp3", "wav", "flac", "m4a", "ogg"] },
+        ],
+      });
+      if (selected && typeof selected === "string") {
+        onChange(selected);
+      }
+    } catch {
+      // User cancelled
+    }
+  }, [onChange, filters]);
+
+  return (
+    <label className="space-y-1">
+      <FieldLabel>{label}</FieldLabel>
+      <div className="flex gap-2">
+        <input
+          className="text-input flex-1"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          readOnly={api.isTauriRuntime()}
+        />
+        {api.isTauriRuntime() && (
+          <button
+            type="button"
+            className="secondary-button shrink-0"
+            onClick={handleBrowse}
+            disabled={disabled}
+          >
+            <FileAudio size={13} />
+            {t("generation.chooseFile")}
+          </button>
+        )}
+        {value && (
+          <button
+            type="button"
+            className="secondary-button shrink-0 px-2"
+            onClick={() => onChange("")}
+            disabled={disabled}
+          >
+            <X size={13} />
+          </button>
+        )}
+      </div>
+    </label>
+  );
+}
+
 export function GenerationPanel() {
   const { t } = useTranslation();
   const form = useGenerationStore((state) => state.form);
@@ -77,40 +161,89 @@ export function GenerationPanel() {
   const generationState = useGenerationStore((state) => state.generationState);
   const currentRequest = useGenerationStore((state) => state.currentRequest);
   const settings = useGenerationStore((state) => state.settings);
-  const lyricsPanelOpen = useGenerationStore((state) => state.lyricsPanelOpen);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
   const cancelGeneration = useGenerationStore((state) => state.cancelGeneration);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const setField = useGenerationStore((state) => state.setField);
-  const toggleLyricsPanel = useGenerationStore((state) => state.toggleLyricsPanel);
   const openSettings = useGenerationStore((state) => state.openSettings);
 
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const lyricsRef = useRef<HTMLTextAreaElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const isBusy = generationState.status === "validating" || generationState.status === "running";
+  const isFailed = generationState.status === "failed";
   const hasErrors = Object.keys(validationErrors).length > 0;
   const selectedModel = settings.modelVariant ? MODEL_VARIANTS[settings.modelVariant] : null;
-  const selectedModelDescription = settings.modelVariant
-    ? t(`modelProfiles.${settings.modelVariant}.description`)
-    : t("model.chooseFirst");
   const modelReady = isModelDownloaded(settings, settings.modelVariant);
   const canSubmit = currentRequest !== null && !hasErrors && modelReady;
-  const selectedModelState = modelDownloadStateForVariant(
-    modelStatuses,
-    settings.modelVariant,
+  const selectedModelState = modelDownloadStateForVariant(modelStatuses, settings.modelVariant);
+
+  // Elapsed timer for generating state
+  useEffect(() => {
+    if (generationState.status === "running") {
+      setElapsedTime(0);
+      timerRef.current = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setElapsedTime(0);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [generationState.status]);
+
+  // Auto-expand lyrics when content exists
+  useEffect(() => {
+    if (form.lyrics.trim()) {
+      setField("instrumental", false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formatElapsed = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  const submitLabel = useMemo(() => {
+    if (generationState.status === "validating") return t("generation.validating");
+    if (generationState.status === "running") return t("generation.generatingElapsed", { time: formatElapsed(elapsedTime) });
+    return t("generation.generate");
+  }, [generationState.status, elapsedTime, t]);
+
+  const handleTextFieldChange =
+    (field: TextField) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setField(field, event.target.value);
+    };
+
+  const insertTag = useCallback(
+    (tagKey: string) => {
+      const textarea = lyricsRef.current;
+      if (!textarea) return;
+      const tag = `[${t(`generation.${tagKey}`).replace(/[[\]]/g, "")}]`;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const before = form.lyrics.slice(0, start);
+      const after = form.lyrics.slice(end);
+      const insertion = (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
+      setField("lyrics", before + insertion + after);
+      requestAnimationFrame(() => {
+        const newPos = start + insertion.length;
+        textarea.selectionStart = newPos;
+        textarea.selectionEnd = newPos;
+        textarea.focus();
+      });
+    },
+    [form.lyrics, setField, t],
   );
-  const selectedModelStatusLabel = modelReady
-    ? t("model.ready")
-    : selectedModelState === "failed"
-      ? t("model.failed")
-      : selectedModelState === "downloading"
-        ? t("model.downloading")
-        : t("model.notInstalled");
-  const selectedModelStatusTone = modelReady
-    ? "bg-emerald-500/14 text-emerald-200"
-    : selectedModelState === "failed"
-      ? "bg-red-500/14 text-red-200"
-      : selectedModelState === "downloading"
-        ? "bg-[var(--color-accent)]/14 text-[var(--color-accent)]"
-        : "bg-amber-500/14 text-amber-200";
+
+  const handleRetry = useCallback(() => {
+    void runGeneration();
+  }, [runGeneration]);
+
   const hasAdvancedErrors = (
     [
       "negativePrompt",
@@ -123,23 +256,12 @@ export function GenerationPanel() {
     ] as const
   ).some((key) => validationErrors[key]);
 
-  const submitLabel = useMemo(() => {
-    if (generationState.status === "validating") return t("generation.validating");
-    if (generationState.status === "running") return t("generation.generating");
-    return t("generation.generate");
-  }, [generationState.status, t]);
-
-  const handleTextFieldChange =
-    (field: TextField) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setField(field, event.target.value);
-    };
-
+  // Auto-expand advanced if there are errors
   useEffect(() => {
-    if (form.lyrics.trim() && !lyricsPanelOpen) {
-      toggleLyricsPanel();
+    if (hasAdvancedErrors && !advancedOpen) {
+      setAdvancedOpen(true);
     }
-  }, [form.lyrics, lyricsPanelOpen, toggleLyricsPanel]);
+  }, [hasAdvancedErrors]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleItems: readonly [ToggleField, string, string][] = [
     ["thinking", "generation.thinking", "generation.thinkingDesc"],
@@ -150,6 +272,8 @@ export function GenerationPanel() {
     ["constrainedDecoding", "generation.constrained", ""],
   ];
 
+  const variationOptions = [1, 2, 3, 4];
+
   return (
     <section className="rounded-[28px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] p-4 shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
       <form
@@ -159,6 +283,7 @@ export function GenerationPanel() {
           void runGeneration();
         }}
       >
+        {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 px-1">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[var(--chrome-floating-border)] bg-[var(--chrome-floating-bg)] text-[var(--color-accent)]">
@@ -173,97 +298,30 @@ export function GenerationPanel() {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            className="secondary-button shrink-0"
-            onClick={toggleLyricsPanel}
-            disabled={isBusy}
-          >
-            <WandSparkles size={14} />
-            {form.lyrics.trim()
-              ? t("generation.editLyrics")
-              : t("generation.addLyrics")}
-          </button>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
-          <label className="space-y-2">
-            <FieldLabel>{t("generation.prompt")}</FieldLabel>
-            <textarea
-              className="min-h-[116px] w-full resize-none rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_82%,transparent)] px-4 py-3 text-[14px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
-              placeholder={t("generation.promptPlaceholder")}
-              value={form.prompt}
-              onChange={handleTextFieldChange("prompt")}
-              disabled={isBusy}
-            />
-            <FieldError message={validationErrors.prompt} />
-          </label>
-
-          <div className="flex min-h-[116px] flex-col justify-between gap-3 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_68%,transparent)] p-3">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <FieldLabel>{t("generation.model")}</FieldLabel>
-                {selectedModel ? (
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${selectedModelStatusTone}`}
-                  >
-                    {modelReady ? (
-                      <CheckCircle2 size={9} />
-                    ) : (
-                      <AlertCircle size={9} />
-                    )}
-                    {selectedModelStatusLabel}
-                  </span>
-                ) : null}
-              </div>
-              <p className="text-[13px] font-semibold leading-tight text-white">
-                {selectedModel?.label ?? t("model.noModel")}
-              </p>
-              <p className="line-clamp-2 text-[11px] leading-[1.4] text-[var(--color-text-dim)]">
-                {selectedModelDescription}
-              </p>
+          <div className="flex items-center gap-2">
+            <Tooltip label={t("generation.randomInspiration")}>
               <button
                 type="button"
-                onClick={openSettings}
-                className="text-left text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)] transition-colors hover:text-white"
+                className="secondary-button shrink-0 px-2"
+                onClick={() => setField("prompt", "Energetic pop rock with driving drums, catchy guitar riffs, and an uplifting chorus")}
+                disabled={isBusy}
               >
-                {t("model.openSettings")} →
+                <Dice5 size={14} />
               </button>
-            </div>
-
-            <button
-              className="primary-button w-full disabled:opacity-50"
-              type="submit"
-              disabled={isBusy || !canSubmit}
-            >
-              {isBusy ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <WandSparkles size={15} />
-              )}
-              {submitLabel}
-            </button>
+            </Tooltip>
           </div>
         </div>
 
-        {(lyricsPanelOpen || form.lyrics.trim()) ? (
-          <label className="block space-y-2 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_62%,transparent)] p-3">
-            <FieldLabel>{t("generation.lyrics")}</FieldLabel>
-            <textarea
-              className="min-h-[120px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
-              placeholder={t("generation.lyricsPlaceholder")}
-              value={form.lyrics}
-              onChange={handleTextFieldChange("lyrics")}
-              disabled={isBusy}
-            />
-            <FieldError message={validationErrors.lyrics} />
-          </label>
-        ) : null}
-
-        <div className="grid gap-3 lg:grid-cols-[1.2fr_repeat(4,minmax(112px,0.55fr))]">
+        {/* Task Type - standalone row */}
+        <div className="px-1">
           <label className="space-y-1">
             <FieldLabel>{t("generation.taskType")}</FieldLabel>
-            <select className="select-input" value={form.taskType} onChange={(event) => setField("taskType", event.target.value as GenerationFormValues["taskType"])} disabled={isBusy}>
+            <select
+              className="select-input"
+              value={form.taskType}
+              onChange={(event) => setField("taskType", event.target.value as GenerationFormValues["taskType"])}
+              disabled={isBusy}
+            >
               {SELECT_OPTIONS.taskType.map((option) => (
                 <option key={option} value={option}>
                   {t(`generation.taskTypes.${option}`)}
@@ -271,45 +329,176 @@ export function GenerationPanel() {
               ))}
             </select>
           </label>
-          <label className="space-y-1">
-            <FieldLabel>{t("generation.duration")}</FieldLabel>
-            <input className="text-input" type="number" min="10" max="600" step="1" value={form.durationSeconds} onChange={handleTextFieldChange("durationSeconds")} disabled={isBusy} />
-            <FieldError message={validationErrors.durationSeconds} />
-          </label>
-          <label className="space-y-1">
-            <FieldLabel>{t("generation.bpm")}</FieldLabel>
-            <input className="text-input" type="number" min="30" max="300" step="1" placeholder={t("generation.optional")} value={form.bpm} onChange={handleTextFieldChange("bpm")} disabled={isBusy} />
-            <FieldError message={validationErrors.bpm} />
-          </label>
-          <label className="space-y-1">
-            <FieldLabel>{t("generation.language")}</FieldLabel>
-            <select className="select-input" value={form.vocalLanguage} onChange={(event) => setField("vocalLanguage", event.target.value)} disabled={isBusy}>
-              {SELECT_OPTIONS.vocalLanguage.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
-            </select>
-          </label>
-          <label className="space-y-1">
-            <FieldLabel>{t("generation.format")}</FieldLabel>
-            <select className="select-input" value={form.audioFormat} onChange={(event) => setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])} disabled={isBusy}>
-              {SELECT_OPTIONS.audioFormat.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
-            </select>
-          </label>
         </div>
 
-        <details className="group rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_58%,transparent)]">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[13px] font-semibold text-white">
+        {/* Prompt - full width */}
+        <label className="block space-y-2 px-1">
+          <FieldLabel>{t("generation.prompt")}</FieldLabel>
+          <textarea
+            className="min-h-[140px] w-full resize-none rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_82%,transparent)] px-4 py-3 text-[14px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+            placeholder={t("generation.promptPlaceholder")}
+            value={form.prompt}
+            onChange={handleTextFieldChange("prompt")}
+            disabled={isBusy}
+          />
+          <FieldError message={validationErrors.prompt} />
+        </label>
+
+        {/* Model info - compact row */}
+        <div className="flex items-center gap-3 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_68%,transparent)] px-3 py-2">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] text-[var(--color-text-dim)]">
+            <Music4 size={13} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[12px] font-medium text-white">
+              {selectedModel?.label ?? t("model.noModel")}
+            </span>
+            {selectedModel && (
+              <span
+                className={`ml-2 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                  modelReady
+                    ? "bg-emerald-500/14 text-emerald-200"
+                    : selectedModelState === "failed"
+                      ? "bg-red-500/14 text-red-200"
+                      : selectedModelState === "downloading"
+                        ? "bg-[var(--color-accent)]/14 text-[var(--color-accent)]"
+                        : "bg-amber-500/14 text-amber-200"
+                }`}
+              >
+                {modelReady ? <CheckCircle2 size={8} /> : null}
+                {modelReady
+                  ? t("model.ready")
+                  : selectedModelState === "failed"
+                    ? t("model.failed")
+                    : selectedModelState === "downloading"
+                      ? t("model.downloading")
+                      : t("model.notInstalled")}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={openSettings}
+            className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)] transition-colors hover:text-white"
+          >
+            {t("model.openSettings")} →
+          </button>
+        </div>
+
+        {/* Lyrics section - always visible */}
+        <div className="space-y-2 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_62%,transparent)] p-3">
+          <div className="flex items-center justify-between gap-2">
+            <FieldLabel>{t("generation.lyrics")}</FieldLabel>
+            <div className="flex items-center gap-2">
+              {/* Instrumental toggle */}
+              <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-dim)]">
+                <input
+                  type="checkbox"
+                  className="rounded"
+                  checked={form.instrumental}
+                  onChange={(e) => {
+                    setField("instrumental", e.target.checked);
+                    if (e.target.checked) {
+                      setField("lyrics", "");
+                    }
+                  }}
+                  disabled={isBusy}
+                />
+                <span>{t("generation.instrumental")}</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Structure tag chips */}
+          {!form.instrumental && (
+            <div className="flex flex-wrap gap-1.5">
+              {STRUCTURE_TAGS.map((tagKey) => (
+                <button
+                  key={tagKey}
+                  type="button"
+                  className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-1 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:border-[var(--color-accent)] hover:text-white disabled:opacity-40"
+                  onClick={() => insertTag(tagKey)}
+                  disabled={isBusy}
+                >
+                  {t(`generation.${tagKey}`)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <textarea
+            ref={lyricsRef}
+            className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+            placeholder={form.instrumental ? t("generation.instrumentalDesc") : t("generation.lyricsPlaceholder")}
+            value={form.lyrics}
+            onChange={handleTextFieldChange("lyrics")}
+            disabled={isBusy || form.instrumental}
+          />
+          <FieldError message={validationErrors.lyrics} />
+        </div>
+
+        {/* Basic parameters - grouped */}
+        <div className="space-y-3 rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_62%,transparent)] p-3">
+          <div className="flex items-center gap-2 px-1">
+            <FieldLabel>{t("generation.musicalControls")}</FieldLabel>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.duration")}</FieldLabel>
+              <input className="text-input" type="number" min="10" max="600" step="1" value={form.durationSeconds} onChange={handleTextFieldChange("durationSeconds")} disabled={isBusy} />
+              <FieldError message={validationErrors.durationSeconds} />
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.bpm")}</FieldLabel>
+              <input className="text-input" type="number" min="30" max="300" step="1" placeholder={t("generation.optional")} value={form.bpm} onChange={handleTextFieldChange("bpm")} disabled={isBusy} />
+              <FieldError message={validationErrors.bpm} />
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.keyScale")}</FieldLabel>
+              <input className="text-input" placeholder={t("generation.keyScalePlaceholder")} value={form.keyScale} onChange={handleTextFieldChange("keyScale")} disabled={isBusy} />
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.timeSignature")}</FieldLabel>
+              <select className="select-input" value={form.timeSignature} onChange={(event) => setField("timeSignature", event.target.value as GenerationFormValues["timeSignature"])} disabled={isBusy}>
+                {SELECT_OPTIONS.timeSignature.map((option) => <option key={option} value={option}>{option}/4</option>)}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.language")}</FieldLabel>
+              <select className="select-input" value={form.vocalLanguage} onChange={(event) => setField("vocalLanguage", event.target.value)} disabled={isBusy || form.instrumental}>
+                {SELECT_OPTIONS.vocalLanguage.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.format")}</FieldLabel>
+              <select className="select-input" value={form.audioFormat} onChange={(event) => setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])} disabled={isBusy}>
+                {SELECT_OPTIONS.audioFormat.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        {/* Advanced controls - smooth collapsible */}
+        <Collapsible
+          className="rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_58%,transparent)]"
+          title={
             <span className="flex items-center gap-2">
               <Settings2 size={15} />
               {t("generation.advancedControls")}
-              {hasAdvancedErrors ? (
-                <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-300">
-                  {t("generation.needsReview")}
-                </span>
-              ) : null}
             </span>
-            <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
-          </summary>
-
-          <div className="space-y-4 border-t border-[var(--color-border-light)] p-4">
+          }
+          badge={
+            hasAdvancedErrors ? (
+              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-300">
+                {t("generation.needsReview")}
+              </span>
+            ) : null
+          }
+          open={advancedOpen}
+          onOpenChange={setAdvancedOpen}
+          contentClassName="border-t border-[var(--color-border-light)]"
+        >
+          <div className="space-y-4 p-4">
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-1 md:col-span-2">
                 <FieldLabel>{t("generation.negativePrompt")}</FieldLabel>
@@ -323,16 +512,6 @@ export function GenerationPanel() {
                 <FieldError message={validationErrors.negativePrompt} />
               </label>
 
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.keyScale")}</FieldLabel>
-                <input className="text-input" placeholder={t("generation.keyScalePlaceholder")} value={form.keyScale} onChange={handleTextFieldChange("keyScale")} disabled={isBusy} />
-              </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.timeSignature")}</FieldLabel>
-                <select className="select-input" value={form.timeSignature} onChange={(event) => setField("timeSignature", event.target.value as GenerationFormValues["timeSignature"])} disabled={isBusy}>
-                  {SELECT_OPTIONS.timeSignature.map((option) => <option key={option} value={option}>{option}/4</option>)}
-                </select>
-              </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.lmModel")}</FieldLabel>
                 <select className="select-input" value={form.lmModelPath} onChange={(event) => setField("lmModelPath", event.target.value)} disabled={isBusy || !form.thinking}>
@@ -370,14 +549,18 @@ export function GenerationPanel() {
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.referenceAudio")}</FieldLabel>
-                <input className="text-input" value={form.referenceAudioPath} onChange={handleTextFieldChange("referenceAudioPath")} disabled={isBusy} />
-              </label>
-              <label className="space-y-1">
-                <FieldLabel>{t("generation.sourceAudio")}</FieldLabel>
-                <input className="text-input" value={form.srcAudioPath} onChange={handleTextFieldChange("srcAudioPath")} disabled={isBusy} />
-              </label>
+              <FilePickerField
+                label={t("generation.referenceAudio")}
+                value={form.referenceAudioPath}
+                onChange={(path) => setField("referenceAudioPath", path)}
+                disabled={isBusy}
+              />
+              <FilePickerField
+                label={t("generation.sourceAudio")}
+                value={form.srcAudioPath}
+                onChange={(path) => setField("srcAudioPath", path)}
+                disabled={isBusy}
+              />
               <label className="space-y-1 md:col-span-2">
                 <FieldLabel>{t("generation.instruction")}</FieldLabel>
                 <input className="text-input" value={form.instruction} onChange={handleTextFieldChange("instruction")} disabled={isBusy} />
@@ -404,8 +587,26 @@ export function GenerationPanel() {
               </label>
             </div>
           </div>
-        </details>
+        </Collapsible>
 
+        {/* Variations selector */}
+        <div className="flex items-center gap-3 px-1">
+          <label className="flex items-center gap-2">
+            <FieldLabel>{t("generation.variations")}</FieldLabel>
+            <select
+              className="select-input w-20"
+              value={form.variations}
+              onChange={(e) => setField("variations", Number(e.target.value))}
+              disabled={isBusy}
+            >
+              {variationOptions.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {/* Action buttons row */}
         <div className="flex flex-wrap items-center gap-2 px-1">
           {isBusy ? (
             <button
@@ -426,10 +627,34 @@ export function GenerationPanel() {
           >
             {t("generation.reset")}
           </button>
+          {isFailed && !isBusy && (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={handleRetry}
+            >
+              <Play size={13} />
+              {t("generation.retry")}
+            </button>
+          )}
           <p className="min-w-0 flex-1 text-[11px] leading-[1.4] text-[var(--color-text-dim)]">
             {modelReady ? t("generation.localReady") : t("model.chooseFirst")}
           </p>
         </div>
+
+        {/* Generate button - full width, prominent */}
+        <button
+          className="primary-button w-full py-3 text-[14px] font-semibold disabled:opacity-50"
+          type="submit"
+          disabled={isBusy || !canSubmit}
+        >
+          {isBusy ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <WandSparkles size={16} />
+          )}
+          {submitLabel}
+        </button>
       </form>
     </section>
   );

@@ -42,6 +42,8 @@ export const DEFAULT_GENERATION_FORM_VALUES: GenerationFormValues = {
   audioCoverStrength: "1.0",
   useRandomSeed: true,
   seed: "",
+  instrumental: false,
+  variations: 1,
 };
 
 function parseOptionalInteger(value: string): number | null {

@@ -30,6 +30,26 @@ export const APP_SHORTCUTS = {
     key: ",",
     displayKey: ",",
   },
+  submitGeneration: {
+    id: "generation.submit",
+    code: "Enter",
+    key: "Enter",
+    displayKey: "Enter",
+  },
+  retryGeneration: {
+    id: "generation.retry",
+    code: "KeyR",
+    key: "r",
+    displayKey: "R",
+    allowShift: true,
+  },
+  togglePlayback: {
+    id: "player.toggle",
+    code: "Space",
+    key: " ",
+    displayKey: "Space",
+    requiresPrimaryModifier: false,
+  },
 } satisfies Record<string, ShortcutDefinition>;
 
 export function getShortcutPlatform(): ShortcutPlatform {
@@ -54,4 +74,42 @@ export function getShortcutDisplay(
 
   const modifier = platform === "mac" ? "⌘" : "Ctrl+";
   return `${modifier}${shortcut.displayKey}`;
+}
+
+export function isInputFocused(): boolean {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || (el as HTMLElement).isContentEditable;
+}
+
+export function matchesShortcut(
+  event: KeyboardEvent,
+  shortcut: ShortcutDefinition,
+): boolean {
+  const platform = getShortcutPlatform();
+  const modifierKey = platform === "mac" ? event.metaKey : event.ctrlKey;
+
+  // Space key doesn't require modifier
+  if (shortcut.requiresPrimaryModifier === false) {
+    if (shortcut.code && event.code === shortcut.code) return true;
+    if (shortcut.key && event.key === shortcut.key) return true;
+    return false;
+  }
+
+  if (!modifierKey) return false;
+
+  // Handle shift for Cmd+Shift+R
+  if (shortcut.allowShift && event.shiftKey) {
+    if (shortcut.code && event.code === shortcut.code) return true;
+    if (shortcut.key && event.key === shortcut.key) return true;
+  }
+
+  // Normal modifier + key
+  if (!event.shiftKey) {
+    if (shortcut.code && event.code === shortcut.code) return true;
+    if (shortcut.key && event.key === shortcut.key) return true;
+  }
+
+  return false;
 }

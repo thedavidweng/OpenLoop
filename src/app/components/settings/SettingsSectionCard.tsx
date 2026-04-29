@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 interface SettingsSectionCardProps {
+  id?: string;
   title: string;
   description?: string;
   tone?: "default" | "danger";
@@ -8,6 +9,7 @@ interface SettingsSectionCardProps {
 }
 
 export function SettingsSectionCard({
+  id,
   title,
   description,
   tone = "default",
@@ -17,7 +19,8 @@ export function SettingsSectionCard({
 
   return (
     <section
-      className={`space-y-3 rounded-lg border p-5 ${
+      id={id}
+      className={`space-y-3 rounded-lg border p-5 scroll-mt-6 ${
         isDanger
           ? "border-red-500/30 bg-[var(--color-sidebar)]"
           : "border-[var(--color-border)] bg-[var(--color-sidebar)]"

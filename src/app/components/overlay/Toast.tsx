@@ -1,0 +1,96 @@
+import { useEffect, useState, useCallback, createContext, useContext, useRef, type ReactNode } from "react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+
+type ToastType = "success" | "error" | "info";
+
+interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+}
+
+interface ToastContextValue {
+  toasts: Toast[];
+  addToast: (type: ToastType, message: string) => void;
+  removeToast: (id: string) => void;
+}
+
+const ToastContext = createContext<ToastContextValue | null>(null);
+
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const removeToast = useCallback((id: string) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const addToast = useCallback((type: ToastType, message: string) => {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, type, message }]);
+    const timer = setTimeout(() => removeToast(id), 3000);
+    timersRef.current.set(id, timer);
+  }, [removeToast]);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of timersRef.current.values()) {
+        clearTimeout(timer);
+      }
+    };
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+      {children}
+      <div className="pointer-events-none fixed right-4 top-4 z-[100] flex flex-col gap-2">
+        {toasts.map((toast) => (
+          <ToastItem key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+}
+
+const ICON_MAP = {
+  success: CheckCircle2,
+  error: AlertCircle,
+  info: Info,
+} as const;
+
+const TONE_MAP = {
+  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+  error: "border-red-500/30 bg-red-500/10 text-red-200",
+  info: "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]",
+} as const;
+
+function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+  const Icon = ICON_MAP[toast.type];
+
+  return (
+    <div
+      className={`pointer-events-auto animate-slide-in-right flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[13px] font-medium shadow-[0_18px_36px_rgba(0,0,0,0.34)] backdrop-blur-xl ${TONE_MAP[toast.type]}`}
+    >
+      <Icon size={14} className="shrink-0" />
+      <span className="min-w-0 flex-1">{toast.message}</span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="shrink-0 rounded-md p-0.5 opacity-60 hover:opacity-100 transition-opacity"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}

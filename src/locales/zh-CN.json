@@ -146,7 +146,7 @@
     "bpm": "BPM",
     "optional": "可选",
     "keyScale": "调性 / 音阶",
-    "keyScalePlaceholder": "C 大调",
+    "keyScalePlaceholder": "自动（如 C 大调）",
     "timeSignature": "拍号",
     "format": "格式",
     "modelAdvanced": "模型与 ACE-Step 控制",
@@ -186,7 +186,30 @@
     "generate": "生成音乐",
     "validating": "校验中...",
     "generating": "生成中...",
-    "reset": "重置表单"
+    "generatingElapsed": "生成中... {{time}}",
+    "downloading": "下载中...",
+    "reset": "重置表单",
+    "retry": "使用相同参数重试",
+    "instrumental": "纯器乐",
+    "instrumentalDesc": "生成无人声的音乐。",
+    "lyricsStructure": "结构标签",
+    "tagVerse": "[Verse]",
+    "tagPreChorus": "[Pre-Chorus]",
+    "tagChorus": "[Chorus]",
+    "tagBridge": "[Bridge]",
+    "tagOutro": "[Outro]",
+    "tagInstrumental": "[Instrumental]",
+    "musicParams": "音乐参数",
+    "outputSettings": "输出设置",
+    "variations": "变体数量",
+    "variationProgress": "变体 {{current}} / {{total}}",
+    "chooseFile": "选择文件",
+    "clearFile": "清除",
+    "randomInspiration": "随机灵感",
+    "volume": "音量",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "speed": "速度"
   },
   "stage": {
     "selectGeneration": "选择一个生成记录开始"
@@ -236,7 +259,11 @@
     "deleteFileAndRecord": "删除文件和记录",
     "openFile": "打开音频文件",
     "missingFile": "音频文件不存在",
-    "prompt": "提示词"
+    "prompt": "提示词",
+    "volume": "音量",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "speed": "速度"
   },
   "validation": {
     "promptOrLyrics": "请输入提示词、歌词，或同时输入两者。",
@@ -360,6 +387,14 @@
   "common": {
     "cancel": "取消",
     "delete": "删除",
-    "unknown": "未知"
+    "unknown": "未知",
+    "close": "关闭"
+  },
+  "toast": {
+    "generationCompleted": "生成已完成。",
+    "generationFailed": "生成失败。",
+    "settingsCopied": "参数已复制到剪贴板。",
+    "fileExported": "文件已导出。",
+    "retryStarted": "正在使用相同参数重试..."
   }
 }

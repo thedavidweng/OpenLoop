@@ -146,7 +146,7 @@
     "bpm": "BPM",
     "optional": "Optional",
     "keyScale": "Key / scale",
-    "keyScalePlaceholder": "C Major",
+    "keyScalePlaceholder": "Auto (e.g. C Major)",
     "timeSignature": "Time signature",
     "format": "Format",
     "modelAdvanced": "Model & ACE-Step controls",
@@ -186,7 +186,30 @@
     "generate": "Generate music",
     "validating": "Validating...",
     "generating": "Generating...",
-    "reset": "Reset form"
+    "generatingElapsed": "Generating... {{time}}",
+    "downloading": "Downloading...",
+    "reset": "Reset form",
+    "retry": "Retry with same settings",
+    "instrumental": "Instrumental",
+    "instrumentalDesc": "Generate music without vocals.",
+    "lyricsStructure": "Structure tags",
+    "tagVerse": "[Verse]",
+    "tagPreChorus": "[Pre-Chorus]",
+    "tagChorus": "[Chorus]",
+    "tagBridge": "[Bridge]",
+    "tagOutro": "[Outro]",
+    "tagInstrumental": "[Instrumental]",
+    "musicParams": "Musical parameters",
+    "outputSettings": "Output settings",
+    "variations": "Variations",
+    "variationProgress": "Variation {{current}} / {{total}}",
+    "chooseFile": "Choose file",
+    "clearFile": "Clear",
+    "randomInspiration": "Random inspiration",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "speed": "Speed"
   },
   "stage": {
     "selectGeneration": "Select a generation to start"
@@ -236,7 +259,11 @@
     "deleteFileAndRecord": "Delete file and record",
     "openFile": "Open audio file",
     "missingFile": "Audio file is missing",
-    "prompt": "Prompt"
+    "prompt": "Prompt",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "speed": "Speed"
   },
   "validation": {
     "promptOrLyrics": "Enter a prompt, lyrics, or both.",
@@ -360,6 +387,14 @@
   "common": {
     "cancel": "Cancel",
     "delete": "Delete",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "close": "Close"
+  },
+  "toast": {
+    "generationCompleted": "Generation completed successfully.",
+    "generationFailed": "Generation failed.",
+    "settingsCopied": "Settings copied to clipboard.",
+    "fileExported": "File exported.",
+    "retryStarted": "Retrying with same settings..."
   }
 }

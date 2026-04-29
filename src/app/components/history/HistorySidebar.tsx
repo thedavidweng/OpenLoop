@@ -1,10 +1,17 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Clock3, Folder, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, Folder, Play, Settings2, Trash2, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";
+import { Tooltip } from "@/app/components/overlay/Tooltip";
 
 type HistoryFilter = "all" | "completed" | "failed" | "cancelled";
+
+const STATUS_BORDER = {
+  completed: "border-l-emerald-500",
+  failed: "border-l-red-500",
+  cancelled: "border-l-amber-500",
+} as const;
 
 export function HistorySidebar() {
   const { t } = useTranslation();
@@ -106,7 +113,9 @@ export function HistorySidebar() {
               return (
                 <li key={item.id}>
                   <div
-                    className={`group rounded-xl border px-3 py-3 transition-colors ${
+                    className={`group rounded-xl border border-l-2 px-3 py-3 transition-colors ${
+                      STATUS_BORDER[item.status]
+                    } ${
                       selected
                         ? "border-[var(--sidebar-row-selected-border)] bg-[var(--sidebar-row-selected-bg)]"
                         : "border-[var(--color-border-light)] bg-[var(--color-surface)] hover:bg-[var(--color-hover)]"
@@ -121,7 +130,12 @@ export function HistorySidebar() {
                         <p className="truncate text-[13px] font-medium text-white">
                           {item.prompt || item.lyrics.slice(0, 48) || t("history.untitled")}
                         </p>
+                        {/* Key parameters row */}
                         <p className="mt-1 truncate text-[11px] text-[var(--color-text-dim)]">
+                          {item.bpm ? `${item.bpm} BPM` : null}
+                          {item.bpm && item.keyScale ? " · " : null}
+                          {item.keyScale || null}
+                          {(item.bpm || item.keyScale) && " · "}
                           {item.audioFormat.toUpperCase()} · {Math.round(item.durationSeconds)}s
                         </p>
                       </div>
@@ -145,33 +159,61 @@ export function HistorySidebar() {
                           minute: "2-digit",
                         })}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => loadGenerationSettings(item.id, "settings")}
-                          className="contextual-reveal text-[11px] text-[var(--color-text-dim)] hover:text-white"
-                          data-visible={selected}
-                        >
-                          {t("history.useSettings")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => loadGenerationSettings(item.id, "reproduce")}
-                          className="contextual-reveal text-[11px] text-[var(--color-text-dim)] hover:text-white"
-                          data-visible={selected}
-                        >
-                          {t("history.reproduce")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            void deleteGenerationRecord(item.id);
-                          }}
-                          className="contextual-reveal text-[11px] text-[var(--color-text-dim)] hover:text-white"
-                          data-visible={selected}
-                        >
-                          {t("common.delete")}
-                        </button>
+                      <div className="flex items-center gap-1">
+                        {/* Quick play button */}
+                        <Tooltip label={t("player.play")}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              selectGenerationRecord(item.id);
+                            }}
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                          >
+                            <Play size={11} fill="currentColor" />
+                          </button>
+                        </Tooltip>
+                        {/* Always-visible Use Settings button */}
+                        <Tooltip label={t("history.useSettings")}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadGenerationSettings(item.id, "settings");
+                            }}
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                          >
+                            <Settings2 size={11} />
+                          </button>
+                        </Tooltip>
+                        {/* Reproduce button */}
+                        <Tooltip label={t("history.reproduce")}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              loadGenerationSettings(item.id, "reproduce");
+                            }}
+                            className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                            data-visible={selected}
+                          >
+                            <Play size={11} />
+                          </button>
+                        </Tooltip>
+                        {/* Delete button */}
+                        <Tooltip label={t("common.delete")}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void deleteGenerationRecord(item.id);
+                            }}
+                            className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
+                            data-visible={selected}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </Tooltip>
                       </div>
                     </div>
                   </div>

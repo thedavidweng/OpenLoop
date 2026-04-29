@@ -1,5 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Copy, FolderOutput, Music4, Pause, Play, SkipBack, SkipForward, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
+import {
+  Copy,
+  FolderOutput,
+  Music4,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Trash2,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import * as api from "@/app/lib/api";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
@@ -16,6 +27,11 @@ import {
   shouldCollapsePlaybackBarMetadata,
   type PlaybackBarDensity,
 } from "@/app/components/player/playback-bar-layout";
+
+const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+const VOLUME_STORAGE_KEY = "openloop-volume";
+const SPEED_STORAGE_KEY = "openloop-speed";
 
 function audioPayloadToBytes(payload: ArrayBuffer | number[]) {
   return payload instanceof ArrayBuffer
@@ -35,6 +51,28 @@ function audioMimeType(format: string) {
   }
 }
 
+function loadPersistedVolume(): number {
+  try {
+    const stored = localStorage.getItem(VOLUME_STORAGE_KEY);
+    if (stored) {
+      const v = parseFloat(stored);
+      if (Number.isFinite(v) && v >= 0 && v <= 1) return v;
+    }
+  } catch { /* ignore */ }
+  return 1;
+}
+
+function loadPersistedSpeed(): number {
+  try {
+    const stored = localStorage.getItem(SPEED_STORAGE_KEY);
+    if (stored) {
+      const v = parseFloat(stored);
+      if (Number.isFinite(v) && SPEED_OPTIONS.includes(v as (typeof SPEED_OPTIONS)[number])) return v;
+    }
+  } catch { /* ignore */ }
+  return 1;
+}
+
 export function PlaybackBar() {
   const { t } = useTranslation();
   const currentGeneration = useGenerationStore((state) => state.currentGeneration);
@@ -45,10 +83,33 @@ export function PlaybackBar() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(loadPersistedVolume);
+  const [previousVolume, setPreviousVolume] = useState(1);
+  const [speed, setSpeed] = useState(loadPersistedSpeed);
   const [measuredWidth, setMeasuredWidth] = useState(1280);
   const [measuredDensity, setMeasuredDensity] = useState<PlaybackBarDensity>("relaxed");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Persist volume
+  useEffect(() => {
+    try { localStorage.setItem(VOLUME_STORAGE_KEY, String(volume)); } catch { /* ignore */ }
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
+
+  // Persist speed
+  useEffect(() => {
+    try { localStorage.setItem(SPEED_STORAGE_KEY, String(speed)); } catch { /* ignore */ }
+    if (audioRef.current) audioRef.current.playbackRate = speed;
+  }, [speed]);
+
+  // Apply volume and speed when audio source changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+      audioRef.current.playbackRate = speed;
+    }
+  }, [audioSrc, volume, speed]);
 
   useEffect(() => {
     setIsPlaying(false);
@@ -136,6 +197,22 @@ export function PlaybackBar() {
     }
     return Math.max(0, Math.min(100, (position / duration) * 100));
   }, [duration, position]);
+
+  const toggleMute = useCallback(() => {
+    if (volume > 0) {
+      setPreviousVolume(volume);
+      setVolume(0);
+    } else {
+      setVolume(previousVolume || 1);
+    }
+  }, [volume, previousVolume]);
+
+  const cycleSpeed = useCallback(() => {
+    setSpeed((current) => {
+      const idx = SPEED_OPTIONS.indexOf(current as (typeof SPEED_OPTIONS)[number]);
+      return SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
+    });
+  }, []);
 
   const density = measuredDensity;
   const layoutTokens = getPlaybackBarLayoutTokens(density);
@@ -263,6 +340,40 @@ export function PlaybackBar() {
         </div>
 
         <div className="flex shrink-0 items-center justify-end" style={{ gap: layoutTokens.rightZoneGap }}>
+          {/* Volume control */}
+          <Tooltip label={volume === 0 ? t("player.unmute") : t("player.mute")}>
+            <button
+              type="button"
+              className="motion-icon-button rounded-full p-2 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+              disabled={!audioSrc}
+              onClick={toggleMute}
+            >
+              {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+          </Tooltip>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={volume}
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="native-slider w-16"
+            disabled={!audioSrc}
+          />
+
+          {/* Speed control */}
+          <Tooltip label={t("player.speed")}>
+            <button
+              type="button"
+              className="motion-icon-button rounded-full px-2 py-1 text-[11px] font-semibold tabular-nums text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+              disabled={!audioSrc}
+              onClick={cycleSpeed}
+            >
+              {speed}x
+            </button>
+          </Tooltip>
+
           <Tooltip label={t("player.reveal")}>
           <button
             type="button"

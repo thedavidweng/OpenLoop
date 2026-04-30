@@ -53,13 +53,13 @@ AI music tools are powerful, but many of them share the same problems:
 - **BPM, Key, and Time Signature Controls** — Provide musical constraints for generation.
 - **Seed Reproduction** — Reuse a seed to reproduce or iterate on previous results.
 - **Built-in Preview Player** — Play generated audio inside the app.
+- **Waveform Review** — Inspect generated audio with a lightweight waveform surface.
 - **Local Generation History** — Store prompt, lyrics, model settings, seed, and output path in a local SQLite database.
 - **Export** — Save generated audio to a local output folder.
 
 ### Planned after v0.1
 
 - Repaint / local audio region regeneration
-- Better waveform display
 - Multi-model profile management
 - More robust model downloader
 - Homebrew Cask distribution

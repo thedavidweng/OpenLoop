@@ -25,7 +25,10 @@ export function ModelBootstrapBanner() {
     bootstrapStatus.state === "downloading" ? bootstrapStatus.totalBytes : null;
   const percent =
     bootstrapStatus.state === "downloading" && totalBytes
-      ? Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)))
+      ? Math.min(
+          100,
+          Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
+        )
       : null;
 
   const accent =

@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { getShortcutPlatform, type ShortcutPlatform } from "@/app/lib/app-shortcuts";
+import {
+  getShortcutPlatform,
+  type ShortcutPlatform,
+} from "@/app/lib/app-shortcuts";
 import { getWindowShellState as getWindowShellStateSnapshot } from "@/app/lib/api";
-import type { WindowShellChromeVariant, WindowShellStateSnapshot, WindowShellTier } from "@/app/lib/types";
+import type {
+  WindowShellChromeVariant,
+  WindowShellStateSnapshot,
+  WindowShellTier,
+} from "@/app/lib/types";
 
 export interface WindowShellState {
   chromeVariant: WindowShellChromeVariant;

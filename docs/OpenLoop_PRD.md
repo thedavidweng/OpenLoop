@@ -6,7 +6,7 @@
 **目标平台**: macOS Apple Silicon  
 **项目类型**: 开源、本地优先、离线 AI 音乐生成桌面应用  
 **内部代号**: OpenLoop  
-**主要实现对象**: Codex / Coding Agent / Human Developer  
+**主要实现对象**: Codex / Coding Agent / Human Developer
 
 ---
 
@@ -59,12 +59,12 @@ v0.1 不实现以下能力：
 
 ### 2.1 目标用户
 
-| 用户类型 | 需求 | OpenLoop 提供的价值 |
-|---|---|---|
-| 视频/播客/短片创作者 | 快速生成背景音乐或 demo | 本地生成、快速导出、无需订阅 |
-| 独立音乐人 | 用 AI 生成灵感草稿 | 支持歌词、风格、BPM、seed 复现 |
-| 技术用户/开发者 | 在本地运行和调试开源音乐模型 | 模型路径可控、后端透明、开源可改 |
-| 注重隐私的用户 | 避免上传歌词、prompt、音频素材 | 默认本地推理、本地历史、本地文件 |
+| 用户类型             | 需求                           | OpenLoop 提供的价值              |
+| -------------------- | ------------------------------ | -------------------------------- |
+| 视频/播客/短片创作者 | 快速生成背景音乐或 demo        | 本地生成、快速导出、无需订阅     |
+| 独立音乐人           | 用 AI 生成灵感草稿             | 支持歌词、风格、BPM、seed 复现   |
+| 技术用户/开发者      | 在本地运行和调试开源音乐模型   | 模型路径可控、后端透明、开源可改 |
+| 注重隐私的用户       | 避免上传歌词、prompt、音频素材 | 默认本地推理、本地历史、本地文件 |
 
 ### 2.2 核心用户故事
 
@@ -79,34 +79,34 @@ v0.1 不实现以下能力：
 
 ### 3.1 支持平台
 
-| 平台 | v0.1 状态 | 说明 |
-|---|---|---|
-| macOS 14+ Apple Silicon | Required | MVP 主平台 |
-| macOS 12–13 Apple Silicon | Best Effort | 可运行性需实测 |
-| Intel Mac | Unsupported / Experimental | 不作为 v0.1 验收目标 |
-| Windows/Linux | Out of Scope | 后续再评估 |
+| 平台                      | v0.1 状态                  | 说明                 |
+| ------------------------- | -------------------------- | -------------------- |
+| macOS 14+ Apple Silicon   | Required                   | MVP 主平台           |
+| macOS 12–13 Apple Silicon | Best Effort                | 可运行性需实测       |
+| Intel Mac                 | Unsupported / Experimental | 不作为 v0.1 验收目标 |
+| Windows/Linux             | Out of Scope               | 后续再评估           |
 
 ### 3.2 硬件分级
 
-| 设备级别 | 推荐配置 | 默认策略 |
-|---|---|---|
-| Apple Silicon 8 GB RAM | M1/M2 8GB | 使用低内存配置，默认关闭 LM thinking 或使用 0.6B LM |
-| Apple Silicon 16 GB RAM | M1/M2/M3 16GB | 默认启用 turbo DiT + 0.6B LM；可选 1.7B LM |
-| Apple Silicon 24 GB+ RAM | M 系列高内存设备 | 可启用 1.7B LM、高质量参数、更长时长 |
+| 设备级别                 | 推荐配置         | 默认策略                                            |
+| ------------------------ | ---------------- | --------------------------------------------------- |
+| Apple Silicon 8 GB RAM   | M1/M2 8GB        | 使用低内存配置，默认关闭 LM thinking 或使用 0.6B LM |
+| Apple Silicon 16 GB RAM  | M1/M2/M3 16GB    | 默认启用 turbo DiT + 0.6B LM；可选 1.7B LM          |
+| Apple Silicon 24 GB+ RAM | M 系列高内存设备 | 可启用 1.7B LM、高质量参数、更长时长                |
 
 ### 3.3 技术栈
 
-| 层级 | 技术选择 | 说明 |
-|---|---|---|
-| 桌面框架 | Tauri v2 | Rust 后端 + WebView 前端 |
-| 前端 | React + TypeScript + Vite | UI、状态管理、表单、播放器 |
-| 后端管理 | Rust Tauri Commands | 进程管理、文件系统、SQLite、API proxy |
-| 推理服务 | ACE-Step 1.5 local API server | 本机 HTTP API，作为 sidecar/subprocess 管理 |
-| 推理加速 | Apple MLX | Apple Silicon CPU/GPU + unified memory |
-| 依赖环境 | bundled uv-managed Python environment | 隔离 ACE-Step 运行环境，不依赖用户已安装的 uv |
-| 数据库 | SQLite | 生成历史、设置、模型 manifest |
-| 音频处理 | Native audio element + optional FFmpeg sidecar | MVP 优先播放和 WAV/MP3 导出 |
-| 打包 | Tauri bundler | `.dmg` release |
+| 层级     | 技术选择                                       | 说明                                          |
+| -------- | ---------------------------------------------- | --------------------------------------------- |
+| 桌面框架 | Tauri v2                                       | Rust 后端 + WebView 前端                      |
+| 前端     | React + TypeScript + Vite                      | UI、状态管理、表单、播放器                    |
+| 后端管理 | Rust Tauri Commands                            | 进程管理、文件系统、SQLite、API proxy         |
+| 推理服务 | ACE-Step 1.5 local API server                  | 本机 HTTP API，作为 sidecar/subprocess 管理   |
+| 推理加速 | Apple MLX                                      | Apple Silicon CPU/GPU + unified memory        |
+| 依赖环境 | bundled uv-managed Python environment          | 隔离 ACE-Step 运行环境，不依赖用户已安装的 uv |
+| 数据库   | SQLite                                         | 生成历史、设置、模型 manifest                 |
+| 音频处理 | Native audio element + optional FFmpeg sidecar | MVP 优先播放和 WAV/MP3 导出                   |
+| 打包     | Tauri bundler                                  | `.dmg` release                                |
 
 ### 3.4 核心架构
 
@@ -153,48 +153,48 @@ ACE-Step 后端负责：
 
 v0.1 优先使用 ACE-Step local HTTP API。
 
-| 接口 | 用途 |
-|---|---|
-| `GET /health` | 后端健康检查 |
-| `POST /release_task` | 创建生成任务 |
-| `POST /query_result` | 查询任务状态 |
-| `GET /v1/audio?path=...` | 下载生成音频 |
-| `GET /v1/models` | 获取可用 DiT 模型 |
-| `POST /v1/init` | 初始化或切换模型；v0.1 可只用于启动后验证 |
+| 接口                     | 用途                                      |
+| ------------------------ | ----------------------------------------- |
+| `GET /health`            | 后端健康检查                              |
+| `POST /release_task`     | 创建生成任务                              |
+| `POST /query_result`     | 查询任务状态                              |
+| `GET /v1/audio?path=...` | 下载生成音频                              |
+| `GET /v1/models`         | 获取可用 DiT 模型                         |
+| `POST /v1/init`          | 初始化或切换模型；v0.1 可只用于启动后验证 |
 
 ### 4.2 v0.1 生成参数
 
 #### 基础参数
 
-| UI 字段 | 后端字段 | 类型 | 默认值 | 约束 |
-|---|---|---:|---|---|
-| 风格描述 | `prompt` | string | empty | 建议必填，但允许歌词驱动 |
-| 负面提示词 | `negative_prompt` | string | empty | 用于排除不需要的风格或噪音 |
-| 歌词 | `lyrics` | string | empty | 支持 `[verse]`、`[chorus]` 等文本结构 |
-| 人声语言 | `vocal_language` | string | `en` | 下拉选择：`en`, `zh`, `ja`, `ko`, `auto` |
-| 时长 | `audio_duration` | number | 30 | 10–600 秒 |
-| BPM | `bpm` | number/null | null | 30–300 |
-| Key/Scale | `key_scale` | string | empty | 可选 |
-| 拍号 | `time_signature` | string | `4` | 2 / 3 / 4 / 6 |
-| 输出格式 | `audio_format` | string | `wav` | `wav` / `mp3` / `flac` |
-| 随机种子 | `seed` | int | -1 | 与 `use_random_seed=false` 配合 |
-| 使用随机种子 | `use_random_seed` | bool | true | seed 模式下 false |
-| 模型 | `model` | string | backend default | v0.1 默认 turbo |
-| Thinking | `thinking` | bool | hardware dependent | 8GB 默认 false，16GB+ 默认 true/optional |
-| 推理步数 | `inference_steps` | int | 8 | turbo 默认 8 |
+| UI 字段      | 后端字段          |        类型 | 默认值             | 约束                                     |
+| ------------ | ----------------- | ----------: | ------------------ | ---------------------------------------- |
+| 风格描述     | `prompt`          |      string | empty              | 建议必填，但允许歌词驱动                 |
+| 负面提示词   | `negative_prompt` |      string | empty              | 用于排除不需要的风格或噪音               |
+| 歌词         | `lyrics`          |      string | empty              | 支持 `[verse]`、`[chorus]` 等文本结构    |
+| 人声语言     | `vocal_language`  |      string | `en`               | 下拉选择：`en`, `zh`, `ja`, `ko`, `auto` |
+| 时长         | `audio_duration`  |      number | 30                 | 10–600 秒                                |
+| BPM          | `bpm`             | number/null | null               | 30–300                                   |
+| Key/Scale    | `key_scale`       |      string | empty              | 可选                                     |
+| 拍号         | `time_signature`  |      string | `4`                | 2 / 3 / 4 / 6                            |
+| 输出格式     | `audio_format`    |      string | `wav`              | `wav` / `mp3` / `flac`                   |
+| 随机种子     | `seed`            |         int | -1                 | 与 `use_random_seed=false` 配合          |
+| 使用随机种子 | `use_random_seed` |        bool | true               | seed 模式下 false                        |
+| 模型         | `model`           |      string | backend default    | v0.1 默认 turbo                          |
+| Thinking     | `thinking`        |        bool | hardware dependent | 8GB 默认 false，16GB+ 默认 true/optional |
+| 推理步数     | `inference_steps` |         int | 8                  | turbo 默认 8                             |
 
 #### 高级参数
 
 高级参数 v0.1 可以隐藏在折叠面板中：
 
-| UI 字段 | 后端字段 | 默认 | 说明 |
-|---|---|---|---|
-| Guidance Scale | `guidance_scale` | 7.0 | |
-| Use Format | `use_format` | false | |
-| CoT Caption | `use_cot_caption` | true | |
-| CoT Language | `use_cot_language` | true | |
-| Batch Size | `batch_size` | 1 | OpenLoop v0.1 固定为 1 以节省内存 |
-| Infer Method | `infer_method` | `ode` | |
+| UI 字段        | 后端字段           | 默认  | 说明                              |
+| -------------- | ------------------ | ----- | --------------------------------- |
+| Guidance Scale | `guidance_scale`   | 7.0   |                                   |
+| Use Format     | `use_format`       | false |                                   |
+| CoT Caption    | `use_cot_caption`  | true  |                                   |
+| CoT Language   | `use_cot_language` | true  |                                   |
+| Batch Size     | `batch_size`       | 1     | OpenLoop v0.1 固定为 1 以节省内存 |
+| Infer Method   | `infer_method`     | `ode` |                                   |
 
 v0.1 固定 `batch_size=1`，降低内存风险。
 
@@ -202,11 +202,11 @@ v0.1 固定 `batch_size=1`，降低内存风险。
 
 v0.1 提供两个推荐 profile。
 
-| Profile | 目标设备 | DiT | LM | Thinking 默认 | 说明 |
-|---|---|---|---|---|---|
-| Low Memory | 8GB | `acestep-v15-turbo` | 0.6B 或 disabled | false | 优先成功率 |
-| Standard | 16GB+ | `acestep-v15-turbo` | 0.6B | true optional | 默认推荐 |
-| Quality | 24GB+ | base/turbo 可选 | 1.7B | true | 后续版本优先完善 |
+| Profile    | 目标设备 | DiT                 | LM               | Thinking 默认 | 说明             |
+| ---------- | -------- | ------------------- | ---------------- | ------------- | ---------------- |
+| Low Memory | 8GB      | `acestep-v15-turbo` | 0.6B 或 disabled | false         | 优先成功率       |
+| Standard   | 16GB+    | `acestep-v15-turbo` | 0.6B             | true optional | 默认推荐         |
+| Quality    | 24GB+    | base/turbo 可选     | 1.7B             | true          | 后续版本优先完善 |
 
 ### 4.4 模型 Manifest
 
@@ -270,13 +270,13 @@ v0.1 的完整性检测至少包含：
 
 ### 错误处理
 
-| 错误 | UI 展示 |
-|---|---|
-| 非 Apple Silicon | 显示 unsupported/experimental 提示，允许退出 |
-| 内存低于 8GB | 显示 unsupported 提示 |
-| 内置 uv / Python 环境创建失败 | 显示失败阶段、stderr 摘要、日志路径 |
-| 后端端口被占用 | 提示换端口或关闭占用进程 |
-| 模型缺失 | 提示选择已有目录或进入下载/安装流程 |
+| 错误                          | UI 展示                                      |
+| ----------------------------- | -------------------------------------------- |
+| 非 Apple Silicon              | 显示 unsupported/experimental 提示，允许退出 |
+| 内存低于 8GB                  | 显示 unsupported 提示                        |
+| 内置 uv / Python 环境创建失败 | 显示失败阶段、stderr 摘要、日志路径          |
+| 后端端口被占用                | 提示换端口或关闭占用进程                     |
+| 模型缺失                      | 提示选择已有目录或进入下载/安装流程          |
 
 ---
 
@@ -312,18 +312,18 @@ v0.1 的完整性检测至少包含：
 
 ### 生成状态
 
-| 状态 | 含义 |
-|---|---|
-| `idle` | 无任务 |
-| `validating` | 表单校验 |
-| `backend_starting` | 后端启动中 |
-| `submitting` | 提交任务 |
-| `queued` | 后端排队 |
-| `running` | 后端生成中 |
-| `downloading` | 下载音频文件 |
-| `completed` | 生成成功 |
-| `failed` | 生成失败 |
-| `cancelled` | 用户取消 |
+| 状态               | 含义         |
+| ------------------ | ------------ |
+| `idle`             | 无任务       |
+| `validating`       | 表单校验     |
+| `backend_starting` | 后端启动中   |
+| `submitting`       | 提交任务     |
+| `queued`           | 后端排队     |
+| `running`          | 后端生成中   |
+| `downloading`      | 下载音频文件 |
+| `completed`        | 生成成功     |
+| `failed`           | 生成失败     |
+| `cancelled`        | 用户取消     |
 
 ### 任务流程
 
@@ -351,13 +351,13 @@ Validate form
 
 ### 表单校验
 
-| 字段 | 规则 |
-|---|---|
-| prompt + lyrics | 两者至少一个非空 |
-| duration | 10–600 秒 |
-| bpm | empty 或 30–300 |
-| seed | empty 或 32-bit integer |
-| batch_size | v0.1 固定 1 |
+| 字段            | 规则                    |
+| --------------- | ----------------------- |
+| prompt + lyrics | 两者至少一个非空        |
+| duration        | 10–600 秒               |
+| bpm             | empty 或 30–300         |
+| seed            | empty 或 32-bit integer |
+| batch_size      | v0.1 固定 1             |
 
 ---
 
@@ -495,17 +495,17 @@ CREATE TABLE generations (
 
 ### 设置项
 
-| 设置 | 默认 |
-|---|---|
-| 模型目录 | Application Support/OpenLoop/models |
-| 输出目录 | Music/OpenLoop |
-| 后端端口 | 8001 |
-| 默认输出格式 | wav |
-| 默认时长 | 30 |
-| 默认 Thinking | hardware profile |
-| 自动播放 | true |
-| 保存失败任务 | true |
-| 日志保留天数 | 14 |
+| 设置          | 默认                                |
+| ------------- | ----------------------------------- |
+| 模型目录      | Application Support/OpenLoop/models |
+| 输出目录      | Music/OpenLoop                      |
+| 后端端口      | 8001                                |
+| 默认输出格式  | wav                                 |
+| 默认时长      | 30                                  |
+| 默认 Thinking | hardware profile                    |
+| 自动播放      | true                                |
+| 保存失败任务  | true                                |
+| 日志保留天数  | 14                                  |
 
 ### 验收标准
 
@@ -541,12 +541,12 @@ v0.1 实现基础数值输入；v0.2 引入可视化选择。
 
 所有性能目标分为 cold start 和 warm generation。
 
-| 设备 | 任务 | 目标 |
-|---|---|---|
-| M1/M2 8GB | 10s audio, low-memory profile | 应成功完成 |
-| M1/M2 8GB | 60s audio, low-memory profile | Best effort |
-| M2/M3 16GB | 30s audio, standard profile | ≤ 60s warm generation target |
-| M3 Pro 18GB+ | 60s audio, standard profile | ≤ 60s warm generation target |
+| 设备         | 任务                          | 目标                         |
+| ------------ | ----------------------------- | ---------------------------- |
+| M1/M2 8GB    | 10s audio, low-memory profile | 应成功完成                   |
+| M1/M2 8GB    | 60s audio, low-memory profile | Best effort                  |
+| M2/M3 16GB   | 30s audio, standard profile   | ≤ 60s warm generation target |
+| M3 Pro 18GB+ | 60s audio, standard profile   | ≤ 60s warm generation target |
 
 性能验收必须记录：
 
@@ -649,16 +649,16 @@ v0.1 使用三栏结构。
 
 ### 7.5 状态文案
 
-| 场景 | 文案 |
-|---|---|
+| 场景     | 文案                              |
+| -------- | --------------------------------- |
 | 后端启动 | Starting local generation engine… |
-| 模型加载 | Loading local model… |
-| 排队 | Task queued… |
-| 生成中 | Generating audio… |
-| 下载 | Saving audio file… |
-| 成功 | Generation complete |
-| 失败 | Generation failed |
-| 后端错误 | Local backend is unavailable |
+| 模型加载 | Loading local model…              |
+| 排队     | Task queued…                      |
+| 生成中   | Generating audio…                 |
+| 下载     | Saving audio file…                |
+| 成功     | Generation complete               |
+| 失败     | Generation failed                 |
+| 后端错误 | Local backend is unavailable      |
 
 ---
 
@@ -708,18 +708,18 @@ type AppError = {
 
 ### 常见错误码
 
-| Code | 场景 | Recoverable |
-|---|---|---|
-| `UNSUPPORTED_DEVICE` | 非 Apple Silicon 或 RAM 不足 | false |
-| `BACKEND_NOT_INSTALLED` | 后端环境缺失 | true |
-| `BACKEND_START_FAILED` | 后端启动失败 | true |
-| `BACKEND_HEALTH_TIMEOUT` | 健康检查超时 | true |
-| `MODEL_NOT_FOUND` | 模型缺失 | true |
-| `TASK_SUBMIT_FAILED` | `/release_task` 失败 | true |
-| `TASK_FAILED` | 生成失败 | true |
-| `AUDIO_DOWNLOAD_FAILED` | 结果文件下载失败 | true |
-| `OUTPUT_WRITE_FAILED` | 写入导出目录失败 | true |
-| `DB_WRITE_FAILED` | 历史记录写入失败 | true |
+| Code                     | 场景                         | Recoverable |
+| ------------------------ | ---------------------------- | ----------- |
+| `UNSUPPORTED_DEVICE`     | 非 Apple Silicon 或 RAM 不足 | false       |
+| `BACKEND_NOT_INSTALLED`  | 后端环境缺失                 | true        |
+| `BACKEND_START_FAILED`   | 后端启动失败                 | true        |
+| `BACKEND_HEALTH_TIMEOUT` | 健康检查超时                 | true        |
+| `MODEL_NOT_FOUND`        | 模型缺失                     | true        |
+| `TASK_SUBMIT_FAILED`     | `/release_task` 失败         | true        |
+| `TASK_FAILED`            | 生成失败                     | true        |
+| `AUDIO_DOWNLOAD_FAILED`  | 结果文件下载失败             | true        |
+| `OUTPUT_WRITE_FAILED`    | 写入导出目录失败             | true        |
+| `DB_WRITE_FAILED`        | 历史记录写入失败             | true        |
 
 ---
 
@@ -786,13 +786,13 @@ OpenLoop 不承诺生成内容天然无版权风险。应用需要在 About 或�
 
 ## 12. 里程碑
 
-| 阶段 | 目标 | 交付物 | 验收 |
-|---|---|---|---|
-| M0 | 技术验证 | Tauri app 启动 ACE-Step 后端，生成 10 秒音频 | 本地生成成功并可播放 |
-| M1 | MVP 闭环 | 设置、生成、播放、导出、历史 | 完整用户流程可跑通 |
-| M1.5 | 稳定化 | 错误处理、日志、seed 复现、文件缺失处理 | 手动测试清单通过 |
-| M2 | Beta | Repaint、模型管理、性能优化 | Beta release |
-| M3 | v1.0 | 签名、公证、文档、发布流程 | Public stable release |
+| 阶段 | 目标     | 交付物                                       | 验收                  |
+| ---- | -------- | -------------------------------------------- | --------------------- |
+| M0   | 技术验证 | Tauri app 启动 ACE-Step 后端，生成 10 秒音频 | 本地生成成功并可播放  |
+| M1   | MVP 闭环 | 设置、生成、播放、导出、历史                 | 完整用户流程可跑通    |
+| M1.5 | 稳定化   | 错误处理、日志、seed 复现、文件缺失处理      | 手动测试清单通过      |
+| M2   | Beta     | Repaint、模型管理、性能优化                  | Beta release          |
+| M3   | v1.0     | 签名、公证、文档、发布流程                   | Public stable release |
 
 ---
 
@@ -818,17 +818,17 @@ OpenLoop 不承诺生成内容天然无版权风险。应用需要在 About 或�
 
 ### 13.3 手动测试
 
-| 测试 | 预期 |
-|---|---|
-| 首次启动 | 显示设置向导 |
-| 后端缺失 | 显示安装/配置提示 |
-| 模型缺失 | 显示模型目录提示 |
-| 10 秒生成 | 成功保存音频 |
-| 取消任务 | UI 停止轮询，状态为 cancelled |
-| 删除文件后打开历史 | 显示 file missing |
-| 输出目录无权限 | 显示可恢复错误 |
-| 重启应用 | 历史仍存在 |
-| 后端崩溃 | UI 显示 backend error |
+| 测试               | 预期                          |
+| ------------------ | ----------------------------- |
+| 首次启动           | 显示设置向导                  |
+| 后端缺失           | 显示安装/配置提示             |
+| 模型缺失           | 显示模型目录提示              |
+| 10 秒生成          | 成功保存音频                  |
+| 取消任务           | UI 停止轮询，状态为 cancelled |
+| 删除文件后打开历史 | 显示 file missing             |
+| 输出目录无权限     | 显示可恢复错误                |
+| 重启应用           | 历史仍存在                    |
+| 后端崩溃           | UI 显示 backend error         |
 
 ---
 

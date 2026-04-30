@@ -71,4 +71,3 @@ Idle state should teach the user to start from the composer. Active state should
 - Advanced controls are discoverable but not visually dominant.
 - Local-first behavior remains visible through copy and status.
 - The interface avoids backend jargon unless the user opens advanced controls.
-

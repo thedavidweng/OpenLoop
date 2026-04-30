@@ -17,7 +17,9 @@ export function useAppMenuRuntime(enabled: boolean) {
   const reopenSetup = useGenerationStore((state) => state.reopenSetup);
   const toggleSidebar = useGenerationStore((state) => state.toggleSidebar);
   const resetForm = useGenerationStore((state) => state.resetForm);
-  const outputDirectory = useGenerationStore((state) => state.settings.outputDirectory);
+  const outputDirectory = useGenerationStore(
+    (state) => state.settings.outputDirectory,
+  );
 
   useEffect(() => {
     if (!enabled) {
@@ -59,5 +61,12 @@ export function useAppMenuRuntime(enabled: boolean) {
       cancelled = true;
       unlisten?.();
     };
-  }, [enabled, openSettings, outputDirectory, reopenSetup, resetForm, toggleSidebar]);
+  }, [
+    enabled,
+    openSettings,
+    outputDirectory,
+    reopenSetup,
+    resetForm,
+    toggleSidebar,
+  ]);
 }

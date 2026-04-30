@@ -231,7 +231,8 @@
       background-color var(--motion-duration-quick) var(--motion-ease-soft-out),
       box-shadow var(--motion-duration-standard) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
-      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out);
+      transform var(--motion-duration-standard)
+        var(--motion-ease-emphasized-out);
   }
 
   .select-input {
@@ -264,7 +265,8 @@
   .select-input:focus {
     border-color: var(--color-accent);
     background: color-mix(in srgb, var(--color-surface-muted) 96%, white 4%);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--color-accent) 14%, transparent);
   }
 
   .text-input:disabled,
@@ -286,15 +288,18 @@
     font-weight: 650;
     line-height: 1;
     transition:
-      background-color var(--motion-duration-standard) var(--motion-ease-soft-out),
+      background-color var(--motion-duration-standard)
+        var(--motion-ease-soft-out),
       border-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       color var(--motion-duration-quick) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
-      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out);
+      transform var(--motion-duration-standard)
+        var(--motion-ease-emphasized-out);
   }
 
   .primary-button {
-    border: 1px solid color-mix(in srgb, var(--color-control-primary) 24%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--color-control-primary) 24%, transparent);
     background: var(--color-control-primary);
     color: var(--color-control-primary-foreground);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
@@ -320,7 +325,11 @@
 
   .secondary-button:hover:not(:disabled),
   .secondary-button:focus-visible:not(:disabled) {
-    border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border-light));
+    border-color: color-mix(
+      in srgb,
+      var(--color-accent) 42%,
+      var(--color-border-light)
+    );
     background: var(--color-ghost-hover);
     color: white;
   }

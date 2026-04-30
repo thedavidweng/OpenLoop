@@ -4,7 +4,7 @@
 **目标**: 指导 Coding Agent 从零实现 OpenLoop v0.1 Alpha  
 **输入文档**: `OpenLoop_PRD.md`  
 **开发模式**: 小步提交、每阶段可运行、优先打通技术闭环  
-**目标平台**: macOS Apple Silicon  
+**目标平台**: macOS Apple Silicon
 
 ---
 

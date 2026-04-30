@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getPromptExampleAt, PROMPT_EXAMPLE_CATEGORIES } from "@/app/lib/prompt-examples";
+import {
+  getPromptExampleAt,
+  PROMPT_EXAMPLE_CATEGORIES,
+} from "@/app/lib/prompt-examples";
 
 describe("local prompt examples", () => {
   it("covers the required music categories without network access", () => {

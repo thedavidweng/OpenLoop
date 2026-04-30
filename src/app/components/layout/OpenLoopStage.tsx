@@ -5,7 +5,9 @@ export function OpenLoopStage() {
   const generationState = useGenerationStore((state) => state.generationState);
 
   const isFailed = generationState.status === "failed";
-  const isRunning = generationState.status === "running" || generationState.status === "validating";
+  const isRunning =
+    generationState.status === "running" ||
+    generationState.status === "validating";
 
   return (
     <div
@@ -33,7 +35,9 @@ export function OpenLoopStage() {
               )}
               {generationState.statusMessage}
               {generationState.error && (
-                <span className="ml-2 opacity-80">{generationState.error.message}</span>
+                <span className="ml-2 opacity-80">
+                  {generationState.error.message}
+                </span>
               )}
             </div>
           )}

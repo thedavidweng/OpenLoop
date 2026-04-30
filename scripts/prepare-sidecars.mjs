@@ -102,7 +102,9 @@ function download(url, destination) {
 
       if (response.statusCode !== 200) {
         response.resume();
-        reject(new Error(`Download failed: ${url} returned ${response.statusCode}`));
+        reject(
+          new Error(`Download failed: ${url} returned ${response.statusCode}`),
+        );
         return;
       }
 

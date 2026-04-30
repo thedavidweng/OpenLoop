@@ -5,9 +5,8 @@ import type {
   GenerationRunResult,
 } from "@/app/lib/types";
 
-const generateMusic = vi.fn<
-  (request: GenerationRequest) => Promise<GenerationRunResult>
->();
+const generateMusic =
+  vi.fn<(request: GenerationRequest) => Promise<GenerationRunResult>>();
 
 vi.mock("@/app/lib/api", () => ({
   isTauriRuntime: () => true,

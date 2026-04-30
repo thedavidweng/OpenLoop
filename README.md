@@ -22,10 +22,10 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 ## OpenMusic Series
 
-| Project | Purpose | Status |
-|---|---|---|
-| [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active |
-| OpenLoop | Generate new music locally from prompts, lyrics, and musical parameters | Alpha in development |
+| Project                                              | Purpose                                                                                  | Status               |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------- |
+| [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active               |
+| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha in development |
 
 The shared philosophy is simple: music tools should be local-first, ownership-friendly, transparent, and useful with the media and hardware you already have.
 
@@ -39,7 +39,6 @@ AI music tools are powerful, but many of them share the same problems:
 2. They send prompts, lyrics, and creative drafts to cloud services.
 3. They hide model behavior behind closed platforms.
 4. They make export, ownership, and reproducibility harder than they should be.
-
 
 ## Features
 
@@ -72,7 +71,6 @@ AI music tools are powerful, but many of them share the same problems:
 
 ### Prerequisites
 
-
 - macOS 14+ recommended
 - Apple Silicon Mac recommended
 - Node.js 20+
@@ -80,9 +78,7 @@ AI music tools are powerful, but many of them share the same problems:
 - Rust stable toolchain
 - Tauri 2 platform dependencies
 
-
 ### Clone and run
-
 
 ```bash
 git clone https://github.com/thedavidweng/OpenLoop.git
@@ -91,9 +87,7 @@ pnpm install
 pnpm tauri dev
 ```
 
-
 ### Development checks
-
 
 ```bash
 pnpm install
@@ -106,23 +100,21 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 Detailed manual QA notes live in [`docs/testing.md`](docs/testing.md).
 
-
 For the current implementation status and more development details, see [Implementation Status](./docs/implementation-status.md).
 
 ## System Requirements
 
-| Requirement | v0.1 Target |
-|---|---|
-| Operating system | macOS 14+ recommended; macOS 12–13 best effort |
-| CPU/GPU | Apple Silicon recommended |
-| Memory | 8 GB minimum target; 16 GB+ recommended |
-| Storage | Several GB for models and generated audio |
-| Network | Required for first model/backend setup; offline afterward unless the user chooses otherwise |
+| Requirement      | v0.1 Target                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| Operating system | macOS 14+ recommended; macOS 12–13 best effort                                              |
+| CPU/GPU          | Apple Silicon recommended                                                                   |
+| Memory           | 8 GB minimum target; 16 GB+ recommended                                                     |
+| Storage          | Several GB for models and generated audio                                                   |
+| Network          | Required for first model/backend setup; offline afterward unless the user chooses otherwise |
 
 Intel Mac support is experimental and outside the v0.1 acceptance target.
 
 ---
-
 
 ## AI Models
 
@@ -130,32 +122,30 @@ OpenLoop uses [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) as the lo
 
 The app targets a profile-based model setup:
 
-| Profile | Target Device | Default Strategy |
-|---|---|---|
-| Low Memory | 8 GB Apple Silicon | Conservative settings, lower memory pressure |
-| Standard | 16 GB+ Apple Silicon | Recommended default for v0.1 |
-| Quality | 24 GB+ Apple Silicon | Higher-quality settings and larger model options |
+| Profile    | Target Device        | Default Strategy                                 |
+| ---------- | -------------------- | ------------------------------------------------ |
+| Low Memory | 8 GB Apple Silicon   | Conservative settings, lower memory pressure     |
+| Standard   | 16 GB+ Apple Silicon | Recommended default for v0.1                     |
+| Quality    | 24 GB+ Apple Silicon | Higher-quality settings and larger model options |
 
 Model files are downloaded or selected during first setup and stored locally. The application code is MIT licensed; model weights and third-party components follow their upstream licenses.
 
 ---
 
-
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-|---|---|---|
-| Desktop framework | [Tauri 2](https://v2.tauri.app/) | Rust backend + system WebView desktop shell |
-| Frontend | React + TypeScript + Vite | App UI, generation form, player, history panel |
-| Backend orchestration | Rust | Process management, API proxy, file operations, SQLite |
-| AI backend | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | Local music generation |
-| Apple Silicon inference | [MLX](https://github.com/ml-explore/mlx) | Apple Silicon CPU/GPU execution and unified memory |
-| Python environment | bundled `uv` sidecar | Reproducible local backend environment without relying on user-installed Python or `uv` |
-| Database | SQLite | Settings, generation history, backend events |
-| Packaging | Tauri bundler | macOS `.dmg` release |
+| Layer                   | Technology                                               | Purpose                                                                                 |
+| ----------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Desktop framework       | [Tauri 2](https://v2.tauri.app/)                         | Rust backend + system WebView desktop shell                                             |
+| Frontend                | React + TypeScript + Vite                                | App UI, generation form, player, history panel                                          |
+| Backend orchestration   | Rust                                                     | Process management, API proxy, file operations, SQLite                                  |
+| AI backend              | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | Local music generation                                                                  |
+| Apple Silicon inference | [MLX](https://github.com/ml-explore/mlx)                 | Apple Silicon CPU/GPU execution and unified memory                                      |
+| Python environment      | bundled `uv` sidecar                                     | Reproducible local backend environment without relying on user-installed Python or `uv` |
+| Database                | SQLite                                                   | Settings, generation history, backend events                                            |
+| Packaging               | Tauri bundler                                            | macOS `.dmg` release                                                                    |
 
 ---
-
 
 ## Architecture
 
@@ -183,7 +173,6 @@ OpenLoop uses a local API server model instead of making the UI talk directly to
 
 ---
 
-
 ## Data and Privacy
 
 OpenLoop is local-first by design.
@@ -200,7 +189,6 @@ Logs should avoid storing full lyrics or complete sensitive prompts. Backend err
 
 ---
 
-
 ## Responsible Use
 
 OpenLoop does not provide legal clearance for generated music.
@@ -208,7 +196,6 @@ OpenLoop does not provide legal clearance for generated music.
 Users are responsible for checking whether generated output is appropriate for publication, monetization, or commercial use. Avoid entering protected lyrics, melodies, voices, or prompts that explicitly imitate protected artists or copyrighted works. When publishing generated music, follow applicable laws and platform rules around AI-generated content disclosure.
 
 ---
-
 
 ## Known Limitations
 
@@ -221,7 +208,6 @@ Users are responsible for checking whether generated output is appropriate for p
 - The current UI favors local workflow coverage and technical completeness over final visual polish.
 
 ---
-
 
 ## Contributing
 
@@ -241,7 +227,6 @@ Before opening a large PR, please open an issue describing the proposed change.
 
 ---
 
-
 ## License
 
 OpenLoop application code is released under the [MIT License](LICENSE).
@@ -249,7 +234,6 @@ OpenLoop application code is released under the [MIT License](LICENSE).
 Third-party models, libraries, and tools retain their own licenses. In particular, ACE-Step, MLX, FFmpeg, Tauri, and other dependencies should be reviewed according to their upstream license terms before redistribution.
 
 ---
-
 
 ## Acknowledgements
 
@@ -261,7 +245,6 @@ OpenLoop builds on work from the open-source music and local AI ecosystem, inclu
 - The broader open-source audio tooling community
 
 OpenLoop is part of the OpenMusic series by [David Weng](https://github.com/thedavidweng).
-
 
 ## Roadmap
 

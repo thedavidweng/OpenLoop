@@ -107,4 +107,3 @@
 - Advanced ACE-Step settings remain accessible.
 - Generate/cancel/reset preserve current behavior.
 - Model-not-ready state still blocks generation with clear copy.
-

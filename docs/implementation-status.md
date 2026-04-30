@@ -31,5 +31,5 @@ uv run acestep-api
 
 ---
 
-*For the full technical development plan, see [Development Plan](./plans/Development_Plan.md).*
-*For testing notes and QA procedures, see [Testing Guide](./testing.md).*
+_For the full technical development plan, see [Development Plan](./plans/Development_Plan.md)._
+_For testing notes and QA procedures, see [Testing Guide](./testing.md)._

@@ -11,7 +11,10 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { getTooltipPosition, tooltipVisibilityReducer } from "@/app/components/overlay/Tooltip.utils";
+import {
+  getTooltipPosition,
+  tooltipVisibilityReducer,
+} from "@/app/components/overlay/Tooltip.utils";
 
 interface TooltipProps {
   children: ReactNode;
@@ -24,27 +27,40 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [open, dispatch] = useReducer(tooltipVisibilityReducer, false);
   const tooltipId = useId();
-  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  const [position, setPosition] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
 
   const describedChildren = (() => {
     if (!open || !isValidElement(children)) {
       return children;
     }
 
-    const existing = (children.props as { "aria-describedby"?: string })?.["aria-describedby"];
+    const existing = (children.props as { "aria-describedby"?: string })?.[
+      "aria-describedby"
+    ];
     const merged = existing
       ? existing.split(/\s+/).includes(tooltipId)
         ? existing
         : `${existing} ${tooltipId}`
       : tooltipId;
 
-    return cloneElement(children as ReactElement, {
-      "aria-describedby": merged,
-    } as Record<string, unknown>);
+    return cloneElement(
+      children as ReactElement,
+      {
+        "aria-describedby": merged,
+      } as Record<string, unknown>,
+    );
   })();
 
   useLayoutEffect(() => {
-    if (!open || !anchorRef.current || !tooltipRef.current || typeof window === "undefined") {
+    if (
+      !open ||
+      !anchorRef.current ||
+      !tooltipRef.current ||
+      typeof window === "undefined"
+    ) {
       return;
     }
 

@@ -29,7 +29,9 @@ function App() {
   const applyGenerationEvent = useGenerationStore(
     (state) => state.applyGenerationEvent,
   );
-  const applyModelStatus = useGenerationStore((state) => state.applyModelStatus);
+  const applyModelStatus = useGenerationStore(
+    (state) => state.applyModelStatus,
+  );
 
   useAppMenuRuntime(hydrated && api.isTauriRuntime());
 

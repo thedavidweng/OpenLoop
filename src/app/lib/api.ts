@@ -55,7 +55,9 @@ export function getDefaultAppPaths(): Promise<DefaultAppPaths> {
   return invoke<DefaultAppPaths>("get_default_app_paths");
 }
 
-export async function selectDirectory(defaultPath?: string | null): Promise<string | null> {
+export async function selectDirectory(
+  defaultPath?: string | null,
+): Promise<string | null> {
   const selected = await open({
     directory: true,
     multiple: false,
@@ -140,11 +142,15 @@ export function getModelStatus(): Promise<ModelStatusSnapshot[]> {
   return invoke<ModelStatusSnapshot[]>("get_model_status");
 }
 
-export function downloadModel(variant: ModelVariant): Promise<ModelStatusSnapshot> {
+export function downloadModel(
+  variant: ModelVariant,
+): Promise<ModelStatusSnapshot> {
   return invoke<ModelStatusSnapshot>("download_model", { variant });
 }
 
-export function deleteModel(variant: ModelVariant): Promise<ModelStatusSnapshot[]> {
+export function deleteModel(
+  variant: ModelVariant,
+): Promise<ModelStatusSnapshot[]> {
   return invoke<ModelStatusSnapshot[]>("delete_model", { variant });
 }
 
@@ -160,7 +166,10 @@ export function revealInFinder(path: string): Promise<void> {
   return invoke<void>("reveal_in_finder", { path });
 }
 
-export function copyAudioTo(path: string, destination: string): Promise<string> {
+export function copyAudioTo(
+  path: string,
+  destination: string,
+): Promise<string> {
   return invoke<string>("copy_audio_to", { path, destination });
 }
 
@@ -172,7 +181,9 @@ export function deleteGenerationFile(path: string): Promise<void> {
   return invoke<void>("delete_generation_file", { path });
 }
 
-export function readGenerationAudio(id: string): Promise<ArrayBuffer | number[]> {
+export function readGenerationAudio(
+  id: string,
+): Promise<ArrayBuffer | number[]> {
   return invoke<ArrayBuffer | number[]>("read_generation_audio", { id });
 }
 
@@ -198,6 +209,8 @@ export function discardActiveGenerationTask(id: string): Promise<void> {
   return invoke<void>("discard_active_generation_task", { id });
 }
 
-export function readGenerationWaveform(id: string): Promise<GenerationWaveform> {
+export function readGenerationWaveform(
+  id: string,
+): Promise<GenerationWaveform> {
   return invoke<GenerationWaveform>("read_generation_waveform", { id });
 }

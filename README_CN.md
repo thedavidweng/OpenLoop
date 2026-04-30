@@ -22,10 +22,10 @@
 
 ## OpenMusic 系列
 
-| 项目 | 用途 | 状态 |
-|---|---|---|
-| [OpenKara](https://github.com/thedavidweng/OpenKara) | 用本地 AI 进行人声分离，并配合同步歌词，把本地歌曲变成卡拉 OK | Active |
-| OpenLoop | 根据提示词、歌词和音乐参数，在本地生成新音乐 | Alpha in development |
+| 项目                                                 | 用途                                                          | 状态                 |
+| ---------------------------------------------------- | ------------------------------------------------------------- | -------------------- |
+| [OpenKara](https://github.com/thedavidweng/OpenKara) | 用本地 AI 进行人声分离，并配合同步歌词，把本地歌曲变成卡拉 OK | Active               |
+| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha in development |
 
 这个系列的共同理念很简单：音乐工具应该本地优先、尊重所有权、透明，并且能够直接利用你手头已有的媒体和硬件。
 
@@ -104,13 +104,13 @@ cargo test --manifest-path src-tauri/Cargo.toml
 
 ## 系统需求
 
-| 需求 | v0.1 目标 |
-|---|---|
-| 操作系统 | 推荐 macOS 14+；macOS 12 - 13 为尽力支持 |
-| CPU/GPU | 推荐 Apple Silicon |
-| 内存 | 最低 8 GB；推荐 16 GB+ |
-| 存储 | 模型和生成音频需要数 GB 空间 |
-| 网络 | 首次模型 / 后端初始化需要；之后可离线，除非用户另行选择 |
+| 需求     | v0.1 目标                                               |
+| -------- | ------------------------------------------------------- |
+| 操作系统 | 推荐 macOS 14+；macOS 12 - 13 为尽力支持                |
+| CPU/GPU  | 推荐 Apple Silicon                                      |
+| 内存     | 最低 8 GB；推荐 16 GB+                                  |
+| 存储     | 模型和生成音频需要数 GB 空间                            |
+| 网络     | 首次模型 / 后端初始化需要；之后可离线，除非用户另行选择 |
 
 Intel Mac 支持是实验性的，不在 v0.1 的验收目标内。
 
@@ -122,11 +122,11 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 
 项目采用按配置文件划分的模型方案：
 
-| 配置 | 目标设备 | 默认策略 |
-|---|---|---|
-| Low Memory | 8 GB Apple Silicon | 更保守的设置，更低内存压力 |
-| Standard | 16 GB+ Apple Silicon | v0.1 推荐默认 |
-| Quality | 24 GB+ Apple Silicon | 更高质量设置和更大的模型选项 |
+| 配置       | 目标设备             | 默认策略                     |
+| ---------- | -------------------- | ---------------------------- |
+| Low Memory | 8 GB Apple Silicon   | 更保守的设置，更低内存压力   |
+| Standard   | 16 GB+ Apple Silicon | v0.1 推荐默认                |
+| Quality    | 24 GB+ Apple Silicon | 更高质量设置和更大的模型选项 |
 
 模型文件会在首次启动时下载或选择，并保存在本地。应用代码采用 MIT 许可；模型权重和第三方组件遵循各自上游许可。
 
@@ -134,16 +134,16 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 
 ## 技术栈
 
-| 层 | 技术 | 作用 |
-|---|---|---|
-| 桌面框架 | [Tauri 2](https://v2.tauri.app/) | Rust 后端 + 系统 WebView 桌面壳 |
-| 前端 | React + TypeScript + Vite | 应用 UI、生成表单、播放器、历史面板 |
-| 后端编排 | Rust | 进程管理、API 代理、文件操作、SQLite |
-| AI 后端 | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | 本地音乐生成 |
-| Apple Silicon 推理 | [MLX](https://github.com/ml-explore/mlx) | Apple Silicon CPU/GPU 执行和统一内存 |
-| Python 环境 | 内置 `uv` sidecar | 可复现的本地后端环境，不依赖用户已安装的 Python 或 `uv` |
-| 数据库 | SQLite | 设置、生成历史、后端事件 |
-| 打包 | Tauri bundler | macOS `.dmg` 发布 |
+| 层                 | 技术                                                     | 作用                                                    |
+| ------------------ | -------------------------------------------------------- | ------------------------------------------------------- |
+| 桌面框架           | [Tauri 2](https://v2.tauri.app/)                         | Rust 后端 + 系统 WebView 桌面壳                         |
+| 前端               | React + TypeScript + Vite                                | 应用 UI、生成表单、播放器、历史面板                     |
+| 后端编排           | Rust                                                     | 进程管理、API 代理、文件操作、SQLite                    |
+| AI 后端            | [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) | 本地音乐生成                                            |
+| Apple Silicon 推理 | [MLX](https://github.com/ml-explore/mlx)                 | Apple Silicon CPU/GPU 执行和统一内存                    |
+| Python 环境        | 内置 `uv` sidecar                                        | 可复现的本地后端环境，不依赖用户已安装的 Python 或 `uv` |
+| 数据库             | SQLite                                                   | 设置、生成历史、后端事件                                |
+| 打包               | Tauri bundler                                            | macOS `.dmg` 发布                                       |
 
 ---
 

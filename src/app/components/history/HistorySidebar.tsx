@@ -1,5 +1,13 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Clock3, Folder, Play, Settings2, Trash2, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  Folder,
+  Play,
+  Settings2,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";
@@ -26,7 +34,9 @@ export function HistorySidebar() {
   const loadGenerationSettings = useGenerationStore(
     (state) => state.loadGenerationSettings,
   );
-  const currentGeneration = useGenerationStore((state) => state.currentGeneration);
+  const currentGeneration = useGenerationStore(
+    (state) => state.currentGeneration,
+  );
   const [filter, setFilter] = useState<HistoryFilter>("all");
 
   const filteredHistory = useMemo(() => {
@@ -47,9 +57,11 @@ export function HistorySidebar() {
   const counts = useMemo(
     () => ({
       all: history.length,
-      completed: history.filter((record) => record.status === "completed").length,
+      completed: history.filter((record) => record.status === "completed")
+        .length,
       failed: history.filter((record) => record.status === "failed").length,
-      cancelled: history.filter((record) => record.status === "cancelled").length,
+      cancelled: history.filter((record) => record.status === "cancelled")
+        .length,
     }),
     [history],
   );
@@ -69,12 +81,19 @@ export function HistorySidebar() {
           {t("history.localRuns")}
         </div>
 
-        {([
-          ["all", t("history.all"), counts.all, Folder],
-          ["completed", t("history.completed"), counts.completed, CheckCircle2],
-          ["failed", t("history.failed"), counts.failed, XCircle],
-          ["cancelled", t("history.cancelled"), counts.cancelled, XCircle],
-        ] as const).map(([value, label, count, Icon]) => {
+        {(
+          [
+            ["all", t("history.all"), counts.all, Folder],
+            [
+              "completed",
+              t("history.completed"),
+              counts.completed,
+              CheckCircle2,
+            ],
+            ["failed", t("history.failed"), counts.failed, XCircle],
+            ["cancelled", t("history.cancelled"), counts.cancelled, XCircle],
+          ] as const
+        ).map(([value, label, count, Icon]) => {
           const selected = filter === value;
           return (
             <button
@@ -91,7 +110,9 @@ export function HistorySidebar() {
                 <Icon size={14} className="text-[var(--color-accent)]" />
                 <span>{label}</span>
               </span>
-              <span className="text-[11px] text-[var(--color-text-dim)]">{count}</span>
+              <span className="text-[11px] text-[var(--color-text-dim)]">
+                {count}
+              </span>
             </button>
           );
         })}
@@ -128,7 +149,9 @@ export function HistorySidebar() {
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[13px] font-medium text-white">
-                          {item.prompt || item.lyrics.slice(0, 48) || t("history.untitled")}
+                          {item.prompt ||
+                            item.lyrics.slice(0, 48) ||
+                            t("history.untitled")}
                         </p>
                         {/* Key parameters row */}
                         <p className="mt-1 truncate text-[11px] text-[var(--color-text-dim)]">
@@ -136,7 +159,8 @@ export function HistorySidebar() {
                           {item.bpm && item.keyScale ? " · " : null}
                           {item.keyScale || null}
                           {(item.bpm || item.keyScale) && " · "}
-                          {item.audioFormat.toUpperCase()} · {Math.round(item.durationSeconds)}s
+                          {item.audioFormat.toUpperCase()} ·{" "}
+                          {Math.round(item.durationSeconds)}s
                         </p>
                       </div>
                       <span

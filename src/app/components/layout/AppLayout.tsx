@@ -3,7 +3,10 @@ import { MainContentView } from "@/app/components/layout/MainContentView";
 import { SidebarRail } from "@/app/components/layout/SidebarRail";
 import { WindowChrome } from "@/app/components/layout/WindowChrome";
 import { HistorySidebar } from "@/app/components/history/HistorySidebar";
-import { createWindowShellStyle, useWindowShellState } from "@/app/lib/window-shell";
+import {
+  createWindowShellStyle,
+  useWindowShellState,
+} from "@/app/lib/window-shell";
 import { useGenerationStore } from "@/app/lib/store";
 import {
   APP_SHORTCUTS,
@@ -19,7 +22,9 @@ export function AppLayout() {
   const toggleSettings = useGenerationStore((state) => state.toggleSettings);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
-  const requestPlaybackToggle = useGenerationStore((state) => state.requestPlaybackToggle);
+  const requestPlaybackToggle = useGenerationStore(
+    (state) => state.requestPlaybackToggle,
+  );
   const generationState = useGenerationStore((state) => state.generationState);
   const windowShellState = useWindowShellState(sidebarWidth);
 
@@ -29,21 +34,34 @@ export function AppLayout() {
       if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.togglePlayback)) {
         event.preventDefault();
         requestPlaybackToggle();
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSidebar)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSidebar)
+      ) {
         event.preventDefault();
         toggleSidebar();
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.newGeneration)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.newGeneration)
+      ) {
         event.preventDefault();
         resetForm();
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSettings)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSettings)
+      ) {
         event.preventDefault();
         toggleSettings();
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.submitGeneration)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.submitGeneration)
+      ) {
         event.preventDefault();
-        if (generationState.status !== "running" && generationState.status !== "validating") {
+        if (
+          generationState.status !== "running" &&
+          generationState.status !== "validating"
+        ) {
           void runGeneration();
         }
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.retryGeneration)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.retryGeneration)
+      ) {
         event.preventDefault();
         if (generationState.status === "failed") {
           void runGeneration();
@@ -53,7 +71,14 @@ export function AppLayout() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, resetForm, toggleSettings, runGeneration, requestPlaybackToggle, generationState.status]);
+  }, [
+    toggleSidebar,
+    resetForm,
+    toggleSettings,
+    runGeneration,
+    requestPlaybackToggle,
+    generationState.status,
+  ]);
 
   return (
     <div

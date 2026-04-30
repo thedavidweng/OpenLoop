@@ -131,19 +131,26 @@ export function validateGenerationForm(
   }
 
   const repaintingStart = parseOptionalNumber(form.repaintingStart);
-  if (Number.isNaN(repaintingStart) || (repaintingStart !== null && repaintingStart < 0)) {
+  if (
+    Number.isNaN(repaintingStart) ||
+    (repaintingStart !== null && repaintingStart < 0)
+  ) {
     errors.repaintingStart = validationMessage("repaintingStart");
   }
 
   const repaintingEnd = parseOptionalNumber(form.repaintingEnd);
-  if (Number.isNaN(repaintingEnd) || (repaintingEnd !== null && repaintingEnd < -1)) {
+  if (
+    Number.isNaN(repaintingEnd) ||
+    (repaintingEnd !== null && repaintingEnd < -1)
+  ) {
     errors.repaintingEnd = validationMessage("repaintingEnd");
   }
 
   const audioCoverStrength = parseOptionalNumber(form.audioCoverStrength);
   if (
     Number.isNaN(audioCoverStrength) ||
-    (audioCoverStrength !== null && (audioCoverStrength < 0 || audioCoverStrength > 1))
+    (audioCoverStrength !== null &&
+      (audioCoverStrength < 0 || audioCoverStrength > 1))
   ) {
     errors.audioCoverStrength = validationMessage("audioCoverStrength");
   }
@@ -188,7 +195,8 @@ export function validateGenerationForm(
     vocalLanguage: form.vocalLanguage.trim() || "en",
     durationSeconds,
     bpm: bpm ?? undefined,
-    keyScale: form.keyScale === "auto" ? undefined : trimOptional(form.keyScale),
+    keyScale:
+      form.keyScale === "auto" ? undefined : trimOptional(form.keyScale),
     timeSignature: form.timeSignature,
     audioFormat: form.audioFormat,
     model: trimOptional(form.model),

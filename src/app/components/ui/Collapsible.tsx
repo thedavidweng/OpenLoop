@@ -63,9 +63,7 @@ export function Collapsible({
           gridTemplateRows: isOpen ? "1fr" : "0fr",
         }}
       >
-        <div className={`min-h-0 ${contentClassName}`}>
-          {children}
-        </div>
+        <div className={`min-h-0 ${contentClassName}`}>{children}</div>
       </div>
     </div>
   );

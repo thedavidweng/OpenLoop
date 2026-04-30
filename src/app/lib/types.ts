@@ -10,7 +10,13 @@ export type RecommendedProfile =
   | "unsupported";
 
 export type ModelVariant = "lite" | "turbo" | "pro";
-export type TaskType = "text2music" | "cover" | "repaint" | "lego" | "extract" | "complete";
+export type TaskType =
+  | "text2music"
+  | "cover"
+  | "repaint"
+  | "lego"
+  | "extract"
+  | "complete";
 export type LmBackend = "pt" | "vllm" | "mlx";
 
 export type GenerationRequest = {
@@ -203,13 +209,38 @@ export type DeviceInfo = {
 };
 
 export type GenerationEvent =
-  | { type: "backend_starting"; variationCurrent?: number; variationTotal?: number }
-  | { type: "submitted"; taskId: string; variationCurrent?: number; variationTotal?: number }
+  | {
+      type: "backend_starting";
+      variationCurrent?: number;
+      variationTotal?: number;
+    }
+  | {
+      type: "submitted";
+      taskId: string;
+      variationCurrent?: number;
+      variationTotal?: number;
+    }
   | { type: "queued"; variationCurrent?: number; variationTotal?: number }
-  | { type: "running"; variationCurrent?: number; variationTotal?: number; progressPercent?: number }
+  | {
+      type: "running";
+      variationCurrent?: number;
+      variationTotal?: number;
+      progressPercent?: number;
+    }
   | { type: "downloading"; variationCurrent?: number; variationTotal?: number }
-  | { type: "completed"; generationId: string; outputPath: string; variationCurrent?: number; variationTotal?: number }
-  | { type: "cancelled"; generationId: string; variationCurrent?: number; variationTotal?: number }
+  | {
+      type: "completed";
+      generationId: string;
+      outputPath: string;
+      variationCurrent?: number;
+      variationTotal?: number;
+    }
+  | {
+      type: "cancelled";
+      generationId: string;
+      variationCurrent?: number;
+      variationTotal?: number;
+    }
   | { type: "failed"; error: AppError };
 
 export type ActiveGenerationTask = {

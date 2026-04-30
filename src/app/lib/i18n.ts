@@ -14,7 +14,10 @@ export function detectSystemLanguage(): string {
     return nav;
   }
   const base = nav.split("-")[0];
-  return SUPPORTED_LANGUAGES.find((language) => language.code.startsWith(base))?.code ?? "en";
+  return (
+    SUPPORTED_LANGUAGES.find((language) => language.code.startsWith(base))
+      ?.code ?? "en"
+  );
 }
 
 i18next.use(initReactI18next).init({

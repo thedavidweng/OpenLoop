@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -13,6 +14,13 @@ export default defineConfig(() => ({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
+  },
+  test: {
+    environment: "jsdom",
+    include: ["tests/unit/**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", "src-tauri/**", "reference/**"],
+    setupFiles: ["./vitest.setup.ts"],
+    globals: true,
   },
   clearScreen: false,
   server: {

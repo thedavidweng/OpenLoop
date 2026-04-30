@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+coverage
+
+src-tauri/target
+src-tauri/binaries
+src-tauri/gen
+src-tauri/icons
+
+reference

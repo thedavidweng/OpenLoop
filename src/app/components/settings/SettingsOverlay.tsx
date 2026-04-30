@@ -11,18 +11,21 @@ import {
 } from "lucide-react";
 import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 import { SettingsSectionCard } from "@/app/components/settings/SettingsSectionCard";
+import { useToast } from "@/app/components/overlay/Toast";
 import {
   MODEL_PACKS,
   MODEL_VARIANTS,
+  aggregatePackStatus,
+  packIdForVariant,
+  primaryVariantForPack,
   type ModelPackId,
-  useGenerationStore,
-} from "@/app/lib/store";
+} from "@/app/lib/model-packs";
+import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
 import { SUPPORTED_LANGUAGES } from "@/app/lib/i18n";
 import type {
   AppSettings,
   ModelDownloadState,
-  ModelStatusSnapshot,
   ModelVariant,
 } from "@/app/lib/types";
 
@@ -35,7 +38,10 @@ type EditableSettingKey =
   | "defaultAudioFormat"
   | "defaultThinking";
 
-type DirectorySettingKey = "outputDirectory" | "modelDirectory" | "logDirectory";
+type DirectorySettingKey =
+  | "outputDirectory"
+  | "modelDirectory"
+  | "logDirectory";
 
 function stateKey(state: ModelDownloadState): string {
   switch (state) {
@@ -61,44 +67,6 @@ function progressPercent(downloadedBytes: number, totalBytes?: number | null) {
     100,
     Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
   );
-}
-
-function packForVariant(variant: ModelVariant): ModelPackId {
-  return variant === "pro" ? "xl" : "standard";
-}
-
-function primaryVariantForPack(packId: ModelPackId): ModelVariant {
-  return MODEL_PACKS[packId].primaryVariant;
-}
-
-function aggregatePackStatus(
-  statuses: ModelStatusSnapshot[],
-  packId: ModelPackId,
-) {
-  const rows = statuses.filter((status) =>
-    MODEL_PACKS[packId].variants.includes(status.variant),
-  );
-  const row = rows[0];
-  const state: ModelDownloadState = rows.some((item) => item.state === "failed")
-    ? "failed"
-    : rows.some((item) => item.state === "downloading")
-      ? "downloading"
-      : rows.some((item) => item.state === "ready")
-        ? "ready"
-        : "not_installed";
-  const downloadedBytes =
-    rows.length > 0 ? Math.max(...rows.map((item) => item.downloadedBytes)) : 0;
-  const totalBytes =
-    rows.find((item) => item.totalBytes)?.totalBytes ??
-    MODEL_PACKS[packId].estimatedSizeBytes;
-  const error = rows.find((item) => item.error)?.error;
-  return {
-    state,
-    downloadedBytes,
-    totalBytes,
-    error,
-    sample: row,
-  };
 }
 
 function DirectoryPickerRow({
@@ -174,7 +142,8 @@ function StateBadge({ state }: { state: ModelDownloadState }) {
     },
     downloading: {
       label: t("model.downloading"),
-      classes: "bg-[var(--color-accent)]/12 text-[var(--color-accent)] border-[var(--color-accent)]/30",
+      classes:
+        "bg-[var(--color-accent)]/12 text-[var(--color-accent)] border-[var(--color-accent)]/30",
       Icon: Loader2,
     },
     failed: {
@@ -325,7 +294,7 @@ function ModelVariantCard({
 }) {
   const { t } = useTranslation();
   const meta = MODEL_VARIANTS[variant];
-  const packId = packForVariant(variant);
+  const packId = packIdForVariant(variant);
 
   return (
     <div
@@ -372,6 +341,7 @@ function ModelVariantCard({
 
 export function SettingsOverlay() {
   const { i18n, t } = useTranslation();
+  const { addToast } = useToast();
   const settings = useGenerationStore((state) => state.settings);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
   const history = useGenerationStore((state) => state.history);
@@ -517,7 +487,9 @@ export function SettingsOverlay() {
               key={section.id}
               type="button"
               onClick={() => {
-                const el = document.getElementById(`settings-section-${section.id}`);
+                const el = document.getElementById(
+                  `settings-section-${section.id}`,
+                );
                 el?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
@@ -576,7 +548,7 @@ export function SettingsOverlay() {
                   {t("settings.runProfiles")}
                 </p>
                 {(["lite", "turbo", "pro"] as const).map((variant) => {
-                  const packId = packForVariant(variant);
+                  const packId = packIdForVariant(variant);
                   const packStatus = aggregatePackStatus(modelStatuses, packId);
                   return (
                     <ModelVariantCard
@@ -769,6 +741,7 @@ export function SettingsOverlay() {
                       ]);
                       await hydrateFromPersistence();
                       setSaveNotice(t("settings.saved"));
+                      addToast("success", t("toast.settingsSaved"));
                     })();
                   }}
                   disabled={!backendPortValid}

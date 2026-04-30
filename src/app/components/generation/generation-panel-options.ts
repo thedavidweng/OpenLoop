@@ -1,0 +1,46 @@
+export const SELECT_OPTIONS = {
+  vocalLanguage: ["en", "zh", "ja", "ko", "auto"] as const,
+  keyScale: [
+    "auto",
+    "C Major",
+    "C Minor",
+    "D Major",
+    "D Minor",
+    "E Major",
+    "E Minor",
+    "F Major",
+    "F Minor",
+    "G Major",
+    "G Minor",
+    "A Major",
+    "A Minor",
+    "B Major",
+    "B Minor",
+  ] as const,
+  timeSignature: ["2", "3", "4", "6"] as const,
+  audioFormat: ["wav", "mp3", "flac", "ogg"] as const,
+  taskType: [
+    "text2music",
+    "cover",
+    "repaint",
+    "lego",
+    "extract",
+    "complete",
+  ] as const,
+  lmBackend: ["mlx", "pt", "vllm"] as const,
+  lmModelPath: [
+    "",
+    "acestep-5Hz-lm-0.6B",
+    "acestep-5Hz-lm-1.7B",
+    "acestep-5Hz-lm-4B",
+  ] as const,
+};
+
+export const STRUCTURE_TAGS = [
+  "tagVerse",
+  "tagPreChorus",
+  "tagChorus",
+  "tagBridge",
+  "tagOutro",
+  "tagInstrumental",
+] as const;

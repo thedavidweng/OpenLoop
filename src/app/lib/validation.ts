@@ -12,6 +12,8 @@ const MIN_BPM = 30;
 const MAX_BPM = 300;
 const INT32_MIN = -2147483648;
 const INT32_MAX = 2147483647;
+const MIN_VARIATIONS = 1;
+const MAX_VARIATIONS = 4;
 
 export const DEFAULT_GENERATION_FORM_VALUES: GenerationFormValues = {
   prompt: "",
@@ -19,8 +21,9 @@ export const DEFAULT_GENERATION_FORM_VALUES: GenerationFormValues = {
   lyrics: "",
   vocalLanguage: "en",
   durationSeconds: "30",
+  bpmMode: "auto",
   bpm: "",
-  keyScale: "",
+  keyScale: "auto",
   timeSignature: "4",
   audioFormat: "wav",
   model: "acestep-v15-turbo",
@@ -104,8 +107,9 @@ export function validateGenerationForm(
     errors.durationSeconds = validationMessage("duration");
   }
 
-  const bpm = parseOptionalInteger(form.bpm);
+  const bpm = form.bpmMode === "manual" ? parseOptionalInteger(form.bpm) : null;
   if (
+    form.bpmMode === "manual" &&
     bpm !== null &&
     (!Number.isFinite(bpm) || bpm < MIN_BPM || bpm > MAX_BPM)
   ) {
@@ -159,6 +163,14 @@ export function validateGenerationForm(
     }
   }
 
+  if (
+    !Number.isInteger(form.variations) ||
+    form.variations < MIN_VARIATIONS ||
+    form.variations > MAX_VARIATIONS
+  ) {
+    errors.prompt = validationMessage("variations");
+  }
+
   if (Object.keys(errors).length > 0) {
     return {
       isValid: false,
@@ -176,7 +188,7 @@ export function validateGenerationForm(
     vocalLanguage: form.vocalLanguage.trim() || "en",
     durationSeconds,
     bpm: bpm ?? undefined,
-    keyScale: trimOptional(form.keyScale),
+    keyScale: form.keyScale === "auto" ? undefined : trimOptional(form.keyScale),
     timeSignature: form.timeSignature,
     audioFormat: form.audioFormat,
     model: trimOptional(form.model),
@@ -198,6 +210,7 @@ export function validateGenerationForm(
     audioCoverStrength: audioCoverStrength ?? undefined,
     useRandomSeed: form.useRandomSeed,
     seed,
+    variationCount: form.variations,
   };
 
   return {

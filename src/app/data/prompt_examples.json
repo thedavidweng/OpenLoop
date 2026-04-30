@@ -1,0 +1,26 @@
+[
+  {
+    "category": "pop",
+    "prompt": "bright pop anthem with punchy drums, shimmering guitars, warm bass, and a memorable uplifting chorus"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "cinematic orchestral cue with soft piano, swelling strings, deep percussion, and a hopeful emotional arc"
+  },
+  {
+    "category": "edm",
+    "prompt": "high-energy EDM track with sidechained synth bass, crisp claps, euphoric supersaws, and a festival drop"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "intimate acoustic folk song with fingerpicked guitar, brushed percussion, gentle bass, and natural room warmth"
+  },
+  {
+    "category": "ambient",
+    "prompt": "ambient piano texture with slow evolving pads, distant granular echoes, soft sub movement, and a calm nocturnal mood"
+  },
+  {
+    "category": "trailer",
+    "prompt": "epic trailer build with pulsing low strings, hybrid drums, brass stabs, risers, and a massive final hit"
+  }
+]

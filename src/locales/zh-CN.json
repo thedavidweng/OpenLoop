@@ -144,6 +144,8 @@
     "language": "人声语言",
     "duration": "时长",
     "bpm": "BPM",
+    "auto": "自动",
+    "manual": "手动",
     "optional": "可选",
     "keyScale": "调性 / 音阶",
     "keyScalePlaceholder": "自动（如 C 大调）",
@@ -206,6 +208,10 @@
     "chooseFile": "选择文件",
     "clearFile": "清除",
     "randomInspiration": "随机灵感",
+    "enhancePrompt": "本地增强提示词",
+    "recoveryAvailable": "检测到 {{count}} 个未完成的本地任务。",
+    "resumeTask": "继续轮询",
+    "discardTask": "丢弃",
     "volume": "音量",
     "mute": "静音",
     "unmute": "取消静音",
@@ -274,7 +280,8 @@
     "repaintingStart": "重绘开始时间可以留空，或填写大于等于 0 的数值。",
     "repaintingEnd": "重绘结束时间可以留空、填写 -1，或填写大于等于 0 的数值。",
     "audioCoverStrength": "翻唱强度可以留空，或填写 0 到 1 之间的数值。",
-    "seed": "种子必须是有效的 32 位整数。"
+    "seed": "种子必须是有效的 32 位整数。",
+    "variations": "变体数量必须在 1 到 4 之间。"
   },
   "status": {
     "ready": "可以校验下一个本地生成请求。",
@@ -309,7 +316,9 @@
     "submissionFailed": "本地生成栈提交任务失败。",
     "runningPreview": "正在运行浏览器预览生成...",
     "previewFailedPrompt": "预览生成失败，请调整提示词后重试。",
-    "previewCompletedShort": "预览生成已完成。"
+    "previewCompletedShort": "预览生成已完成。",
+    "recovering": "正在继续未完成的本地生成任务...",
+    "recoveryFailed": "未完成任务无法继续。"
   },
   "errors": {
     "validationDetails": "开始生成前请修正表单中的错误。",
@@ -393,8 +402,12 @@
   "toast": {
     "generationCompleted": "生成已完成。",
     "generationFailed": "生成失败。",
+    "promptEnhanced": "提示词已在本地增强。",
+    "promptEnhanceFailed": "提示词增强失败。",
+    "settingsSaved": "设置已保存。",
     "settingsCopied": "参数已复制到剪贴板。",
     "fileExported": "文件已导出。",
+    "fileDeleted": "文件已删除。",
     "retryStarted": "正在使用相同参数重试..."
   }
 }

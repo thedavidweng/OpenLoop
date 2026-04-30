@@ -3,14 +3,18 @@ import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import type {
   AppSettings,
+  ActiveGenerationTask,
   BackendStatus,
   DeviceInfo,
   GenerationEvent,
+  GenerationRunResult,
+  GenerationWaveform,
   ModelCatalogItem,
   ModelStatusSnapshot,
   GenerationRecord,
   GenerationRequest,
   ModelVariant,
+  PromptEnhancementResult,
   WindowShellStateSnapshot,
 } from "@/app/lib/types";
 
@@ -88,8 +92,8 @@ export function insertGeneration(
 
 export function generateMusic(
   request: GenerationRequest,
-): Promise<GenerationRecord> {
-  return invoke<GenerationRecord>("generate_music", { request });
+): Promise<GenerationRunResult> {
+  return invoke<GenerationRunResult>("generate_music", { request });
 }
 
 export function cancelGeneration(): Promise<void> {
@@ -174,4 +178,26 @@ export function readGenerationAudio(id: string): Promise<ArrayBuffer | number[]>
 
 export function deleteGeneration(id: string): Promise<void> {
   return invoke<void>("delete_generation", { id });
+}
+
+export function enhancePrompt(
+  request: GenerationRequest,
+): Promise<PromptEnhancementResult> {
+  return invoke<PromptEnhancementResult>("enhance_prompt", { request });
+}
+
+export function listActiveGenerationTasks(): Promise<ActiveGenerationTask[]> {
+  return invoke<ActiveGenerationTask[]>("list_active_generation_tasks");
+}
+
+export function resumeGenerationTask(id: string): Promise<GenerationRecord> {
+  return invoke<GenerationRecord>("resume_generation_task", { id });
+}
+
+export function discardActiveGenerationTask(id: string): Promise<void> {
+  return invoke<void>("discard_active_generation_task", { id });
+}
+
+export function readGenerationWaveform(id: string): Promise<GenerationWaveform> {
+  return invoke<GenerationWaveform>("read_generation_waveform", { id });
 }

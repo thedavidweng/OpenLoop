@@ -18,14 +18,12 @@ import * as api from "@/app/lib/api";
 import {
   MODEL_PACKS,
   MODEL_VARIANTS,
+  aggregatePackStatus,
+  packIdForVariant,
   type ModelPackId,
-  useGenerationStore,
-} from "@/app/lib/store";
-import type {
-  ModelDownloadState,
-  ModelStatusSnapshot,
-  ModelVariant,
-} from "@/app/lib/types";
+} from "@/app/lib/model-packs";
+import { useGenerationStore } from "@/app/lib/store";
+import type { ModelDownloadState, ModelVariant } from "@/app/lib/types";
 
 interface SetupScreenProps {
   onClose?: () => void;
@@ -105,33 +103,6 @@ function progressPercent(downloadedBytes: number, totalBytes?: number | null) {
   );
 }
 
-function packForVariant(variant: ModelVariant): ModelPackId {
-  return variant === "pro" ? "xl" : "standard";
-}
-
-function aggregatePackStatus(
-  statuses: ModelStatusSnapshot[],
-  packId: ModelPackId,
-) {
-  const rows = statuses.filter((status) =>
-    MODEL_PACKS[packId].variants.includes(status.variant),
-  );
-  const state: ModelDownloadState = rows.some((item) => item.state === "failed")
-    ? "failed"
-    : rows.some((item) => item.state === "downloading")
-      ? "downloading"
-      : rows.some((item) => item.state === "ready")
-        ? "ready"
-        : "not_installed";
-  const downloadedBytes =
-    rows.length > 0 ? Math.max(...rows.map((item) => item.downloadedBytes)) : 0;
-  const totalBytes =
-    rows.find((item) => item.totalBytes)?.totalBytes ??
-    MODEL_PACKS[packId].estimatedSizeBytes;
-  const error = rows.find((item) => item.error)?.error;
-  return { state, downloadedBytes, totalBytes, error };
-}
-
 function PackDownloadCard({
   packId,
   state,
@@ -158,9 +129,7 @@ function PackDownloadCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-semibold text-white">
-              {pack.label}
-            </p>
+            <p className="text-[13px] font-semibold text-white">{pack.label}</p>
             {state === "ready" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                 <CheckCircle2 size={10} />
@@ -244,7 +213,7 @@ function VariantPickerCard({
 }) {
   const { t } = useTranslation();
   const meta = MODEL_VARIANTS[variant];
-  const packId = packForVariant(variant);
+  const packId = packIdForVariant(variant);
   const packReady = packState === "ready";
 
   return (
@@ -298,8 +267,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
   );
 
   const currentIndex = STEP_ORDER.indexOf(step);
-  const recommendedProfile =
-    deviceInfo?.recommendedProfile ?? settings.profile;
+  const recommendedProfile = deviceInfo?.recommendedProfile ?? settings.profile;
   const recommendedVariant = settings.modelVariant ?? "turbo";
 
   const stepTitle = useMemo(() => {
@@ -483,7 +451,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 {(["lite", "turbo", "pro"] as const).map((variant) => {
                   const status = aggregatePackStatus(
                     modelStatuses,
-                    packForVariant(variant),
+                    packIdForVariant(variant),
                   );
                   return (
                     <VariantPickerCard

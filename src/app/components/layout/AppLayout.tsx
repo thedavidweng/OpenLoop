@@ -7,8 +7,7 @@ import { createWindowShellStyle, useWindowShellState } from "@/app/lib/window-sh
 import { useGenerationStore } from "@/app/lib/store";
 import {
   APP_SHORTCUTS,
-  isInputFocused,
-  matchesShortcut,
+  shouldHandleGlobalShortcut,
 } from "@/app/lib/app-shortcuts";
 
 export function AppLayout() {
@@ -20,30 +19,31 @@ export function AppLayout() {
   const toggleSettings = useGenerationStore((state) => state.toggleSettings);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
+  const requestPlaybackToggle = useGenerationStore((state) => state.requestPlaybackToggle);
   const generationState = useGenerationStore((state) => state.generationState);
   const windowShellState = useWindowShellState(sidebarWidth);
 
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't handle shortcuts when input is focused (except Space for non-input)
-      if (isInputFocused()) return;
-
-      if (matchesShortcut(event, APP_SHORTCUTS.toggleSidebar)) {
+      if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.togglePlayback)) {
+        event.preventDefault();
+        requestPlaybackToggle();
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSidebar)) {
         event.preventDefault();
         toggleSidebar();
-      } else if (matchesShortcut(event, APP_SHORTCUTS.newGeneration)) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.newGeneration)) {
         event.preventDefault();
         resetForm();
-      } else if (matchesShortcut(event, APP_SHORTCUTS.toggleSettings)) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSettings)) {
         event.preventDefault();
         toggleSettings();
-      } else if (matchesShortcut(event, APP_SHORTCUTS.submitGeneration)) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.submitGeneration)) {
         event.preventDefault();
         if (generationState.status !== "running" && generationState.status !== "validating") {
           void runGeneration();
         }
-      } else if (matchesShortcut(event, APP_SHORTCUTS.retryGeneration)) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.retryGeneration)) {
         event.preventDefault();
         if (generationState.status === "failed") {
           void runGeneration();
@@ -53,7 +53,7 @@ export function AppLayout() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleSidebar, resetForm, toggleSettings, runGeneration, generationState.status]);
+  }, [toggleSidebar, resetForm, toggleSettings, runGeneration, requestPlaybackToggle, generationState.status]);
 
   return (
     <div

@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 use crate::models::{
     errors::{AppError, AppResult},
-    generation::GenerationRequest,
+    generation::{GenerationRequest, PromptEnhancementResult},
 };
 
 const HEALTH_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(20);
@@ -176,6 +176,60 @@ impl AceClient {
             })?;
 
         Ok(AceReleasedTask { task_id })
+    }
+
+    pub fn format_input(&self, request: &GenerationRequest) -> AppResult<PromptEnhancementResult> {
+        let param_obj = json!({
+            "duration": request.duration_seconds,
+            "bpm": request.bpm,
+            "key": request.key_scale,
+            "time_signature": request.time_signature,
+            "language": request.vocal_language,
+        });
+        let payload = json!({
+            "prompt": request.prompt,
+            "lyrics": request.lyrics,
+            "temperature": 0.85,
+            "param_obj": param_obj.to_string(),
+        });
+        let envelope: AceEnvelope<Value> = self.post_envelope(
+            "/format_input",
+            &payload,
+            RELEASE_TASK_TIMEOUT,
+            AppError::task_submit_failed,
+        )?;
+        Self::ensure_success(&envelope, AppError::task_submit_failed)?;
+
+        Ok(PromptEnhancementResult {
+            prompt: envelope
+                .data
+                .get("caption")
+                .and_then(Value::as_str)
+                .unwrap_or(request.prompt.as_str())
+                .to_owned(),
+            lyrics: envelope
+                .data
+                .get("lyrics")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            bpm: envelope.data.get("bpm").and_then(Value::as_i64),
+            key_scale: envelope
+                .data
+                .get("key_scale")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            time_signature: envelope
+                .data
+                .get("time_signature")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            duration_seconds: envelope.data.get("duration").and_then(Value::as_f64),
+            vocal_language: envelope
+                .data
+                .get("vocal_language")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+        })
     }
 
     pub fn query_result(&self, task_ids: Vec<String>) -> AppResult<Vec<AceTaskResult>> {
@@ -441,6 +495,7 @@ mod tests {
             audio_cover_strength: None,
             use_random_seed: true,
             seed: None,
+            variation_count: 1,
         }
     }
 
@@ -501,6 +556,27 @@ mod tests {
             AceTaskState::Succeeded { file_path } => assert_eq!(file_path, "/tmp/generated.flac"),
             other => panic!("expected succeeded task state, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn format_input_parses_enhanced_caption_and_metadata() {
+        let mut server = Server::new();
+        let _mock = server
+            .mock("POST", "/format_input")
+            .with_status(200)
+            .with_body(r#"{"data":{"caption":"enhanced pop rock","lyrics":"[Verse]\nHello","bpm":120,"key_scale":"C Major","time_signature":"4","duration":180,"vocal_language":"en"},"code":200,"error":null,"timestamp":1770000000000}"#)
+            .create();
+        let client = AceClient::from_base_url(server.url()).expect("client should create");
+
+        let enhanced = client
+            .format_input(&sample_request())
+            .expect("format input should parse");
+
+        assert_eq!(enhanced.prompt, "enhanced pop rock");
+        assert_eq!(enhanced.lyrics.as_deref(), Some("[Verse]\nHello"));
+        assert_eq!(enhanced.bpm, Some(120));
+        assert_eq!(enhanced.key_scale.as_deref(), Some("C Major"));
+        assert_eq!(enhanced.duration_seconds, Some(180.0));
     }
 
     #[test]

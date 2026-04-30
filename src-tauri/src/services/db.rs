@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::models::{
     errors::{AppError, AppResult},
-    generation::GenerationRecord,
+    generation::{ActiveGenerationTask, GenerationRecord, GenerationRequest},
     settings::AppSettings,
 };
 
@@ -194,6 +194,66 @@ impl Database {
         Ok(())
     }
 
+    pub fn upsert_active_generation_task(
+        &self,
+        task: &ActiveGenerationTask,
+    ) -> AppResult<ActiveGenerationTask> {
+        let connection = self.connection()?;
+        let request_json = serde_json::to_string(&task.request)
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        connection
+            .execute(
+                "INSERT INTO active_generation_tasks (id, task_id, request_json, variation_index, variation_total, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT(id) DO UPDATE SET task_id = excluded.task_id, request_json = excluded.request_json, variation_index = excluded.variation_index, variation_total = excluded.variation_total, updated_at = excluded.updated_at",
+                params![
+                    task.id,
+                    task.task_id,
+                    request_json,
+                    task.variation_index,
+                    task.variation_total,
+                    task.created_at,
+                    task.updated_at,
+                ],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(task.clone())
+    }
+
+    pub fn list_active_generation_tasks(&self) -> AppResult<Vec<ActiveGenerationTask>> {
+        let connection = self.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at FROM active_generation_tasks ORDER BY created_at ASC",
+            )
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        let rows = statement
+            .query_map([], Self::map_active_generation_task_row)
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+
+        rows.into_iter()
+            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+            .collect()
+    }
+
+    pub fn get_active_generation_task(&self, id: &str) -> AppResult<Option<ActiveGenerationTask>> {
+        let connection = self.connection()?;
+        connection
+            .query_row(
+                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at FROM active_generation_tasks WHERE id = ?1",
+                [id],
+                Self::map_active_generation_task_row,
+            )
+            .optional()
+            .map_err(|error| AppError::db_read_failed(error.to_string()))
+    }
+
+    pub fn delete_active_generation_task(&self, id: &str) -> AppResult<()> {
+        let connection = self.connection()?;
+        connection
+            .execute("DELETE FROM active_generation_tasks WHERE id = ?1", [id])
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(())
+    }
+
     fn map_generation_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<GenerationRecord> {
         let output_path: String = row.get(17)?;
         let seed: Option<String> = row.get(15)?;
@@ -226,12 +286,39 @@ impl Database {
             generation_info: row.get(20)?,
         })
     }
+
+    fn map_active_generation_task_row(
+        row: &rusqlite::Row<'_>,
+    ) -> rusqlite::Result<ActiveGenerationTask> {
+        let request_json: String = row.get(2)?;
+        let request =
+            serde_json::from_str::<GenerationRequest>(&request_json).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    2,
+                    rusqlite::types::Type::Text,
+                    Box::new(error),
+                )
+            })?;
+
+        Ok(ActiveGenerationTask {
+            id: row.get(0)?,
+            task_id: row.get(1)?,
+            request,
+            variation_index: row.get(3)?,
+            variation_total: row.get(4)?,
+            created_at: row.get(5)?,
+            updated_at: row.get(6)?,
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Database;
-    use crate::models::{generation::GenerationRecord, settings::RecommendedProfile};
+    use crate::models::{
+        generation::{ActiveGenerationTask, GenerationRecord, GenerationRequest},
+        settings::RecommendedProfile,
+    };
     use serde_json::json;
 
     fn sample_record() -> GenerationRecord {
@@ -257,6 +344,40 @@ mod tests {
             status: "completed".to_owned(),
             error_message: None,
             generation_info: Some("ok".to_owned()),
+        }
+    }
+
+    fn sample_request() -> GenerationRequest {
+        GenerationRequest {
+            prompt: "warm piano loop".to_owned(),
+            negative_prompt: None,
+            lyrics: "".to_owned(),
+            vocal_language: "en".to_owned(),
+            duration_seconds: 30.0,
+            bpm: Some(92),
+            key_scale: Some("C Major".to_owned()),
+            time_signature: "4".to_owned(),
+            audio_format: "wav".to_owned(),
+            model: Some("acestep-v15-turbo".to_owned()),
+            task_type: "text2music".to_owned(),
+            lm_model_path: None,
+            lm_backend: Some("mlx".to_owned()),
+            thinking: true,
+            inference_steps: 8,
+            guidance_scale: 7.0,
+            use_format: false,
+            use_cot_caption: true,
+            use_cot_language: true,
+            constrained_decoding: true,
+            reference_audio_path: None,
+            src_audio_path: None,
+            instruction: None,
+            repainting_start: None,
+            repainting_end: None,
+            audio_cover_strength: None,
+            use_random_seed: true,
+            seed: None,
+            variation_count: 2,
         }
     }
 
@@ -309,5 +430,38 @@ mod tests {
             .list_generations(None)
             .expect("generation list should still load");
         assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn active_generation_task_round_trip_works() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let database = Database::new(temp_dir.path()).expect("database should initialize");
+        let task = ActiveGenerationTask {
+            id: "active_001".to_owned(),
+            task_id: "task-123".to_owned(),
+            request: sample_request(),
+            variation_index: 1,
+            variation_total: 2,
+            created_at: "2026-04-29T10:00:00Z".to_owned(),
+            updated_at: "2026-04-29T10:00:01Z".to_owned(),
+        };
+
+        database
+            .upsert_active_generation_task(&task)
+            .expect("active task should insert");
+        let listed = database
+            .list_active_generation_tasks()
+            .expect("active tasks should list");
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].task_id, "task-123");
+        assert_eq!(listed[0].request.variation_count, 2);
+
+        database
+            .delete_active_generation_task(&task.id)
+            .expect("active task should delete");
+        assert!(database
+            .list_active_generation_tasks()
+            .expect("active tasks should list")
+            .is_empty());
     }
 }

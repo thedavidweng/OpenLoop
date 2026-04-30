@@ -14,6 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import * as api from "@/app/lib/api";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
+import { useToast } from "@/app/components/overlay/Toast";
 import { useGenerationStore } from "@/app/lib/store";
 import {
   getPlaybackBarCenterMinWidth,
@@ -75,11 +76,14 @@ function loadPersistedSpeed(): number {
 
 export function PlaybackBar() {
   const { t } = useTranslation();
+  const { addToast } = useToast();
   const currentGeneration = useGenerationStore((state) => state.currentGeneration);
   const deleteGenerationRecord = useGenerationStore((state) => state.deleteGenerationRecord);
+  const playbackToggleRequest = useGenerationStore((state) => state.playbackToggleRequest);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -90,6 +94,7 @@ export function PlaybackBar() {
   const [measuredDensity, setMeasuredDensity] = useState<PlaybackBarDensity>("relaxed");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastPlaybackToggleRequest = useRef(playbackToggleRequest);
 
   // Persist volume
   useEffect(() => {
@@ -116,6 +121,7 @@ export function PlaybackBar() {
     setPosition(0);
     setDuration(0);
     setPlaybackStatus(null);
+    setWaveformPeaks([]);
     setAudioSrc(null);
     if (audioRef.current) {
       audioRef.current.pause();
@@ -145,6 +151,19 @@ export function PlaybackBar() {
       .catch(() => {
         if (!cancelled) {
           setPlaybackStatus(t("player.missingFile"));
+        }
+      });
+
+    void api
+      .readGenerationWaveform(currentGeneration.id)
+      .then((waveform) => {
+        if (!cancelled) {
+          setWaveformPeaks(waveform.peaks);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWaveformPeaks([]);
         }
       });
 
@@ -206,6 +225,23 @@ export function PlaybackBar() {
       setVolume(previousVolume || 1);
     }
   }, [volume, previousVolume]);
+
+  const togglePlayback = useCallback(() => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      void audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (playbackToggleRequest === lastPlaybackToggleRequest.current) {
+      return;
+    }
+    lastPlaybackToggleRequest.current = playbackToggleRequest;
+    togglePlayback();
+  }, [playbackToggleRequest, togglePlayback]);
 
   const cycleSpeed = useCallback(() => {
     setSpeed((current) => {
@@ -292,14 +328,7 @@ export function PlaybackBar() {
               type="button"
               className="motion-icon-button flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-control-primary)] text-[var(--color-control-primary-foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:bg-[color-mix(in_srgb,var(--color-control-primary)_90%,white)] disabled:opacity-30"
               disabled={!audioSrc}
-              onClick={() => {
-                if (!audioRef.current) return;
-                if (audioRef.current.paused) {
-                  void audioRef.current.play();
-                } else {
-                  audioRef.current.pause();
-                }
-              }}
+              onClick={togglePlayback}
             >
               {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
             </button>
@@ -331,6 +360,19 @@ export function PlaybackBar() {
                 audioRef.current.currentTime = percent * duration;
               }}
             >
+              {waveformPeaks.length > 0 ? (
+                <div className="pointer-events-none absolute inset-x-0 top-1/2 flex h-8 -translate-y-1/2 items-center gap-px opacity-40">
+                  {waveformPeaks.map((peak, index) => (
+                    <span
+                      key={`${index}-${peak.toFixed(3)}`}
+                      className="min-w-px flex-1 rounded-full bg-white"
+                      style={{
+                        height: `${Math.max(2, Math.min(100, peak * 100))}%`,
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : null}
               <div className="relative h-full rounded-full bg-[var(--color-text-dim)] group-hover:bg-white" style={{ width: `${progressPercent}%` }}>
                 <div className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100" />
               </div>
@@ -405,6 +447,7 @@ export function PlaybackBar() {
 
               void api.copyAudioTo(currentGeneration.outputPath, destination).then((result) => {
                 setCopyStatus(t("player.copied", { path: result }));
+                addToast("success", t("toast.fileExported"));
               });
             }}
             >
@@ -422,6 +465,7 @@ export function PlaybackBar() {
               void (async () => {
                 await api.deleteGenerationFile(outputPath);
                 await deleteGenerationRecord(currentGeneration.id);
+                addToast("success", t("toast.fileDeleted"));
               })();
             }}
           >

@@ -113,3 +113,14 @@ export function matchesShortcut(
 
   return false;
 }
+
+export function shouldHandleGlobalShortcut(
+  event: KeyboardEvent,
+  shortcut: ShortcutDefinition,
+): boolean {
+  if (isInputFocused()) {
+    return false;
+  }
+
+  return matchesShortcut(event, shortcut);
+}

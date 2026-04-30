@@ -24,24 +24,12 @@ import type { GenerationFormValues } from "@/app/lib/types";
 import { Collapsible } from "@/app/components/ui/Collapsible";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
 import * as api from "@/app/lib/api";
-
-const SELECT_OPTIONS = {
-  vocalLanguage: ["en", "zh", "ja", "ko", "auto"] as const,
-  timeSignature: ["2", "3", "4", "6"] as const,
-  audioFormat: ["wav", "mp3", "flac", "ogg"] as const,
-  taskType: ["text2music", "cover", "repaint", "lego", "extract", "complete"] as const,
-  lmBackend: ["mlx", "pt", "vllm"] as const,
-  lmModelPath: ["", "acestep-5Hz-lm-0.6B", "acestep-5Hz-lm-1.7B", "acestep-5Hz-lm-4B"] as const,
-};
-
-const STRUCTURE_TAGS = [
-  "tagVerse",
-  "tagPreChorus",
-  "tagChorus",
-  "tagBridge",
-  "tagOutro",
-  "tagInstrumental",
-] as const;
+import { useToast } from "@/app/components/overlay/Toast";
+import { getRandomPromptExample } from "@/app/lib/prompt-examples";
+import {
+  SELECT_OPTIONS,
+  STRUCTURE_TAGS,
+} from "@/app/components/generation/generation-panel-options";
 
 type TextField =
   | "prompt"
@@ -155,36 +143,60 @@ function FilePickerField({
 
 export function GenerationPanel() {
   const { t } = useTranslation();
+  const { addToast } = useToast();
   const form = useGenerationStore((state) => state.form);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
-  const validationErrors = useGenerationStore((state) => state.validationErrors);
+  const validationErrors = useGenerationStore(
+    (state) => state.validationErrors,
+  );
   const generationState = useGenerationStore((state) => state.generationState);
   const currentRequest = useGenerationStore((state) => state.currentRequest);
   const settings = useGenerationStore((state) => state.settings);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
-  const cancelGeneration = useGenerationStore((state) => state.cancelGeneration);
+  const cancelGeneration = useGenerationStore(
+    (state) => state.cancelGeneration,
+  );
+  const enhancePrompt = useGenerationStore((state) => state.enhancePrompt);
+  const activeTasks = useGenerationStore((state) => state.activeTasks);
+  const resumeActiveTask = useGenerationStore(
+    (state) => state.resumeActiveTask,
+  );
+  const discardActiveTask = useGenerationStore(
+    (state) => state.discardActiveTask,
+  );
   const resetForm = useGenerationStore((state) => state.resetForm);
   const setField = useGenerationStore((state) => state.setField);
   const openSettings = useGenerationStore((state) => state.openSettings);
 
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const lyricsRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isBusy = generationState.status === "validating" || generationState.status === "running";
+  const isBusy =
+    generationState.status === "validating" ||
+    generationState.status === "running";
   const isFailed = generationState.status === "failed";
   const hasErrors = Object.keys(validationErrors).length > 0;
-  const selectedModel = settings.modelVariant ? MODEL_VARIANTS[settings.modelVariant] : null;
+  const selectedModel = settings.modelVariant
+    ? MODEL_VARIANTS[settings.modelVariant]
+    : null;
   const modelReady = isModelDownloaded(settings, settings.modelVariant);
   const canSubmit = currentRequest !== null && !hasErrors && modelReady;
-  const selectedModelState = modelDownloadStateForVariant(modelStatuses, settings.modelVariant);
+  const selectedModelState = modelDownloadStateForVariant(
+    modelStatuses,
+    settings.modelVariant,
+  );
 
   // Elapsed timer for generating state
   useEffect(() => {
     if (generationState.status === "running") {
       setElapsedTime(0);
-      timerRef.current = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
+      timerRef.current = setInterval(
+        () => setElapsedTime((prev) => prev + 1),
+        1000,
+      );
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       setElapsedTime(0);
@@ -208,8 +220,12 @@ export function GenerationPanel() {
   };
 
   const submitLabel = useMemo(() => {
-    if (generationState.status === "validating") return t("generation.validating");
-    if (generationState.status === "running") return t("generation.generatingElapsed", { time: formatElapsed(elapsedTime) });
+    if (generationState.status === "validating")
+      return t("generation.validating");
+    if (generationState.status === "running")
+      return t("generation.generatingElapsed", {
+        time: formatElapsed(elapsedTime),
+      });
     return t("generation.generate");
   }, [generationState.status, elapsedTime, t]);
 
@@ -228,7 +244,8 @@ export function GenerationPanel() {
       const end = textarea.selectionEnd;
       const before = form.lyrics.slice(0, start);
       const after = form.lyrics.slice(end);
-      const insertion = (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
+      const insertion =
+        (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
       setField("lyrics", before + insertion + after);
       requestAnimationFrame(() => {
         const newPos = start + insertion.length;
@@ -303,14 +320,72 @@ export function GenerationPanel() {
               <button
                 type="button"
                 className="secondary-button shrink-0 px-2"
-                onClick={() => setField("prompt", "Energetic pop rock with driving drums, catchy guitar riffs, and an uplifting chorus")}
+                onClick={() => setField("prompt", getRandomPromptExample())}
                 disabled={isBusy}
               >
                 <Dice5 size={14} />
               </button>
             </Tooltip>
+            <Tooltip label={t("generation.enhancePrompt")}>
+              <button
+                type="button"
+                className="secondary-button shrink-0 px-2"
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      setEnhancing(true);
+                      await enhancePrompt();
+                      addToast("success", t("toast.promptEnhanced"));
+                    } catch {
+                      addToast("error", t("toast.promptEnhanceFailed"));
+                    } finally {
+                      setEnhancing(false);
+                    }
+                  })();
+                }}
+                disabled={isBusy || enhancing}
+              >
+                {enhancing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <WandSparkles size={14} />
+                )}
+              </button>
+            </Tooltip>
           </div>
         </div>
+
+        {activeTasks.length > 0 ? (
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3 py-3 text-[12px] text-amber-100">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1">
+                {t("generation.recoveryAvailable", {
+                  count: activeTasks.length,
+                })}
+              </span>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  void resumeActiveTask(activeTasks[0].id);
+                }}
+                disabled={isBusy}
+              >
+                {t("generation.resumeTask")}
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  void discardActiveTask(activeTasks[0].id);
+                }}
+                disabled={isBusy}
+              >
+                {t("generation.discardTask")}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Task Type - standalone row */}
         <div className="px-1">
@@ -319,7 +394,12 @@ export function GenerationPanel() {
             <select
               className="select-input"
               value={form.taskType}
-              onChange={(event) => setField("taskType", event.target.value as GenerationFormValues["taskType"])}
+              onChange={(event) =>
+                setField(
+                  "taskType",
+                  event.target.value as GenerationFormValues["taskType"],
+                )
+              }
               disabled={isBusy}
             >
               {SELECT_OPTIONS.taskType.map((option) => (
@@ -429,7 +509,11 @@ export function GenerationPanel() {
           <textarea
             ref={lyricsRef}
             className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
-            placeholder={form.instrumental ? t("generation.instrumentalDesc") : t("generation.lyricsPlaceholder")}
+            placeholder={
+              form.instrumental
+                ? t("generation.instrumentalDesc")
+                : t("generation.lyricsPlaceholder")
+            }
             value={form.lyrics}
             onChange={handleTextFieldChange("lyrics")}
             disabled={isBusy || form.instrumental}
@@ -445,34 +529,119 @@ export function GenerationPanel() {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <label className="space-y-1">
               <FieldLabel>{t("generation.duration")}</FieldLabel>
-              <input className="text-input" type="number" min="10" max="600" step="1" value={form.durationSeconds} onChange={handleTextFieldChange("durationSeconds")} disabled={isBusy} />
+              <input
+                className="text-input"
+                type="number"
+                min="10"
+                max="600"
+                step="1"
+                value={form.durationSeconds}
+                onChange={handleTextFieldChange("durationSeconds")}
+                disabled={isBusy}
+              />
               <FieldError message={validationErrors.durationSeconds} />
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.bpm")}</FieldLabel>
-              <input className="text-input" type="number" min="30" max="300" step="1" placeholder={t("generation.optional")} value={form.bpm} onChange={handleTextFieldChange("bpm")} disabled={isBusy} />
+              <div className="grid grid-cols-[0.75fr_1fr] gap-2">
+                <select
+                  className="select-input"
+                  value={form.bpmMode}
+                  onChange={(event) =>
+                    setField(
+                      "bpmMode",
+                      event.target.value as GenerationFormValues["bpmMode"],
+                    )
+                  }
+                  disabled={isBusy}
+                >
+                  <option value="auto">{t("generation.auto")}</option>
+                  <option value="manual">{t("generation.manual")}</option>
+                </select>
+                <input
+                  className="text-input"
+                  type="number"
+                  min="30"
+                  max="300"
+                  step="1"
+                  placeholder={t("generation.optional")}
+                  value={form.bpm}
+                  onChange={handleTextFieldChange("bpm")}
+                  disabled={isBusy || form.bpmMode === "auto"}
+                />
+              </div>
               <FieldError message={validationErrors.bpm} />
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.keyScale")}</FieldLabel>
-              <input className="text-input" placeholder={t("generation.keyScalePlaceholder")} value={form.keyScale} onChange={handleTextFieldChange("keyScale")} disabled={isBusy} />
+              <select
+                className="select-input"
+                value={form.keyScale}
+                onChange={(event) => setField("keyScale", event.target.value)}
+                disabled={isBusy}
+              >
+                {SELECT_OPTIONS.keyScale.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "auto" ? t("generation.auto") : option}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.timeSignature")}</FieldLabel>
-              <select className="select-input" value={form.timeSignature} onChange={(event) => setField("timeSignature", event.target.value as GenerationFormValues["timeSignature"])} disabled={isBusy}>
-                {SELECT_OPTIONS.timeSignature.map((option) => <option key={option} value={option}>{option}/4</option>)}
+              <select
+                className="select-input"
+                value={form.timeSignature}
+                onChange={(event) =>
+                  setField(
+                    "timeSignature",
+                    event.target.value as GenerationFormValues["timeSignature"],
+                  )
+                }
+                disabled={isBusy}
+              >
+                {SELECT_OPTIONS.timeSignature.map((option) => (
+                  <option key={option} value={option}>
+                    {option}/4
+                  </option>
+                ))}
               </select>
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.language")}</FieldLabel>
-              <select className="select-input" value={form.vocalLanguage} onChange={(event) => setField("vocalLanguage", event.target.value)} disabled={isBusy || form.instrumental}>
-                {SELECT_OPTIONS.vocalLanguage.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+              <select
+                className="select-input"
+                value={form.vocalLanguage}
+                onChange={(event) =>
+                  setField("vocalLanguage", event.target.value)
+                }
+                disabled={isBusy || form.instrumental}
+              >
+                {SELECT_OPTIONS.vocalLanguage.map((option) => (
+                  <option key={option} value={option}>
+                    {option.toUpperCase()}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.format")}</FieldLabel>
-              <select className="select-input" value={form.audioFormat} onChange={(event) => setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])} disabled={isBusy}>
-                {SELECT_OPTIONS.audioFormat.map((option) => <option key={option} value={option}>{option.toUpperCase()}</option>)}
+              <select
+                className="select-input"
+                value={form.audioFormat}
+                onChange={(event) =>
+                  setField(
+                    "audioFormat",
+                    event.target.value as GenerationFormValues["audioFormat"],
+                  )
+                }
+                disabled={isBusy}
+              >
+                {SELECT_OPTIONS.audioFormat.map((option) => (
+                  <option key={option} value={option}>
+                    {option.toUpperCase()}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
@@ -514,35 +683,90 @@ export function GenerationPanel() {
 
               <label className="space-y-1">
                 <FieldLabel>{t("generation.lmModel")}</FieldLabel>
-                <select className="select-input" value={form.lmModelPath} onChange={(event) => setField("lmModelPath", event.target.value)} disabled={isBusy || !form.thinking}>
-                  {SELECT_OPTIONS.lmModelPath.map((option) => <option key={option || "none"} value={option}>{option || "None"}</option>)}
+                <select
+                  className="select-input"
+                  value={form.lmModelPath}
+                  onChange={(event) =>
+                    setField("lmModelPath", event.target.value)
+                  }
+                  disabled={isBusy || !form.thinking}
+                >
+                  {SELECT_OPTIONS.lmModelPath.map((option) => (
+                    <option key={option || "none"} value={option}>
+                      {option || "None"}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.lmBackend")}</FieldLabel>
-                <select className="select-input" value={form.lmBackend} onChange={(event) => setField("lmBackend", event.target.value as GenerationFormValues["lmBackend"])} disabled={isBusy || !form.thinking}>
-                  {SELECT_OPTIONS.lmBackend.map((option) => <option key={option} value={option}>{option}</option>)}
+                <select
+                  className="select-input"
+                  value={form.lmBackend}
+                  onChange={(event) =>
+                    setField(
+                      "lmBackend",
+                      event.target.value as GenerationFormValues["lmBackend"],
+                    )
+                  }
+                  disabled={isBusy || !form.thinking}
+                >
+                  {SELECT_OPTIONS.lmBackend.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.inferenceSteps")}</FieldLabel>
-                <input className="text-input" type="number" min="1" value={form.inferenceSteps} onChange={handleTextFieldChange("inferenceSteps")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  type="number"
+                  min="1"
+                  value={form.inferenceSteps}
+                  onChange={handleTextFieldChange("inferenceSteps")}
+                  disabled={isBusy}
+                />
                 <FieldError message={validationErrors.inferenceSteps} />
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.guidanceScale")}</FieldLabel>
-                <input className="text-input" type="number" min="0.1" step="0.1" value={form.guidanceScale} onChange={handleTextFieldChange("guidanceScale")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={form.guidanceScale}
+                  onChange={handleTextFieldChange("guidanceScale")}
+                  disabled={isBusy}
+                />
                 <FieldError message={validationErrors.guidanceScale} />
               </label>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
               {toggleItems.map(([field, titleKey, descriptionKey]) => (
-                <label key={field} className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3">
-                  <input type="checkbox" className="mt-0.5" checked={Boolean(form[field])} onChange={(event) => setField(field, event.target.checked)} disabled={isBusy} />
+                <label
+                  key={field}
+                  className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3"
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={Boolean(form[field])}
+                    onChange={(event) => setField(field, event.target.checked)}
+                    disabled={isBusy}
+                  />
                   <div>
-                    <p className="text-[13px] font-medium text-white">{t(titleKey)}</p>
-                    {descriptionKey ? <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">{t(descriptionKey)}</p> : null}
+                    <p className="text-[13px] font-medium text-white">
+                      {t(titleKey)}
+                    </p>
+                    {descriptionKey ? (
+                      <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
+                        {t(descriptionKey)}
+                      </p>
+                    ) : null}
                   </div>
                 </label>
               ))}
@@ -563,26 +787,68 @@ export function GenerationPanel() {
               />
               <label className="space-y-1 md:col-span-2">
                 <FieldLabel>{t("generation.instruction")}</FieldLabel>
-                <input className="text-input" value={form.instruction} onChange={handleTextFieldChange("instruction")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  value={form.instruction}
+                  onChange={handleTextFieldChange("instruction")}
+                  disabled={isBusy}
+                />
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.repaintStart")}</FieldLabel>
-                <input className="text-input" type="number" min="0" step="0.1" value={form.repaintingStart} onChange={handleTextFieldChange("repaintingStart")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={form.repaintingStart}
+                  onChange={handleTextFieldChange("repaintingStart")}
+                  disabled={isBusy}
+                />
                 <FieldError message={validationErrors.repaintingStart} />
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.repaintEnd")}</FieldLabel>
-                <input className="text-input" type="number" min="-1" step="0.1" value={form.repaintingEnd} onChange={handleTextFieldChange("repaintingEnd")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  type="number"
+                  min="-1"
+                  step="0.1"
+                  value={form.repaintingEnd}
+                  onChange={handleTextFieldChange("repaintingEnd")}
+                  disabled={isBusy}
+                />
                 <FieldError message={validationErrors.repaintingEnd} />
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.coverStrength")}</FieldLabel>
-                <input className="text-input" type="number" min="0" max="1" step="0.05" value={form.audioCoverStrength} onChange={handleTextFieldChange("audioCoverStrength")} disabled={isBusy} />
+                <input
+                  className="text-input"
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={form.audioCoverStrength}
+                  onChange={handleTextFieldChange("audioCoverStrength")}
+                  disabled={isBusy}
+                />
                 <FieldError message={validationErrors.audioCoverStrength} />
               </label>
               <label className="space-y-1">
                 <FieldLabel>{t("generation.seed")}</FieldLabel>
-                <input className="text-input disabled:opacity-60" type="number" step="1" placeholder={form.useRandomSeed ? t("generation.randomSeedEnabled") : t("generation.optional")} value={form.seed} onChange={handleTextFieldChange("seed")} disabled={isBusy || form.useRandomSeed} />
+                <input
+                  className="text-input disabled:opacity-60"
+                  type="number"
+                  step="1"
+                  placeholder={
+                    form.useRandomSeed
+                      ? t("generation.randomSeedEnabled")
+                      : t("generation.optional")
+                  }
+                  value={form.seed}
+                  onChange={handleTextFieldChange("seed")}
+                  disabled={isBusy || form.useRandomSeed}
+                />
                 <FieldError message={validationErrors.seed} />
               </label>
             </div>
@@ -600,7 +866,9 @@ export function GenerationPanel() {
               disabled={isBusy}
             >
               {variationOptions.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
           </label>

@@ -33,6 +33,12 @@ pub struct GenerationRequest {
     pub audio_cover_strength: Option<f64>,
     pub use_random_seed: bool,
     pub seed: Option<i64>,
+    #[serde(default = "default_variation_count")]
+    pub variation_count: i64,
+}
+
+fn default_variation_count() -> i64 {
+    1
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -59,6 +65,42 @@ pub struct GenerationRecord {
     pub status: String,
     pub error_message: Option<String>,
     pub generation_info: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerationRunResult {
+    pub records: Vec<GenerationRecord>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveGenerationTask {
+    pub id: String,
+    pub task_id: String,
+    pub request: GenerationRequest,
+    pub variation_index: i64,
+    pub variation_total: i64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PromptEnhancementResult {
+    pub prompt: String,
+    pub lyrics: Option<String>,
+    pub bpm: Option<i64>,
+    pub key_scale: Option<String>,
+    pub time_signature: Option<String>,
+    pub duration_seconds: Option<f64>,
+    pub vocal_language: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerationWaveform {
+    pub peaks: Vec<f32>,
 }
 
 impl GenerationRequest {
@@ -89,6 +131,12 @@ impl GenerationRequest {
                     "seed must be a valid 32-bit integer",
                 ));
             }
+        }
+
+        if !(1..=4).contains(&self.variation_count) {
+            return Err(AppError::validation_failed(
+                "variationCount must be between 1 and 4",
+            ));
         }
 
         Ok(())

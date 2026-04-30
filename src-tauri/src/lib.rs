@@ -63,6 +63,7 @@ pub fn run() {
             commands::files::copy_audio_to,
             commands::files::file_exists,
             commands::files::read_generation_audio,
+            commands::files::read_generation_waveform,
             commands::files::delete_generation_file,
             commands::settings::get_settings,
             commands::settings::set_setting,
@@ -78,6 +79,10 @@ pub fn run() {
             commands::generation::insert_generation,
             commands::generation::generate_music,
             commands::generation::cancel_generation,
+            commands::generation::enhance_prompt,
+            commands::generation::list_active_generation_tasks,
+            commands::generation::resume_generation_task,
+            commands::generation::discard_active_generation_task,
             commands::window_shell::get_window_shell_state,
         ]);
 

@@ -3,7 +3,9 @@ use std::{fs, path::PathBuf, process::Command};
 use tauri::{command, ipc::Response, State};
 
 use crate::{
+    audio::{decode::decode_bytes, waveform::waveform_peaks},
     models::errors::{AppError, AppResult},
+    models::generation::GenerationWaveform,
     AppState,
 };
 
@@ -69,6 +71,33 @@ pub fn read_generation_audio(state: State<'_, AppState>, id: String) -> AppResul
     fs::read(&path)
         .map(Response::new)
         .map_err(|error| AppError::output_read_failed(error.to_string()))
+}
+
+#[command]
+pub fn read_generation_waveform(
+    state: State<'_, AppState>,
+    id: String,
+) -> AppResult<GenerationWaveform> {
+    let record = state
+        .db
+        .get_generation(&id)?
+        .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
+    let output_path = record.output_path.ok_or_else(|| {
+        AppError::not_found(
+            "Generation audio",
+            format!("record {id} has no output path"),
+        )
+    })?;
+    let path = PathBuf::from(&output_path);
+    if !path.is_file() {
+        return Err(AppError::not_found("Generation audio", output_path));
+    }
+    let bytes = fs::read(&path).map_err(|error| AppError::output_read_failed(error.to_string()))?;
+    let decoded = decode_bytes(bytes, &record.audio_format)
+        .map_err(|error| AppError::output_read_failed(error.to_string()))?;
+    Ok(GenerationWaveform {
+        peaks: waveform_peaks(&decoded),
+    })
 }
 
 #[command]

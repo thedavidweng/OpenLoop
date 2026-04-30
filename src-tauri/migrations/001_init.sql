@@ -36,3 +36,13 @@ CREATE TABLE IF NOT EXISTS backend_events (
   message TEXT NOT NULL,
   metadata_json TEXT
 );
+
+CREATE TABLE IF NOT EXISTS active_generation_tasks (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  request_json TEXT NOT NULL,
+  variation_index INTEGER NOT NULL,
+  variation_total INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

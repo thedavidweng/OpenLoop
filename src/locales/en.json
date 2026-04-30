@@ -144,6 +144,8 @@
     "language": "Vocal language",
     "duration": "Duration",
     "bpm": "BPM",
+    "auto": "Auto",
+    "manual": "Manual",
     "optional": "Optional",
     "keyScale": "Key / scale",
     "keyScalePlaceholder": "Auto (e.g. C Major)",
@@ -206,6 +208,10 @@
     "chooseFile": "Choose file",
     "clearFile": "Clear",
     "randomInspiration": "Random inspiration",
+    "enhancePrompt": "Enhance prompt locally",
+    "recoveryAvailable": "{{count}} unfinished local task is available for recovery.",
+    "resumeTask": "Resume polling",
+    "discardTask": "Discard",
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
@@ -274,7 +280,8 @@
     "repaintingStart": "Repaint start can be empty or zero and above.",
     "repaintingEnd": "Repaint end can be empty, -1, or zero and above.",
     "audioCoverStrength": "Cover strength can be empty or between 0 and 1.",
-    "seed": "Seed must be a valid 32-bit integer."
+    "seed": "Seed must be a valid 32-bit integer.",
+    "variations": "Variations must be between 1 and 4."
   },
   "status": {
     "ready": "Ready to validate your next local generation request.",
@@ -309,7 +316,9 @@
     "submissionFailed": "The local generation stack failed during submission.",
     "runningPreview": "Running browser preview generation...",
     "previewFailedPrompt": "Preview generation failed. Update the prompt and try again.",
-    "previewCompletedShort": "Preview generation completed."
+    "previewCompletedShort": "Preview generation completed.",
+    "recovering": "Resuming unfinished local generation task...",
+    "recoveryFailed": "The unfinished task could not be resumed."
   },
   "errors": {
     "validationDetails": "Fix the inline form errors before starting generation.",
@@ -393,8 +402,12 @@
   "toast": {
     "generationCompleted": "Generation completed successfully.",
     "generationFailed": "Generation failed.",
+    "promptEnhanced": "Prompt enhanced locally.",
+    "promptEnhanceFailed": "Prompt enhancement failed.",
+    "settingsSaved": "Settings saved.",
     "settingsCopied": "Settings copied to clipboard.",
     "fileExported": "File exported.",
+    "fileDeleted": "File deleted.",
     "retryStarted": "Retrying with same settings..."
   }
 }

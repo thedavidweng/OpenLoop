@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/app/components/layout/AppLayout";
+import { useToast } from "@/app/components/overlay/Toast";
 import { SetupScreen } from "@/app/components/settings/SetupScreen";
 import * as api from "@/app/lib/api";
 import { useGenerationStore } from "@/app/lib/store";
@@ -14,6 +16,8 @@ function BootShell() {
 }
 
 function App() {
+  const { t } = useTranslation();
+  const { addToast } = useToast();
   const hydrateFromPersistence = useGenerationStore(
     (state) => state.hydrateFromPersistence,
   );
@@ -43,6 +47,11 @@ function App() {
     void api
       .listenToGenerationEvents((event) => {
         applyGenerationEvent(event);
+        if (event.type === "completed") {
+          addToast("success", t("toast.generationCompleted"));
+        } else if (event.type === "failed") {
+          addToast("error", t("toast.generationFailed"));
+        }
       })
       .then((unlisten) => {
         unsubscribe = unlisten;
@@ -51,7 +60,7 @@ function App() {
     return () => {
       unsubscribe?.();
     };
-  }, [applyGenerationEvent]);
+  }, [addToast, applyGenerationEvent, t]);
 
   useEffect(() => {
     if (!api.isTauriRuntime()) {

@@ -1,6 +1,7 @@
 export type TimeSignature = "2" | "3" | "4" | "6";
 
 export type AudioFormat = "wav" | "mp3" | "flac" | "ogg";
+export type BpmMode = "auto" | "manual";
 
 export type RecommendedProfile =
   | "low-memory"
@@ -41,6 +42,7 @@ export type GenerationRequest = {
   audioCoverStrength?: number;
   useRandomSeed: boolean;
   seed?: number;
+  variationCount: number;
 };
 
 export type GenerationFormValues = {
@@ -49,6 +51,7 @@ export type GenerationFormValues = {
   lyrics: string;
   vocalLanguage: string;
   durationSeconds: string;
+  bpmMode: BpmMode;
   bpm: string;
   keyScale: string;
   timeSignature: TimeSignature;
@@ -137,6 +140,10 @@ export type GenerationRecord = {
   generationInfo?: string;
 };
 
+export type GenerationRunResult = {
+  records: GenerationRecord[];
+};
+
 export type GenerationStatus =
   | "idle"
   | "validating"
@@ -145,10 +152,28 @@ export type GenerationStatus =
   | "failed"
   | "cancelled";
 
+export type GenerationPhase =
+  | "idle"
+  | "validating"
+  | "backend_starting"
+  | "submitted"
+  | "queued"
+  | "running"
+  | "downloading"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "recovering";
+
 export type GenerationState = {
   status: GenerationStatus;
+  phase: GenerationPhase;
   statusMessage: string;
   error: AppError | null;
+  taskId?: string;
+  variationCurrent?: number;
+  variationTotal?: number;
+  progressPercent?: number;
 };
 
 export type AppSettings = {
@@ -178,14 +203,38 @@ export type DeviceInfo = {
 };
 
 export type GenerationEvent =
-  | { type: "backend_starting" }
-  | { type: "submitted"; taskId: string }
-  | { type: "queued" }
-  | { type: "running" }
-  | { type: "downloading" }
-  | { type: "completed"; generationId: string; outputPath: string }
-  | { type: "cancelled"; generationId: string }
+  | { type: "backend_starting"; variationCurrent?: number; variationTotal?: number }
+  | { type: "submitted"; taskId: string; variationCurrent?: number; variationTotal?: number }
+  | { type: "queued"; variationCurrent?: number; variationTotal?: number }
+  | { type: "running"; variationCurrent?: number; variationTotal?: number; progressPercent?: number }
+  | { type: "downloading"; variationCurrent?: number; variationTotal?: number }
+  | { type: "completed"; generationId: string; outputPath: string; variationCurrent?: number; variationTotal?: number }
+  | { type: "cancelled"; generationId: string; variationCurrent?: number; variationTotal?: number }
   | { type: "failed"; error: AppError };
+
+export type ActiveGenerationTask = {
+  id: string;
+  taskId: string;
+  request: GenerationRequest;
+  variationIndex: number;
+  variationTotal: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PromptEnhancementResult = {
+  prompt: string;
+  lyrics?: string;
+  bpm?: number;
+  keyScale?: string;
+  timeSignature?: TimeSignature;
+  durationSeconds?: number;
+  vocalLanguage?: string;
+};
+
+export type GenerationWaveform = {
+  peaks: number[];
+};
 
 export type BackendStatus =
   | { state: "stopped" }

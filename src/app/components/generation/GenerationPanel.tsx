@@ -320,6 +320,7 @@ export function GenerationPanel() {
               <button
                 type="button"
                 className="secondary-button shrink-0 px-2"
+                aria-label={t("generation.randomInspiration")}
                 onClick={() => setField("prompt", getRandomPromptExample())}
                 disabled={isBusy}
               >
@@ -330,6 +331,7 @@ export function GenerationPanel() {
               <button
                 type="button"
                 className="secondary-button shrink-0 px-2"
+                aria-label={t("generation.enhancePrompt")}
                 onClick={() => {
                   void (async () => {
                     try {
@@ -856,22 +858,34 @@ export function GenerationPanel() {
         </Collapsible>
 
         {/* Variations selector */}
-        <div className="flex items-center gap-3 px-1">
-          <label className="flex items-center gap-2">
-            <FieldLabel>{t("generation.variations")}</FieldLabel>
-            <select
-              className="select-input w-20"
-              value={form.variations}
-              onChange={(e) => setField("variations", Number(e.target.value))}
-              disabled={isBusy}
-            >
-              {variationOptions.map((n) => (
-                <option key={n} value={n}>
+        <div className="flex flex-wrap items-center gap-3 px-1">
+          <FieldLabel>{t("generation.variations")}</FieldLabel>
+          <div
+            className="inline-flex overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] p-0.5"
+            role="group"
+            aria-label={t("generation.variations")}
+          >
+            {variationOptions.map((n) => {
+              const selected = form.variations === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  className={`h-8 min-w-9 rounded-lg px-3 text-[12px] font-semibold transition-colors ${
+                    selected
+                      ? "bg-[var(--color-accent)] text-white shadow-sm"
+                      : "text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-white"
+                  }`}
+                  aria-label={t("generation.variationOption", { count: n })}
+                  aria-pressed={selected}
+                  onClick={() => setField("variations", n)}
+                  disabled={isBusy}
+                >
                   {n}
-                </option>
-              ))}
-            </select>
-          </label>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Action buttons row */}

@@ -50,6 +50,10 @@ export const PROFILE_FORM_PRESETS = {
     thinking: false,
     inferenceSteps: "6",
     guidanceScale: "6.0",
+    useFormat: false,
+    useCotCaption: false,
+    useCotLanguage: false,
+    constrainedDecoding: false,
   },
   standard: {
     model: "acestep-v15-turbo",
@@ -58,6 +62,10 @@ export const PROFILE_FORM_PRESETS = {
     thinking: true,
     inferenceSteps: "8",
     guidanceScale: "7.0",
+    useFormat: false,
+    useCotCaption: true,
+    useCotLanguage: true,
+    constrainedDecoding: true,
   },
   quality: {
     model: "acestep-v15-xl-turbo",
@@ -66,6 +74,10 @@ export const PROFILE_FORM_PRESETS = {
     thinking: true,
     inferenceSteps: "10",
     guidanceScale: "7.5",
+    useFormat: false,
+    useCotCaption: true,
+    useCotLanguage: true,
+    constrainedDecoding: true,
   },
   unsupported: {
     model: "acestep-v15-turbo",
@@ -74,6 +86,10 @@ export const PROFILE_FORM_PRESETS = {
     thinking: false,
     inferenceSteps: "6",
     guidanceScale: "6.5",
+    useFormat: false,
+    useCotCaption: false,
+    useCotLanguage: false,
+    constrainedDecoding: false,
   },
 } satisfies Record<
   AppSettings["profile"],
@@ -85,6 +101,10 @@ export const PROFILE_FORM_PRESETS = {
     | "thinking"
     | "inferenceSteps"
     | "guidanceScale"
+    | "useFormat"
+    | "useCotCaption"
+    | "useCotLanguage"
+    | "constrainedDecoding"
   >
 >;
 
@@ -418,6 +438,10 @@ export function applyProfilePreset(
     thinking: preset.thinking,
     inferenceSteps: preset.inferenceSteps,
     guidanceScale: preset.guidanceScale,
+    useFormat: preset.useFormat,
+    useCotCaption: preset.useCotCaption,
+    useCotLanguage: preset.useCotLanguage,
+    constrainedDecoding: preset.constrainedDecoding,
   };
 }
 

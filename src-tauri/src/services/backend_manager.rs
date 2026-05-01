@@ -443,11 +443,16 @@ PY
         settings.backend_working_directory = Some(temp_dir.path().display().to_string());
         settings.log_directory = Some(temp_dir.path().join("logs").display().to_string());
         settings.model_variant = Some(ModelVariant::Turbo);
-        settings.backend_port = 18081;
+        let listener = TcpListener::bind("127.0.0.1:0").expect("test port allocation should bind");
+        settings.backend_port = listener
+            .local_addr()
+            .expect("listener should have local addr")
+            .port();
+        drop(listener);
 
         let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
         let status = manager.start(&settings).expect("backend should start");
-        assert!(matches!(status, BackendStatus::Healthy { port: 18081 }));
+        assert!(matches!(status, BackendStatus::Healthy { port } if port == settings.backend_port));
         assert!(manager.logs_path().is_some());
 
         let stopped = manager.stop().expect("backend should stop");

@@ -619,10 +619,15 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     await get().refreshBootstrapStatus();
   },
   setField: (field, value) => {
-    const nextForm = {
+    const nextForm: GenerationFormValues = {
       ...get().form,
       [field]: value,
     };
+    if (field === "thinking" && value === false) {
+      nextForm.useCotCaption = false;
+      nextForm.useCotLanguage = false;
+      nextForm.constrainedDecoding = false;
+    }
     const nextValidation = computeValidationState(nextForm);
     set({
       form: nextForm,

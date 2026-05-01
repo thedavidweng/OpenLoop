@@ -204,6 +204,7 @@
     "musicParams": "音乐参数",
     "outputSettings": "输出设置",
     "variations": "变体数量",
+    "variationOption": "{{count}} 个变体",
     "variationProgress": "变体 {{current}} / {{total}}",
     "chooseFile": "选择文件",
     "clearFile": "清除",

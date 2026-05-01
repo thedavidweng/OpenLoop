@@ -537,11 +537,12 @@ export function PlaybackBar() {
               className="motion-icon-button relative flex shrink-0 items-center rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
               disabled={!currentGeneration?.outputPath}
               onClick={() => {
-                const outputPath = currentGeneration?.outputPath;
-                if (!outputPath || !currentGeneration) return;
+                if (!currentGeneration?.outputPath) return;
                 void (async () => {
-                  await api.deleteGenerationFile(outputPath);
-                  await deleteGenerationRecord(currentGeneration.id);
+                  await api.deleteGenerationFileAndRecord(currentGeneration.id);
+                  await deleteGenerationRecord(currentGeneration.id, {
+                    alreadyDeleted: true,
+                  });
                   addToast("success", t("toast.fileDeleted"));
                 })();
               }}

@@ -10,8 +10,10 @@ use serde_json::Value;
 use crate::models::{
     errors::{AppError, AppResult},
     generation::{ActiveGenerationTask, GenerationRecord, GenerationRequest},
-    settings::AppSettings,
+    settings::{AppSettings, SettingKey},
 };
+
+const LEGACY_SETTING_KEYS: &[&str] = &["backendCommandPath"];
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -26,6 +28,7 @@ impl Database {
         let path = app_data_dir.join("openloop.sqlite3");
         let database = Self { path };
         database.migrate()?;
+        database.prune_legacy_settings()?;
         database.ensure_default_settings()?;
         Ok(database)
     }
@@ -58,7 +61,18 @@ impl Database {
         Ok(())
     }
 
+    fn prune_legacy_settings(&self) -> AppResult<()> {
+        let connection = self.connection()?;
+        for key in LEGACY_SETTING_KEYS {
+            connection
+                .execute("DELETE FROM settings WHERE key = ?1", [key])
+                .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        }
+        Ok(())
+    }
+
     pub fn get_settings(&self) -> AppResult<AppSettings> {
+        self.prune_legacy_settings()?;
         let connection = self.connection()?;
         let mut statement = connection
             .prepare("SELECT key, value FROM settings")
@@ -77,13 +91,14 @@ impl Database {
             let (key, value) = row.map_err(|error| AppError::db_read_failed(error.to_string()))?;
             let parsed: Value = serde_json::from_str(&value)
                 .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-            settings.apply_setting(&key, parsed)?;
+            settings.apply_setting(SettingKey::parse(&key)?, parsed)?;
         }
 
         Ok(settings)
     }
 
     pub fn set_setting(&self, key: &str, value: Value) -> AppResult<AppSettings> {
+        let key = SettingKey::parse(key)?;
         let mut settings = self.get_settings()?;
         settings.apply_setting(key, value.clone())?;
 
@@ -93,7 +108,7 @@ impl Database {
         connection
             .execute(
                 "INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
-                params![key, serialized, Utc::now().to_rfc3339()],
+                params![key.as_str(), serialized, Utc::now().to_rfc3339()],
             )
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
 
@@ -191,6 +206,14 @@ impl Database {
             ));
         }
 
+        Ok(())
+    }
+
+    pub fn clear_generations(&self) -> AppResult<()> {
+        let connection = self.connection()?;
+        connection
+            .execute("DELETE FROM generations", [])
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
         Ok(())
     }
 
@@ -320,6 +343,7 @@ mod tests {
         settings::RecommendedProfile,
     };
     use serde_json::json;
+    use std::fs;
 
     fn sample_record() -> GenerationRecord {
         GenerationRecord {
@@ -401,6 +425,33 @@ mod tests {
     }
 
     #[test]
+    fn settings_prunes_legacy_backend_command_path_key() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let database = Database::new(temp_dir.path()).expect("database should initialize");
+        let connection = database.connection().expect("connection should open");
+        connection
+            .execute(
+                "INSERT INTO settings (key, value, updated_at) VALUES ('backendCommandPath', '\"/tmp/uv\"', '2026-04-29T00:00:00Z')",
+                [],
+            )
+            .expect("legacy setting should insert");
+
+        let settings = database
+            .get_settings()
+            .expect("settings should ignore legacy key");
+        assert_eq!(settings.backend_port, 8001);
+
+        let legacy_count: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM settings WHERE key = 'backendCommandPath'",
+                [],
+                |row| row.get(0),
+            )
+            .expect("legacy count should query");
+        assert_eq!(legacy_count, 0);
+    }
+
+    #[test]
     fn generation_crud_round_trip_works() {
         let temp_dir = tempfile::tempdir().expect("temp dir should exist");
         let database = Database::new(temp_dir.path()).expect("database should initialize");
@@ -430,6 +481,29 @@ mod tests {
             .list_generations(None)
             .expect("generation list should still load");
         assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn clear_generations_removes_records_without_touching_files() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let database = Database::new(temp_dir.path()).expect("database should initialize");
+        let output = temp_dir.path().join("mock.wav");
+        fs::write(&output, b"audio").expect("audio should write");
+        let mut record = sample_record();
+        record.output_path = Some(output.display().to_string());
+        database
+            .insert_generation(&record)
+            .expect("generation record should insert");
+
+        database
+            .clear_generations()
+            .expect("generation records should clear");
+
+        assert!(database
+            .list_generations(None)
+            .expect("generation list should load")
+            .is_empty());
+        assert!(output.exists());
     }
 
     #[test]

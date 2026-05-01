@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::{
     models::{backend::BackendStatus, errors::AppResult},
-    services::model_manager::runtime_dir_for,
+    services::model_bootstrap::runtime_dir_for,
     AppState,
 };
 

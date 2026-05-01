@@ -1,25 +1,15 @@
-import * as api from "@/app/lib/api";
 import i18next from "@/app/lib/i18n";
 import {
-  MODEL_VARIANTS,
-  aggregatePackStatus,
-  isModelDownloaded,
   modelNameForVariant,
-  packIdForVariant,
 } from "@/app/lib/model-packs";
-import {
-  DEFAULT_GENERATION_FORM_VALUES,
-  validateGenerationForm,
-} from "@/app/lib/validation";
+import { validateGenerationForm } from "@/app/lib/validation";
 import type {
   AppError,
   AppSettings,
-  DeviceInfo,
   GenerationFormValues,
   GenerationRecord,
   GenerationRequest,
   GenerationState,
-  ModelBootstrapStatus,
   ModelStatusSnapshot,
   ModelVariant,
 } from "@/app/lib/types";
@@ -27,19 +17,6 @@ import type {
 export const PREVIEW_DELAY_MS = {
   validating: 350,
   running: 1100,
-};
-
-export const DEFAULT_APP_SETTINGS: AppSettings = {
-  profile: "standard",
-  modelVariant: null,
-  downloadedModels: [],
-  outputDirectory: null,
-  backendPort: 8001,
-  defaultDurationSeconds: 30,
-  defaultAudioFormat: "wav",
-  defaultThinking: true,
-  firstRunCompleted: false,
-  language: null,
 };
 
 export const PROFILE_FORM_PRESETS = {
@@ -121,13 +98,6 @@ export function createIdleGenerationState(): GenerationState {
   };
 }
 
-export function createDefaultBootstrapStatus(): ModelBootstrapStatus {
-  return {
-    state: "pending",
-    message: tr("status.setupRequired"),
-  };
-}
-
 export function sleep(ms: number) {
   return new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
@@ -148,15 +118,6 @@ export function createPreviewRuntimeError(): AppError {
     code: "PREVIEW_GENERATION_FAILED",
     message: tr("errors.previewFailed"),
     details: tr("errors.previewFailedDetails"),
-    recoverable: true,
-  };
-}
-
-export function createBootstrapRuntimeError(error: unknown): AppError {
-  return {
-    code: "BOOTSTRAP_STATUS_FAILED",
-    message: tr("errors.bootstrapInspectFailed"),
-    details: stringifyUnknownError(error),
     recoverable: true,
   };
 }
@@ -269,95 +230,6 @@ export function localizeModelStatuses(
   }));
 }
 
-export function shouldMarkBootstrapFailed(code: string): boolean {
-  return (
-    code === "BACKEND_START_FAILED" ||
-    code === "BACKEND_HEALTH_TIMEOUT" ||
-    code === "MODEL_NOT_FOUND"
-  );
-}
-
-export function resolveBootstrapStatus(
-  settings: AppSettings,
-  deviceInfo: DeviceInfo | null,
-  statuses: ModelStatusSnapshot[] = [],
-): ModelBootstrapStatus {
-  if (!settings.firstRunCompleted) {
-    return {
-      state: "pending",
-      message: tr("status.chooseModel"),
-    };
-  }
-
-  if (!settings.modelVariant) {
-    return {
-      state: "pending",
-      message: tr("status.chooseAndDownload"),
-    };
-  }
-
-  if (statuses.length > 0) {
-    const selectedPackStatus = aggregatePackStatus(
-      statuses,
-      packIdForVariant(settings.modelVariant),
-    );
-    if (selectedPackStatus.state === "failed") {
-      return {
-        state: "failed",
-        message:
-          selectedPackStatus.error?.message ??
-          tr("errors.codes.MODEL_DOWNLOAD_FAILED.message"),
-        error: selectedPackStatus.error,
-      };
-    }
-    if (selectedPackStatus.state === "downloading") {
-      return {
-        state: "downloading",
-        message: tr("status.downloadingModel", {
-          model: selectedPackStatus.label,
-        }),
-        downloadedBytes: selectedPackStatus.downloadedBytes,
-        totalBytes: selectedPackStatus.totalBytes,
-      };
-    }
-  }
-
-  if (!isModelDownloaded(settings, settings.modelVariant)) {
-    return {
-      state: "pending",
-      message: tr("status.downloadModelToStart", {
-        model: MODEL_VARIANTS[settings.modelVariant].label,
-      }),
-    };
-  }
-
-  if (
-    deviceInfo?.recommendedProfile === "unsupported" ||
-    settings.profile === "unsupported"
-  ) {
-    return {
-      state: "experimental",
-      message: tr("status.experimentalMac"),
-    };
-  }
-
-  if (!api.isTauriRuntime()) {
-    return {
-      state: "ready",
-      message: tr("status.modelReadyPreview", {
-        model: MODEL_VARIANTS[settings.modelVariant].label,
-      }),
-    };
-  }
-
-  return {
-    state: "ready",
-    message: tr("status.modelReady", {
-      model: MODEL_VARIANTS[settings.modelVariant].label,
-    }),
-  };
-}
-
 export function shouldPreviewFail(request: GenerationRequest) {
   const haystack = `${request.prompt} ${request.lyrics}`.toLowerCase();
   return haystack.includes("fail");
@@ -457,7 +329,3 @@ export function applyModelVariantToForm(
     model: modelNameForVariant(variant),
   };
 }
-
-export const INITIAL_CURRENT_REQUEST = validateGenerationForm(
-  DEFAULT_GENERATION_FORM_VALUES,
-).request;

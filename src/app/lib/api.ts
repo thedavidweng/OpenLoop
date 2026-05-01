@@ -181,6 +181,10 @@ export function deleteGenerationFile(path: string): Promise<void> {
   return invoke<void>("delete_generation_file", { path });
 }
 
+export function deleteGenerationFileAndRecord(id: string): Promise<void> {
+  return invoke<void>("delete_generation_file_and_record", { id });
+}
+
 export function readGenerationAudio(
   id: string,
 ): Promise<ArrayBuffer | number[]> {
@@ -189,6 +193,10 @@ export function readGenerationAudio(
 
 export function deleteGeneration(id: string): Promise<void> {
   return invoke<void>("delete_generation", { id });
+}
+
+export function clearGenerationHistory(): Promise<void> {
+  return invoke<void>("clear_generation_history");
 }
 
 export function enhancePrompt(

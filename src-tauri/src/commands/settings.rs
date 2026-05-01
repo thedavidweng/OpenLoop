@@ -33,7 +33,6 @@ pub fn reset_runtime_settings(state: State<'_, AppState>) -> AppResult<AppSettin
     let resets = [
         ("backendPort", Value::from(8001)),
         ("modelDirectory", Value::Null),
-        ("backendCommandPath", Value::Null),
         ("backendWorkingDirectory", Value::Null),
         ("logDirectory", Value::Null),
     ];

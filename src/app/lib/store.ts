@@ -15,15 +15,11 @@ import {
   profileForVariant,
 } from "@/app/lib/model-packs";
 import {
-  DEFAULT_APP_SETTINGS,
-  INITIAL_CURRENT_REQUEST,
   PREVIEW_DELAY_MS,
   PROFILE_FORM_PRESETS,
   applyModelVariantToForm,
   applyProfilePreset,
   computeValidationState,
-  createBootstrapRuntimeError,
-  createDefaultBootstrapStatus,
   createGenerationRecord,
   createIdleGenerationState,
   createModelRequiredError,
@@ -31,13 +27,24 @@ import {
   createValidationError,
   localizeAppError,
   localizeModelStatuses,
-  resolveBootstrapStatus,
-  shouldMarkBootstrapFailed,
   shouldPreviewFail,
   sleep,
   stringifyUnknownError,
   variationLabel,
 } from "@/app/lib/store-helpers";
+import {
+  DEFAULT_APP_SETTINGS,
+  createBootstrapRuntimeError,
+  createDefaultBootstrapStatus,
+  resolveModelBootstrapStatus,
+  shouldMarkBootstrapFailed,
+} from "@/app/lib/model-bootstrap";
+import {
+  INITIAL_CURRENT_REQUEST,
+  mergeGenerationRecords,
+  nextCurrentGenerationAfterDelete,
+  recordToGenerationForm,
+} from "@/app/lib/history-workflow";
 import type {
   ActiveGenerationTask,
   AppSettings,
@@ -120,7 +127,10 @@ interface GenerationStore {
   discardActiveTask: (id: string) => Promise<void>;
   requestPlaybackToggle: () => void;
   loadGenerationSettings: (id: string, mode: "settings" | "reproduce") => void;
-  deleteGenerationRecord: (id: string) => Promise<void>;
+  deleteGenerationRecord: (
+    id: string,
+    options?: { alreadyDeleted?: boolean },
+  ) => Promise<void>;
   resetForm: () => void;
 }
 
@@ -465,7 +475,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
             ? state.settings.modelVariant
             : state.settings.modelVariant,
       },
-      bootstrapStatus: resolveBootstrapStatus(
+      bootstrapStatus: resolveModelBootstrapStatus(
         {
           ...state.settings,
           downloadedModels,
@@ -537,7 +547,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
                         model: MODEL_PACKS[eventPack].label,
                       }),
                     }
-            : resolveBootstrapStatus(
+            : resolveModelBootstrapStatus(
                 nextSettings,
                 state.deviceInfo,
                 modelStatuses,
@@ -563,7 +573,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           state.generationState.status === "idle"
             ? createIdleGenerationState()
             : state.generationState,
-        bootstrapStatus: resolveBootstrapStatus(
+        bootstrapStatus: resolveModelBootstrapStatus(
           settings,
           state.deviceInfo,
           modelStatuses,
@@ -578,7 +588,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     set({ setupOverride: true, isSettingsOpen: false });
   },
   refreshBootstrapStatus: async () => {
-    const bootstrapStatus = await resolveBootstrapStatus(
+    const bootstrapStatus = await resolveModelBootstrapStatus(
       get().settings,
       get().deviceInfo,
       get().modelStatuses,
@@ -794,15 +804,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           persistedRecords[persistedRecords.length - 1] ?? null;
         set((state) => ({
           currentGeneration: latestRecord ?? state.currentGeneration,
-          history: [
-            ...persistedRecords,
-            ...state.history.filter(
-              (record) =>
-                !persistedRecords.some(
-                  (persisted) => persisted.id === record.id,
-                ),
-            ),
-          ],
+          history: mergeGenerationRecords(persistedRecords, state.history),
           generationState: {
             status:
               latestRecord?.status === "cancelled" ? "cancelled" : "completed",
@@ -1010,50 +1012,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       return;
     }
 
-    const nextForm: GenerationFormValues = {
-      ...get().form,
-      prompt: record.prompt,
-      negativePrompt: record.negativePrompt ?? "",
-      lyrics: record.lyrics,
-      vocalLanguage: record.vocalLanguage,
-      durationSeconds: String(Math.round(record.durationSeconds)),
-      bpmMode: record.bpm === undefined ? "auto" : "manual",
-      bpm: record.bpm === undefined ? "" : String(record.bpm),
-      keyScale: record.keyScale ?? "auto",
-      timeSignature: record.timeSignature,
-      audioFormat: record.audioFormat,
-      model: record.model ?? get().form.model,
-      taskType: record.taskType ?? "text2music",
-      lmModelPath: record.lmModelPath ?? "",
-      lmBackend: record.lmBackend ?? "mlx",
-      thinking: record.thinking,
-      inferenceSteps: String(record.inferenceSteps),
-      guidanceScale: String(record.guidanceScale),
-      useFormat: record.useFormat ?? false,
-      useCotCaption: record.useCotCaption ?? true,
-      useCotLanguage: record.useCotLanguage ?? true,
-      constrainedDecoding: record.constrainedDecoding ?? true,
-      referenceAudioPath: record.referenceAudioPath ?? "",
-      srcAudioPath: record.srcAudioPath ?? "",
-      instruction: record.instruction ?? "",
-      repaintingStart:
-        record.repaintingStart === undefined
-          ? ""
-          : String(record.repaintingStart),
-      repaintingEnd:
-        record.repaintingEnd === undefined ? "" : String(record.repaintingEnd),
-      audioCoverStrength:
-        record.audioCoverStrength === undefined
-          ? "1.0"
-          : String(record.audioCoverStrength),
-      useRandomSeed: mode === "reproduce" ? false : record.useRandomSeed,
-      seed:
-        mode === "reproduce" && record.seed !== undefined
-          ? String(record.seed)
-          : record.useRandomSeed
-            ? ""
-            : (record.seed?.toString() ?? ""),
-    };
+    const nextForm = recordToGenerationForm(get().form, record, mode);
 
     set({
       form: nextForm,
@@ -1062,8 +1021,8 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       generationState: createIdleGenerationState(),
     });
   },
-  deleteGenerationRecord: async (id) => {
-    if (api.isTauriRuntime()) {
+  deleteGenerationRecord: async (id, options = {}) => {
+    if (api.isTauriRuntime() && !options.alreadyDeleted) {
       await api.deleteGeneration(id);
     }
 
@@ -1071,10 +1030,11 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
       const nextHistory = state.history.filter((record) => record.id !== id);
       return {
         history: nextHistory,
-        currentGeneration:
-          state.currentGeneration?.id === id
-            ? (nextHistory[0] ?? null)
-            : state.currentGeneration,
+        currentGeneration: nextCurrentGenerationAfterDelete(
+          state.currentGeneration,
+          id,
+          nextHistory,
+        ),
       };
     });
   },

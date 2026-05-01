@@ -194,7 +194,6 @@ export type AppSettings = {
   firstRunCompleted: boolean;
   language?: string | null;
   modelDirectory?: string | null;
-  backendCommandPath?: string | null;
   backendWorkingDirectory?: string | null;
   logDirectory?: string | null;
 };

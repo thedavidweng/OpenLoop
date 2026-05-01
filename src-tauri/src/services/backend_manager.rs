@@ -14,9 +14,7 @@ use crate::models::{
     errors::{AppError, AppResult},
     settings::AppSettings,
 };
-use crate::services::model_manager::{
-    checkpoints_dir_for, descriptor_for, ensure_runtime_checkpoints_link, runtime_dir_for,
-};
+use crate::services::model_bootstrap::prepare_runtime_layout;
 
 #[derive(Debug)]
 pub struct BackendManager {
@@ -81,10 +79,6 @@ impl BackendManager {
             BackendStatus::Stopped | BackendStatus::Failed { .. } => {}
         }
 
-        let selected_variant = settings.model_variant.ok_or_else(|| {
-            AppError::model_not_found("select and download a model before starting the backend")
-        })?;
-        let descriptor = descriptor_for(selected_variant)?;
         let client = backend_health_client()
             .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
 
@@ -107,27 +101,18 @@ impl BackendManager {
             return Ok(self.status.clone());
         }
 
-        let working_directory = runtime_dir_for(&self.app_data_dir, settings);
+        let layout = prepare_runtime_layout(&self.app_data_dir, settings)?;
+        let working_directory = layout.working_directory;
+        let model_directory = layout.checkpoints_directory;
+        let descriptor = layout.descriptor;
         let logs_directory = settings
             .log_directory
             .as_ref()
             .map(PathBuf::from)
             .unwrap_or_else(|| self.app_data_dir.join("logs/backend"));
-        let model_directory = checkpoints_dir_for(&self.app_data_dir, settings);
 
-        fs::create_dir_all(&working_directory)
-            .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
         fs::create_dir_all(&logs_directory)
             .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
-        fs::create_dir_all(&model_directory)
-            .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
-        ensure_runtime_checkpoints_link(&working_directory, &model_directory).map_err(|error| {
-            AppError::backend_start_failed(
-                error
-                    .details
-                    .unwrap_or_else(|| "failed to prepare ACE-Step checkpoints link".to_owned()),
-            )
-        })?;
 
         let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
         let log_path = logs_directory.join(format!("ace-step-{timestamp}.log"));

@@ -34,7 +34,6 @@ pub struct AppSettings {
     pub first_run_completed: bool,
     pub language: Option<String>,
     pub model_directory: Option<String>,
-    pub backend_command_path: Option<String>,
     pub backend_working_directory: Option<String>,
     pub log_directory: Option<String>,
 }
@@ -64,83 +63,144 @@ impl Default for AppSettings {
             first_run_completed: false,
             language: None,
             model_directory: None,
-            backend_command_path: None,
             backend_working_directory: None,
             log_directory: None,
         }
     }
 }
 
-impl AppSettings {
-    pub fn apply_setting(&mut self, key: &str, value: Value) -> AppResult<()> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SettingKey {
+    Profile,
+    ModelVariant,
+    DownloadedModels,
+    OutputDirectory,
+    BackendPort,
+    DefaultDurationSeconds,
+    DefaultAudioFormat,
+    DefaultThinking,
+    FirstRunCompleted,
+    Language,
+    ModelDirectory,
+    BackendWorkingDirectory,
+    LogDirectory,
+}
+
+impl SettingKey {
+    pub fn parse(key: &str) -> AppResult<Self> {
         match key {
-            "profile" => {
+            "profile" => Ok(Self::Profile),
+            "modelVariant" => Ok(Self::ModelVariant),
+            "downloadedModels" => Ok(Self::DownloadedModels),
+            "outputDirectory" => Ok(Self::OutputDirectory),
+            "backendPort" => Ok(Self::BackendPort),
+            "defaultDurationSeconds" => Ok(Self::DefaultDurationSeconds),
+            "defaultAudioFormat" => Ok(Self::DefaultAudioFormat),
+            "defaultThinking" => Ok(Self::DefaultThinking),
+            "firstRunCompleted" => Ok(Self::FirstRunCompleted),
+            "language" => Ok(Self::Language),
+            "modelDirectory" => Ok(Self::ModelDirectory),
+            "backendWorkingDirectory" => Ok(Self::BackendWorkingDirectory),
+            "logDirectory" => Ok(Self::LogDirectory),
+            _ => Err(AppError::validation_failed(format!(
+                "unknown setting key: {key}"
+            ))),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Profile => "profile",
+            Self::ModelVariant => "modelVariant",
+            Self::DownloadedModels => "downloadedModels",
+            Self::OutputDirectory => "outputDirectory",
+            Self::BackendPort => "backendPort",
+            Self::DefaultDurationSeconds => "defaultDurationSeconds",
+            Self::DefaultAudioFormat => "defaultAudioFormat",
+            Self::DefaultThinking => "defaultThinking",
+            Self::FirstRunCompleted => "firstRunCompleted",
+            Self::Language => "language",
+            Self::ModelDirectory => "modelDirectory",
+            Self::BackendWorkingDirectory => "backendWorkingDirectory",
+            Self::LogDirectory => "logDirectory",
+        }
+    }
+
+    pub fn impacts_backend_startup(self) -> bool {
+        matches!(
+            self,
+            Self::BackendPort
+                | Self::ModelDirectory
+                | Self::BackendWorkingDirectory
+                | Self::LogDirectory
+                | Self::ModelVariant
+        )
+    }
+}
+
+impl AppSettings {
+    pub fn apply_setting(&mut self, key: SettingKey, value: Value) -> AppResult<()> {
+        match key {
+            SettingKey::Profile => {
                 self.profile = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid profile value: {error}"))
                 })?;
             }
-            "modelVariant" => {
+            SettingKey::ModelVariant => {
                 self.model_variant = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid modelVariant value: {error}"))
                 })?;
             }
-            "downloadedModels" => {
+            SettingKey::DownloadedModels => {
                 self.downloaded_models = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid downloadedModels value: {error}"))
                 })?;
             }
-            "outputDirectory" => {
+            SettingKey::OutputDirectory => {
                 self.output_directory = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid outputDirectory value: {error}"))
                 })?;
             }
-            "backendPort" => {
+            SettingKey::BackendPort => {
                 self.backend_port = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid backendPort value: {error}"))
                 })?;
             }
-            "defaultDurationSeconds" => {
+            SettingKey::DefaultDurationSeconds => {
                 self.default_duration_seconds = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!(
                         "invalid defaultDurationSeconds value: {error}"
                     ))
                 })?;
             }
-            "defaultAudioFormat" => {
+            SettingKey::DefaultAudioFormat => {
                 self.default_audio_format = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!(
                         "invalid defaultAudioFormat value: {error}"
                     ))
                 })?;
             }
-            "defaultThinking" => {
+            SettingKey::DefaultThinking => {
                 self.default_thinking = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid defaultThinking value: {error}"))
                 })?;
             }
-            "firstRunCompleted" => {
+            SettingKey::FirstRunCompleted => {
                 self.first_run_completed = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid firstRunCompleted value: {error}"))
                 })?;
             }
-            "language" => {
+            SettingKey::Language => {
                 self.language = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid language value: {error}"))
                 })?;
             }
-            "modelDirectory" => {
+            SettingKey::ModelDirectory => {
                 self.model_directory = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid modelDirectory value: {error}"))
                 })?;
             }
-            "backendCommandPath" => {
-                self.backend_command_path = serde_json::from_value(value).map_err(|error| {
-                    AppError::validation_failed(format!(
-                        "invalid backendCommandPath value: {error}"
-                    ))
-                })?;
-            }
-            "backendWorkingDirectory" => {
+            SettingKey::BackendWorkingDirectory => {
                 self.backend_working_directory =
                     serde_json::from_value(value).map_err(|error| {
                         AppError::validation_failed(format!(
@@ -148,15 +208,10 @@ impl AppSettings {
                         ))
                     })?;
             }
-            "logDirectory" => {
+            SettingKey::LogDirectory => {
                 self.log_directory = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid logDirectory value: {error}"))
                 })?;
-            }
-            _ => {
-                return Err(AppError::validation_failed(format!(
-                    "unknown setting key: {key}"
-                )));
             }
         }
 
@@ -196,10 +251,6 @@ impl AppSettings {
             (
                 "modelDirectory",
                 serde_json::to_string(&self.model_directory),
-            ),
-            (
-                "backendCommandPath",
-                serde_json::to_string(&self.backend_command_path),
             ),
             (
                 "backendWorkingDirectory",

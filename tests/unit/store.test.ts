@@ -17,8 +17,10 @@ vi.mock("@/app/lib/api", () => ({
   getDeviceInfo: vi.fn(),
   listModelCatalog: vi.fn(),
   getModelStatus: vi.fn(),
+  listActiveGenerationTasks: vi.fn(),
   listenToGenerationEvents: vi.fn(),
   listenToModelDownloadEvents: vi.fn(),
+  clearGenerationHistory: vi.fn(),
 }));
 
 const { DEFAULT_GENERATION_FORM_VALUES } = await import("@/app/lib/validation");

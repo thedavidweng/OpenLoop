@@ -344,19 +344,15 @@ export function SettingsOverlay() {
   const { addToast } = useToast();
   const settings = useGenerationStore((state) => state.settings);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
-  const history = useGenerationStore((state) => state.history);
   const closeSettings = useGenerationStore((state) => state.closeSettings);
-  const deleteGenerationRecord = useGenerationStore(
-    (state) => state.deleteGenerationRecord,
+  const hydrateFromPersistence = useGenerationStore(
+    (state) => state.hydrateFromPersistence,
   );
   const downloadModelVariant = useGenerationStore(
     (state) => state.downloadModelVariant,
   );
   const deleteModelVariant = useGenerationStore(
     (state) => state.deleteModelVariant,
-  );
-  const hydrateFromPersistence = useGenerationStore(
-    (state) => state.hydrateFromPersistence,
   );
   const refreshModelStatuses = useGenerationStore(
     (state) => state.refreshModelStatuses,
@@ -912,9 +908,8 @@ export function SettingsOverlay() {
           onConfirm={() => {
             setClearHistoryConfirmOpen(false);
             void (async () => {
-              for (const record of history) {
-                await deleteGenerationRecord(record.id);
-              }
+              await api.clearGenerationHistory();
+              await hydrateFromPersistence();
               setSaveNotice(t("settings.historyCleared"));
             })();
           }}

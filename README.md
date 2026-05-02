@@ -91,14 +91,18 @@ pnpm tauri dev
 
 ```bash
 pnpm install
-pnpm typecheck
-pnpm build
-pnpm rust:fmt
-pnpm rust:check
-cargo test --manifest-path src-tauri/Cargo.toml
+pnpm release:check
+```
+
+### Local release build
+
+```bash
+pnpm install --frozen-lockfile
+pnpm release:build
 ```
 
 Detailed manual QA notes live in [`docs/testing.md`](docs/testing.md).
+Release packaging notes live in [`docs/release.md`](docs/release.md).
 
 For the current implementation status and more development details, see [Implementation Status](./docs/implementation-status.md).
 

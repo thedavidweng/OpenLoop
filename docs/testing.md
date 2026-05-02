@@ -5,12 +5,8 @@
 Run these before opening a PR or cutting a release candidate.
 
 ```bash
-pnpm install
-pnpm typecheck
-pnpm build
-pnpm rust:fmt
-pnpm rust:check
-cargo test --manifest-path src-tauri/Cargo.toml
+pnpm install --frozen-lockfile
+pnpm release:check
 ```
 
 ## Manual QA checklist
@@ -45,6 +41,16 @@ cargo test --manifest-path src-tauri/Cargo.toml
 - Reveal in Finder works for the selected output file.
 - Export copy writes to the requested destination.
 - Delete file and record removes both the file and the persisted row.
+- Clear history asks for confirmation, removes generated audio files, and leaves the sidebar empty.
+- Failed and cancelled generations do not create history rows.
+
+### Packaged app smoke test
+
+- `pnpm release:build` creates a `.dmg` under `src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/` on Apple Silicon.
+- The installed app launches outside `pnpm tauri dev`.
+- The bundled `uv` sidecar is present and executable.
+- First-run setup can complete from a fresh app data directory.
+- Backend logs rotate automatically instead of growing without limit.
 
 ### Privacy
 

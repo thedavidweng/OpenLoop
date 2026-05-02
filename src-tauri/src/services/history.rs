@@ -34,6 +34,15 @@ impl HistoryService {
     }
 
     pub fn clear_generation_history(&self) -> AppResult<()> {
+        let records = self.db.list_generations(None)?;
+        for record in records {
+            if let Ok(path) = generation_output_path(&record, &record.id) {
+                if path.is_file() {
+                    fs::remove_file(&path)
+                        .map_err(|error| AppError::output_write_failed(error.to_string()))?;
+                }
+            }
+        }
         self.db.clear_generations()
     }
 
@@ -68,8 +77,15 @@ impl HistoryService {
     }
 
     pub fn delete_generation_file_and_record(&self, id: &str) -> AppResult<()> {
-        let path = self.generation_output_file(id)?;
-        fs::remove_file(&path).map_err(|error| AppError::output_write_failed(error.to_string()))?;
+        let record = self
+            .db
+            .get_generation(id)?
+            .ok_or_else(|| AppError::not_found("Generation record", id.to_owned()))?;
+        let path = generation_output_path(&record, id)?;
+        if path.is_file() {
+            fs::remove_file(&path)
+                .map_err(|error| AppError::output_write_failed(error.to_string()))?;
+        }
         self.db.delete_generation(id)
     }
 
@@ -167,5 +183,28 @@ mod tests {
             .expect_err("missing file should fail");
 
         assert_eq!(error.code, "NOT_FOUND");
+    }
+
+    #[test]
+    fn clear_generation_history_deletes_output_files_and_records() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        let first_path = temp.path().join("first.wav");
+        let missing_path = temp.path().join("missing.wav");
+        fs::write(&first_path, b"audio").expect("audio file");
+        db.insert_generation(&sample_record(Some(first_path.display().to_string())))
+            .expect("insert first");
+        let mut missing_record = sample_record(Some(missing_path.display().to_string()));
+        missing_record.id = "gen_002".to_owned();
+        db.insert_generation(&missing_record)
+            .expect("insert missing");
+        let history = HistoryService::new(db.clone());
+
+        history
+            .clear_generation_history()
+            .expect("clear generated output history");
+
+        assert!(!first_path.exists());
+        assert!(db.list_generations(None).expect("history").is_empty());
     }
 }

@@ -16,6 +16,8 @@ use crate::models::{
 };
 use crate::services::model_bootstrap::prepare_runtime_layout;
 
+const BACKEND_LOG_RETAIN_COUNT: usize = 20;
+
 #[derive(Debug)]
 pub struct BackendManager {
     app_data_dir: PathBuf,
@@ -113,6 +115,7 @@ impl BackendManager {
 
         fs::create_dir_all(&logs_directory)
             .map_err(|error| AppError::backend_start_failed(error.to_string()))?;
+        prune_backend_logs(&logs_directory, BACKEND_LOG_RETAIN_COUNT.saturating_sub(1))?;
 
         let timestamp = Utc::now().format("%Y%m%d-%H%M%S").to_string();
         let log_path = logs_directory.join(format!("ace-step-{timestamp}.log"));
@@ -268,6 +271,33 @@ fn backend_is_healthy(client: &Client, port: u16) -> bool {
         .unwrap_or(false)
 }
 
+fn prune_backend_logs(logs_directory: &Path, retain_count: usize) -> AppResult<()> {
+    let mut log_paths = Vec::new();
+    for entry in fs::read_dir(logs_directory)
+        .map_err(|error| AppError::backend_start_failed(error.to_string()))?
+    {
+        let path = entry
+            .map_err(|error| AppError::backend_start_failed(error.to_string()))?
+            .path();
+        let is_backend_log = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .map(|name| name.starts_with("ace-step-") && name.ends_with(".log"))
+            .unwrap_or(false);
+        if is_backend_log {
+            log_paths.push(path);
+        }
+    }
+    log_paths.sort();
+
+    let remove_count = log_paths.len().saturating_sub(retain_count);
+    for path in log_paths.into_iter().take(remove_count) {
+        fs::remove_file(path).map_err(|error| AppError::backend_start_failed(error.to_string()))?;
+    }
+
+    Ok(())
+}
+
 #[cfg(windows)]
 const BUNDLED_UV_EXECUTABLE_NAME: &str = "uv.exe";
 
@@ -298,7 +328,7 @@ impl Drop for BackendManager {
 
 #[cfg(test)]
 mod tests {
-    use super::{BackendManager, BUNDLED_UV_EXECUTABLE_NAME};
+    use super::{prune_backend_logs, BackendManager, BUNDLED_UV_EXECUTABLE_NAME};
     use crate::models::{
         backend::BackendStatus,
         settings::{AppSettings, ModelVariant},
@@ -310,6 +340,45 @@ mod tests {
         os::unix::fs::PermissionsExt,
         thread,
     };
+
+    #[test]
+    fn prunes_old_backend_logs_without_user_action() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let logs_dir = temp_dir.path().join("logs");
+        fs::create_dir_all(&logs_dir).expect("logs dir should exist");
+        fs::write(logs_dir.join("notes.txt"), b"keep").expect("other file should write");
+
+        for index in 0..22 {
+            fs::write(
+                logs_dir.join(format!("ace-step-20260101-0000{index:02}.log")),
+                b"log",
+            )
+            .expect("log fixture should write");
+        }
+
+        prune_backend_logs(&logs_dir, 20).expect("old backend logs should prune");
+
+        let names = fs::read_dir(&logs_dir)
+            .expect("logs should read")
+            .map(|entry| {
+                entry
+                    .expect("entry should load")
+                    .file_name()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .collect::<Vec<_>>();
+        let retained_logs = names
+            .iter()
+            .filter(|name| name.starts_with("ace-step-") && name.ends_with(".log"))
+            .count();
+
+        assert_eq!(retained_logs, 20);
+        assert!(!names.contains(&"ace-step-20260101-000000.log".to_owned()));
+        assert!(!names.contains(&"ace-step-20260101-000001.log".to_owned()));
+        assert!(names.contains(&"ace-step-20260101-000021.log".to_owned()));
+        assert!(names.contains(&"notes.txt".to_owned()));
+    }
 
     #[test]
     fn reuses_existing_healthy_backend_on_configured_port() {

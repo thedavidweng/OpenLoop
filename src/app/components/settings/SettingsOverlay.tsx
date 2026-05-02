@@ -348,6 +348,10 @@ export function SettingsOverlay() {
   const hydrateFromPersistence = useGenerationStore(
     (state) => state.hydrateFromPersistence,
   );
+  const history = useGenerationStore((state) => state.history);
+  const clearGenerationHistory = useGenerationStore(
+    (state) => state.clearGenerationHistory,
+  );
   const downloadModelVariant = useGenerationStore(
     (state) => state.downloadModelVariant,
   );
@@ -883,7 +887,8 @@ export function SettingsOverlay() {
                 <button
                   type="button"
                   onClick={() => setClearHistoryConfirmOpen(true)}
-                  className="inline-flex h-8 items-center rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16"
+                  disabled={history.length === 0}
+                  className="inline-flex h-8 items-center rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("settings.clearHistory")}
                 </button>
@@ -902,14 +907,15 @@ export function SettingsOverlay() {
         <SettingsDialogHost
           open={clearHistoryConfirmOpen}
           title={t("settings.clearHistoryTitle")}
-          message={t("settings.clearHistoryMessage")}
+          message={t("settings.clearHistoryMessage", {
+            count: history.length,
+          })}
           confirmLabel={t("settings.clearHistory")}
           onCancel={() => setClearHistoryConfirmOpen(false)}
           onConfirm={() => {
             setClearHistoryConfirmOpen(false);
             void (async () => {
-              await api.clearGenerationHistory();
-              await hydrateFromPersistence();
+              await clearGenerationHistory();
               setSaveNotice(t("settings.historyCleared"));
             })();
           }}

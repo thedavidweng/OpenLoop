@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface SettingsDialogHostProps {
   open: boolean;
   title: string;
@@ -15,6 +17,8 @@ export function SettingsDialogHost({
   onConfirm,
   onCancel,
 }: SettingsDialogHostProps) {
+  const { t } = useTranslation();
+
   if (!open) {
     return null;
   }
@@ -34,7 +38,7 @@ export function SettingsDialogHost({
             onClick={onCancel}
             className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-1.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"

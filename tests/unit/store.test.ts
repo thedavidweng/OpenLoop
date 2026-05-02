@@ -7,9 +7,12 @@ import type {
 
 const generateMusic =
   vi.fn<(request: GenerationRequest) => Promise<GenerationRunResult>>();
+const isTauriRuntime = vi.fn(() => true);
+const deleteGenerationFileAndRecord = vi.fn<(id: string) => Promise<void>>();
+const clearGenerationHistory = vi.fn<() => Promise<void>>();
 
 vi.mock("@/app/lib/api", () => ({
-  isTauriRuntime: () => true,
+  isTauriRuntime: () => isTauriRuntime(),
   generateMusic: (request: GenerationRequest) => generateMusic(request),
   cancelGeneration: vi.fn(),
   getSettings: vi.fn(),
@@ -20,7 +23,9 @@ vi.mock("@/app/lib/api", () => ({
   listActiveGenerationTasks: vi.fn(),
   listenToGenerationEvents: vi.fn(),
   listenToModelDownloadEvents: vi.fn(),
-  clearGenerationHistory: vi.fn(),
+  deleteGenerationFileAndRecord: (id: string) =>
+    deleteGenerationFileAndRecord(id),
+  clearGenerationHistory: () => clearGenerationHistory(),
 }));
 
 const { DEFAULT_GENERATION_FORM_VALUES } = await import("@/app/lib/validation");
@@ -58,7 +63,13 @@ function record(id: string, seed: number): GenerationRecord {
 describe("generation store", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    isTauriRuntime.mockReset();
+    isTauriRuntime.mockReturnValue(true);
     generateMusic.mockReset();
+    deleteGenerationFileAndRecord.mockReset();
+    deleteGenerationFileAndRecord.mockResolvedValue();
+    clearGenerationHistory.mockReset();
+    clearGenerationHistory.mockResolvedValue();
     useGenerationStore.setState({
       form: {
         ...DEFAULT_GENERATION_FORM_VALUES,
@@ -98,5 +109,61 @@ describe("generation store", () => {
     ]);
     expect(state.currentGeneration?.id).toBe("variant-2");
     expect(state.generationState.phase).toBe("completed");
+  });
+
+  it("deletes a history output through the file-and-record command", async () => {
+    useGenerationStore.setState({
+      history: [record("kept", 1), record("deleted", 2)],
+      currentGeneration: record("deleted", 2),
+    });
+
+    await useGenerationStore.getState().deleteGenerationRecord("deleted");
+
+    expect(deleteGenerationFileAndRecord).toHaveBeenCalledWith("deleted");
+    expect(useGenerationStore.getState().history.map((item) => item.id)).toEqual(
+      ["kept"],
+    );
+    expect(useGenerationStore.getState().currentGeneration?.id).toBe("kept");
+  });
+
+  it("clears generated output history after the backend deletes files and records", async () => {
+    useGenerationStore.setState({
+      history: [record("first", 1), record("second", 2)],
+      currentGeneration: record("second", 2),
+    });
+
+    await useGenerationStore.getState().clearGenerationHistory();
+
+    expect(clearGenerationHistory).toHaveBeenCalledOnce();
+    expect(useGenerationStore.getState().history).toEqual([]);
+    expect(useGenerationStore.getState().currentGeneration).toBeNull();
+  });
+
+  it("does not create history when browser preview generation fails", async () => {
+    isTauriRuntime.mockReturnValue(false);
+
+    useGenerationStore.setState({
+      form: {
+        ...DEFAULT_GENERATION_FORM_VALUES,
+        prompt: "fail this preview",
+      },
+      history: [record("existing", 1)],
+      currentGeneration: record("existing", 1),
+      settings: {
+        ...useGenerationStore.getState().settings,
+        firstRunCompleted: true,
+        modelVariant: "turbo",
+        downloadedModels: ["turbo"],
+      },
+    });
+
+    const run = useGenerationStore.getState().runGeneration();
+    await vi.advanceTimersByTimeAsync(1450);
+    await run;
+
+    const state = useGenerationStore.getState();
+    expect(state.generationState.status).toBe("failed");
+    expect(state.history.map((item) => item.id)).toEqual(["existing"]);
+    expect(state.currentGeneration?.id).toBe("existing");
   });
 });

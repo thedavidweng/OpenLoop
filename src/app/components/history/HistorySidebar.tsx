@@ -1,25 +1,15 @@
 import { useMemo, useState } from "react";
 import {
-  CheckCircle2,
   Clock3,
-  Folder,
   Play,
   Settings2,
   Trash2,
-  XCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
-
-type HistoryFilter = "all" | "completed" | "failed" | "cancelled";
-
-const STATUS_BORDER = {
-  completed: "border-l-emerald-500",
-  failed: "border-l-red-500",
-  cancelled: "border-l-amber-500",
-} as const;
+import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 
 export function HistorySidebar() {
   const { t } = useTranslation();
@@ -34,37 +24,31 @@ export function HistorySidebar() {
   const loadGenerationSettings = useGenerationStore(
     (state) => state.loadGenerationSettings,
   );
+  const clearGenerationHistory = useGenerationStore(
+    (state) => state.clearGenerationHistory,
+  );
   const currentGeneration = useGenerationStore(
     (state) => state.currentGeneration,
   );
-  const [filter, setFilter] = useState<HistoryFilter>("all");
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   const filteredHistory = useMemo(() => {
     const query = historyQuery.trim().toLowerCase();
     return history.filter((record) => {
-      if (filter !== "all" && record.status !== filter) {
-        return false;
-      }
-
       if (!query) {
         return true;
       }
 
       return `${record.prompt} ${record.lyrics}`.toLowerCase().includes(query);
     });
-  }, [filter, history, historyQuery]);
+  }, [history, historyQuery]);
 
-  const counts = useMemo(
-    () => ({
-      all: history.length,
-      completed: history.filter((record) => record.status === "completed")
-        .length,
-      failed: history.filter((record) => record.status === "failed").length,
-      cancelled: history.filter((record) => record.status === "cancelled")
-        .length,
-    }),
-    [history],
+  const deleteTarget = useMemo(
+    () => history.find((item) => item.id === deleteTargetId) ?? null,
+    [deleteTargetId, history],
   );
+  const historyCount = history.length;
 
   return (
     <div
@@ -76,51 +60,31 @@ export function HistorySidebar() {
         <SearchBox />
       </div>
 
-      <div className="shrink-0 space-y-0.5 px-2">
-        <div className="px-2 pb-1 text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]">
-          {t("history.localRuns")}
+      <div className="shrink-0 px-3 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]">
+              {t("history.generatedMusic")}
+            </p>
+            <p className="mt-0.5 text-[11px] text-[var(--color-text-dimmer)]">
+              {t("history.itemCount", { count: historyCount })}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setClearConfirmOpen(true)}
+            disabled={historyCount === 0}
+            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-red-500/25 bg-red-600/8 px-2 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 size={11} />
+            {t("history.clearAllShort")}
+          </button>
         </div>
-
-        {(
-          [
-            ["all", t("history.all"), counts.all, Folder],
-            [
-              "completed",
-              t("history.completed"),
-              counts.completed,
-              CheckCircle2,
-            ],
-            ["failed", t("history.failed"), counts.failed, XCircle],
-            ["cancelled", t("history.cancelled"), counts.cancelled, XCircle],
-          ] as const
-        ).map(([value, label, count, Icon]) => {
-          const selected = filter === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFilter(value)}
-              className={`sidebar-source-list-row motion-surface flex w-full items-center justify-between px-2 py-1.5 ${
-                selected
-                  ? "border border-[var(--sidebar-row-selected-border)] bg-[var(--sidebar-row-selected-bg)] text-white shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
-                  : "border border-transparent text-[var(--color-text)] hover:bg-[var(--sidebar-row-overlay-bg)]"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <Icon size={14} className="text-[var(--color-accent)]" />
-                <span>{label}</span>
-              </span>
-              <span className="text-[11px] text-[var(--color-text-dim)]">
-                {count}
-              </span>
-            </button>
-          );
-        })}
       </div>
 
-      <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden px-2">
+      <div className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden px-2">
         <div className="px-2 pb-1 text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]">
-          {t("history.localMusic")}
+          {t("history.recent")}
         </div>
 
         {filteredHistory.length === 0 ? (
@@ -134,9 +98,7 @@ export function HistorySidebar() {
               return (
                 <li key={item.id}>
                   <div
-                    className={`group rounded-xl border border-l-2 px-3 py-3 transition-colors ${
-                      STATUS_BORDER[item.status]
-                    } ${
+                    className={`group rounded-xl border border-l-2 border-l-emerald-500 px-3 py-3 transition-colors ${
                       selected
                         ? "border-[var(--sidebar-row-selected-border)] bg-[var(--sidebar-row-selected-bg)]"
                         : "border-[var(--color-border-light)] bg-[var(--color-surface)] hover:bg-[var(--color-hover)]"
@@ -163,17 +125,6 @@ export function HistorySidebar() {
                           {Math.round(item.durationSeconds)}s
                         </p>
                       </div>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          item.status === "completed"
-                            ? "bg-emerald-500/15 text-emerald-300"
-                            : item.status === "cancelled"
-                              ? "bg-amber-500/15 text-amber-300"
-                              : "bg-red-500/15 text-red-300"
-                        }`}
-                      >
-                        {t(`history.status.${item.status}`)}
-                      </span>
                     </button>
                     <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-[var(--color-text-dim)]">
                       <span className="flex items-center gap-1.5">
@@ -230,7 +181,7 @@ export function HistorySidebar() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              void deleteGenerationRecord(item.id);
+                              setDeleteTargetId(item.id);
                             }}
                             className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
                             data-visible={selected}
@@ -247,6 +198,35 @@ export function HistorySidebar() {
           </ul>
         )}
       </div>
+      <SettingsDialogHost
+        open={deleteTarget !== null}
+        title={t("history.deleteTitle")}
+        message={t("history.deleteMessage", {
+          title:
+            deleteTarget?.prompt ||
+            deleteTarget?.lyrics.slice(0, 48) ||
+            t("history.untitled"),
+        })}
+        confirmLabel={t("history.deleteConfirm")}
+        onCancel={() => setDeleteTargetId(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          const id = deleteTarget.id;
+          setDeleteTargetId(null);
+          void deleteGenerationRecord(id);
+        }}
+      />
+      <SettingsDialogHost
+        open={clearConfirmOpen}
+        title={t("history.clearTitle")}
+        message={t("history.clearMessage", { count: historyCount })}
+        confirmLabel={t("history.clearConfirm")}
+        onCancel={() => setClearConfirmOpen(false)}
+        onConfirm={() => {
+          setClearConfirmOpen(false);
+          void clearGenerationHistory();
+        }}
+      />
     </div>
   );
 }

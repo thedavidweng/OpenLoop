@@ -107,7 +107,7 @@ export type AppError = {
   recoverable: boolean;
 };
 
-export type GenerationRecordStatus = "completed" | "failed" | "cancelled";
+export type GenerationRecordStatus = "completed";
 
 export type GenerationRecord = {
   id: string;
@@ -236,7 +236,6 @@ export type GenerationEvent =
     }
   | {
       type: "cancelled";
-      generationId: string;
       variationCurrent?: number;
       variationTotal?: number;
     }

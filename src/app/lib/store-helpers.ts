@@ -237,8 +237,6 @@ export function shouldPreviewFail(request: GenerationRequest) {
 
 export function createGenerationRecord(
   request: GenerationRequest,
-  status: GenerationRecord["status"],
-  errorMessage: string | null,
 ): GenerationRecord {
   const id = globalThis.crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -273,16 +271,10 @@ export function createGenerationRecord(
     useRandomSeed: request.useRandomSeed,
     seed: request.seed,
     audioFormat: request.audioFormat,
-    outputPath:
-      status === "completed"
-        ? `/preview-output/${id}.${request.audioFormat}`
-        : null,
-    status,
-    errorMessage,
-    generationInfo:
-      status === "completed"
-        ? tr("status.previewCompleted")
-        : tr("status.previewFailed"),
+    outputPath: `/preview-output/${id}.${request.audioFormat}`,
+    status: "completed",
+    errorMessage: null,
+    generationInfo: tr("status.previewCompleted"),
   };
 }
 

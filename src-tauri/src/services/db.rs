@@ -122,13 +122,13 @@ impl Database {
         let mut statement = if query.is_some() {
             connection
                 .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1 ORDER BY created_at DESC",
+                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1) ORDER BY created_at DESC",
                 )
                 .map_err(|error| AppError::db_read_failed(error.to_string()))?
         } else {
             connection
                 .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations ORDER BY created_at DESC",
+                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' ORDER BY created_at DESC",
                 )
                 .map_err(|error| AppError::db_read_failed(error.to_string()))?
         };
@@ -481,6 +481,45 @@ mod tests {
             .list_generations(None)
             .expect("generation list should still load");
         assert!(remaining.is_empty());
+    }
+
+    #[test]
+    fn list_generations_only_returns_generated_output_records() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let database = Database::new(temp_dir.path()).expect("database should initialize");
+
+        let completed = sample_record();
+        database
+            .insert_generation(&completed)
+            .expect("completed generation should insert");
+
+        let mut failed = sample_record();
+        failed.id = "gen_failed".to_owned();
+        failed.status = "failed".to_owned();
+        failed.output_path = None;
+        database
+            .insert_generation(&failed)
+            .expect("legacy failed generation should insert");
+
+        let mut cancelled = sample_record();
+        cancelled.id = "gen_cancelled".to_owned();
+        cancelled.status = "cancelled".to_owned();
+        cancelled.output_path = None;
+        database
+            .insert_generation(&cancelled)
+            .expect("legacy cancelled generation should insert");
+
+        let listed = database
+            .list_generations(None)
+            .expect("generation list should load");
+
+        assert_eq!(
+            listed
+                .iter()
+                .map(|record| record.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["gen_001"]
+        );
     }
 
     #[test]

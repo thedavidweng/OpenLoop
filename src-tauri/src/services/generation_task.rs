@@ -148,11 +148,10 @@ impl GenerationTaskRunner {
                 variation_total,
                 Some(active_id),
             )?;
-            let cancelled = record.status == "cancelled";
-            records.push(record);
-            if cancelled {
+            let Some(record) = record else {
                 break;
-            }
+            };
+            records.push(record);
         }
 
         self.cancelled.store(false, Ordering::SeqCst);
@@ -175,7 +174,8 @@ impl GenerationTaskRunner {
             active.variation_index,
             active.variation_total,
             Some(active.id.clone()),
-        )
+        )?
+        .ok_or_else(|| AppError::task_failed("active generation task was cancelled"))
     }
 
     fn run_released_task(
@@ -188,29 +188,20 @@ impl GenerationTaskRunner {
         variation_index: i64,
         variation_total: i64,
         active_id: Option<String>,
-    ) -> AppResult<GenerationRecord> {
+    ) -> AppResult<Option<GenerationRecord>> {
         let mut first_running_state = true;
 
         loop {
             if self.cancelled.load(Ordering::SeqCst) {
-                let record = build_generation_record(
-                    &request,
-                    "cancelled",
-                    None,
-                    Some("Cancelled by user".to_owned()),
-                    None,
-                );
-                let persisted = self.db.insert_generation(&record)?;
                 if let Some(active_id) = &active_id {
                     self.db.delete_active_generation_task(active_id)?;
                 }
                 sink.emit_generation_event(serde_json::json!({
                     "type": "cancelled",
-                    "generationId": persisted.id,
                     "variationCurrent": variation_index,
                     "variationTotal": variation_total,
                 }))?;
-                return Ok(persisted);
+                return Ok(None);
             }
 
             let results = adapter.query_result(vec![task_id.clone()])?;
@@ -258,17 +249,9 @@ impl GenerationTaskRunner {
                         "variationCurrent": variation_index,
                         "variationTotal": variation_total,
                     }))?;
-                    return Ok(persisted);
+                    return Ok(Some(persisted));
                 }
                 AceTaskState::Failed { error } => {
-                    let record = build_generation_record(
-                        &request,
-                        "failed",
-                        None,
-                        Some(error.message.clone()),
-                        result.raw_result.map(|value| value.to_string()),
-                    );
-                    let _persisted = self.db.insert_generation(&record)?;
                     if let Some(active_id) = &active_id {
                         self.db.delete_active_generation_task(active_id)?;
                     }
@@ -367,12 +350,21 @@ mod tests {
 
     struct MemoryAdapter {
         states: Mutex<Vec<AceTaskState>>,
+        cancel_on_query: Option<Arc<AtomicBool>>,
     }
 
     impl MemoryAdapter {
         fn new(states: Vec<AceTaskState>) -> Self {
             Self {
                 states: Mutex::new(states),
+                cancel_on_query: None,
+            }
+        }
+
+        fn cancelling(states: Vec<AceTaskState>, cancelled: Arc<AtomicBool>) -> Self {
+            Self {
+                states: Mutex::new(states),
+                cancel_on_query: Some(cancelled),
             }
         }
     }
@@ -385,6 +377,9 @@ mod tests {
         }
 
         fn query_result(&self, _task_ids: Vec<String>) -> AppResult<Vec<AceTaskResult>> {
+            if let Some(cancelled) = &self.cancel_on_query {
+                cancelled.store(true, Ordering::SeqCst);
+            }
             let state = self.states.lock().expect("states").remove(0);
             Ok(vec![AceTaskResult {
                 task_id: "task-001".to_owned(),
@@ -509,5 +504,86 @@ mod tests {
         assert_eq!(second.seed, Some(42));
         assert_eq!(third.seed, Some(43));
         assert!(!first.use_random_seed);
+    }
+
+    #[test]
+    fn cancelled_generation_task_does_not_create_history_record() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        let settings = AppSettings {
+            output_directory: Some(temp.path().join("out").display().to_string()),
+            ..AppSettings::default()
+        };
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let runner = GenerationTaskRunner::new(
+            db.clone(),
+            FileStore::new(temp.path().to_path_buf()),
+            cancelled.clone(),
+        )
+        .with_timing(GenerationTaskTiming {
+            poll_delay: Duration::ZERO,
+        });
+        let adapter = MemoryAdapter::cancelling(vec![AceTaskState::Running], cancelled);
+        let sink = MemorySink::default();
+
+        let result = runner
+            .generate(&adapter, &sink, &settings, sample_request())
+            .expect("cancellation is a run outcome");
+
+        assert!(result.records.is_empty());
+        assert!(db.list_generations(None).expect("history").is_empty());
+        assert!(db
+            .list_active_generation_tasks()
+            .expect("active tasks")
+            .is_empty());
+        let event_types: Vec<String> = sink
+            .events
+            .lock()
+            .expect("events")
+            .iter()
+            .map(|event| event["type"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(event_types, vec!["submitted", "queued", "cancelled"]);
+    }
+
+    #[test]
+    fn failed_generation_task_does_not_create_history_record() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        let settings = AppSettings {
+            output_directory: Some(temp.path().join("out").display().to_string()),
+            ..AppSettings::default()
+        };
+        let runner = GenerationTaskRunner::new(
+            db.clone(),
+            FileStore::new(temp.path().to_path_buf()),
+            Arc::new(AtomicBool::new(false)),
+        )
+        .with_timing(GenerationTaskTiming {
+            poll_delay: Duration::ZERO,
+        });
+        let adapter = MemoryAdapter::new(vec![AceTaskState::Failed {
+            error: AppError::task_failed("backend rejected the request"),
+        }]);
+        let sink = MemorySink::default();
+
+        let error = runner
+            .generate(&adapter, &sink, &settings, sample_request())
+            .expect_err("failure remains a run error");
+
+        assert_eq!(error.code, "TASK_FAILED");
+        assert!(db.list_generations(None).expect("history").is_empty());
+        assert!(db
+            .list_active_generation_tasks()
+            .expect("active tasks")
+            .is_empty());
+        let event_types: Vec<String> = sink
+            .events
+            .lock()
+            .expect("events")
+            .iter()
+            .map(|event| event["type"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(event_types, vec!["submitted", "failed"]);
     }
 }

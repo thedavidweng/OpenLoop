@@ -131,6 +131,7 @@ interface GenerationStore {
     id: string,
     options?: { alreadyDeleted?: boolean },
   ) => Promise<void>;
+  clearGenerationHistory: () => Promise<void>;
   resetForm: () => void;
 }
 
@@ -806,12 +807,10 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           currentGeneration: latestRecord ?? state.currentGeneration,
           history: mergeGenerationRecords(persistedRecords, state.history),
           generationState: {
-            status:
-              latestRecord?.status === "cancelled" ? "cancelled" : "completed",
-            phase:
-              latestRecord?.status === "cancelled" ? "cancelled" : "completed",
+            status: persistedRecords.length === 0 ? "cancelled" : "completed",
+            phase: persistedRecords.length === 0 ? "cancelled" : "completed",
             statusMessage:
-              latestRecord?.status === "cancelled"
+              persistedRecords.length === 0
                 ? tr("status.cancelled")
                 : tr("status.completed"),
             error: null,
@@ -854,32 +853,18 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     await sleep(PREVIEW_DELAY_MS.running);
 
     if (shouldPreviewFail(validation.request)) {
-      const failedRecord = createGenerationRecord(
-        validation.request,
-        "failed",
-        createPreviewRuntimeError().message,
-      );
-      const persistedRecord = api.isTauriRuntime()
-        ? await api.insertGeneration(failedRecord)
-        : failedRecord;
-      set((state) => ({
-        currentGeneration: persistedRecord,
-        history: [persistedRecord, ...state.history],
+      set({
         generationState: {
           status: "failed",
           phase: "failed",
           statusMessage: tr("status.previewFailedPrompt"),
           error: createPreviewRuntimeError(),
         },
-      }));
+      });
       return;
     }
 
-    const completedRecord = createGenerationRecord(
-      validation.request,
-      "completed",
-      null,
-    );
+    const completedRecord = createGenerationRecord(validation.request);
     const persistedRecord = api.isTauriRuntime()
       ? await api.insertGeneration(completedRecord)
       : completedRecord;
@@ -972,12 +957,9 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           ...state.history.filter((item) => item.id !== record.id),
         ],
         generationState: {
-          status: record.status === "cancelled" ? "cancelled" : "completed",
-          phase: record.status === "cancelled" ? "cancelled" : "completed",
-          statusMessage:
-            record.status === "cancelled"
-              ? tr("status.cancelled")
-              : tr("status.completed"),
+          status: "completed",
+          phase: "completed",
+          statusMessage: tr("status.completed"),
           error: null,
         },
       }));
@@ -1023,7 +1005,7 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
   },
   deleteGenerationRecord: async (id, options = {}) => {
     if (api.isTauriRuntime() && !options.alreadyDeleted) {
-      await api.deleteGeneration(id);
+      await api.deleteGenerationFileAndRecord(id);
     }
 
     set((state) => {
@@ -1036,6 +1018,16 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
           nextHistory,
         ),
       };
+    });
+  },
+  clearGenerationHistory: async () => {
+    if (api.isTauriRuntime()) {
+      await api.clearGenerationHistory();
+    }
+
+    set({
+      history: [],
+      currentGeneration: null,
     });
   },
   resetForm: () => {

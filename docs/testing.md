@@ -46,7 +46,7 @@ pnpm release:check
 
 ### Packaged app smoke test
 
-- `pnpm release:build` creates a `.dmg` under `src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/` on Apple Silicon.
+- `pnpm release:build` creates a `.dmg` under `src-tauri/target/release/bundle/dmg/` on Apple Silicon.
 - The installed app launches outside `pnpm tauri dev`.
 - The bundled `uv` sidecar is present and executable.
 - First-run setup can complete from a fresh app data directory.

@@ -41,9 +41,55 @@ AI music tools are powerful, but many of them share the same problems:
 3. They hide model behavior behind closed platforms.
 4. They make export, ownership, and reproducibility harder than they should be.
 
+---
+
+## Installation
+
+```bash
+brew tap thedavidweng/tap && brew install --cask openloop
+```
+
+Homebrew automatically adds `openloop` to your PATH and clears macOS quarantine. Direct DMG downloads are available on [Releases](https://github.com/thedavidweng/OpenLoop/releases) — after installing, open Settings → "Add to PATH" to enable the CLI.
+
+---
+
+## CLI Mode
+
+`openloop` ships with a full CLI in the same binary as the desktop app. Pass any subcommand and it runs headlessly — no GUI needed.
+
+```bash
+openloop run "lo-fi warm piano, 90 BPM"
+openloop run --model pro --duration 30 --output ~/Music/beat.mp3
+openloop setup model turbo
+openloop list --json
+openloop ps
+```
+
+Every GUI operation maps to a CLI command. The CLI reads/writes the same SQLite database, so history and settings stay in sync with the app.
+
+### Agent Pipelines
+
+Paired with **[Remotion](https://github.com/remotion-dev/remotion)** (programmatic React video rendering) or **[HyperFrames](https://github.com/heygen-com/hyperframes)** (HTML-to-video), an AI coding agent can orchestrate end-to-end video workflows:
+
+```
+AI agent → openloop run (music) → Remotion / HyperFrames (video) → final render
+```
+
+The `--ndjson` flag streams machine-readable progress — agents parse one JSON line at a time:
+
+```bash
+openloop run "cinematic strings" --ndjson | while read line; do
+  echo "Progress: $(echo "$line" | jq -r '.progress')"
+done
+```
+
+[Full CLI documentation →](./docs/cli.md)
+
+---
+
 ## Features
 
-### Planned for v0.1 Alpha
+### v0.1 Alpha
 
 - **Text-to-Music Generation** — Generate music from prompts such as `lo-fi warm piano, 90 BPM, no vocal`.
 - **Lyrics Input** — Add lyrics with optional structure tags like `[verse]`, `[chorus]`, and `[bridge]`.
@@ -64,59 +110,6 @@ AI music tools are powerful, but many of them share the same problems:
 - More robust model downloader
 - macOS signing and notarization
 - Advanced export and audio conversion options
-
----
-
-## CLI Mode — Built for Agents
-
-OpenLoop ships with a full-featured CLI in the same binary as the desktop app. No separate install — if you installed via Homebrew, `openloop` is already in your PATH. Otherwise, toggle it in Settings.
-
-```bash
-openloop run "lo-fi warm piano, 90 BPM"
-openloop run --model pro --duration 30 --output ~/Music/beat.mp3
-openloop list --json
-openloop pull model:turbo
-openloop ps
-```
-
-Every GUI operation maps to a CLI command. The CLI is stateless — it reads/writes the same SQLite database the GUI uses, so history and settings are always in sync.
-
-### Agent-friendly design
-
-OpenLoop was designed to be scriptable and composable. Paired with open-source video tools like **[Remotion](https://github.com/remotion-dev/remotion)** (programmatic React video rendering) and **[HyperFrames](https://github.com/heygen-com/hyperframes)** (HTML-to-video for AI agents), you can build fully automated AI video pipelines:
-
-```
-AI script → OpenLoop CLI (music) → Remotion/HyperFrames (video) → Final video
-```
-
-An AI coding agent can orchestrate the entire chain: generate background music with `openloop run`, render visuals programmatically, synthesize voiceover — all in one scripted workflow.
-
-The `--ndjson` flag streams machine-readable progress, so agents can parse generation status line by line:
-
-```bash
-openloop run "cinematic strings" --ndjson | while read line; do
-  echo "Progress: $(echo "$line" | jq -r '.progress')"
-done
-```
-
-Full CLI documentation: [CLI Design Spec](./docs/specs/2026-05-04-openloop-cli-design.md)
-
----
-
-## Installation
-
-### Homebrew (recommended)
-
-```bash
-brew tap thedavidweng/tap
-brew install --cask openloop
-```
-
-Homebrew automatically adds `openloop` to your PATH and clears macOS quarantine.
-
-### Direct download
-
-Download the latest DMG from [Releases](https://github.com/thedavidweng/OpenLoop/releases). After installing, open OpenLoop → Settings → "Add to PATH" to enable CLI commands from your terminal.
 
 ---
 

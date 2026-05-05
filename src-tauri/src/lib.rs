@@ -1,27 +1,14 @@
 mod app_menu;
+pub mod app_state;
 pub mod audio;
+pub mod cli;
 pub mod commands;
 pub mod models;
 pub mod services;
 pub mod window_shell;
 
-use std::{
-    fs,
-    path::{Path, PathBuf},
-    sync::{atomic::AtomicBool, Arc, Mutex},
-};
-
-use services::{backend_manager::BackendManager, db::Database, model_manager::ModelManager};
+pub use app_state::AppState;
 use tauri::Manager;
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub app_data_dir: PathBuf,
-    pub db: Database,
-    pub backend: Arc<Mutex<BackendManager>>,
-    pub models: Arc<Mutex<ModelManager>>,
-    pub generation_cancelled: Arc<AtomicBool>,
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,26 +16,14 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
-            let sidecar_dir = current_executable_dir()?;
-            fs::create_dir_all(&app_data_dir)?;
-            let db = Database::new(&app_data_dir)
+            let sidecar_dir = app_state::current_executable_dir()
                 .map_err(|error| std::io::Error::other(error.message.clone()))?;
-            let backend = Arc::new(Mutex::new(BackendManager::new(
-                app_data_dir.clone(),
-                sidecar_dir,
-            )));
-            let models = Arc::new(Mutex::new(ModelManager::new(app_data_dir.clone())));
-            let generation_cancelled = Arc::new(AtomicBool::new(false));
+            let state = AppState::init(app_data_dir, sidecar_dir)
+                .map_err(|error| std::io::Error::other(error.message.clone()))?;
             let window_shell_state = window_shell::initialize_main_window(app);
 
             app.manage(window_shell_state);
-            app.manage(AppState {
-                app_data_dir,
-                db,
-                backend,
-                models,
-                generation_cancelled,
-            });
+            app.manage(state);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -70,6 +45,9 @@ pub fn run() {
             commands::settings::set_setting,
             commands::settings::reset_runtime_settings,
             commands::settings::get_default_app_paths,
+            commands::settings::add_cli_to_path,
+            commands::settings::remove_cli_from_path,
+            commands::settings::is_cli_in_path,
             commands::models::list_model_catalog,
             commands::models::get_model_status,
             commands::models::download_model,
@@ -93,15 +71,7 @@ pub fn run() {
         .menu(|app| app_menu::build_app_menu(app))
         .on_menu_event(app_menu::handle_menu_event);
 
-    builder
-        .run(tauri::generate_context!())
-        .expect("error while running OpenLoop");
-}
-
-fn current_executable_dir() -> std::io::Result<PathBuf> {
-    std::env::current_exe().and_then(|path| {
-        path.parent()
-            .map(Path::to_path_buf)
-            .ok_or_else(|| std::io::Error::other("current executable has no parent directory"))
-    })
+    if let Err(error) = builder.run(tauri::generate_context!()) {
+        eprintln!("openloop: {error}");
+    }
 }

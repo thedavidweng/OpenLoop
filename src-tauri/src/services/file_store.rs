@@ -3,12 +3,9 @@ use std::{env, fs, path::PathBuf};
 use chrono::Utc;
 use uuid::Uuid;
 
-use crate::{
-    audio::{decode::decode_bytes, encode::write_ogg_file},
-    models::{
-        errors::{AppError, AppResult},
-        settings::AppSettings,
-    },
+use crate::models::{
+    errors::{AppError, AppResult},
+    settings::AppSettings,
 };
 
 pub struct FileStore {
@@ -47,19 +44,8 @@ impl FileStore {
         );
         let output_path = directory.join(filename);
 
-        if audio_format == "ogg" {
-            let decoded = decode_bytes(bytes, "flac").map_err(|error| {
-                AppError::output_write_failed(format!(
-                    "failed to decode ACE-Step output before OGG export: {error}"
-                ))
-            })?;
-            write_ogg_file(&output_path, &decoded).map_err(|error| {
-                AppError::output_write_failed(format!("failed to write OGG/Vorbis output: {error}"))
-            })?;
-        } else {
-            fs::write(&output_path, bytes)
-                .map_err(|error| AppError::output_write_failed(error.to_string()))?;
-        }
+        fs::write(&output_path, bytes)
+            .map_err(|error| AppError::output_write_failed(error.to_string()))?;
 
         Ok(output_path.display().to_string())
     }

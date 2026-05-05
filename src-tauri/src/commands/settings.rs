@@ -1,8 +1,12 @@
 use serde_json::Value;
+use std::path::Path;
 use tauri::State;
 
 use crate::{
-    models::{errors::AppResult, settings::AppSettings},
+    models::{
+        errors::{AppError, AppResult},
+        settings::AppSettings,
+    },
     AppState,
 };
 
@@ -65,4 +69,46 @@ pub fn get_default_app_paths(state: State<'_, AppState>) -> AppResult<DefaultApp
             .display()
             .to_string(),
     })
+}
+
+#[tauri::command]
+pub fn add_cli_to_path() -> AppResult<String> {
+    let target = Path::new("/usr/local/bin/openloop");
+    if let Some(parent) = target.parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|error| {
+                AppError::internal(format!(
+                    "Cannot create /usr/local/bin. Grant permission in System Settings, then retry. ({error})"
+                ))
+            })?;
+        }
+    }
+
+    let exe_path = std::env::current_exe().map_err(|error| {
+        AppError::internal(format!("Cannot locate current executable: {error}"))
+    })?;
+
+    if target.exists() {
+        let _ = std::fs::remove_file(target);
+    }
+
+    #[cfg(target_os = "macos")]
+    std::os::unix::fs::symlink(&exe_path, target)
+        .map_err(|error| AppError::internal(format!("Cannot create symlink: {error}")))?;
+
+    Ok("openloop added to PATH".to_owned())
+}
+
+#[tauri::command]
+pub fn remove_cli_from_path() -> AppResult<String> {
+    let target = Path::new("/usr/local/bin/openloop");
+    if target.exists() {
+        let _ = std::fs::remove_file(target);
+    }
+    Ok("Removed from PATH".to_owned())
+}
+
+#[tauri::command]
+pub fn is_cli_in_path() -> AppResult<bool> {
+    Ok(Path::new("/usr/local/bin/openloop").exists())
 }

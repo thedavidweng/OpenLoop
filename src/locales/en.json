@@ -83,7 +83,14 @@
     "clearBackendCache": "Clear backend cache",
     "clearBackendCacheTitle": "Clear backend cache?",
     "clearBackendCacheMessage": "This stops the embedded backend and removes ACE-Step runtime cache files. Downloaded models are kept.",
-    "backendCacheCleared": "Backend cache cleared."
+    "backendCacheCleared": "Backend cache cleared.",
+    "cliPath": "CLI tool in PATH",
+    "cliPathDescription": "Add the openloop CLI to your terminal PATH for command-line usage.",
+    "cliPathHint": "Creates a symbolic link at {{link}} pointing to OpenLoop.app so you can run commands like openloop run directly from your terminal.",
+    "cliPathAdd": "Add to PATH",
+    "cliPathRemove": "Remove from PATH",
+    "cliPathRetry": "Retry adding to PATH",
+    "cliPathChecking": "Checking..."
   },
   "model": {
     "notInstalled": "Not installed",

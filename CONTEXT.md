@@ -1,6 +1,6 @@
 # OpenLoop Context
 
-OpenLoop is a local-first desktop app for Apple Silicon music generation through a local ACE-Step backend.
+OpenLoop is a local-first music generation tool for Apple Silicon, powered by a local ACE-Step backend. It has two interfaces — a desktop GUI and a command-line CLI — that share all state: settings, history, models, and the backend process.
 
 ## Language
 
@@ -41,6 +41,9 @@ Persisted local configuration for model selection, runtime directories, backend 
 
 ## Relationships
 
+- The CLI and GUI are two interfaces to the same product; a **Generation Task** submitted via the CLI appears in GUI **History**, and vice versa.
+- **Settings** changed via the CLI are immediately visible in the GUI, and vice versa.
+- The CLI supports agent workflows: it can run headlessly, output machine-readable JSON, and auto-bootstrap the **Local Backend** and **Model Bootstrap** on first use.
 - A **Generation Task** produces exactly one **Generation Record** per variation.
 - A **Generation Record** has exactly one **Output File** when created.
 - A failed **Generation Task** produces no **Generation Record**; the form remains available for correction and retry.

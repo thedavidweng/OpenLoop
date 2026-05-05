@@ -246,6 +246,52 @@ impl ModelManager {
         Ok(initial)
     }
 
+    pub fn download_blocking(
+        &self,
+        settings: &AppSettings,
+        variant: ModelVariant,
+    ) -> AppResult<ModelStatusSnapshot> {
+        let descriptor = descriptor_for(variant)?;
+        let pack = pack_for_descriptor(descriptor);
+        let checkpoints_dir = checkpoints_dir_for(&self.app_data_dir, settings);
+
+        fs::create_dir_all(&checkpoints_dir).map_err(|error| {
+            AppError::model_download_failed(format!(
+                "failed to create checkpoints directory {}: {error}",
+                checkpoints_dir.display()
+            ))
+        })?;
+
+        let client = blocking_http_client()?;
+
+        for spec in &pack {
+            let target = checkpoints_dir.join(spec.local_path);
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent).map_err(|error| {
+                    AppError::model_download_failed(format!(
+                        "failed to create directory {}: {error}",
+                        parent.display()
+                    ))
+                })?;
+            }
+
+            if let Ok(metadata) = fs::metadata(&target) {
+                if metadata.is_file() && metadata.len() >= spec.size {
+                    continue;
+                }
+            }
+
+            download_single_file_blocking(&client, spec, &target)?;
+        }
+
+        record_install(&self.app_data_dir, descriptor)?;
+        Ok(inspect_descriptor_for(
+            &self.app_data_dir,
+            settings,
+            descriptor,
+        ))
+    }
+
     pub fn delete(
         &self,
         settings: &AppSettings,
@@ -808,6 +854,19 @@ fn http_client() -> AppResult<Client> {
         })
 }
 
+fn blocking_http_client() -> AppResult<reqwest::blocking::Client> {
+    reqwest::blocking::Client::builder()
+        .user_agent(concat!("OpenLoop/", env!("CARGO_PKG_VERSION")))
+        .connect_timeout(Duration::from_secs(30))
+        .timeout(Duration::from_secs(120))
+        .build()
+        .map_err(|error| {
+            AppError::model_download_failed(format!(
+                "failed to build blocking HTTP client: {error}"
+            ))
+        })
+}
+
 fn part_path(target: &Path) -> PathBuf {
     let mut name = target
         .file_name()
@@ -1074,6 +1133,148 @@ where
     })?;
 
     on_progress(spec.size);
+    Ok(())
+}
+
+fn download_single_file_blocking(
+    client: &reqwest::blocking::Client,
+    spec: &ModelFileSpec,
+    target: &Path,
+) -> AppResult<()> {
+    use std::io::Read;
+
+    let url = format!(
+        "{HF_RESOLVE_BASE}/{repo}/resolve/main/{path}",
+        repo = spec.repo,
+        path = spec.remote_path
+    );
+
+    let part = part_path(target);
+    let existing_size = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
+    let resume_from = if existing_size > 0 && existing_size < spec.size {
+        existing_size
+    } else {
+        0
+    };
+    if resume_from == 0 && part.exists() {
+        let _ = fs::remove_file(&part);
+    }
+
+    const MAX_ATTEMPTS: u32 = 4;
+    let mut attempt: u32 = 0;
+    let mut written = resume_from;
+
+    loop {
+        attempt += 1;
+
+        let mut request = client.get(&url);
+        if written > 0 {
+            request = request.header("Range", format!("bytes={written}-"));
+        }
+
+        let mut response = match request.send() {
+            Ok(response) => response,
+            Err(error) => {
+                let message = format!(
+                    "failed to request {repo}/{path}: {error}",
+                    repo = spec.repo,
+                    path = spec.remote_path
+                );
+                if attempt >= MAX_ATTEMPTS {
+                    return Err(AppError::model_download_failed(message));
+                }
+                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                std::thread::sleep(retry_delay(attempt));
+                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                continue;
+            }
+        };
+
+        if !response.status().is_success() {
+            let status_code = response.status();
+            let message = format!(
+                "Hugging Face returned HTTP {status_code} for {}/{}",
+                spec.repo, spec.remote_path
+            );
+            if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
+                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                std::thread::sleep(retry_delay(attempt));
+                continue;
+            }
+            return Err(AppError::model_download_failed(message));
+        }
+
+        let mut writer = OpenOptions::new()
+            .create(true)
+            .append(written > 0)
+            .write(true)
+            .truncate(written == 0)
+            .open(&part)
+            .map_err(|error| {
+                AppError::model_download_failed(format!(
+                    "failed to open temporary file {}: {error}",
+                    part.display()
+                ))
+            })?;
+
+        let mut buffer = [0u8; 8192];
+        let reader = &mut response;
+        loop {
+            match reader.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => {
+                    writer.write_all(&buffer[..n]).map_err(|error| {
+                        AppError::model_download_failed(format!(
+                            "failed to write to {}: {error}",
+                            part.display()
+                        ))
+                    })?;
+                    written += n as u64;
+                }
+                Err(error) => {
+                    if attempt >= MAX_ATTEMPTS {
+                        return Err(AppError::model_download_failed(format!(
+                            "stream error for {}/{}: {error}",
+                            spec.repo, spec.remote_path
+                        )));
+                    }
+                    eprintln!(
+                        "openloop: stream error for {}/{}: {error} (retry {attempt}/{MAX_ATTEMPTS})",
+                        spec.repo, spec.remote_path
+                    );
+                    std::thread::sleep(retry_delay(attempt));
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    break;
+                }
+            }
+        }
+        writer.flush().ok();
+        drop(writer);
+
+        if written < spec.size {
+            let message = format!(
+                "incomplete download for {}/{} ({} / {} bytes)",
+                spec.repo, spec.remote_path, written, spec.size
+            );
+            if attempt >= MAX_ATTEMPTS {
+                return Err(AppError::model_download_failed(message));
+            }
+            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+            std::thread::sleep(retry_delay(attempt));
+            continue;
+        }
+
+        break;
+    }
+
+    fs::rename(&part, target).map_err(|error| {
+        AppError::model_download_failed(format!(
+            "failed to move temporary download {} to {}: {error}",
+            part.display(),
+            target.display()
+        ))
+    })?;
+
     Ok(())
 }
 

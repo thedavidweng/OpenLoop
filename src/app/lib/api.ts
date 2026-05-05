@@ -55,6 +55,18 @@ export function getDefaultAppPaths(): Promise<DefaultAppPaths> {
   return invoke<DefaultAppPaths>("get_default_app_paths");
 }
 
+export function addCliToPath(): Promise<string> {
+  return invoke<string>("add_cli_to_path");
+}
+
+export function removeCliFromPath(): Promise<string> {
+  return invoke<string>("remove_cli_from_path");
+}
+
+export function isCliInPath(): Promise<boolean> {
+  return invoke<boolean>("is_cli_in_path");
+}
+
 export async function selectDirectory(
   defaultPath?: string | null,
 ): Promise<string | null> {

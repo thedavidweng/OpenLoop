@@ -51,6 +51,14 @@ jobs:
       - name: Run release checks
         run: pnpm release:check
 
+      - name: Read release notes
+        id: notes
+        run: |
+          NOTES=$(cat docs/release-notes/v0.1.0.md)
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$NOTES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Build and draft GitHub release
         uses: tauri-apps/tauri-action@action-v0.6.2
         env:
@@ -58,7 +66,7 @@ jobs:
         with:
           tagName: ${{ steps.release.outputs.tag }}
           releaseName: "OpenLoop ${{ steps.release.outputs.tag }}"
-          releaseBody: "Draft macOS DMG release for OpenLoop. Complete manual QA, signing, and notarization review before publishing."
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: true
           args: --target aarch64-apple-darwin

@@ -11,9 +11,10 @@
 An open-source desktop AI music generator powered by local inference, built for the OpenMusic series.
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
-![Status](https://img.shields.io/badge/Status-Alpha%20in%20development-orange)
+![Status](https://img.shields.io/badge/Status-Alpha%20v0.1.0-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -61,9 +62,61 @@ AI music tools are powerful, but many of them share the same problems:
 - Repaint / local audio region regeneration
 - Multi-model profile management
 - More robust model downloader
-- Homebrew Cask distribution
 - macOS signing and notarization
 - Advanced export and audio conversion options
+
+---
+
+## CLI Mode — Built for Agents
+
+OpenLoop ships with a full-featured CLI in the same binary as the desktop app. No separate install — if you installed via Homebrew, `openloop` is already in your PATH. Otherwise, toggle it in Settings.
+
+```bash
+openloop run "lo-fi warm piano, 90 BPM"
+openloop run --model pro --duration 30 --output ~/Music/beat.mp3
+openloop list --json
+openloop pull model:turbo
+openloop ps
+```
+
+Every GUI operation maps to a CLI command. The CLI is stateless — it reads/writes the same SQLite database the GUI uses, so history and settings are always in sync.
+
+### Agent-friendly design
+
+OpenLoop was designed to be scriptable and composable. Paired with open-source video tools like **[Remotion](https://github.com/remotion-dev/remotion)** (programmatic React video rendering) and **[HyperFrames](https://github.com/heygen-com/hyperframes)** (HTML-to-video for AI agents), you can build fully automated AI video pipelines:
+
+```
+AI script → OpenLoop CLI (music) → Remotion/HyperFrames (video) → Final video
+```
+
+An AI coding agent can orchestrate the entire chain: generate background music with `openloop run`, render visuals programmatically, synthesize voiceover — all in one scripted workflow.
+
+The `--ndjson` flag streams machine-readable progress, so agents can parse generation status line by line:
+
+```bash
+openloop run "cinematic strings" --ndjson | while read line; do
+  echo "Progress: $(echo "$line" | jq -r '.progress')"
+done
+```
+
+Full CLI documentation: [CLI Design Spec](./docs/specs/2026-05-04-openloop-cli-design.md)
+
+---
+
+## Installation
+
+### Homebrew (recommended)
+
+```bash
+brew tap thedavidweng/tap
+brew install --cask openloop
+```
+
+Homebrew automatically adds `openloop` to your PATH and clears macOS quarantine.
+
+### Direct download
+
+Download the latest DMG from [Releases](https://github.com/thedavidweng/OpenLoop/releases). After installing, open OpenLoop → Settings → "Add to PATH" to enable CLI commands from your terminal.
 
 ---
 

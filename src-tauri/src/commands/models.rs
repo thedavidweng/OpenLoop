@@ -37,13 +37,49 @@ pub fn download_model(
 
 #[tauri::command]
 pub fn delete_model(
+    app: AppHandle,
     state: State<'_, AppState>,
     variant: ModelVariant,
-) -> AppResult<Vec<ModelStatusSnapshot>> {
+) -> AppResult<ModelStatusSnapshot> {
     let settings = state.db.get_settings()?;
     let manager = state
         .models
         .lock()
         .map_err(|_| crate::models::errors::AppError::internal("model manager lock poisoned"))?;
-    manager.delete(&settings, variant)
+    manager.delete(app, settings, variant)
+}
+
+#[tauri::command]
+pub fn clear_partial_downloads(
+    state: State<'_, AppState>,
+    variant: ModelVariant,
+) -> AppResult<ModelStatusSnapshot> {
+    let settings = state.db.get_settings()?;
+    let manager = state
+        .models
+        .lock()
+        .map_err(|_| crate::models::errors::AppError::internal("model manager lock poisoned"))?;
+    manager.clear_partial_downloads(&settings, variant)
+}
+
+#[tauri::command]
+pub fn cancel_download(
+    state: State<'_, AppState>,
+    variant: ModelVariant,
+) -> AppResult<()> {
+    let manager = state
+        .models
+        .lock()
+        .map_err(|_| crate::models::errors::AppError::internal("model manager lock poisoned"))?;
+    manager.cancel_download(variant)
+}
+
+#[tauri::command]
+pub fn delete_all_models(state: State<'_, AppState>) -> AppResult<Vec<ModelStatusSnapshot>> {
+    let settings = state.db.get_settings()?;
+    let manager = state
+        .models
+        .lock()
+        .map_err(|_| crate::models::errors::AppError::internal("model manager lock poisoned"))?;
+    Ok(manager.delete_all(&settings))
 }

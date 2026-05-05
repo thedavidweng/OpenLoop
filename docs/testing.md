@@ -31,6 +31,7 @@ pnpm release:check
 - Browser-only preview mode still supports mock generation.
 - Tauri runtime sends progress events and finishes with a persisted record.
 - Failed generation exposes error details and supports copy-error.
+- Cancelled generation returns form to editable state.
 
 ### History and files
 
@@ -42,7 +43,7 @@ pnpm release:check
 - Export copy writes to the requested destination.
 - Delete file and record removes both the file and the persisted row.
 - Clear history asks for confirmation, removes generated audio files, and leaves the sidebar empty.
-- Failed and cancelled generations do not create history rows.
+- Cancelled generations are not saved to history; failed generations are recorded for debugging.
 
 ### Packaged app smoke test
 
@@ -50,7 +51,19 @@ pnpm release:check
 - The installed app launches outside `pnpm tauri dev`.
 - The bundled `uv` sidecar is present and executable.
 - First-run setup can complete from a fresh app data directory.
-- Backend logs rotate automatically instead of growing without limit.
+- Backend logs rotate automatically (keeps last 20 log files).
+
+### CLI
+
+- `openloop run` generates music headlessly and saves to disk.
+- `openloop setup` interactive wizard works in a terminal.
+- `openloop setup model turbo` sets key-value immediately.
+- `openloop list --json` outputs valid JSON.
+- `openloop models` shows all three variants with download status.
+- `openloop ps` shows backend health and active tasks.
+- `openloop delete <id>` removes record and file.
+- `openloop clear --yes` removes all records and files.
+- `openloop stop` terminates the backend process.
 
 ### Privacy
 
@@ -63,3 +76,4 @@ pnpm release:check
 - `pnpm tauri dev` is intentionally long-running. Automation timeouts after the
   Rust binary starts are not considered startup failures.
 - v0.1 targets macOS Apple Silicon first. Intel support remains experimental.
+- The full CLI test suite also validates the shared service layer used by the GUI.

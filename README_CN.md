@@ -13,7 +13,7 @@
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
-![Status](https://img.shields.io/badge/Status-Alpha%20in%20development-orange)
+![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -25,7 +25,7 @@
 | 项目                                                 | 用途                                                          | 状态                 |
 | ---------------------------------------------------- | ------------------------------------------------------------- | -------------------- |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | 用本地 AI 进行人声分离，并配合同步歌词，把本地歌曲变成卡拉 OK | Active               |
-| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha in development |
+| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha v0.1.0         |
 
 这个系列的共同理念很简单：音乐工具应该本地优先、尊重所有权、透明，并且能够直接利用你手头已有的媒体和硬件。
 
@@ -40,9 +40,49 @@ AI 音乐工具很强，但它们常见的问题也很一致：
 3. 把模型行为封装在封闭平台里。
 4. 导出、所有权和可复现性都不够直接。
 
+---
+
+## 安装
+
+```bash
+brew tap thedavidweng/tap && brew install --cask openloop
+```
+
+Homebrew 自动将 `openloop` 添加到 PATH 并清除 macOS 隔离标记。直接 DMG 下载可在 [Releases](https://github.com/thedavidweng/OpenLoop/releases) 获取 — 安装后打开设置 → "添加到 PATH" 即可启用 CLI。
+
+---
+
+## CLI 模式
+
+`openloop` 二进制内置完整 CLI，与桌面应用共享同一服务层。传入任何子命令即运行无头模式。
+
+```bash
+openloop run "lo-fi warm piano, 90 BPM"
+openloop run --model pro --duration 30 --output ~/Music/beat.mp3
+openloop setup model turbo
+openloop list --json
+openloop ps
+```
+
+CLI 读写相同的 SQLite 数据库，历史记录和设置与应用同步。
+
+### 代理流水线
+
+搭配 **[Remotion](https://github.com/remotion-dev/remotion)** 和 **[HyperFrames](https://github.com/heygen-com/hyperframes)**，AI 编码代理可编排端到端视频工作流：
+
+```bash
+openloop run "cinematic strings" --json | while read line; do
+  echo "进度: $(echo "$line" | jq -r '.event')"
+done
+```
+
+[完整 CLI 文档 →](./docs/cli.md)
+
+---
+
 ## 功能
 
-### v0.1 Alpha 计划
+### v0.1.0 Alpha
 
 - **文本生成音乐** - 例如 `lo-fi warm piano, 90 BPM, no vocal`
 - **歌词输入** - 支持 `[verse]`、`[chorus]`、`[bridge]` 这类结构标签
@@ -51,17 +91,19 @@ AI 音乐工具很强，但它们常见的问题也很一致：
 - **时长控制** - 支持从短循环到更长的草稿片段
 - **BPM / 调性 / 拍号控制** - 为生成结果提供音乐约束
 - **Seed 可复现** - 复用 seed 复现或迭代之前的结果
-- **内置预览播放器** - 在应用内直接播放生成音频
-- **波形预览** - 用轻量波形视图检查生成音频
-- **本地生成历史** - 将提示词、歌词、模型设置、seed 和输出路径保存在本地 SQLite
-- **导出** - 将生成音频保存到本地输出目录
+- **内置预览播放器** - 播放/暂停、拖动、跳过、变速
+- **波形显示** - Rust Symphonia 音频解码生成波形
+- **本地生成历史** - 搜索、加载、删除历史记录
+- **导出** - Reveal in Finder、导出复制
+- **CLI** - 10 个子命令，NDJSON 流式输出
+- **i18n** - 英文、简体中文
+- **键盘快捷键** - Space、Cmd+B、Cmd+N、Cmd+,、Cmd+Enter
 
-### v0.1 之后计划
+### v0.1.0 之后计划
 
 - 局部重绘 / 本地音频区域重生成
 - 多模型配置管理
 - 更稳健的模型下载器
-- Homebrew Cask 分发
 - macOS 签名与公证
 - 更高级的导出和音频转换选项
 
@@ -91,11 +133,7 @@ pnpm tauri dev
 
 ```bash
 pnpm install
-pnpm typecheck
-pnpm build
-pnpm rust:fmt
-pnpm rust:check
-cargo test --manifest-path src-tauri/Cargo.toml
+pnpm release:check
 ```
 
 详细的人工 QA 记录见 [`docs/testing.md`](docs/testing.md)。
@@ -122,11 +160,11 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 
 项目采用按配置文件划分的模型方案：
 
-| 配置       | 目标设备             | 默认策略                     |
-| ---------- | -------------------- | ---------------------------- |
-| Low Memory | 8 GB Apple Silicon   | 更保守的设置，更低内存压力   |
-| Standard   | 16 GB+ Apple Silicon | v0.1 推荐默认                |
-| Quality    | 24 GB+ Apple Silicon | 更高质量设置和更大的模型选项 |
+| 配置   | 目标设备             | 默认策略                     |
+| ------ | -------------------- | ---------------------------- |
+| Lite   | 8 GB Apple Silicon   | 更保守的设置，更低内存压力   |
+| Turbo  | 16 GB+ Apple Silicon | v0.1 推荐默认                |
+| Pro    | 24 GB+ Apple Silicon | 最高质量，XL 模型 + 更大 LM  |
 
 模型文件会在首次启动时下载或选择，并保存在本地。应用代码采用 MIT 许可；模型权重和第三方组件遵循各自上游许可。
 
@@ -151,25 +189,33 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 
 ```mermaid
 flowchart TB
-  subgraph UI["OpenLoop UI"]
+  subgraph CLI["CLI 模式"]
+    CLI_ENTRY["openloop run/setup/..."]
+  end
+
+  subgraph UI["Tauri GUI"]
     H["历史侧栏"]
     G["生成表单"]
-    P["预览播放器"]
+    P["播放栏 + 波形"]
   end
 
-  subgraph BE["Tauri Rust 后端"]
-    BM["后端管理器"]
-    AC["ACE-Step 客户端"]
-    SF["SQLite / 文件存储"]
+  subgraph BE["Rust 服务层"]
+    BM["BackendManager"]
+    AC["AceClient"]
+    TR["GenerationTaskRunner"]
+    SF["FileStore / SQLite"]
+    WA["波形 (Symphonia)"]
   end
 
-  H --> BM
-  G --> BM
-  P --> BM
-  BM --> AC --> SF --> API["本地 ACE-Step API Server<br/>模型加载 · 任务队列"] --> OUT["本地输出文件<br/>WAV / MP3 / FLAC / OGG + 元数据"]
+  CLI_ENTRY --> BE
+  H --> BE
+  G --> BE
+  P --> BE
+  BM --> AC --> TR --> SF --> API["本地 ACE-Step API Server"] --> OUT["本地输出文件<br/>WAV / MP3 / FLAC / OGG"]
+  P --> WA --> OUT
 ```
 
-OpenLoop 使用本地 API Server 模式，而不是让 UI 直接对接 Python。Rust 后端负责进程生命周期、健康检查、请求校验、文件路径、本地历史和面向用户的错误映射。
+OpenLoop 使用本地 API Server 模式 — Rust 服务层负责进程生命周期、健康检查、任务轮询、文件路径和错误映射。GUI 和 CLI 共享同一服务层。
 
 ---
 

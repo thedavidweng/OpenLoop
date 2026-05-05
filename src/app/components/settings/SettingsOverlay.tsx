@@ -9,6 +9,7 @@ import {
   Terminal,
   Trash2,
   X,
+  XCircle,
 } from "lucide-react";
 import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 import { SettingsSectionCard } from "@/app/components/settings/SettingsSectionCard";
@@ -182,6 +183,8 @@ function ModelPackCard({
   busy,
   onDownload,
   onDelete,
+  onCancel,
+  onClearPartial,
 }: {
   packId: ModelPackId;
   state: ModelDownloadState;
@@ -192,6 +195,8 @@ function ModelPackCard({
   busy: boolean;
   onDownload: () => void;
   onDelete: () => void;
+  onCancel: () => void;
+  onClearPartial: () => void;
 }) {
   const { t } = useTranslation();
   const meta = MODEL_PACKS[packId];
@@ -225,32 +230,57 @@ function ModelPackCard({
               {t("model.delete")}
             </button>
           ) : null}
-          {state !== "ready" ? (
-            <button
-              type="button"
-              onClick={onDownload}
-              disabled={busy || state === "downloading"}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {state === "downloading" ? (
-                <>
-                  <Loader2 size={11} className="animate-spin" />
-                  {t("setup.downloadingButton", {
-                    defaultValue: "Downloading…",
-                  })}
-                </>
-              ) : state === "failed" ? (
-                <>
-                  <Download size={11} />
-                  {t("model.retry")}
-                </>
-              ) : (
-                <>
-                  <Download size={11} />
-                  {t("model.download")}
-                </>
-              )}
-            </button>
+          {state === "downloading" ? (
+            <>
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={busy}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <XCircle size={11} />
+                {t("model.cancel")}
+              </button>
+              <div className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-white shadow-sm opacity-60 cursor-not-allowed">
+                <Loader2 size={11} className="animate-spin" />
+                {t("setup.downloadingButton", {
+                  defaultValue: "Downloading…",
+                })}
+              </div>
+            </>
+          ) : null}
+          {state !== "ready" && state !== "downloading" ? (
+            <>
+              <button
+                type="button"
+                onClick={onDownload}
+                disabled={busy}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {state === "failed" ? (
+                  <>
+                    <Download size={11} />
+                    {t("model.retry")}
+                  </>
+                ) : (
+                  <>
+                    <Download size={11} />
+                    {t("model.download")}
+                  </>
+                )}
+              </button>
+              {state === "failed" ? (
+                <button
+                  type="button"
+                  onClick={onClearPartial}
+                  disabled={busy}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 size={11} />
+                  {t("model.clearCache")}
+                </button>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>
@@ -359,6 +389,15 @@ export function SettingsOverlay() {
   const deleteModelVariant = useGenerationStore(
     (state) => state.deleteModelVariant,
   );
+  const cancelModelDownload = useGenerationStore(
+    (state) => state.cancelModelDownload,
+  );
+  const clearPartialModelDownloads = useGenerationStore(
+    (state) => state.clearPartialModelDownloads,
+  );
+  const deleteAllModels = useGenerationStore(
+    (state) => state.deleteAllModels,
+  );
   const refreshModelStatuses = useGenerationStore(
     (state) => state.refreshModelStatuses,
   );
@@ -370,6 +409,8 @@ export function SettingsOverlay() {
   const [busyVariant, setBusyVariant] = useState<ModelVariant | null>(null);
   const [clearHistoryConfirmOpen, setClearHistoryConfirmOpen] = useState(false);
   const [clearCacheConfirmOpen, setClearCacheConfirmOpen] = useState(false);
+  const [deleteAllModelsConfirmOpen, setDeleteAllModelsConfirmOpen] =
+    useState(false);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [cliPathStatus, setCliPathStatus] = useState<
     "loading" | "added" | "not_added" | "error"
@@ -564,6 +605,15 @@ export function SettingsOverlay() {
                       onDelete={() => {
                         setBusyVariant(primary);
                         void deleteModelVariant(primary).finally(() => {
+                          setBusyVariant(null);
+                        });
+                      }}
+                      onCancel={() => {
+                        void cancelModelDownload(primary);
+                      }}
+                      onClearPartial={() => {
+                        setBusyVariant(primary);
+                        void clearPartialModelDownloads(primary).finally(() => {
                           setBusyVariant(null);
                         });
                       }}
@@ -975,6 +1025,24 @@ export function SettingsOverlay() {
                   {t("settings.clearBackendCache")}
                 </button>
               </div>
+
+              <hr className="border-t border-red-500/20" />
+
+              <p className="text-[12px] leading-5 text-[var(--color-text-dim)]">
+                {t("settings.deleteAllModelsDescription")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteAllModelsConfirmOpen(true)}
+                  disabled={
+                    settings.downloadedModels.length === 0
+                  }
+                  className="inline-flex h-8 items-center rounded-md border border-red-500/40 bg-red-600/10 px-3 text-[11px] font-medium text-red-300 transition-colors hover:bg-red-600/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {t("settings.deleteAllModels")}
+                </button>
+              </div>
             </SettingsSectionCard>
           </div>
         </div>
@@ -1006,6 +1074,22 @@ export function SettingsOverlay() {
             void api.clearBackendCache().then(() => {
               setSaveNotice(t("settings.backendCacheCleared"));
             });
+          }}
+        />
+        <SettingsDialogHost
+          open={deleteAllModelsConfirmOpen}
+          title={t("settings.deleteAllModelsTitle")}
+          message={t("settings.deleteAllModelsMessage", {
+            count: settings.downloadedModels.length,
+          })}
+          confirmLabel={t("settings.deleteAllModels")}
+          onCancel={() => setDeleteAllModelsConfirmOpen(false)}
+          onConfirm={() => {
+            setDeleteAllModelsConfirmOpen(false);
+            void (async () => {
+              await deleteAllModels();
+              setSaveNotice(t("settings.modelsDeleted"));
+            })();
           }}
         />
       </div>

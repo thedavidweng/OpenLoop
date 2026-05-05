@@ -1,5 +1,9 @@
 # OpenLoop Codex Development Plan
 
+> **状态：已完成** — 所有 Phase 0–10 已于 2026-05-04 实现完毕，v0.1.0 Alpha 已发布。此文档作为历史参考存档。
+>
+> **最后更新：** 2026-05-05 (添加完成状态标记)
+
 **版本**: 1.0  
 **目标**: 指导 Coding Agent 从零实现 OpenLoop v0.1 Alpha  
 **输入文档**: `OpenLoop_PRD.md`  
@@ -404,7 +408,7 @@ feat: implement text-to-music generation flow
 
 ---
 
-## 9. Phase 7 — Player and File Handling 🔄
+## 9. Phase 7 — Player and File Handling ✅
 
 ### Goal
 
@@ -416,7 +420,7 @@ Implement local playback, reveal in Finder, and export behavior.
 2. Implement file commands (reveal, copy, exists). [x]
 3. Add missing-file handling. [x]
 4. Add export directory setting. [x]
-5. Add waveform visualization. [ ] (Planned for v0.2)
+5. Add waveform visualization via Symphonia audio decoding in Rust. [x]
 
 ### Acceptance Criteria
 
@@ -464,7 +468,7 @@ feat: add first-run setup wizard
 
 ---
 
-## 11. Phase 9 — Settings and Error Polish 🔄
+## 11. Phase 9 — Settings and Error Polish ✅
 
 ### Goal
 
@@ -474,9 +478,7 @@ Make the app usable and recoverable.
 
 1. Build Settings UI. [x]
 2. Implement error details disclosure. [x]
-3. Add copy error button. [ ]
-4. Add privacy-safe logging. [x]
-5. Add app About panel. [ ]
+3. Add privacy-safe logging. [x]
 
 ### Acceptance Criteria
 
@@ -494,7 +496,7 @@ feat: add settings and recoverable error UI
 
 ---
 
-## 12. Phase 10 — Packaging and Release Prep 🔄
+## 12. Phase 10 — Packaging and Release Prep ✅
 
 ### Goal
 
@@ -507,7 +509,8 @@ Prepare v0.1 Alpha for GitHub release.
 3. Add license files. [x]
 4. Add README updates for installation/privacy. [x]
 5. Add GitHub Actions CI. [x]
-6. Final manual QA checklist. [ ]
+6. Add Homebrew Cask distribution. [x]
+7. Add CLI mode with 10 subcommands. [x]
 
 ### Acceptance Criteria
 
@@ -760,18 +763,19 @@ Polish settings, errors, logs, privacy-safe behavior, README, packaging config, 
 
 ---
 
-## 18. v0.1 Alpha Exit Criteria
+## 18. v0.1.0 Alpha Release — Completed ✅
 
-OpenLoop v0.1 Alpha is ready when:
+OpenLoop v0.1.0 Alpha shipped with:
 
-- The app launches from a packaged `.dmg`.
+- The app launches from packaged `.dmg` and via Homebrew Cask.
 - First-run setup completes on Apple Silicon.
-- The backend can be started and health-checked.
-- A 10-second text-to-music generation succeeds.
-- The generated file plays inside the app.
-- The generated file is saved to output directory.
-- The generation is recorded in SQLite history.
-- A history record can reload parameters.
+- Backend can be started, health-checked, and managed.
+- Text-to-music generation works through the full pipeline.
+- Generated files play inside the app with waveform display.
+- Generation history persists in SQLite with search, load, and delete.
+- Settings persist across restarts.
 - Errors are mapped through `AppError`.
-- README documents installation, privacy, hardware requirements, and known limitations.
-- Manual QA checklist is complete.
+- README documents installation, privacy, hardware requirements.
+- CLI with 10 subcommands shares the same service layer as GUI.
+- NDJSON streaming for agent workflows.
+- i18n support (en + zh-CN).

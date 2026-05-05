@@ -4,7 +4,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Mutex,
     },
     time::{Duration, Instant},
@@ -120,7 +120,7 @@ struct InstalledModelManifest {
 pub struct ModelManager {
     app_data_dir: PathBuf,
     status: Arc<Mutex<Vec<ModelStatusSnapshot>>>,
-    in_flight: Arc<Mutex<Vec<ModelVariant>>>,
+    in_flight: Arc<Mutex<Vec<(ModelVariant, Arc<AtomicBool>)>>>,
 }
 
 impl ModelManager {
@@ -130,6 +130,7 @@ impl ModelManager {
             status: Arc::new(Mutex::new(Vec::new())),
             in_flight: Arc::new(Mutex::new(Vec::new())),
         };
+        resume_pending_deletions(&manager.app_data_dir, &AppSettings::default());
         let snapshots = manager.inspect_all(&AppSettings::default());
         if let Ok(mut status) = manager.status.lock() {
             *status = snapshots;
@@ -172,21 +173,12 @@ impl ModelManager {
         let descriptor = descriptor_for(variant)?;
 
         if let Ok(mut guard) = self.in_flight.lock() {
-            if guard.contains(&variant) {
-                if let Ok(snapshots) = self.status.lock() {
-                    if let Some(existing) = snapshots.iter().find(|s| s.variant == variant) {
-                        return Ok(existing.clone());
-                    }
-                }
-                return Ok(downloading_snapshot(
-                    &self.app_data_dir,
-                    &settings,
-                    descriptor,
-                    0,
-                    None,
-                ));
+            if let Some((_, cancel)) = guard.iter().find(|(v, _)| *v == variant) {
+                cancel.store(true, Ordering::SeqCst);
+                guard.retain(|(v, _)| *v != variant);
             }
-            guard.push(variant);
+            let cancel = Arc::new(AtomicBool::new(false));
+            guard.push((variant, Arc::clone(&cancel)));
         }
 
         let pack = pack_for_descriptor(descriptor);
@@ -205,43 +197,86 @@ impl ModelManager {
         let in_flight = Arc::clone(&self.in_flight);
         let download_settings = settings.clone();
 
-        tauri::async_runtime::spawn(async move {
-            let result = download_pack(
-                &app,
-                &app_data_dir,
-                &download_settings,
-                descriptor,
-                pack,
-                total_bytes,
-                &status,
-            )
-            .await;
+        if let Ok(guard) = self.in_flight.lock() {
+            if let Some((_, cancel)) = guard.iter().find(|(v, _)| *v == variant) {
+                let cancel = Arc::clone(cancel);
+                let pack_for_cleanup = pack.clone();
 
-            let final_snapshot = match result {
-                Ok(()) => {
-                    if let Err(error) = record_install(&app_data_dir, descriptor) {
-                        eprintln!(
-                            "openloop: failed to persist model install manifest: {}",
-                            error.message
-                        );
+                tauri::async_runtime::spawn(async move {
+                    let result = download_pack(
+                        &app,
+                        &app_data_dir,
+                        &download_settings,
+                        descriptor,
+                        pack,
+                        total_bytes,
+                        &status,
+                        &cancel,
+                    )
+                    .await;
+
+                    if cancel.load(Ordering::SeqCst) {
+                        let checkpoints_dir =
+                            checkpoints_dir_for(&app_data_dir, &download_settings);
+                        for spec in &pack_for_cleanup {
+                            let part = part_path(&checkpoints_dir.join(spec.local_path));
+                            if part.exists() {
+                                let _ = fs::remove_file(&part);
+                            }
+                        }
+                        let cancelled = ModelStatusSnapshot {
+                            variant: descriptor.variant,
+                            state: ModelDownloadState::Failed,
+                            model_name: descriptor.model_name.to_owned(),
+                            label: descriptor.label.to_owned(),
+                            description: descriptor.description.to_owned(),
+                            downloaded_bytes: 0,
+                            total_bytes: Some(total_bytes),
+                            installed_at: None,
+                            error: Some(AppError::model_download_failed(
+                                "Download cancelled.",
+                            )),
+                        };
+                        publish_snapshot(&app, &status, cancelled);
+                    } else {
+                        let final_snapshot = match result {
+                            Ok(()) => {
+                                if let Err(error) =
+                                    record_install(&app_data_dir, descriptor)
+                                {
+                                    eprintln!(
+                                        "openloop: failed to persist model install manifest: {}",
+                                        error.message
+                                    );
+                                }
+                                inspect_descriptor_for(
+                                    &app_data_dir,
+                                    &download_settings,
+                                    descriptor,
+                                )
+                            }
+                            Err(error) => {
+                                eprintln!(
+                                    "openloop: model download for {:?} failed: {}",
+                                    variant, error.message
+                                );
+                                failed_snapshot_for(
+                                    &app_data_dir,
+                                    &download_settings,
+                                    descriptor,
+                                    error,
+                                )
+                            }
+                        };
+                        publish_snapshot(&app, &status, final_snapshot);
                     }
-                    inspect_descriptor_for(&app_data_dir, &download_settings, descriptor)
-                }
-                Err(error) => {
-                    eprintln!(
-                        "openloop: model download for {:?} failed: {}",
-                        variant, error.message
-                    );
-                    failed_snapshot_for(&app_data_dir, &download_settings, descriptor, error)
-                }
-            };
 
-            publish_snapshot(&app, &status, final_snapshot);
-
-            if let Ok(mut guard) = in_flight.lock() {
-                guard.retain(|v| *v != variant);
+                    if let Ok(mut guard) = in_flight.lock() {
+                        guard.retain(|(v, _)| *v != variant);
+                    }
+                });
             }
-        });
+        }
 
         Ok(initial)
     }
@@ -294,44 +329,176 @@ impl ModelManager {
 
     pub fn delete(
         &self,
+        app: AppHandle,
+        settings: AppSettings,
+        variant: ModelVariant,
+    ) -> AppResult<ModelStatusSnapshot> {
+        let descriptor = descriptor_for(variant)?;
+        let initial = ModelStatusSnapshot {
+            variant: descriptor.variant,
+            state: ModelDownloadState::NotInstalled,
+            model_name: descriptor.model_name.to_owned(),
+            label: descriptor.label.to_owned(),
+            description: descriptor.description.to_owned(),
+            downloaded_bytes: 0,
+            total_bytes: Some(
+                pack_for_descriptor(descriptor)
+                    .iter()
+                    .map(|f| f.size)
+                    .sum(),
+            ),
+            installed_at: None,
+            error: None,
+        };
+        publish_snapshot(&app, &self.status, initial.clone());
+
+        write_delete_marker(&self.app_data_dir, variant);
+
+        let app_data_dir = self.app_data_dir.clone();
+        let settings_for_blocking = settings.clone();
+        let settings_for_final = settings.clone();
+        let app_data_dir_for_final = self.app_data_dir.clone();
+        let status = Arc::clone(&self.status);
+        let variant_key = variant_key(descriptor.variant);
+
+        tauri::async_runtime::spawn(async move {
+            let result = tokio::task::spawn_blocking(move || {
+                let checkpoints_dir =
+                    checkpoints_dir_for(&app_data_dir, &settings_for_blocking);
+                for spec in pack_for_descriptor(descriptor) {
+                    let target = checkpoints_dir.join(spec.local_path);
+                    if target.exists() {
+                        fs::remove_file(&target).ok();
+                    }
+                    let part = part_path(&target);
+                    if part.exists() {
+                        let _ = fs::remove_file(&part);
+                    }
+                }
+
+                for model_dir_name in
+                    unique_model_dirs(pack_for_descriptor(descriptor))
+                {
+                    let dir = checkpoints_dir.join(model_dir_name);
+                    let _ = fs::read_dir(&dir).map(|mut iter| {
+                        if iter.next().is_none() {
+                            let _ = fs::remove_dir(&dir);
+                        }
+                    });
+                }
+
+                let mut manifest =
+                    read_manifest(&app_data_dir).unwrap_or_default();
+                manifest.installed.remove(&variant_key);
+                manifest.updated_at = Utc::now().to_rfc3339();
+                write_manifest(&app_data_dir, &manifest).ok();
+            })
+            .await;
+
+            clear_delete_marker(&app_data_dir_for_final, variant);
+
+            if let Err(error) = result {
+                eprintln!(
+                    "openloop: model delete for {:?} panicked: {error}",
+                    variant
+                );
+            }
+
+            let final_snapshot = inspect_descriptor_for(
+                &app_data_dir_for_final,
+                &settings_for_final,
+                descriptor,
+            );
+            publish_snapshot(
+                &app,
+                &status,
+                final_snapshot,
+            );
+        });
+
+        Ok(initial)
+    }
+
+    pub fn clear_partial_downloads(
+        &self,
         settings: &AppSettings,
         variant: ModelVariant,
-    ) -> AppResult<Vec<ModelStatusSnapshot>> {
+    ) -> AppResult<ModelStatusSnapshot> {
         let descriptor = descriptor_for(variant)?;
         let checkpoints_dir = checkpoints_dir_for(&self.app_data_dir, settings);
         for spec in pack_for_descriptor(descriptor) {
             let target = checkpoints_dir.join(spec.local_path);
-            if target.exists() {
-                fs::remove_file(&target).map_err(|error| {
-                    AppError::model_not_found(format!(
-                        "failed to delete model file {}: {error}",
-                        target.display()
-                    ))
-                })?;
-            }
             let part = part_path(&target);
             if part.exists() {
                 let _ = fs::remove_file(&part);
             }
         }
+        Ok(inspect_descriptor_for(
+            &self.app_data_dir,
+            settings,
+            descriptor,
+        ))
+    }
 
-        // Best-effort cleanup of empty model directories so we don't litter the
-        // checkpoints folder with husks. We only remove top-level model dirs we
-        // know about to avoid touching unrelated data.
-        for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
-            let dir = checkpoints_dir.join(model_dir_name);
-            let _ = fs::read_dir(&dir).map(|mut iter| {
-                if iter.next().is_none() {
-                    let _ = fs::remove_dir(&dir);
+    pub fn delete_all(&self, settings: &AppSettings) -> Vec<ModelStatusSnapshot> {
+        let manifest = read_manifest(&self.app_data_dir).unwrap_or_default();
+        let variants_to_delete: Vec<ModelVariant> = manifest
+            .installed
+            .keys()
+            .filter_map(|key| match key.as_str() {
+                "lite" => Some(ModelVariant::Lite),
+                "turbo" => Some(ModelVariant::Turbo),
+                "pro" => Some(ModelVariant::Pro),
+                _ => None,
+            })
+            .collect();
+
+        for variant in &variants_to_delete {
+            write_delete_marker(&self.app_data_dir, *variant);
+        }
+
+        for variant in &variants_to_delete {
+            let descriptor = match descriptor_for(*variant) {
+                Ok(d) => d,
+                Err(_) => continue,
+            };
+            let checkpoints_dir = checkpoints_dir_for(&self.app_data_dir, settings);
+            for spec in pack_for_descriptor(descriptor) {
+                let target = checkpoints_dir.join(spec.local_path);
+                if target.exists() {
+                    let _ = fs::remove_file(&target);
                 }
-            });
+                let part = part_path(&target);
+                if part.exists() {
+                    let _ = fs::remove_file(&part);
+                }
+            }
+            for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
+                let dir = checkpoints_dir.join(model_dir_name);
+                let _ = fs::read_dir(&dir).map(|mut iter| {
+                    if iter.next().is_none() {
+                        let _ = fs::remove_dir(&dir);
+                    }
+                });
+            }
+            clear_delete_marker(&self.app_data_dir, *variant);
         }
 
         let mut manifest = read_manifest(&self.app_data_dir).unwrap_or_default();
-        manifest.installed.remove(&variant_key(variant));
+        manifest.installed.clear();
         manifest.updated_at = Utc::now().to_rfc3339();
-        write_manifest(&self.app_data_dir, &manifest)?;
-        Ok(self.refresh(settings))
+        let _ = write_manifest(&self.app_data_dir, &manifest);
+
+        self.inspect_all(settings)
+    }
+
+    pub fn cancel_download(&self, variant: ModelVariant) -> AppResult<()> {
+        if let Ok(guard) = self.in_flight.lock() {
+            if let Some((_, cancel)) = guard.iter().find(|(v, _)| *v == variant) {
+                cancel.store(true, Ordering::SeqCst);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -898,6 +1065,7 @@ async fn download_pack(
     files: Vec<ModelFileSpec>,
     total_bytes: u64,
     status: &Arc<Mutex<Vec<ModelStatusSnapshot>>>,
+    cancel: &Arc<AtomicBool>,
 ) -> AppResult<()> {
     let checkpoints_dir = checkpoints_dir_for(app_data_dir, settings);
     fs::create_dir_all(&checkpoints_dir).map_err(|error| {
@@ -938,6 +1106,12 @@ async fn download_pack(
     emit_progress(0, true);
 
     for spec in &files {
+        if cancel.load(Ordering::SeqCst) {
+            return Err(AppError::model_download_failed(
+                "Download cancelled.",
+            ));
+        }
+
         let target = checkpoints_dir.join(spec.local_path);
         if let Some(parent) = target.parent() {
             fs::create_dir_all(parent).map_err(|error| {
@@ -1337,6 +1511,60 @@ fn variant_key(variant: ModelVariant) -> String {
         ModelVariant::Pro => "pro",
     }
     .to_owned()
+}
+
+fn delete_marker_path(app_data_dir: &Path, variant: ModelVariant) -> PathBuf {
+    app_data_dir
+        .join("models")
+        .join(format!(".openloop-deleting-{}", variant_key(variant)))
+}
+
+fn write_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
+    let path = delete_marker_path(app_data_dir, variant);
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(&path, Utc::now().to_rfc3339());
+}
+
+fn clear_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
+    let _ = fs::remove_file(delete_marker_path(app_data_dir, variant));
+}
+
+fn read_delete_marker(app_data_dir: &Path, variant: ModelVariant) -> bool {
+    delete_marker_path(app_data_dir, variant).exists()
+}
+
+fn resume_pending_deletions(app_data_dir: &Path, settings: &AppSettings) {
+    for descriptor in ACE_MODEL_DESCRIPTORS {
+        if read_delete_marker(app_data_dir, descriptor.variant) {
+            let checkpoints_dir = checkpoints_dir_for(app_data_dir, settings);
+            for spec in pack_for_descriptor(descriptor) {
+                let target = checkpoints_dir.join(spec.local_path);
+                if target.exists() {
+                    let _ = fs::remove_file(&target);
+                }
+                let part = part_path(&target);
+                if part.exists() {
+                    let _ = fs::remove_file(&part);
+                }
+            }
+            for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
+                let dir = checkpoints_dir.join(model_dir_name);
+                let _ = fs::read_dir(&dir).map(|mut iter| {
+                    if iter.next().is_none() {
+                        let _ = fs::remove_dir(&dir);
+                    }
+                });
+            }
+            if let Ok(mut manifest) = read_manifest(app_data_dir) {
+                manifest.installed.remove(&variant_key(descriptor.variant));
+                manifest.updated_at = Utc::now().to_rfc3339();
+                let _ = write_manifest(app_data_dir, &manifest);
+            }
+            clear_delete_marker(app_data_dir, descriptor.variant);
+        }
+    }
 }
 
 #[cfg(test)]

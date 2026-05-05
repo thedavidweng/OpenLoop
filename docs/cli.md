@@ -11,7 +11,7 @@ Generate music from a prompt.
 ```bash
 openloop run "lo-fi warm piano, 90 BPM"
 openloop run --model pro --duration 30 --output ~/Music/beat.mp3
-openloop run "epic cinematic" --ndjson        # machine-readable output
+openloop run "epic cinematic" --json            # machine-readable output
 ```
 
 | Flag | Short | Description |
@@ -26,7 +26,7 @@ openloop run "epic cinematic" --ndjson        # machine-readable output
 | `--seed` | | Random seed for reproducibility |
 | `--variations` | `-v` | Number of variations (1–4) |
 | `--no-thinking` | | Disable thinking mode |
-| `--ndjson` | | Stream NDJSON progress events to stdout |
+| `--json` | | Stream NDJSON progress events to stdout |
 
 ### `openloop setup`
 
@@ -109,18 +109,18 @@ openloop stop
 
 An agent would typically:
 
-1. Call `openloop run "cinematic strings" --ndjson` and parse the streaming output
+1. Call `openloop run "cinematic strings" --json` and parse the streaming output
 2. Take the `output_path` from the completed event
 3. Feed it into a Remotion composition or HyperFrames render
 
 ```bash
 # Agent workflow
-openloop run "cinematic strings" --duration 120 --format mp3 --output ./assets/bg.mp3 --ndjson
+openloop run "cinematic strings" --duration 120 --format mp3 --output ./assets/bg.mp3 --json
 openloop models --json
 openloop ps --json
 ```
 
-The `--ndjson` flag streams one JSON object per line — agents can parse progress line by line:
+The `--json` flag streams one JSON object per line — agents can parse progress line by line:
 
 ```json
 {"event":"running","variation":1,"total":1}

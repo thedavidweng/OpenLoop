@@ -14,7 +14,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
-![Status](https://img.shields.io/badge/Status-Alpha%20v0.1.0-orange)
+![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -26,7 +26,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 | Project                                              | Purpose                                                                                  | Status               |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------- |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active               |
-| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha in development |
+| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters | Alpha v0.1.0         |
 
 The shared philosophy is simple: music tools should be local-first, ownership-friendly, transparent, and useful with the media and hardware you already have.
 
@@ -75,11 +75,11 @@ Paired with **[Remotion](https://github.com/remotion-dev/remotion)** (programmat
 AI agent → openloop run (music) → Remotion / HyperFrames (video) → final render
 ```
 
-The `--ndjson` flag streams machine-readable progress — agents parse one JSON line at a time:
+The `--json` flag streams machine-readable NDJSON — agents parse one JSON line at a time:
 
 ```bash
-openloop run "cinematic strings" --ndjson | while read line; do
-  echo "Progress: $(echo "$line" | jq -r '.progress')"
+openloop run "cinematic strings" --json | while read line; do
+  echo "Progress: $(echo "$line" | jq -r '.event')"
 done
 ```
 
@@ -99,7 +99,7 @@ done
 - **BPM, Key, and Time Signature Controls** — Provide musical constraints for generation.
 - **Seed Reproduction** — Reuse a seed to reproduce or iterate on previous results.
 - **Built-in Preview Player** — Play generated audio inside the app.
-- **Waveform Review** — Inspect generated audio with a lightweight waveform surface.
+- **Waveform Review** — Inspect generated audio with a waveform surface rendered from Rust audio decoding.
 - **Local Generation History** — Store prompt, lyrics, model settings, seed, and output path in a local SQLite database.
 - **Export** — Save generated audio to a local output folder.
 
@@ -172,11 +172,11 @@ OpenLoop uses [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) as the lo
 
 The app targets a profile-based model setup:
 
-| Profile    | Target Device        | Default Strategy                                 |
-| ---------- | -------------------- | ------------------------------------------------ |
-| Low Memory | 8 GB Apple Silicon   | Conservative settings, lower memory pressure     |
-| Standard   | 16 GB+ Apple Silicon | Recommended default for v0.1                     |
-| Quality    | 24 GB+ Apple Silicon | Higher-quality settings and larger model options |
+| Profile | Target Device        | Default Strategy                                 |
+| ------- | -------------------- | ------------------------------------------------ |
+| Lite    | 8 GB Apple Silicon   | Conservative settings, lower memory pressure     |
+| Turbo   | 16 GB+ Apple Silicon | Recommended default for v0.1                     |
+| Pro     | 24 GB+ Apple Silicon | Highest quality with XL model and larger LM      |
 
 Model files are downloaded or selected during first setup and stored locally. The application code is MIT licensed; model weights and third-party components follow their upstream licenses.
 
@@ -201,25 +201,33 @@ Model files are downloaded or selected during first setup and stored locally. Th
 
 ```mermaid
 flowchart TB
-  subgraph UI["OpenLoop UI"]
+  subgraph CLI["CLI Mode"]
+    CLI_ENTRY["openloop run/setup/..."]
+  end
+
+  subgraph UI["Tauri GUI"]
     H["History Sidebar"]
     G["Generation Form"]
-    P["Preview Player"]
+    P["Playback Bar + Waveform"]
   end
 
-  subgraph BE["Tauri Rust Backend"]
-    BM["Backend Manager"]
-    AC["ACE-Step Client"]
-    SF["SQLite / File Store"]
+  subgraph BE["Rust Service Layer"]
+    BM["BackendManager"]
+    AC["AceClient"]
+    TR["GenerationTaskRunner"]
+    SF["FileStore / SQLite"]
+    WA["Waveform (Symphonia)"]
   end
 
-  H --> BM
-  G --> BM
-  P --> BM
-  BM --> AC --> SF --> API["Local ACE-Step API Server<br/>Model loading · Task queue"] --> OUT["Local Output Files<br/>WAV / MP3 / FLAC / OGG + metadata"]
+  CLI_ENTRY --> BE
+  H --> BE
+  G --> BE
+  P --> BE
+  BM --> AC --> TR --> SF --> API["Local ACE-Step API Server"] --> OUT["Local Output Files<br/>WAV / MP3 / FLAC / OGG"]
+  P --> WA --> OUT
 ```
 
-OpenLoop uses a local API server model instead of making the UI talk directly to Python. The Rust backend owns process lifecycle, health checks, request validation, file paths, local history, and user-facing error mapping.
+OpenLoop uses a local API server model — the Rust service layer owns process lifecycle, health checks, task polling, file paths, and error mapping. The same service layer is shared by both GUI and CLI modes.
 
 ---
 

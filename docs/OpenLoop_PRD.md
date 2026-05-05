@@ -1,8 +1,8 @@
 # OpenLoop Product Requirements Document
 
 **版本**: 1.0  
-**状态**: Implementation-Ready  
-**最后更新**: 2026-04-23  
+**状态**: Implemented (v0.1.0 Alpha released)  
+**最后更新**: 2026-05-05  
 **目标平台**: macOS Apple Silicon  
 **项目类型**: 开源、本地优先、离线 AI 音乐生成桌面应用  
 **内部代号**: OpenLoop  
@@ -29,13 +29,13 @@ OpenLoop 的核心价值是：
 
 ### 1.3 当前版本目标
 
-v0.1 Alpha 的目标是验证完整闭环：
+v0.1.0 Alpha 已实现完整闭环：
 
 ```text
 首次设置 → 模型准备 → 文本/歌词生成音乐 → 播放预览 → 导出文件 → 保存历史
 ```
 
-本版本优先保证可运行、可调试、可恢复、可复现。高级音频编辑、Repaint、多模型管理、Homebrew Cask 分发放入后续版本。
+CLI 模式、波形显示、i18n 也已就绪。高级音频编辑、Repaint 正式版、多模型配置管理、macOS 签名公证放入后续版本。
 
 ### 1.4 非目标
 
@@ -51,7 +51,7 @@ v0.1 不实现以下能力：
 - Windows/Linux 客户端。
 - 插件系统。
 - LoRA 训练 UI。
-- Repaint 正式版。
+- Repaint 完整体验（v0.1 仅在高级设置中保留参数输入）。
 
 ---
 
@@ -204,9 +204,9 @@ v0.1 提供两个推荐 profile。
 
 | Profile    | 目标设备 | DiT                 | LM               | Thinking 默认 | 说明             |
 | ---------- | -------- | ------------------- | ---------------- | ------------- | ---------------- |
-| Low Memory | 8GB      | `acestep-v15-turbo` | 0.6B 或 disabled | false         | 优先成功率       |
-| Standard   | 16GB+    | `acestep-v15-turbo` | 0.6B             | true optional | 默认推荐         |
-| Quality    | 24GB+    | base/turbo 可选     | 1.7B             | true          | 后续版本优先完善 |
+| Lite       | 8GB      | `acestep-v15-turbo` | 0.6B 或 disabled | false         | 优先成功率       |
+| Turbo      | 16GB+    | `acestep-v15-turbo` | 0.6B             | true optional | 默认推荐         |
+| Pro        | 24GB+    | acestep-v15-xl-turbo| 1.7B             | true          | 完整质量         |
 
 ### 4.4 模型 Manifest
 
@@ -788,11 +788,12 @@ OpenLoop 不承诺生成内容天然无版权风险。应用需要在 About 或�
 
 | 阶段 | 目标     | 交付物                                       | 验收                  |
 | ---- | -------- | -------------------------------------------- | --------------------- |
-| M0   | 技术验证 | Tauri app 启动 ACE-Step 后端，生成 10 秒音频 | 本地生成成功并可播放  |
-| M1   | MVP 闭环 | 设置、生成、播放、导出、历史                 | 完整用户流程可跑通    |
-| M1.5 | 稳定化   | 错误处理、日志、seed 复现、文件缺失处理      | 手动测试清单通过      |
-| M2   | Beta     | Repaint、模型管理、性能优化                  | Beta release          |
-| M3   | v1.0     | 签名、公证、文档、发布流程                   | Public stable release |
+| M0   | 技术验证 | Tauri app 启动 ACE-Step 后端，生成 10 秒音频 | ✅ 已完成              |
+| M1   | MVP 闭环 | 设置、生成、播放、导出、历史                 | ✅ 已完成              |
+| M1.5 | 稳定化   | 错误处理、日志、seed 复现、文件缺失处理      | ✅ 已完成              |
+| M1.8 | CLI & 波形 | CLI 10 个子命令、波形显示、i18n             | ✅ 已完成              |
+| M2   | Beta     | Repaint、模型管理、性能优化                  | 🔄 进行中              |
+| M3   | v1.0     | 签名、公证、文档、发布流程                   | ⏳ 计划中              |
 
 ---
 

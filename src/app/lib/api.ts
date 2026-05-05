@@ -162,8 +162,24 @@ export function downloadModel(
 
 export function deleteModel(
   variant: ModelVariant,
-): Promise<ModelStatusSnapshot[]> {
-  return invoke<ModelStatusSnapshot[]>("delete_model", { variant });
+): Promise<ModelStatusSnapshot> {
+  return invoke<ModelStatusSnapshot>("delete_model", { variant });
+}
+
+export function clearPartialDownloads(
+  variant: ModelVariant,
+): Promise<ModelStatusSnapshot> {
+  return invoke<ModelStatusSnapshot>("clear_partial_downloads", { variant });
+}
+
+export function cancelDownload(
+  variant: ModelVariant,
+): Promise<void> {
+  return invoke<void>("cancel_download", { variant });
+}
+
+export function deleteAllModels(): Promise<ModelStatusSnapshot[]> {
+  return invoke<ModelStatusSnapshot[]>("delete_all_models");
 }
 
 export function listenToModelDownloadEvents(

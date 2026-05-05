@@ -1,6 +1,6 @@
 # OpenLoop Release Checklist
 
-OpenLoop v0.1 currently targets macOS Apple Silicon DMG builds.
+OpenLoop v0.1.0 targets macOS Apple Silicon DMG builds, distributed via Homebrew Cask and direct download.
 
 ## Release readiness
 
@@ -43,11 +43,13 @@ Before publishing a release, install the generated DMG and verify:
 - first-run setup completes;
 - model bootstrap can reach a ready state;
 - generation creates a playable output file;
-- failed and cancelled generations do not appear in history;
+- failed and cancelled generations are handled correctly (failed recorded for debugging, cancelled not in history);
 - single-item delete removes the history row and local audio file;
 - clear history removes generated audio files and leaves history empty;
 - Reveal in Finder and export copy work for generated files;
-- backend logs are created and old logs are pruned automatically.
+- backend logs are created and old logs are pruned automatically (keeps last 20);
+- CLI `openloop run` generates headlessly and saves to disk;
+- CLI `openloop list --json` outputs valid JSON matching GUI history.
 
 ## Signing and notarization
 

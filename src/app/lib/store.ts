@@ -101,6 +101,9 @@ interface GenerationStore {
   closeSettings: () => void;
   downloadModelVariant: (variant: ModelVariant) => Promise<void>;
   deleteModelVariant: (variant: ModelVariant) => Promise<void>;
+  cancelModelDownload: (variant: ModelVariant) => Promise<void>;
+  clearPartialModelDownloads: (variant: ModelVariant) => Promise<void>;
+  deleteAllModels: () => Promise<void>;
   refreshModelStatuses: () => Promise<void>;
   applyModelStatus: (status: ModelStatusSnapshot) => void;
   setLanguage: (language: string) => Promise<void>;
@@ -414,20 +417,8 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     const packId = packIdForVariant(variant);
     const deleteTarget = primaryVariantForPack(packId);
     if (api.isTauriRuntime()) {
-      const statuses = await api.deleteModel(deleteTarget);
-      const nextDownloadedModels =
-        expandDownloadedVariantsFromStatuses(statuses);
-      const currentSelected = get().settings.modelVariant;
-      const nextSelected =
-        currentSelected &&
-        MODEL_PACKS[packId].variants.includes(currentSelected)
-          ? null
-          : currentSelected;
-      await Promise.all([
-        api.setSetting("downloadedModels", nextDownloadedModels),
-        api.setSetting("modelVariant", nextSelected),
-      ]);
-      await get().hydrateFromPersistence();
+      const status = await api.deleteModel(deleteTarget);
+      get().applyModelStatus(status);
       return;
     }
 
@@ -452,6 +443,49 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
             message: tr("status.chooseAndDownload"),
           },
     }));
+  },
+  cancelModelDownload: async (variant) => {
+    if (api.isTauriRuntime()) {
+      await api.cancelDownload(variant);
+    }
+  },
+  clearPartialModelDownloads: async (variant) => {
+    if (api.isTauriRuntime()) {
+      const status = await api.clearPartialDownloads(variant);
+      get().applyModelStatus(status);
+    }
+  },
+  deleteAllModels: async () => {
+    if (!api.isTauriRuntime()) {
+      return;
+    }
+    const state = get();
+    const rawModelStatuses = await api.deleteAllModels();
+    const modelStatuses = localizeModelStatuses(rawModelStatuses);
+    const downloadedModels =
+      expandDownloadedVariantsFromStatuses(modelStatuses);
+    const nextModelVariant = (downloadedModels.length === 0
+      ? ""
+      : state.settings.modelVariant) as AppSettings["modelVariant"];
+    set((prev) => ({
+      modelStatuses,
+      settings: {
+        ...prev.settings,
+        downloadedModels,
+        modelVariant: nextModelVariant,
+      },
+      bootstrapStatus: resolveModelBootstrapStatus(
+        {
+          ...prev.settings,
+          downloadedModels,
+          modelVariant: nextModelVariant,
+        },
+        null,
+        modelStatuses,
+      ),
+    }));
+    void api.setSetting("downloadedModels", downloadedModels);
+    void api.setSetting("modelVariant", nextModelVariant);
   },
   refreshModelStatuses: async () => {
     if (!api.isTauriRuntime()) {
@@ -513,6 +547,26 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
         ...state.settings,
         downloadedModels,
       };
+
+      if (status.state !== "downloading") {
+        const currentSelected = state.settings.modelVariant;
+        const nextSelected =
+          currentSelected &&
+          MODEL_PACKS[eventPack].variants.includes(currentSelected) &&
+          !downloadedModels.includes(currentSelected)
+            ? null
+            : currentSelected;
+        if (nextSettings.modelVariant !== nextSelected) {
+          nextSettings.modelVariant = nextSelected;
+        }
+        if (api.isTauriRuntime()) {
+          void api.setSetting("downloadedModels", downloadedModels);
+          if (nextSelected === null && currentSelected !== null) {
+            void api.setSetting("modelVariant", nextSelected);
+          }
+        }
+      }
+
       return {
         modelStatuses,
         settings: nextSettings,

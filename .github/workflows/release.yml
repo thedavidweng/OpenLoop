@@ -18,6 +18,8 @@ jobs:
   build-macos-dmg:
     name: Build macOS DMG
     runs-on: macos-14
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -82,3 +84,85 @@ jobs:
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
           if-no-files-found: error
+
+  sync-homebrew-cask:
+    name: Sync Homebrew Cask
+    runs-on: ubuntu-latest
+    needs: build-macos-dmg
+    permissions:
+      contents: write
+    steps:
+      - name: Find DMG asset URL
+        id: dmg
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const tag = "${{ needs.build-macos-dmg.outputs.tag || github.ref_name }}";
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag
+            });
+            const dmg = release.data.assets.find(a => a.name.endsWith('.dmg'));
+            if (!dmg) throw new Error('No DMG asset found in release ' + tag);
+            core.setOutput('url', dmg.browser_download_url);
+            core.setOutput('filename', dmg.name);
+            core.setOutput('version', tag.replace(/^v/, ''));
+
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v6.0.2
+        with:
+          repository: thedavidweng/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
+          path: tap-repo
+
+      - name: Update openloop.rb
+        run: |
+          VERSION="${{ steps.dmg.outputs.version }}"
+          URL="${{ steps.dmg.outputs.url }}"
+
+          cat > tap-repo/Casks/openloop.rb << 'RUBYEOF'
+          cask "openloop" do
+            version "VERSION"
+            sha256 :no_check
+
+            url "URL"
+            name "OpenLoop"
+            desc "AI music generation desktop application"
+            homepage "https://github.com/REPO"
+
+            depends_on macos: ">= :sonoma"
+
+            app "OpenLoop.app"
+
+            postflight do
+              system_command "/usr/bin/xattr",
+                             args: ["-dr", "com.apple.quarantine", "#{appdir}/OpenLoop.app"]
+              system_command "/bin/ln",
+                             args: ["-sf", "#{appdir}/OpenLoop.app/Contents/MacOS/openloop", "/usr/local/bin/openloop"],
+                             sudo: true
+            end
+
+            zap trash: [
+              "~/Library/Application Support/openloop",
+              "~/Library/Application Support/OpenLoop",
+              "~/Music/OpenLoop",
+              "~/Library/Logs/openloop",
+            ]
+          end
+          RUBYEOF
+
+          sed -i '' "s|VERSION|${VERSION}|g" tap-repo/Casks/openloop.rb 2>/dev/null || sed -i "s|VERSION|${VERSION}|g" tap-repo/Casks/openloop.rb
+          sed -i '' "s|URL|${URL}|g" tap-repo/Casks/openloop.rb 2>/dev/null || sed -i "s|URL|${URL}|g" tap-repo/Casks/openloop.rb
+          sed -i '' "s|REPO|${GITHUB_REPOSITORY}|g" tap-repo/Casks/openloop.rb 2>/dev/null || sed -i "s|REPO|${GITHUB_REPOSITORY}|g" tap-repo/Casks/openloop.rb
+
+      - name: Commit and push
+        run: |
+          cd tap-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/openloop.rb
+          git diff --staged --quiet || {
+            git commit -m "chore: sync openloop cask ${{ steps.dmg.outputs.version }}"
+            git push
+          }

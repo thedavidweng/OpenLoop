@@ -63,10 +63,7 @@ pub fn clear_partial_downloads(
 }
 
 #[tauri::command]
-pub fn cancel_download(
-    state: State<'_, AppState>,
-    variant: ModelVariant,
-) -> AppResult<()> {
+pub fn cancel_download(state: State<'_, AppState>, variant: ModelVariant) -> AppResult<()> {
     let manager = state
         .models
         .lock()

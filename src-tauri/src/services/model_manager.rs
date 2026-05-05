@@ -233,17 +233,13 @@ impl ModelManager {
                             downloaded_bytes: 0,
                             total_bytes: Some(total_bytes),
                             installed_at: None,
-                            error: Some(AppError::model_download_failed(
-                                "Download cancelled.",
-                            )),
+                            error: Some(AppError::model_download_failed("Download cancelled.")),
                         };
                         publish_snapshot(&app, &status, cancelled);
                     } else {
                         let final_snapshot = match result {
                             Ok(()) => {
-                                if let Err(error) =
-                                    record_install(&app_data_dir, descriptor)
-                                {
+                                if let Err(error) = record_install(&app_data_dir, descriptor) {
                                     eprintln!(
                                         "openloop: failed to persist model install manifest: {}",
                                         error.message
@@ -341,12 +337,7 @@ impl ModelManager {
             label: descriptor.label.to_owned(),
             description: descriptor.description.to_owned(),
             downloaded_bytes: 0,
-            total_bytes: Some(
-                pack_for_descriptor(descriptor)
-                    .iter()
-                    .map(|f| f.size)
-                    .sum(),
-            ),
+            total_bytes: Some(pack_for_descriptor(descriptor).iter().map(|f| f.size).sum()),
             installed_at: None,
             error: None,
         };
@@ -363,8 +354,7 @@ impl ModelManager {
 
         tauri::async_runtime::spawn(async move {
             let result = tokio::task::spawn_blocking(move || {
-                let checkpoints_dir =
-                    checkpoints_dir_for(&app_data_dir, &settings_for_blocking);
+                let checkpoints_dir = checkpoints_dir_for(&app_data_dir, &settings_for_blocking);
                 for spec in pack_for_descriptor(descriptor) {
                     let target = checkpoints_dir.join(spec.local_path);
                     if target.exists() {
@@ -376,9 +366,7 @@ impl ModelManager {
                     }
                 }
 
-                for model_dir_name in
-                    unique_model_dirs(pack_for_descriptor(descriptor))
-                {
+                for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
                     let dir = checkpoints_dir.join(model_dir_name);
                     let _ = fs::read_dir(&dir).map(|mut iter| {
                         if iter.next().is_none() {
@@ -387,8 +375,7 @@ impl ModelManager {
                     });
                 }
 
-                let mut manifest =
-                    read_manifest(&app_data_dir).unwrap_or_default();
+                let mut manifest = read_manifest(&app_data_dir).unwrap_or_default();
                 manifest.installed.remove(&variant_key);
                 manifest.updated_at = Utc::now().to_rfc3339();
                 write_manifest(&app_data_dir, &manifest).ok();
@@ -398,22 +385,12 @@ impl ModelManager {
             clear_delete_marker(&app_data_dir_for_final, variant);
 
             if let Err(error) = result {
-                eprintln!(
-                    "openloop: model delete for {:?} panicked: {error}",
-                    variant
-                );
+                eprintln!("openloop: model delete for {:?} panicked: {error}", variant);
             }
 
-            let final_snapshot = inspect_descriptor_for(
-                &app_data_dir_for_final,
-                &settings_for_final,
-                descriptor,
-            );
-            publish_snapshot(
-                &app,
-                &status,
-                final_snapshot,
-            );
+            let final_snapshot =
+                inspect_descriptor_for(&app_data_dir_for_final, &settings_for_final, descriptor);
+            publish_snapshot(&app, &status, final_snapshot);
         });
 
         Ok(initial)
@@ -1107,9 +1084,7 @@ async fn download_pack(
 
     for spec in &files {
         if cancel.load(Ordering::SeqCst) {
-            return Err(AppError::model_download_failed(
-                "Download cancelled.",
-            ));
+            return Err(AppError::model_download_failed("Download cancelled."));
         }
 
         let target = checkpoints_dir.join(spec.local_path);

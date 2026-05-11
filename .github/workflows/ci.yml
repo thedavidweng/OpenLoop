@@ -8,9 +8,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate:
-    runs-on: macos-14
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -26,29 +32,91 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Install dependencies
+        id: install
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Frontend tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test:run
 
       - name: Frontend build
-        run: pnpm build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm exec vite build
+
+  rust-fmt-check:
+    name: Rust Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
 
       - name: Rust format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
 
+  rust-test:
+    name: Rust Test
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 20
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Cache sidecar downloads
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/binaries/.cache
+          key: ${{ runner.os }}-uv-sidecars-${{ hashFiles('scripts/prepare-sidecars.mjs') }}
+
       - name: Prepare sidecars
-        run: pnpm prepare:sidecars
+        run: node scripts/prepare-sidecars.mjs
 
       - name: Rust compile check
-        run: pnpm rust:check
+        run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Rust tests
         run: cargo test -q --manifest-path src-tauri/Cargo.toml
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    needs: [frontend, rust-fmt-check, rust-test]
+    if: ${{ always() }}
+    timeout-minutes: 5
+    steps:
+      - name: Check required jobs
+        run: |
+          echo "frontend: ${{ needs.frontend.result }}"
+          echo "rust-fmt-check: ${{ needs['rust-fmt-check'].result }}"
+          echo "rust-test: ${{ needs['rust-test'].result }}"
+          test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs['rust-fmt-check'].result }}" = "success"
+          test "${{ needs['rust-test'].result }}" = "success"

@@ -25,6 +25,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.cursor/
+.claude/
+.commandcode/
+.omx
+.sisyphus
+
+# Local worktrees
+.worktrees/
 
 # Test and cache
 coverage

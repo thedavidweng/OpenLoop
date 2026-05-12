@@ -61,6 +61,7 @@ fn main() {
 ### Shared State
 
 CLI and GUI share:
+
 - **SQLite database** (same `app_data_dir/openloop.db`)
 - **ACE-Step backend** (health check on configured port — reuse if running, start if not)
 - **Settings** (same `settings` table)
@@ -73,6 +74,7 @@ CLI queued task → GUI sees it in active tasks. GUI queued task → CLI `ps` sh
 ### Backend Coordination
 
 Both CLI and GUI check backend health before operations:
+
 1. `GET /health` on configured port
 2. If healthy → reuse existing backend
 3. If not healthy → start backend, wait for health
@@ -96,14 +98,14 @@ Neither CLI nor GUI should kill a backend they didn't start. The backend process
 
 ### Affected Files
 
-| File | Change |
-|------|--------|
-| `src-tauri/Cargo.toml` | Remove `vorbis_rs` dependency |
-| `src-tauri/src/audio/encode.rs` | Delete file |
-| `src-tauri/src/audio/mod.rs` | Remove `pub mod encode` |
-| `src-tauri/src/services/file_store.rs` | Remove OGG branch, simplify `write_audio` to always write bytes directly |
-| `src-tauri/src/services/generation_task.rs` | No change (already passes format to ACE-Step) |
-| `src-tauri/src/services/ace_client.rs` | No change (already sends `audio_format` in payload) |
+| File                                        | Change                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------ |
+| `src-tauri/Cargo.toml`                      | Remove `vorbis_rs` dependency                                            |
+| `src-tauri/src/audio/encode.rs`             | Delete file                                                              |
+| `src-tauri/src/audio/mod.rs`                | Remove `pub mod encode`                                                  |
+| `src-tauri/src/services/file_store.rs`      | Remove OGG branch, simplify `write_audio` to always write bytes directly |
+| `src-tauri/src/services/generation_task.rs` | No change (already passes format to ACE-Step)                            |
+| `src-tauri/src/services/ace_client.rs`      | No change (already sends `audio_format` in payload)                      |
 
 ### `write_audio` After Change
 
@@ -141,31 +143,33 @@ Default: `wav` (ACE-Step's default).
 Generate music. The primary command for agent workflows.
 
 **Synopsis:**
+
 ```
 openloop run [FLAGS] <prompt>
 ```
 
 **Positional:**
+
 - `prompt` — text description of the music to generate
 
 **Flags:**
 
-| Flag | Short | Default | Description |
-|------|-------|---------|-------------|
-| `--model` | `-m` | from setup | Model variant (lite/turbo/pro) |
-| `--duration` | `-d` | from setup | Duration in seconds (10-600) |
-| `--format` | `-f` | from setup | Audio format (wav/mp3/flac/ogg) |
-| `--output` | `-o` | CWD | Output file path |
-| `--lyrics` | `-l` | empty | Lyrics text |
-| `--bpm` | | auto | BPM (30-300) |
-| `--key` | | auto | Key and scale (e.g., "C major") |
-| `--steps` | | 8 | Inference steps |
-| `--guidance` | | 7.0 | Guidance scale |
-| `--seed` | | random | Random seed |
-| `--variations` | `-v` | 1 | Number of variations (1-4) |
-| `--no-thinking` | | false | Disable thinking mode |
-| `--json` | | false | NDJSON streaming output |
-| `--help` | `-h` | | Show help |
+| Flag            | Short | Default    | Description                     |
+| --------------- | ----- | ---------- | ------------------------------- |
+| `--model`       | `-m`  | from setup | Model variant (lite/turbo/pro)  |
+| `--duration`    | `-d`  | from setup | Duration in seconds (10-600)    |
+| `--format`      | `-f`  | from setup | Audio format (wav/mp3/flac/ogg) |
+| `--output`      | `-o`  | CWD        | Output file path                |
+| `--lyrics`      | `-l`  | empty      | Lyrics text                     |
+| `--bpm`         |       | auto       | BPM (30-300)                    |
+| `--key`         |       | auto       | Key and scale (e.g., "C major") |
+| `--steps`       |       | 8          | Inference steps                 |
+| `--guidance`    |       | 7.0        | Guidance scale                  |
+| `--seed`        |       | random     | Random seed                     |
+| `--variations`  | `-v`  | 1          | Number of variations (1-4)      |
+| `--no-thinking` |       | false      | Disable thinking mode           |
+| `--json`        |       | false      | NDJSON streaming output         |
+| `--help`        | `-h`  |            | Show help                       |
 
 **Behavior:**
 
@@ -179,6 +183,7 @@ openloop run [FLAGS] <prompt>
 8. Print final result.
 
 **Output path logic (ffmpeg-style):**
+
 - `--output ./track.mp3` → format inferred as mp3
 - `--output ./track.flac` → format inferred as flac
 - `--output ./track` → format from `--format` flag or setup default
@@ -188,6 +193,7 @@ openloop run [FLAGS] <prompt>
 - Multiple variations with `--output ./track.wav` → `./track-1.wav`, `./track-2.wav`, etc.
 
 **NDJSON events (with `--json`):**
+
 ```json
 {"event":"bootstrapping","action":"starting_backend"}
 {"event":"bootstrapping","action":"downloading_model","model":"turbo"}
@@ -198,11 +204,13 @@ openloop run [FLAGS] <prompt>
 ```
 
 On error:
+
 ```json
-{"event":"failed","error":"backend health timeout after 60s"}
+{ "event": "failed", "error": "backend health timeout after 60s" }
 ```
 
 **Human output (without `--json`):**
+
 ```
 ♫ Generating music...
   Model: turbo | Duration: 30s | Format: wav
@@ -211,20 +219,26 @@ On error:
 ```
 
 **Exit codes:**
+
 - `0` — success
 - `1` — error (validation, backend, generation failure)
 
 **Error output (with `--json`):**
+
 ```json
-{"error":"model 'ultra' not available. Use 'openloop models' to list options."}
+{
+  "error": "model 'ultra' not available. Use 'openloop models' to list options."
+}
 ```
 
 **Error output (human):**
+
 ```
 ✗ Error: model 'ultra' not available. Use 'openloop models' to list options.
 ```
 
 **Examples:**
+
 ```bash
 # Simple generation
 openloop run "upbeat electronic track for a product video"
@@ -249,11 +263,13 @@ openloop run "jazz trio" --model pro
 Configure default settings. Interactive wizard for humans, key-value for agents.
 
 **Synopsis:**
+
 ```
 openloop setup [KEY] [VALUE] [FLAGS]
 ```
 
 **Interactive mode (no args):**
+
 ```
 $ openloop setup
 
@@ -271,7 +287,7 @@ $ openloop setup
   2. Turbo (16GB)   — recommended ← currently active
   3. Pro (24GB)     — highest quality
 
-  Choice [1-3] (2): 
+  Choice [1-3] (2):
 
 ◆ Thinking Mode
   Enable reasoning for better prompt understanding.
@@ -280,13 +296,13 @@ $ openloop setup
   1. Enabled   ← currently active
   2. Disabled
 
-  Choice [1-2] (1): 
+  Choice [1-2] (1):
 
 ◆ Default Duration
   Default duration in seconds for generated audio.
   Current: 30
 
-  Duration [10-600] (30): 
+  Duration [10-600] (30):
 
 ◆ Audio Format
   Default output format for generated audio.
@@ -297,7 +313,7 @@ $ openloop setup
   3. flac — lossless compression
   4. ogg  — lossy compression
 
-  Choice [1-4] (1): 
+  Choice [1-4] (1):
 
 ✓ Setup complete. Settings saved.
 ```
@@ -305,6 +321,7 @@ $ openloop setup
 Uses arrow keys for radio selection, Enter to confirm, current values shown as defaults.
 
 **Non-interactive mode (key-value):**
+
 ```bash
 openloop setup model turbo      # applies immediately, prints confirmation
 openloop setup thinking on
@@ -313,11 +330,13 @@ openloop setup format mp3
 ```
 
 **Non-interactive mode (flags):**
+
 ```bash
 openloop setup --model turbo --thinking on --duration 60 --format mp3
 ```
 
 **Show current values (no args, non-TTY or piped):**
+
 ```bash
 $ openloop setup
 model    = turbo
@@ -328,30 +347,32 @@ format   = wav
 
 **Keys:**
 
-| Key | Values | Description |
-|-----|--------|-------------|
-| `model` | `lite`, `turbo`, `pro` | Model variant |
-| `thinking` | `on`, `off` | Thinking mode |
-| `duration` | `10-600` | Default duration in seconds |
-| `format` | `wav`, `mp3`, `flac`, `ogg` | Default audio format |
+| Key        | Values                      | Description                 |
+| ---------- | --------------------------- | --------------------------- |
+| `model`    | `lite`, `turbo`, `pro`      | Model variant               |
+| `thinking` | `on`, `off`                 | Thinking mode               |
+| `duration` | `10-600`                    | Default duration in seconds |
+| `format`   | `wav`, `mp3`, `flac`, `ogg` | Default audio format        |
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
-| `--model` | Set model variant |
+| Flag         | Description                |
+| ------------ | -------------------------- |
+| `--model`    | Set model variant          |
 | `--thinking` | Set thinking mode (on/off) |
-| `--duration` | Set default duration |
-| `--format` | Set default format |
-| `--json` | JSON output |
-| `--help` | Show help |
+| `--duration` | Set default duration       |
+| `--format`   | Set default format         |
+| `--json`     | JSON output                |
+| `--help`     | Show help                  |
 
 **JSON output (with `--json`):**
+
 ```json
-{"model":"turbo","thinking":"on","duration":"30","format":"wav"}
+{ "model": "turbo", "thinking": "on", "duration": "30", "format": "wav" }
 ```
 
 **Exit codes:**
+
 - `0` — success
 - `1` — error (invalid key, invalid value)
 
@@ -362,19 +383,21 @@ format   = wav
 Show generation history.
 
 **Synopsis:**
+
 ```
 openloop list [FLAGS]
 ```
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
-| `--json` | JSON array output |
+| Flag      | Description                     |
+| --------- | ------------------------------- |
+| `--json`  | JSON array output               |
 | `--limit` | Number of records (default: 20) |
-| `--help` | Show help |
+| `--help`  | Show help                       |
 
 **Human output:**
+
 ```
 ID           Prompt                    Duration  Format  Created
 a1b2c3d4     epic cinematic track      120s      mp3     2026-05-04 14:30
@@ -385,6 +408,7 @@ i9j0k1l2     upbeat electronic         30s       flac    2026-05-04 12:00
 IDs are shown as 8-char prefixes. `openloop delete` accepts these prefixes.
 
 **JSON output (with `--json`):**
+
 ```json
 [
   {
@@ -405,26 +429,30 @@ IDs are shown as 8-char prefixes. `openloop delete` accepts these prefixes.
 Download a model variant.
 
 **Synopsis:**
+
 ```
 openloop pull <model> [FLAGS]
 ```
 
 **Positional:**
+
 - `model` — model variant: `lite`, `turbo`, or `pro`
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description            |
+| -------- | ---------------------- |
 | `--json` | NDJSON progress output |
-| `--help` | Show help |
+| `--help` | Show help              |
 
 **Behavior:**
+
 1. Check if model is already downloaded. If so, print message and exit.
 2. Download model files from Hugging Face.
 3. Save model status to settings.
 
 **NDJSON events (with `--json`):**
+
 ```json
 {"event":"downloading","file":"acestep-v15-turbo/model.safetensors","progress":0.3}
 {"event":"downloading","file":"acestep-5Hz-lm-0.6B/model.safetensors","progress":0.7}
@@ -432,6 +460,7 @@ openloop pull <model> [FLAGS]
 ```
 
 **Human output:**
+
 ```
 ♫ Downloading model: Turbo (16GB)
   [████████████████████░░░░] 80% — acestep-5Hz-lm-0.6B/model.safetensors
@@ -445,18 +474,20 @@ openloop pull <model> [FLAGS]
 List available and downloaded models.
 
 **Synopsis:**
+
 ```
 openloop models [FLAGS]
 ```
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description       |
+| -------- | ----------------- |
 | `--json` | JSON array output |
-| `--help` | Show help |
+| `--help` | Show help         |
 
 **Human output:**
+
 ```
 Variant   Size    Status      Description
 Lite      8GB     downloaded  turbo DiT + 0.6B LM
@@ -465,11 +496,17 @@ Pro       24GB    —           XL turbo DiT + 1.7B LM
 ```
 
 **JSON output (with `--json`):**
+
 ```json
 [
-  {"variant":"lite","size_gb":8,"status":"downloaded","active":false},
-  {"variant":"turbo","size_gb":16,"status":"downloaded","active":true},
-  {"variant":"pro","size_gb":24,"status":"not_downloaded","active":false}
+  { "variant": "lite", "size_gb": 8, "status": "downloaded", "active": false },
+  { "variant": "turbo", "size_gb": 16, "status": "downloaded", "active": true },
+  {
+    "variant": "pro",
+    "size_gb": 24,
+    "status": "not_downloaded",
+    "active": false
+  }
 ]
 ```
 
@@ -480,18 +517,20 @@ Pro       24GB    —           XL turbo DiT + 1.7B LM
 Show backend status and active generation tasks.
 
 **Synopsis:**
+
 ```
 openloop ps [FLAGS]
 ```
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description        |
+| -------- | ------------------ |
 | `--json` | JSON object output |
-| `--help` | Show help |
+| `--help` | Show help          |
 
 **Human output:**
+
 ```
 Backend: healthy (port 8001)
 Model:   turbo
@@ -499,6 +538,7 @@ Active tasks: 0
 ```
 
 **With active task:**
+
 ```
 Backend: healthy (port 8001)
 Model:   turbo
@@ -507,13 +547,19 @@ Active tasks: 1
 ```
 
 **JSON output (with `--json`):**
+
 ```json
 {
   "backend": "healthy",
   "port": 8001,
   "model": "turbo",
   "active_tasks": [
-    {"id": "a1b2c3d4", "prompt": "epic cinematic", "status": "running", "elapsed_seconds": 30}
+    {
+      "id": "a1b2c3d4",
+      "prompt": "epic cinematic",
+      "status": "running",
+      "elapsed_seconds": 30
+    }
   ]
 }
 ```
@@ -525,34 +571,39 @@ Active tasks: 1
 Delete one generation record and its output file.
 
 **Synopsis:**
+
 ```
 openloop delete <id> [FLAGS]
 ```
 
 **Positional:**
+
 - `id` — generation record ID or prefix (from `openloop list`). Supports partial matching: `a1b2` matches `a1b2c3d4-e5f6-...`.
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description |
+| -------- | ----------- |
 | `--json` | JSON output |
-| `--help` | Show help |
+| `--help` | Show help   |
 
 **Behavior:**
+
 1. Find record by ID.
 2. Delete output file if it exists.
 3. Delete database record.
 4. Print confirmation.
 
 **Human output:**
+
 ```
 ✓ Deleted: a1b2c3d4 (epic cinematic track)
 ```
 
 **JSON output (with `--json`):**
+
 ```json
-{"deleted":"a1b2c3d4"}
+{ "deleted": "a1b2c3d4" }
 ```
 
 ---
@@ -562,19 +613,21 @@ openloop delete <id> [FLAGS]
 Clear all generation history.
 
 **Synopsis:**
+
 ```
 openloop clear [FLAGS]
 ```
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
-| `--json` | JSON output |
-| `--yes` | Skip confirmation |
-| `--help` | Show help |
+| Flag     | Description       |
+| -------- | ----------------- |
+| `--json` | JSON output       |
+| `--yes`  | Skip confirmation |
+| `--help` | Show help         |
 
 **Behavior:**
+
 1. Count records.
 2. In human mode (no `--json`): if `--yes` not set, prompt: "Delete 15 records and their output files? [y/N]"
 3. In JSON mode: auto-confirm (no interactive prompt).
@@ -583,14 +636,16 @@ openloop clear [FLAGS]
 6. Print confirmation.
 
 **Human output:**
+
 ```
 Delete 15 records and their output files? [y/N] y
 ✓ Cleared 15 records and output files.
 ```
 
 **JSON output (with `--json`):**
+
 ```json
-{"cleared":15}
+{ "cleared": 15 }
 ```
 
 ---
@@ -600,26 +655,31 @@ Delete 15 records and their output files? [y/N] y
 Stop the ACE-Step backend process.
 
 **Synopsis:**
+
 ```
 openloop stop [FLAGS]
 ```
 
 **Flags:**
 
-| Flag | Description |
-|------|-------------|
+| Flag     | Description |
+| -------- | ----------- |
 | `--json` | JSON output |
-| `--help` | Show help |
+| `--help` | Show help   |
 
 **Behavior:**
+
 1. If backend is running, stop it.
 2. If backend is not running, print message and exit.
 
 **Human output:**
+
 ```
 ✓ Backend stopped.
 ```
+
 or
+
 ```
 Backend is not running.
 ```
@@ -696,35 +756,46 @@ Examples:
 ## Error Handling
 
 ### Human Mode
+
 Colored error text to stderr:
+
 ```
 ✗ Error: model 'ultra' not available. Use 'openloop models' to list options.
 ```
 
 ### JSON Mode (`--json`)
+
 Valid JSON to stdout:
+
 ```json
-{"error":"model 'ultra' not available. Use 'openloop models' to list options."}
+{
+  "error": "model 'ultra' not available. Use 'openloop models' to list options."
+}
 ```
 
 ### Exit Codes
+
 - `0` — success
 - `1` — error
 
 ## Implementation Phases
 
 ### Phase 1: Extract Service Layer
+
 Refactor `AppState` out of Tauri's setup closure. Create `app_state.rs`. No behavior change — just moving code.
 
 **Files to modify:**
+
 - `src-tauri/src/lib.rs` — move `AppState` struct and `current_executable_dir` to `app_state.rs`, call `AppState::init()` in setup
 - `src-tauri/src/app_state.rs` — new file, contains `AppState` struct and `init()`
 - `src-tauri/src/commands/*.rs` — update imports if needed (should be minimal since commands use `tauri::State<AppState>`)
 
 ### Phase 2: Remove OGG Conversion
+
 Simplify audio handling. Let ACE-Step handle all format conversion.
 
 **Files to modify:**
+
 - `src-tauri/Cargo.toml` — remove `vorbis_rs`
 - `src-tauri/src/audio/encode.rs` — delete
 - `src-tauri/src/audio/mod.rs` — remove `pub mod encode`
@@ -733,9 +804,11 @@ Simplify audio handling. Let ACE-Step handle all format conversion.
 - `src/app/components/settings/` — verify format selector still works (no change needed if it reads from the same type)
 
 ### Phase 3: CLI Binary
+
 Add CLI entry point and argument parsing.
 
 **Files to create:**
+
 - `src-tauri/src/cli/mod.rs` — CLI dispatcher
 - `src-tauri/src/cli/run.rs` — `openloop run` implementation
 - `src-tauri/src/cli/setup.rs` — `openloop setup` implementation
@@ -749,25 +822,31 @@ Add CLI entry point and argument parsing.
 - `src-tauri/src/cli/help.rs` — help text
 
 **Files to modify:**
+
 - `src-tauri/Cargo.toml` — add `clap` dependency
 - `src-tauri/src/main.rs` — mode detection (args present → CLI, no args → GUI)
 - `src-tauri/src/lib.rs` — add `pub mod cli`
 
 ### Phase 4: Interactive Setup Wizard
+
 Terminal UI for `openloop setup`.
 
 **Dependencies to add:**
+
 - `dialoguer` or `inquire` — terminal UI (radio selects, input prompts)
 
 ### Phase 5: JSON Output and NDJSON Streaming
+
 Add `--json` flag handling to all commands.
 
 **Shared utilities:**
+
 - JSON output helpers (emit event, emit error)
 - NDJSON stream writer for `run` command
 - Tauri event → NDJSON bridge for `run` command
 
 ### Phase 6: Documentation and Cleanup
+
 - Update CONTEXT.md
 - Update PRD if needed
 - Update implementation-status.md
@@ -776,14 +855,16 @@ Add `--json` flag handling to all commands.
 ## Dependencies
 
 ### New Rust Dependencies
-| Crate | Purpose |
-|-------|---------|
-| `clap` | CLI argument parsing |
+
+| Crate                    | Purpose                           |
+| ------------------------ | --------------------------------- |
+| `clap`                   | CLI argument parsing              |
 | `dialoguer` or `inquire` | Interactive terminal UI for setup |
 
 ### Removed Dependencies
-| Crate | Reason |
-|-------|--------|
+
+| Crate       | Reason                           |
+| ----------- | -------------------------------- |
 | `vorbis_rs` | OGG conversion moved to ACE-Step |
 
 ## Context Map Changes

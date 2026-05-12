@@ -120,9 +120,9 @@ describe("generation store", () => {
     await useGenerationStore.getState().deleteGenerationRecord("deleted");
 
     expect(deleteGenerationFileAndRecord).toHaveBeenCalledWith("deleted");
-    expect(useGenerationStore.getState().history.map((item) => item.id)).toEqual(
-      ["kept"],
-    );
+    expect(
+      useGenerationStore.getState().history.map((item) => item.id),
+    ).toEqual(["kept"]);
     expect(useGenerationStore.getState().currentGeneration?.id).toBe("kept");
   });
 

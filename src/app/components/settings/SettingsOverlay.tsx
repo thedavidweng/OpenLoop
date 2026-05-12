@@ -395,9 +395,7 @@ export function SettingsOverlay() {
   const clearPartialModelDownloads = useGenerationStore(
     (state) => state.clearPartialModelDownloads,
   );
-  const deleteAllModels = useGenerationStore(
-    (state) => state.deleteAllModels,
-  );
+  const deleteAllModels = useGenerationStore((state) => state.deleteAllModels);
   const refreshModelStatuses = useGenerationStore(
     (state) => state.refreshModelStatuses,
   );
@@ -671,16 +669,12 @@ export function SettingsOverlay() {
                 {cliPathStatus === "loading" ? (
                   <>
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>
-                      {t("settings.cliPathChecking")}
-                    </span>
+                    <span>{t("settings.cliPathChecking")}</span>
                   </>
                 ) : cliPathStatus === "added" ? (
                   <>
                     <CheckCircle2 className="h-3 w-3 text-green-400" />
-                    <span>
-                      {t("settings.cliPathRemove")}
-                    </span>
+                    <span>{t("settings.cliPathRemove")}</span>
                   </>
                 ) : (
                   <>
@@ -1035,9 +1029,7 @@ export function SettingsOverlay() {
                 <button
                   type="button"
                   onClick={() => setDeleteAllModelsConfirmOpen(true)}
-                  disabled={
-                    settings.downloadedModels.length === 0
-                  }
+                  disabled={settings.downloadedModels.length === 0}
                   className="inline-flex h-8 items-center rounded-md border border-red-500/40 bg-red-600/10 px-3 text-[11px] font-medium text-red-300 transition-colors hover:bg-red-600/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("settings.deleteAllModels")}

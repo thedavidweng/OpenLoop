@@ -1,7 +1,5 @@
 import i18next from "@/app/lib/i18n";
-import {
-  modelNameForVariant,
-} from "@/app/lib/model-packs";
+import { modelNameForVariant } from "@/app/lib/model-packs";
 import { validateGenerationForm } from "@/app/lib/validation";
 import type {
   AppError,

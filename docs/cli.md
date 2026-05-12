@@ -14,19 +14,19 @@ openloop run --model pro --duration 30 --output ~/Music/beat.mp3
 openloop run "epic cinematic" --json            # machine-readable output
 ```
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--model` | `-m` | Model variant: `lite`, `turbo`, `pro` |
-| `--duration` | `-d` | Duration in seconds (10–600) |
-| `--format` | `-f` | Output format: `wav`, `mp3`, `flac`, `ogg` |
-| `--output` | `-o` | Output file path |
-| `--lyrics` | `-l` | Lyrics text with optional `[verse]`/`[chorus]` tags |
-| `--bpm` | | BPM (30–300) |
-| `--key` | | Key and scale (e.g. `C major`) |
-| `--seed` | | Random seed for reproducibility |
-| `--variations` | `-v` | Number of variations (1–4) |
-| `--no-thinking` | | Disable thinking mode |
-| `--json` | | Stream NDJSON progress events to stdout |
+| Flag            | Short | Description                                         |
+| --------------- | ----- | --------------------------------------------------- |
+| `--model`       | `-m`  | Model variant: `lite`, `turbo`, `pro`               |
+| `--duration`    | `-d`  | Duration in seconds (10–600)                        |
+| `--format`      | `-f`  | Output format: `wav`, `mp3`, `flac`, `ogg`          |
+| `--output`      | `-o`  | Output file path                                    |
+| `--lyrics`      | `-l`  | Lyrics text with optional `[verse]`/`[chorus]` tags |
+| `--bpm`         |       | BPM (30–300)                                        |
+| `--key`         |       | Key and scale (e.g. `C major`)                      |
+| `--seed`        |       | Random seed for reproducibility                     |
+| `--variations`  | `-v`  | Number of variations (1–4)                          |
+| `--no-thinking` |       | Disable thinking mode                               |
+| `--json`        |       | Stream NDJSON progress events to stdout             |
 
 ### `openloop setup`
 
@@ -130,7 +130,7 @@ The `--json` flag streams one JSON object per line — agents can parse progress
 On error:
 
 ```json
-{"event":"failed","error":"backend health timeout after 60s"}
+{ "event": "failed", "error": "backend health timeout after 60s" }
 ```
 
 All commands return exit code `0` on success, `1` on error.

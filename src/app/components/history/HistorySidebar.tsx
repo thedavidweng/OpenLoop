@@ -1,10 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Clock3,
-  Play,
-  Settings2,
-  Trash2,
-} from "lucide-react";
+import { Clock3, Play, Settings2, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";

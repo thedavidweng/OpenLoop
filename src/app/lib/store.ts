@@ -464,9 +464,9 @@ export const useGenerationStore = create<GenerationStore>((set, get) => ({
     const modelStatuses = localizeModelStatuses(rawModelStatuses);
     const downloadedModels =
       expandDownloadedVariantsFromStatuses(modelStatuses);
-    const nextModelVariant = (downloadedModels.length === 0
-      ? ""
-      : state.settings.modelVariant) as AppSettings["modelVariant"];
+    const nextModelVariant = (
+      downloadedModels.length === 0 ? "" : state.settings.modelVariant
+    ) as AppSettings["modelVariant"];
     set((prev) => ({
       modelStatuses,
       settings: {

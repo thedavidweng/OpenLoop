@@ -41,7 +41,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Setup Rust
@@ -84,5 +84,3 @@ jobs:
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
           if-no-files-found: error
-
-

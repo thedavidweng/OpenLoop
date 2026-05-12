@@ -25,9 +25,7 @@ const deviceInfo: DeviceInfo = {
   recommendedProfile: "standard",
 };
 
-function status(
-  state: ModelStatusSnapshot["state"],
-): ModelStatusSnapshot {
+function status(state: ModelStatusSnapshot["state"]): ModelStatusSnapshot {
   return {
     variant: "turbo",
     state,

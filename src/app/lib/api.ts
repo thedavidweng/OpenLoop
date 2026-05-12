@@ -172,9 +172,7 @@ export function clearPartialDownloads(
   return invoke<ModelStatusSnapshot>("clear_partial_downloads", { variant });
 }
 
-export function cancelDownload(
-  variant: ModelVariant,
-): Promise<void> {
+export function cancelDownload(variant: ModelVariant): Promise<void> {
   return invoke<void>("cancel_download", { variant });
 }
 

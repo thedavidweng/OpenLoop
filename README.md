@@ -23,10 +23,10 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 ## OpenMusic Series
 
-| Project                                              | Purpose                                                                                  | Status               |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------- |
-| [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active               |
-| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters | Alpha v0.1.0         |
+| Project                                              | Purpose                                                                                  | Status       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
+| [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active       |
+| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha v0.1.0 |
 
 The shared philosophy is simple: music tools should be local-first, ownership-friendly, transparent, and useful with the media and hardware you already have.
 
@@ -172,11 +172,11 @@ OpenLoop uses [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) as the lo
 
 The app targets a profile-based model setup:
 
-| Profile | Target Device        | Default Strategy                                 |
-| ------- | -------------------- | ------------------------------------------------ |
-| Lite    | 8 GB Apple Silicon   | Conservative settings, lower memory pressure     |
-| Turbo   | 16 GB+ Apple Silicon | Recommended default for v0.1                     |
-| Pro     | 24 GB+ Apple Silicon | Highest quality with XL model and larger LM      |
+| Profile | Target Device        | Default Strategy                             |
+| ------- | -------------------- | -------------------------------------------- |
+| Lite    | 8 GB Apple Silicon   | Conservative settings, lower memory pressure |
+| Turbo   | 16 GB+ Apple Silicon | Recommended default for v0.1                 |
+| Pro     | 24 GB+ Apple Silicon | Highest quality with XL model and larger LM  |
 
 Model files are downloaded or selected during first setup and stored locally. The application code is MIT licensed; model weights and third-party components follow their upstream licenses.
 

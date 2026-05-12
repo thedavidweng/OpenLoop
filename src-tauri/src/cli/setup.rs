@@ -7,6 +7,7 @@ use crate::{
 };
 
 use super::AppState;
+use std::io::IsTerminal;
 
 pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = args.contains(&"--json".to_owned());
@@ -93,7 +94,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         }
     } else {
         // Interactive or show all
-        let is_tty = atty::is(atty::Stream::Stdin);
+        let is_tty = std::io::stdin().is_terminal();
         if !is_tty || json {
             // Non-interactive: show all settings
             let settings = state.db.get_settings()?;

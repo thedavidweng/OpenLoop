@@ -50,6 +50,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high --ignore-registry-errors
+
       - name: Prepare sidecars
         run: pnpm prepare:sidecars
 

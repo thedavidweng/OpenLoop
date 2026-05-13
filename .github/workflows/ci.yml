@@ -36,6 +36,9 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high --ignore-registry-errors
+
       - name: Typecheck
         run: pnpm typecheck
 

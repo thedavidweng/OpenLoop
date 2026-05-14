@@ -27,6 +27,7 @@ export function createUISlice(
     sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
     setupOverride: false,
     lyricsPanelOpen: false,
+    demoMode: false,
     form: DEFAULT_GENERATION_FORM_VALUES,
     validationErrors: {},
     currentRequest: INITIAL_CURRENT_REQUEST,
@@ -91,6 +92,14 @@ export function createUISlice(
 
     reopenSetup: () => {
       set({ setupOverride: true, isSettingsOpen: false });
+    },
+
+    enterDemoMode: () => {
+      set({ demoMode: true });
+    },
+
+    dismissDemoMode: () => {
+      set({ demoMode: false });
     },
 
     resetForm: () => {

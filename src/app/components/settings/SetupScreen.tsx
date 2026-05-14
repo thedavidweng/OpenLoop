@@ -317,11 +317,13 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
   const selectModelVariant = useGenerationStore(
     (state) => state.selectModelVariant,
   );
+  const enterDemoMode = useGenerationStore((state) => state.enterDemoMode);
   const [step, setStep] = useState<SetupStep>("welcome");
   const [busyVariant, setBusyVariant] = useState<ModelVariant | null>(null);
   const [outputDirectory, setOutputDirectory] = useState(
     settings.outputDirectory ?? "",
   );
+  const [skipLoading, setSkipLoading] = useState(false);
   const [defaultPaths, setDefaultPaths] = useState<api.DefaultAppPaths | null>(
     null,
   );
@@ -380,6 +382,16 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
       await api.setSetting("outputDirectory", outputDirectory || null);
     }
     setStep(STEP_ORDER[Math.min(currentIndex + 1, STEP_ORDER.length - 1)]);
+  };
+
+  const handleSkipDemo = async () => {
+    setSkipLoading(true);
+    try {
+      enterDemoMode();
+      await completeSetup();
+    } finally {
+      setSkipLoading(false);
+    }
   };
 
   const StepIcon =
@@ -535,6 +547,23 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                   model: MODEL_VARIANTS[recommendedVariant].label,
                 })}
               </p>
+            </div>
+
+            {/* Skip to demo */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={handleSkipDemo}
+                disabled={skipLoading}
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60 disabled:opacity-50"
+              >
+                {skipLoading ? (
+                  <Loader2 size={10} className="animate-spin" />
+                ) : null}
+                {t("setup.skipDemo", {
+                  defaultValue: "Skip and try a demo prompt",
+                })}
+              </button>
             </div>
           </div>
         ) : null}

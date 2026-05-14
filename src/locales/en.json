@@ -40,7 +40,8 @@
     "modelPackHeading": "Weight packs",
     "modelProfileHeading": "Runtime profiles",
     "downloadAccent": "{{percent}}% downloaded",
-    "downloadComplete": "Pack downloaded"
+    "downloadComplete": "Pack downloaded",
+    "skipDemo": "Skip and try a demo prompt"
   },
   "settings": {
     "title": "Settings",
@@ -449,11 +450,15 @@
       }
     }
   },
+  "demo": {
+    "banner": "Demo mode — download a model to generate your own music"
+  },
   "common": {
     "cancel": "Cancel",
     "delete": "Delete",
     "unknown": "Unknown",
-    "close": "Close"
+    "close": "Close",
+    "dismiss": "Dismiss"
   },
   "toast": {
     "generationCompleted": "Generation completed successfully.",

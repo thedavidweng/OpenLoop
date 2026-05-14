@@ -388,7 +388,7 @@ src-tauri/src/services/model_manager/
 
 ### 6.1 Loop / AB-Loop
 
-- [x] 6.1.1 PlaybackBar 加 Loop 按钮（普通 loop）。——已实现（commit `5a0ee8a`）。
+- [x] 6.1.1 PlaybackBar 加 Loop 按钮（普通 loop）。——已实现。
 - [ ] 6.1.2 波形条上 Shift+Click 设定 A 点，再次 Shift+Click 设定 B 点；自动在 A/B 间循环。
 - [ ] 6.1.3 ESC 或重复点击清除 AB 区间。
 

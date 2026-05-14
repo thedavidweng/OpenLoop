@@ -1,3 +1,4 @@
+import { DemoBanner } from "@/app/components/bootstrap/DemoBanner";
 import { ModelBootstrapBanner } from "@/app/components/bootstrap/ModelBootstrapBanner";
 import { OpenLoopStage } from "@/app/components/layout/OpenLoopStage";
 import { PlaybackBar } from "@/app/components/player/PlaybackBar";
@@ -6,6 +7,7 @@ import { useGenerationStore } from "@/app/lib/store";
 
 export function MainContentView() {
   const settingsOpen = useGenerationStore((state) => state.isSettingsOpen);
+  const demoMode = useGenerationStore((state) => state.demoMode);
 
   return (
     <div
@@ -18,7 +20,7 @@ export function MainContentView() {
     >
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <ModelBootstrapBanner />
+          {demoMode ? <DemoBanner /> : <ModelBootstrapBanner />}
           <OpenLoopStage />
         </div>
         {settingsOpen ? <SettingsOverlay /> : null}

@@ -39,6 +39,7 @@ export interface GenerationStore {
   favoritePrompts: string[];
   favoriteRecordIds: string[];
   lastDeletedRecord: GenerationRecord | null;
+  demoMode: boolean;
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -86,4 +87,6 @@ export interface GenerationStore {
   removeRecentPrompt: (prompt: string) => void;
   toggleFavoriteRecord: (id: string) => Promise<void>;
   restoreLastDeletedRecord: () => void;
+  enterDemoMode: () => void;
+  dismissDemoMode: () => void;
 }

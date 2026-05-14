@@ -24,7 +24,16 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let variant = parse_variant(model_arg)?;
 
-    let settings = state.db.get_settings()?;
+    let mut settings = state.db.get_settings()?;
+
+    // CLI --mirror overrides saved setting for this run
+    if let Some(mirror_idx) = args.iter().position(|a| a == "--mirror") {
+        let mirror = args
+            .get(mirror_idx + 1)
+            .filter(|v| !v.starts_with('-'))
+            .cloned();
+        settings.model_mirror = mirror;
+    }
 
     // Check if already downloaded
     if settings.downloaded_models.contains(&variant) {
@@ -100,7 +109,8 @@ Usage:
   openloop pull <lite|turbo|pro> [flags]
 
 Flags:
-  --json    NDJSON progress output
-  --help    Show help",
+  --mirror <URL>  Use a mirror source (e.g. https://www.modelscope.cn)
+  --json          NDJSON progress output
+  --help          Show help",
     );
 }

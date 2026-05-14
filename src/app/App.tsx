@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/app/components/layout/AppLayout";
+import { UpdateBanner } from "@/app/components/bootstrap/UpdateBanner";
 import { useToast } from "@/app/components/overlay/Toast";
 import { SetupScreen } from "@/app/components/settings/SetupScreen";
 import * as api from "@/app/lib/api";
@@ -100,7 +101,12 @@ function App() {
     );
   }
 
-  return <AppLayout />;
+  return (
+    <>
+      <UpdateBanner />
+      <AppLayout />
+    </>
+  );
 }
 
 export default App;

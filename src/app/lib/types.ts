@@ -196,6 +196,7 @@ export type AppSettings = {
   modelDirectory?: string | null;
   backendWorkingDirectory?: string | null;
   logDirectory?: string | null;
+  modelMirror?: string | null;
 };
 
 export type DeviceInfo = {

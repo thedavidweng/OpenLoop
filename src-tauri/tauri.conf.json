@@ -51,5 +51,18 @@
       },
       "entitlements": "macos/entitlements.plist"
     }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://api.github.com/repos/openmusic/openloop/releases/latest"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1NjQ0QkQzQTU3QzA4NDMKUldSR0tLS3M3YUtub3BJTjNBRUtCNUtMN0ROaTJFMFVTYjlqb0JYc1RrM2t6d0RXNWtWbDZ3aAo=",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

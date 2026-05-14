@@ -14,6 +14,7 @@ use tauri::Manager;
 pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::init())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
             let sidecar_dir = app_state::current_executable_dir()

@@ -36,6 +36,7 @@ pub struct AppSettings {
     pub model_directory: Option<String>,
     pub backend_working_directory: Option<String>,
     pub log_directory: Option<String>,
+    pub model_mirror: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,6 +66,7 @@ impl Default for AppSettings {
             model_directory: None,
             backend_working_directory: None,
             log_directory: None,
+            model_mirror: None,
         }
     }
 }
@@ -84,6 +86,7 @@ pub enum SettingKey {
     ModelDirectory,
     BackendWorkingDirectory,
     LogDirectory,
+    ModelMirror,
 }
 
 impl SettingKey {
@@ -102,6 +105,7 @@ impl SettingKey {
             "modelDirectory" => Ok(Self::ModelDirectory),
             "backendWorkingDirectory" => Ok(Self::BackendWorkingDirectory),
             "logDirectory" => Ok(Self::LogDirectory),
+            "modelMirror" => Ok(Self::ModelMirror),
             _ => Err(AppError::validation_failed(format!(
                 "unknown setting key: {key}"
             ))),
@@ -123,6 +127,7 @@ impl SettingKey {
             Self::ModelDirectory => "modelDirectory",
             Self::BackendWorkingDirectory => "backendWorkingDirectory",
             Self::LogDirectory => "logDirectory",
+            Self::ModelMirror => "modelMirror",
         }
     }
 
@@ -134,6 +139,7 @@ impl SettingKey {
                 | Self::BackendWorkingDirectory
                 | Self::LogDirectory
                 | Self::ModelVariant
+                | Self::ModelMirror
         )
     }
 }
@@ -213,6 +219,11 @@ impl AppSettings {
                     AppError::validation_failed(format!("invalid logDirectory value: {error}"))
                 })?;
             }
+            SettingKey::ModelMirror => {
+                self.model_mirror = serde_json::from_value(value).map_err(|error| {
+                    AppError::validation_failed(format!("invalid modelMirror value: {error}"))
+                })?;
+            }
         }
 
         Ok(())
@@ -257,6 +268,7 @@ impl AppSettings {
                 serde_json::to_string(&self.backend_working_directory),
             ),
             ("logDirectory", serde_json::to_string(&self.log_directory)),
+            ("modelMirror", serde_json::to_string(&self.model_mirror)),
         ];
 
         serialized

@@ -1,7 +1,7 @@
 use std::{
     collections::BTreeMap,
     fs::{self, OpenOptions},
-    io::Write,
+    io::{Read, Write},
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -295,6 +295,7 @@ impl ModelManager {
 
         let client = blocking_http_client()?;
 
+        let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
         for spec in &pack {
             let target = checkpoints_dir.join(spec.local_path);
             if let Some(parent) = target.parent() {
@@ -312,7 +313,7 @@ impl ModelManager {
                 }
             }
 
-            download_single_file_blocking(&client, spec, &target)?;
+            download_single_file_blocking(&client, spec, &target, &mirror)?;
         }
 
         record_install(&self.app_data_dir, descriptor)?;
@@ -489,6 +490,8 @@ struct ModelFileSpec {
     local_path: &'static str,
     /// Expected file size in bytes, taken from the Hugging Face API.
     size: u64,
+    /// Expected SHA256 hex digest. When `None`, integrity verification is skipped.
+    sha256: Option<&'static str>,
 }
 
 const ACESTEP_V15_TURBO_FILES: &[ModelFileSpec] = &[
@@ -497,30 +500,35 @@ const ACESTEP_V15_TURBO_FILES: &[ModelFileSpec] = &[
         remote_path: "acestep-v15-turbo/config.json",
         local_path: "acestep-v15-turbo/config.json",
         size: 1968,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-v15-turbo/configuration_acestep_v15.py",
         local_path: "acestep-v15-turbo/configuration_acestep_v15.py",
         size: 13130,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-v15-turbo/model.safetensors",
         local_path: "acestep-v15-turbo/model.safetensors",
         size: 4_787_825_604,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-v15-turbo/modeling_acestep_v15_turbo.py",
         local_path: "acestep-v15-turbo/modeling_acestep_v15_turbo.py",
         size: 96_036,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-v15-turbo/silence_latent.pt",
         local_path: "acestep-v15-turbo/silence_latent.pt",
         size: 3_841_215,
+        sha256: None,
     },
 ];
 
@@ -530,54 +538,63 @@ const ACESTEP_LM_06B_FILES: &[ModelFileSpec] = &[
         remote_path: "config.json",
         local_path: "acestep-5Hz-lm-0.6B/config.json",
         size: 1386,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "model.safetensors",
         local_path: "acestep-5Hz-lm-0.6B/model.safetensors",
         size: 1_325_804_024,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "tokenizer.json",
         local_path: "acestep-5Hz-lm-0.6B/tokenizer.json",
         size: 24_321_939,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "tokenizer_config.json",
         local_path: "acestep-5Hz-lm-0.6B/tokenizer_config.json",
         size: 14_072_925,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "added_tokens.json",
         local_path: "acestep-5Hz-lm-0.6B/added_tokens.json",
         size: 2_217_787,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "merges.txt",
         local_path: "acestep-5Hz-lm-0.6B/merges.txt",
         size: 1_671_853,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "vocab.json",
         local_path: "acestep-5Hz-lm-0.6B/vocab.json",
         size: 2_776_833,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "special_tokens_map.json",
         local_path: "acestep-5Hz-lm-0.6B/special_tokens_map.json",
         size: 1_824_199,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-5Hz-lm-0.6B",
         remote_path: "chat_template.jinja",
         local_path: "acestep-5Hz-lm-0.6B/chat_template.jinja",
         size: 4168,
+        sha256: None,
     },
 ];
 
@@ -587,54 +604,63 @@ const ACESTEP_LM_17B_FILES: &[ModelFileSpec] = &[
         remote_path: "acestep-5Hz-lm-1.7B/config.json",
         local_path: "acestep-5Hz-lm-1.7B/config.json",
         size: 1385,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/model.safetensors",
         local_path: "acestep-5Hz-lm-1.7B/model.safetensors",
         size: 3_708_521_528,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/tokenizer.json",
         local_path: "acestep-5Hz-lm-1.7B/tokenizer.json",
         size: 24_321_939,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/tokenizer_config.json",
         local_path: "acestep-5Hz-lm-1.7B/tokenizer_config.json",
         size: 14_072_925,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/added_tokens.json",
         local_path: "acestep-5Hz-lm-1.7B/added_tokens.json",
         size: 2_217_787,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/merges.txt",
         local_path: "acestep-5Hz-lm-1.7B/merges.txt",
         size: 1_671_853,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/vocab.json",
         local_path: "acestep-5Hz-lm-1.7B/vocab.json",
         size: 2_776_833,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/special_tokens_map.json",
         local_path: "acestep-5Hz-lm-1.7B/special_tokens_map.json",
         size: 1_824_199,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "acestep-5Hz-lm-1.7B/chat_template.jinja",
         local_path: "acestep-5Hz-lm-1.7B/chat_template.jinja",
         size: 4168,
+        sha256: None,
     },
 ];
 
@@ -644,54 +670,63 @@ const ACESTEP_V15_XL_TURBO_FILES: &[ModelFileSpec] = &[
         remote_path: "config.json",
         local_path: "acestep-v15-xl-turbo/config.json",
         size: 2407,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "configuration_acestep_v15.py",
         local_path: "acestep-v15-xl-turbo/configuration_acestep_v15.py",
         size: 13_225,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "modeling_acestep_v15_xl_turbo.py",
         local_path: "acestep-v15-xl-turbo/modeling_acestep_v15_xl_turbo.py",
         size: 103_821,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "model.safetensors.index.json",
         local_path: "acestep-v15-xl-turbo/model.safetensors.index.json",
         size: 71_471,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "model-00001-of-00004.safetensors",
         local_path: "acestep-v15-xl-turbo/model-00001-of-00004.safetensors",
         size: 4_986_971_456,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "model-00002-of-00004.safetensors",
         local_path: "acestep-v15-xl-turbo/model-00002-of-00004.safetensors",
         size: 4_986_942_776,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "model-00003-of-00004.safetensors",
         local_path: "acestep-v15-xl-turbo/model-00003-of-00004.safetensors",
         size: 4_986_942_808,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "model-00004-of-00004.safetensors",
         local_path: "acestep-v15-xl-turbo/model-00004-of-00004.safetensors",
         size: 4_988_483_464,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/acestep-v15-xl-turbo",
         remote_path: "silence_latent.pt",
         local_path: "acestep-v15-xl-turbo/silence_latent.pt",
         size: 3_841_215,
+        sha256: None,
     },
 ];
 
@@ -701,12 +736,14 @@ const SHARED_VAE_FILES: &[ModelFileSpec] = &[
         remote_path: "vae/config.json",
         local_path: "vae/config.json",
         size: 425,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "vae/diffusion_pytorch_model.safetensors",
         local_path: "vae/diffusion_pytorch_model.safetensors",
         size: 337_431_388,
+        sha256: None,
     },
 ];
 
@@ -716,54 +753,63 @@ const SHARED_TEXT_EMBED_FILES: &[ModelFileSpec] = &[
         remote_path: "Qwen3-Embedding-0.6B/config.json",
         local_path: "Qwen3-Embedding-0.6B/config.json",
         size: 1359,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/model.safetensors",
         local_path: "Qwen3-Embedding-0.6B/model.safetensors",
         size: 1_191_586_416,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/tokenizer.json",
         local_path: "Qwen3-Embedding-0.6B/tokenizer.json",
         size: 11_423_705,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/tokenizer_config.json",
         local_path: "Qwen3-Embedding-0.6B/tokenizer_config.json",
         size: 5404,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/added_tokens.json",
         local_path: "Qwen3-Embedding-0.6B/added_tokens.json",
         size: 707,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/merges.txt",
         local_path: "Qwen3-Embedding-0.6B/merges.txt",
         size: 1_671_853,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/vocab.json",
         local_path: "Qwen3-Embedding-0.6B/vocab.json",
         size: 2_776_833,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/special_tokens_map.json",
         local_path: "Qwen3-Embedding-0.6B/special_tokens_map.json",
         size: 613,
+        sha256: None,
     },
     ModelFileSpec {
         repo: "ACE-Step/Ace-Step1.5",
         remote_path: "Qwen3-Embedding-0.6B/chat_template.jinja",
         local_path: "Qwen3-Embedding-0.6B/chat_template.jinja",
         size: 4116,
+        sha256: None,
     },
 ];
 
@@ -1105,7 +1151,8 @@ async fn download_pack(
             }
         }
 
-        download_single_file(&client, spec, &target, |bytes_in_file| {
+        let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
+        download_single_file(&client, spec, &target, &mirror, |bytes_in_file| {
             emit_progress(bytes_in_file, false)
         })
         .await?;
@@ -1121,16 +1168,13 @@ async fn download_single_file<F>(
     client: &Client,
     spec: &ModelFileSpec,
     target: &Path,
+    mirror: &str,
     mut on_progress: F,
 ) -> AppResult<()>
 where
     F: FnMut(u64),
 {
-    let url = format!(
-        "{HF_RESOLVE_BASE}/{repo}/resolve/main/{path}",
-        repo = spec.repo,
-        path = spec.remote_path
-    );
+    let url = resolve_download_url(spec, mirror);
 
     let part = part_path(target);
     let existing_size = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
@@ -1281,6 +1325,15 @@ where
         ))
     })?;
 
+    // Verify SHA256 integrity if a digest is configured.
+    if let Some(expected_sha256) = spec.sha256 {
+        if let Err(error) = verify_sha256(target, expected_sha256) {
+            let _ = fs::remove_file(target);
+            let _ = fs::remove_file(&part);
+            return Err(error);
+        }
+    }
+
     on_progress(spec.size);
     Ok(())
 }
@@ -1289,14 +1342,11 @@ fn download_single_file_blocking(
     client: &reqwest::blocking::Client,
     spec: &ModelFileSpec,
     target: &Path,
+    mirror: &str,
 ) -> AppResult<()> {
     use std::io::Read;
 
-    let url = format!(
-        "{HF_RESOLVE_BASE}/{repo}/resolve/main/{path}",
-        repo = spec.repo,
-        path = spec.remote_path
-    );
+    let url = resolve_download_url(spec, mirror);
 
     let part = part_path(target);
     let existing_size = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
@@ -1424,7 +1474,61 @@ fn download_single_file_blocking(
         ))
     })?;
 
+    // Verify SHA256 integrity if a digest is configured.
+    if let Some(expected_sha256) = spec.sha256 {
+        if let Err(error) = verify_sha256(target, expected_sha256) {
+            let _ = fs::remove_file(target);
+            let _ = fs::remove_file(&part);
+            return Err(error);
+        }
+    }
+
     Ok(())
+}
+
+fn verify_sha256(path: &Path, expected: &str) -> AppResult<()> {
+    let mut file = fs::File::open(path).map_err(|error| {
+        AppError::model_download_failed(format!(
+            "failed to open file for SHA256 verification {}: {error}",
+            path.display()
+        ))
+    })?;
+    let mut hasher = sha2::Sha256::new();
+    let mut buffer = [0u8; 8192];
+    loop {
+        match file.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(n) => hasher.update(&buffer[..n]),
+            Err(error) => {
+                return Err(AppError::model_download_failed(format!(
+                    "failed to read file for SHA256 verification {}: {error}",
+                    path.display()
+                )));
+            }
+        }
+    }
+    let actual = format!("{:x}", hasher.finalize());
+    if actual != expected {
+        return Err(AppError::model_download_failed(format!(
+            "SHA256 mismatch for {}: expected {expected}, got {actual}",
+            path.display()
+        )));
+    }
+    Ok(())
+}
+
+fn resolve_download_url(spec: &ModelFileSpec, mirror: &str) -> String {
+    let base = if mirror.is_empty() {
+        HF_RESOLVE_BASE
+    } else {
+        mirror
+    };
+    // ModelScope uses a different path pattern (master branch, /models/ prefix).
+    if base.contains("modelscope") {
+        format!("{base}/{}/resolve/master/{}", spec.repo, spec.remote_path)
+    } else {
+        format!("{base}/{}/resolve/main/{}", spec.repo, spec.remote_path)
+    }
 }
 
 fn retry_delay(attempt: u32) -> Duration {

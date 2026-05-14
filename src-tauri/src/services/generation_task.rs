@@ -344,6 +344,7 @@ pub fn build_generation_record(
         status: status.to_owned(),
         error_message,
         generation_info,
+        is_favorite: false,
     }
 }
 

@@ -59,6 +59,7 @@ export function createHistorySlice(
       set({
         history: [],
         currentGeneration: null,
+        favoriteRecordIds: [],
       });
     },
 
@@ -74,15 +75,32 @@ export function createHistorySlice(
       });
     },
 
-    toggleFavoriteRecord: (id: string) => {
-      set((state) => {
-        const isFav = state.favoriteRecordIds.includes(id);
-        return {
-          favoriteRecordIds: isFav
-            ? state.favoriteRecordIds.filter((fid) => fid !== id)
-            : [...state.favoriteRecordIds, id],
-        };
-      });
+    toggleFavoriteRecord: async (id: string) => {
+      if (api.isTauriRuntime()) {
+        const newState = await api.toggleGenerationFavorite(id);
+        set((state) => ({
+          favoriteRecordIds: newState
+            ? state.favoriteRecordIds.includes(id)
+              ? state.favoriteRecordIds
+              : [...state.favoriteRecordIds, id]
+            : state.favoriteRecordIds.filter((fid) => fid !== id),
+          history: state.history.map((r) =>
+            r.id === id ? { ...r, isFavorite: newState } : r,
+          ),
+        }));
+      } else {
+        set((state) => {
+          const isFav = state.favoriteRecordIds.includes(id);
+          return {
+            favoriteRecordIds: isFav
+              ? state.favoriteRecordIds.filter((fid) => fid !== id)
+              : [...state.favoriteRecordIds, id],
+            history: state.history.map((r) =>
+              r.id === id ? { ...r, isFavorite: !isFav } : r,
+            ),
+          };
+        });
+      }
     },
 
     restoreLastDeletedRecord: () => {

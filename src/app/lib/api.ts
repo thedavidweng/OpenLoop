@@ -243,6 +243,10 @@ export function discardActiveGenerationTask(id: string): Promise<void> {
   return invoke<void>("discard_active_generation_task", { id });
 }
 
+export function toggleGenerationFavorite(id: string): Promise<boolean> {
+  return invoke<boolean>("toggle_generation_favorite", { id });
+}
+
 export function readGenerationWaveform(
   id: string,
 ): Promise<GenerationWaveform> {

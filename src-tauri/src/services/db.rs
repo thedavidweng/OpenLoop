@@ -44,9 +44,10 @@ impl Database {
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
 
         // Apply 002+ migrations idempotently: ignore "duplicate column" errors
-        for sql in [include_str!(
-            "../../migrations/002_add_cancel_requested_at.sql"
-        )] {
+        for sql in [
+            include_str!("../../migrations/002_add_cancel_requested_at.sql"),
+            include_str!("../../migrations/003_add_favorite.sql"),
+        ] {
             let _ = connection.execute_batch(sql);
         }
 
@@ -131,13 +132,13 @@ impl Database {
         let mut statement = if query.is_some() {
             connection
                 .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1) ORDER BY created_at DESC",
+                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1) ORDER BY created_at DESC",
                 )
                 .map_err(|error| AppError::db_read_failed(error.to_string()))?
         } else {
             connection
                 .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' ORDER BY created_at DESC",
+                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' ORDER BY created_at DESC",
                 )
                 .map_err(|error| AppError::db_read_failed(error.to_string()))?
         };
@@ -160,7 +161,7 @@ impl Database {
         let connection = self.connection()?;
         connection
             .query_row(
-                "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info FROM generations WHERE id = ?1",
+                "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE id = ?1",
                 [id],
                 Self::map_generation_row,
             )
@@ -172,7 +173,7 @@ impl Database {
         let connection = self.connection()?;
         connection
             .execute(
-                "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21) ON CONFLICT(id) DO UPDATE SET created_at = excluded.created_at, prompt = excluded.prompt, lyrics = excluded.lyrics, vocal_language = excluded.vocal_language, duration_seconds = excluded.duration_seconds, bpm = excluded.bpm, key_scale = excluded.key_scale, time_signature = excluded.time_signature, model = excluded.model, lm_model = excluded.lm_model, thinking = excluded.thinking, inference_steps = excluded.inference_steps, guidance_scale = excluded.guidance_scale, use_random_seed = excluded.use_random_seed, seed = excluded.seed, audio_format = excluded.audio_format, output_path = excluded.output_path, status = excluded.status, error_message = excluded.error_message, generation_info = excluded.generation_info",
+                "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22) ON CONFLICT(id) DO UPDATE SET created_at = excluded.created_at, prompt = excluded.prompt, lyrics = excluded.lyrics, vocal_language = excluded.vocal_language, duration_seconds = excluded.duration_seconds, bpm = excluded.bpm, key_scale = excluded.key_scale, time_signature = excluded.time_signature, model = excluded.model, lm_model = excluded.lm_model, thinking = excluded.thinking, inference_steps = excluded.inference_steps, guidance_scale = excluded.guidance_scale, use_random_seed = excluded.use_random_seed, seed = excluded.seed, audio_format = excluded.audio_format, output_path = excluded.output_path, status = excluded.status, error_message = excluded.error_message, generation_info = excluded.generation_info, is_favorite = excluded.is_favorite",
                 params![
                     record.id,
                     record.created_at,
@@ -195,11 +196,29 @@ impl Database {
                     record.status,
                     record.error_message,
                     record.generation_info,
+                    record.is_favorite,
                 ],
             )
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
 
         Ok(record.clone())
+    }
+
+    pub fn set_generation_favorite(&self, id: &str, is_favorite: bool) -> AppResult<()> {
+        let connection = self.connection()?;
+        let updated = connection
+            .execute(
+                "UPDATE generations SET is_favorite = ?1 WHERE id = ?2",
+                params![is_favorite, id],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        if updated == 0 {
+            return Err(AppError::not_found(
+                "Generation record",
+                format!("No generation record exists for id {id}"),
+            ));
+        }
+        Ok(())
     }
 
     pub fn delete_generation(&self, id: &str) -> AppResult<()> {
@@ -291,6 +310,8 @@ impl Database {
         let output_path: String = row.get(17)?;
         let seed: Option<String> = row.get(15)?;
 
+        let is_favorite_int: i32 = row.get(21)?;
+
         Ok(GenerationRecord {
             id: row.get(0)?,
             created_at: row.get(1)?,
@@ -317,6 +338,7 @@ impl Database {
             status: row.get(18)?,
             error_message: row.get(19)?,
             generation_info: row.get(20)?,
+            is_favorite: is_favorite_int != 0,
         })
     }
 
@@ -379,6 +401,7 @@ mod tests {
             status: "completed".to_owned(),
             error_message: None,
             generation_info: Some("ok".to_owned()),
+            is_favorite: false,
         }
     }
 

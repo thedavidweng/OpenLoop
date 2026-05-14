@@ -166,6 +166,10 @@ export function createSettingsSlice(
           mergedSettings.modelVariant,
         );
 
+        const favoriteRecordIds = persistedHistory
+          .filter((r) => r.isFavorite)
+          .map((r) => r.id);
+
         set({
           hydrated: true,
           deviceInfo,
@@ -176,6 +180,7 @@ export function createSettingsSlice(
           ...computeValidationState(nextForm, { showErrors: false }),
           generationState: { status: "idle", phase: "idle", statusMessage: "Ready", error: null },
           history: persistedHistory,
+          favoriteRecordIds,
           activeTasks,
           currentGeneration: persistedHistory[0] ?? null,
         });

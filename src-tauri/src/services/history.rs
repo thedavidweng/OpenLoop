@@ -33,6 +33,16 @@ impl HistoryService {
         self.db.delete_generation(id)
     }
 
+    pub fn toggle_favorite(&self, id: &str) -> AppResult<bool> {
+        let record = self
+            .db
+            .get_generation(id)?
+            .ok_or_else(|| AppError::not_found("Generation record", id.to_owned()))?;
+        let new_state = !record.is_favorite;
+        self.db.set_generation_favorite(id, new_state)?;
+        Ok(new_state)
+    }
+
     pub fn clear_generation_history(&self) -> AppResult<()> {
         let records = self.db.list_generations(None)?;
         for record in records {
@@ -147,6 +157,7 @@ mod tests {
             status: "completed".to_owned(),
             error_message: None,
             generation_info: None,
+            is_favorite: false,
         }
     }
 

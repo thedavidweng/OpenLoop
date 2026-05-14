@@ -354,10 +354,10 @@ src-tauri/src/services/model_manager/
 
 ### 5.1 收藏 / 置顶
 
-- [ ] 5.1.1 `generations` 表增加列 `is_favorite INTEGER DEFAULT 0`（migration `003_add_favorite.sql`）。——当前仅在内存中通过 `favoriteRecordIds` 维护，未持久化到 DB。
-- [~] 5.1.2 `GenerationRecord` 增加 `isFavorite` 字段。——前端 `GenerationRecord` 无 `isFavorite` 字段，靠 `favoriteRecordIds` 数组维护。
-- [x] 5.1.3 History 行右侧加 ⭐ 按钮；侧栏顶部加 toggle "Show favorites only"。——已实现。
-- [x] 5.1.4 排序：favorites 永远在前，按 createdAt desc。——已实现。
+- [x] 5.1.1 `generations` 表增加列 `is_favorite INTEGER DEFAULT 0`（migration `003_add_favorite.sql`）。
+- [x] 5.1.2 `GenerationRecord` 增加 `isFavorite` 字段。
+- [x] 5.1.3 History 行右侧加 ⭐ 按钮；侧栏顶部加 toggle "Show favorites only"。
+- [x] 5.1.4 排序：favorites 永远在前，按 createdAt desc。
 
 ### 5.2 对比试听（A/B Compare）
 

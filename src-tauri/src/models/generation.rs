@@ -65,6 +65,8 @@ pub struct GenerationRecord {
     pub status: String,
     pub error_message: Option<String>,
     pub generation_info: Option<String>,
+    #[serde(default)]
+    pub is_favorite: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -31,3 +31,8 @@ pub fn delete_generation(state: State<'_, AppState>, id: String) -> AppResult<()
 pub fn clear_generation_history(state: State<'_, AppState>) -> AppResult<()> {
     HistoryService::new(state.db.clone()).clear_generation_history()
 }
+
+#[tauri::command]
+pub fn toggle_generation_favorite(state: State<'_, AppState>, id: String) -> AppResult<bool> {
+    HistoryService::new(state.db.clone()).toggle_favorite(&id)
+}

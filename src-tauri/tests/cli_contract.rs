@@ -40,6 +40,7 @@ fn sample_record(id: &str, output_path: Option<String>) -> GenerationRecord {
         status: "completed".to_owned(),
         error_message: None,
         generation_info: None,
+        is_favorite: false,
     }
 }
 

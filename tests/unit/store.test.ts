@@ -57,6 +57,7 @@ function record(id: string, seed: number): GenerationRecord {
     outputPath: `/tmp/${id}.wav`,
     status: "completed",
     errorMessage: null,
+    isFavorite: false,
   };
 }
 

@@ -84,6 +84,6 @@ export interface GenerationStore {
   addRecentPrompt: (prompt: string) => void;
   toggleFavoritePrompt: (prompt: string) => void;
   removeRecentPrompt: (prompt: string) => void;
-  toggleFavoriteRecord: (id: string) => void;
+  toggleFavoriteRecord: (id: string) => Promise<void>;
   restoreLastDeletedRecord: () => void;
 }

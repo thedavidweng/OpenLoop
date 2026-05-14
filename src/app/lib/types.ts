@@ -144,6 +144,7 @@ export type GenerationRecord = {
   status: GenerationRecordStatus;
   errorMessage: string | null;
   generationInfo?: string;
+  isFavorite: boolean;
 };
 
 export type GenerationRunResult = {

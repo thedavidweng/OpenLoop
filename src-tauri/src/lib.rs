@@ -60,6 +60,7 @@ pub fn run() {
             commands::history::get_generation,
             commands::history::delete_generation,
             commands::history::clear_generation_history,
+            commands::history::toggle_generation_favorite,
             commands::generation::insert_generation,
             commands::generation::generate_music,
             commands::generation::cancel_generation,

@@ -7,7 +7,9 @@ import {
   type CSSProperties,
 } from "react";
 import {
+  ChevronDown,
   Copy,
+  FileDown,
   FolderOutput,
   Music4,
   Pause,
@@ -103,7 +105,9 @@ export function PlaybackBar() {
     (state) => state.playbackToggleRequest,
   );
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -239,6 +243,21 @@ export function PlaybackBar() {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, []);
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    if (!exportDropdownOpen) return;
+    const handleClick = (event: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(event.target as Node)
+      ) {
+        setExportDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [exportDropdownOpen]);
 
   const formatTime = (seconds: number) => {
     const safe = Number.isFinite(seconds) ? Math.floor(seconds) : 0;
@@ -506,46 +525,161 @@ export function PlaybackBar() {
             </button>
           </Tooltip>
 
-          <Tooltip label={t("player.reveal")}>
-            <button
-              type="button"
-              className="motion-icon-button relative flex shrink-0 items-center rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
-              disabled={!currentGeneration?.outputPath}
-              onClick={() => {
-                if (currentGeneration?.outputPath) {
-                  void api.revealInFinder(currentGeneration.outputPath);
-                }
-              }}
-            >
-              <FolderOutput size={16} />
-            </button>
-          </Tooltip>
-          <Tooltip label={t("player.exportCopy")}>
-            <button
-              type="button"
-              className="motion-icon-button relative flex shrink-0 items-center rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
-              disabled={!currentGeneration?.outputPath}
-              onClick={() => {
-                const destination = window.prompt(
-                  t("player.copyPrompt"),
-                  currentGeneration?.outputPath ?? "",
-                );
-
-                if (!destination || !currentGeneration?.outputPath) {
-                  return;
-                }
-
-                void api
-                  .copyAudioTo(currentGeneration.outputPath, destination)
-                  .then((result) => {
-                    setCopyStatus(t("player.copied", { path: result }));
-                    addToast("success", t("toast.fileExported"));
-                  });
-              }}
-            >
-              <Copy size={16} />
-            </button>
-          </Tooltip>
+          {/* Export dropdown */}
+          <div ref={exportMenuRef} className="relative">
+            <Tooltip label={t("player.exportMenu")}>
+              <button
+                type="button"
+                className="motion-icon-button relative flex shrink-0 items-center gap-1 rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+                disabled={!currentGeneration?.outputPath}
+                onClick={() => setExportDropdownOpen((v) => !v)}
+              >
+                <FileDown size={16} />
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform ${exportDropdownOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </Tooltip>
+            {exportDropdownOpen && (
+              <div className="absolute bottom-full right-0 z-30 mb-2 w-56 overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-elevated)] shadow-lg">
+                <div className="flex flex-col py-1">
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
+                    onClick={() => {
+                      setExportDropdownOpen(false);
+                      const destination = window.prompt(
+                        t("player.copyPrompt"),
+                        currentGeneration?.outputPath ?? "",
+                      );
+                      if (
+                        !destination ||
+                        !currentGeneration?.outputPath
+                      ) {
+                        return;
+                      }
+                      void api
+                        .copyAudioTo(
+                          currentGeneration.outputPath,
+                          destination,
+                        )
+                        .then((result) => {
+                          setCopyStatus(
+                            t("player.copied", { path: result }),
+                          );
+                          addToast("success", t("toast.fileExported"));
+                        });
+                    }}
+                  >
+                    <Copy size={16} className="shrink-0 opacity-70" />
+                    <span className="flex-1">
+                      {t("player.saveCopyAs")}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
+                    onClick={() => {
+                      setExportDropdownOpen(false);
+                      if (currentGeneration?.outputPath) {
+                        void api.revealInFinder(
+                          currentGeneration.outputPath,
+                        );
+                      }
+                    }}
+                  >
+                    <FolderOutput
+                      size={16}
+                      className="shrink-0 opacity-70"
+                    />
+                    <span className="flex-1">
+                      {t("player.revealInFinder")}
+                    </span>
+                  </button>
+                  <div className="mx-3 border-t border-[var(--color-border-light)]" />
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
+                    onClick={() => {
+                      setExportDropdownOpen(false);
+                      if (!currentGeneration?.id) return;
+                      void (async () => {
+                        try {
+                          const payload =
+                            await api.readGenerationAudio(
+                              currentGeneration.id,
+                            );
+                          const bytes =
+                            payload instanceof ArrayBuffer
+                              ? new Uint8Array(payload)
+                              : Uint8Array.from(payload);
+                          const blob = new Blob([bytes], {
+                            type: audioMimeType(
+                              currentGeneration.audioFormat,
+                            ),
+                          });
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = reader.result as string;
+                            void navigator.clipboard
+                              .writeText(dataUrl)
+                              .then(() => {
+                                addToast(
+                                  "success",
+                                  t("toast.dataUrlCopied"),
+                                );
+                              });
+                          };
+                          reader.onerror = () => {
+                            addToast(
+                              "error",
+                              t("toast.copyFailed"),
+                            );
+                          };
+                          reader.readAsDataURL(blob);
+                        } catch {
+                          addToast("error", t("toast.copyFailed"));
+                        }
+                      })();
+                    }}
+                  >
+                    <Copy size={16} className="shrink-0 opacity-70" />
+                    <span className="flex-1">
+                      {t("player.copyDataUrl")}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
+                    onClick={() => {
+                      setExportDropdownOpen(false);
+                      if (!currentGeneration?.outputPath) return;
+                      void navigator.clipboard
+                        .writeText(currentGeneration.outputPath)
+                        .then(() => {
+                          addToast(
+                            "success",
+                            t("toast.pathCopied"),
+                          );
+                        })
+                        .catch(() => {
+                          addToast(
+                            "error",
+                            t("toast.copyFailed"),
+                          );
+                        });
+                    }}
+                  >
+                    <Copy size={16} className="shrink-0 opacity-70" />
+                    <span className="flex-1">
+                      {t("player.copyPath")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           <Tooltip label={t("player.deleteFileAndRecord")}>
             <button
               type="button"

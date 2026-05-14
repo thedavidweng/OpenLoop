@@ -282,9 +282,22 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
                 )))
             }
         },
+        "checkForUpdates" => {
+            let on = match value.to_lowercase().as_str() {
+                "on" | "true" | "1" | "yes" | "enabled" => true,
+                "off" | "false" | "0" | "no" | "disabled" => false,
+                _ => {
+                    return Err(cli_error(format!(
+                        "invalid checkForUpdates value '{}'. Use on/off.",
+                        value
+                    )))
+                }
+            };
+            serde_json::Value::Bool(on)
+        }
         _ => {
             return Err(cli_error(format!(
-                "unknown setting '{}'. Available: model, thinking, duration, format",
+                "unknown setting '{}'. Available: model, thinking, duration, format, checkForUpdates",
                 key
             )))
         }
@@ -333,6 +346,11 @@ fn get_setting_value(settings: &AppSettings, key: &str) -> AppResult<String> {
         }),
         "duration" => Ok(settings.default_duration_seconds.to_string()),
         "format" => Ok(settings.default_audio_format.clone()),
+        "checkForUpdates" => Ok(if settings.check_for_updates {
+            "on".to_owned()
+        } else {
+            "off".to_owned()
+        }),
         _ => Err(cli_error(format!("unknown setting '{}'", key))),
     }
 }
@@ -349,12 +367,18 @@ fn print_settings_json(settings: &AppSettings) {
     } else {
         "off"
     };
+    let check_updates = if settings.check_for_updates {
+        "on"
+    } else {
+        "off"
+    };
 
     let json = serde_json::json!({
         "model": model,
         "thinking": thinking,
         "duration": settings.default_duration_seconds.to_string(),
         "format": settings.default_audio_format,
+        "checkForUpdates": check_updates,
     });
     super::json_output(&serde_json::to_string_pretty(&json).unwrap_or_default());
 }
@@ -371,14 +395,20 @@ fn print_settings_table(settings: &AppSettings) {
     } else {
         "off"
     };
+    let check_updates = if settings.check_for_updates {
+        "on"
+    } else {
+        "off"
+    };
 
-    human_output(&format!("model    = {model}"));
-    human_output(&format!("thinking = {thinking}"));
+    human_output(&format!("model              = {model}"));
+    human_output(&format!("thinking           = {thinking}"));
     human_output(&format!(
-        "duration = {}",
+        "duration           = {}",
         settings.default_duration_seconds as i64
     ));
-    human_output(&format!("format   = {}", settings.default_audio_format));
+    human_output(&format!("format             = {}", settings.default_audio_format));
+    human_output(&format!("checkForUpdates    = {check_updates}"));
 }
 
 fn variant_label(v: ModelVariant) -> &'static str {
@@ -427,10 +457,11 @@ Usage:
   openloop setup [flags]          Flag-based setting
 
 Keys:
-  model     lite, turbo, pro
-  thinking  on, off
-  duration  10-600
-  format    wav, mp3, flac, ogg
+  model             lite, turbo, pro
+  thinking          on, off
+  duration          10-600
+  format            wav, mp3, flac, ogg
+  checkForUpdates   on, off
 
 Flags:
   --model VALUE

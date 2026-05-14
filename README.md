@@ -14,6 +14,8 @@ An open-source desktop AI music generator powered by local inference, built for 
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
+> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.
+
 ![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
@@ -49,7 +51,17 @@ AI music tools are powerful, but many of them share the same problems:
 brew tap thedavidweng/tap && brew install --cask openloop
 ```
 
-Homebrew automatically adds `openloop` to your PATH and clears macOS quarantine. Direct DMG downloads are available on [Releases](https://github.com/thedavidweng/OpenLoop/releases) — after installing, open Settings → "Add to PATH" to enable the CLI.
+Homebrew automatically adds `openloop` to your PATH and clears macOS quarantine.
+
+### Install from DMG (manual)
+
+1. Download the latest `.dmg` from [Releases](https://github.com/thedavidweng/OpenLoop/releases).
+2. Drag **OpenLoop** to **Applications**.
+3. **First launch:** macOS may show a Gatekeeper warning because the app uses Ad-hoc code signing. Right-click the app and choose **Open**, or run in Terminal:
+   ```bash
+   xattr -cr /Applications/OpenLoop.app
+   ```
+4. Open Settings → "Add to PATH" to enable the CLI.
 
 ---
 

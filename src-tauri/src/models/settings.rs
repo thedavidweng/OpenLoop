@@ -32,6 +32,7 @@ pub struct AppSettings {
     pub default_audio_format: String,
     pub default_thinking: bool,
     pub first_run_completed: bool,
+    pub check_for_updates: bool,
     pub language: Option<String>,
     pub model_directory: Option<String>,
     pub backend_working_directory: Option<String>,
@@ -62,6 +63,7 @@ impl Default for AppSettings {
             default_audio_format: "wav".to_owned(),
             default_thinking: true,
             first_run_completed: false,
+            check_for_updates: true,
             language: None,
             model_directory: None,
             backend_working_directory: None,
@@ -82,6 +84,7 @@ pub enum SettingKey {
     DefaultAudioFormat,
     DefaultThinking,
     FirstRunCompleted,
+    CheckForUpdates,
     Language,
     ModelDirectory,
     BackendWorkingDirectory,
@@ -101,6 +104,7 @@ impl SettingKey {
             "defaultAudioFormat" => Ok(Self::DefaultAudioFormat),
             "defaultThinking" => Ok(Self::DefaultThinking),
             "firstRunCompleted" => Ok(Self::FirstRunCompleted),
+            "checkForUpdates" => Ok(Self::CheckForUpdates),
             "language" => Ok(Self::Language),
             "modelDirectory" => Ok(Self::ModelDirectory),
             "backendWorkingDirectory" => Ok(Self::BackendWorkingDirectory),
@@ -123,6 +127,7 @@ impl SettingKey {
             Self::DefaultAudioFormat => "defaultAudioFormat",
             Self::DefaultThinking => "defaultThinking",
             Self::FirstRunCompleted => "firstRunCompleted",
+            Self::CheckForUpdates => "checkForUpdates",
             Self::Language => "language",
             Self::ModelDirectory => "modelDirectory",
             Self::BackendWorkingDirectory => "backendWorkingDirectory",
@@ -196,6 +201,11 @@ impl AppSettings {
                     AppError::validation_failed(format!("invalid firstRunCompleted value: {error}"))
                 })?;
             }
+            SettingKey::CheckForUpdates => {
+                self.check_for_updates = serde_json::from_value(value).map_err(|error| {
+                    AppError::validation_failed(format!("invalid checkForUpdates value: {error}"))
+                })?;
+            }
             SettingKey::Language => {
                 self.language = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid language value: {error}"))
@@ -257,6 +267,10 @@ impl AppSettings {
             (
                 "firstRunCompleted",
                 serde_json::to_string(&self.first_run_completed),
+            ),
+            (
+                "checkForUpdates",
+                serde_json::to_string(&self.check_for_updates),
             ),
             ("language", serde_json::to_string(&self.language)),
             (

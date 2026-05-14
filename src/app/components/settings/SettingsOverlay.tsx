@@ -26,7 +26,8 @@ type EditableSettingKey =
   | "logDirectory"
   | "defaultDurationSeconds"
   | "defaultAudioFormat"
-  | "defaultThinking";
+  | "defaultThinking"
+  | "checkForUpdates";
 
 type DirectorySettingKey =
   | "outputDirectory"
@@ -88,6 +89,7 @@ export function SettingsOverlay() {
     defaultDurationSeconds: String(settings.defaultDurationSeconds),
     defaultAudioFormat: settings.defaultAudioFormat,
     defaultThinking: settings.defaultThinking,
+    checkForUpdates: settings.checkForUpdates ?? true,
   });
 
   const hasUnsavedChanges = useMemo(() => {
@@ -98,7 +100,8 @@ export function SettingsOverlay() {
       draft.logDirectory !== (settings.logDirectory ?? "") ||
       draft.defaultDurationSeconds !== String(settings.defaultDurationSeconds) ||
       draft.defaultAudioFormat !== settings.defaultAudioFormat ||
-      draft.defaultThinking !== settings.defaultThinking
+      draft.defaultThinking !== settings.defaultThinking ||
+      draft.checkForUpdates !== (settings.checkForUpdates ?? true)
     );
   }, [draft, settings]);
 
@@ -111,6 +114,7 @@ export function SettingsOverlay() {
       defaultDurationSeconds: String(settings.defaultDurationSeconds),
       defaultAudioFormat: settings.defaultAudioFormat,
       defaultThinking: settings.defaultThinking,
+      checkForUpdates: settings.checkForUpdates ?? true,
     });
   }, [
     settings.outputDirectory,
@@ -120,6 +124,7 @@ export function SettingsOverlay() {
     settings.defaultDurationSeconds,
     settings.defaultAudioFormat,
     settings.defaultThinking,
+    settings.checkForUpdates,
   ]);
 
   useEffect(() => {
@@ -160,6 +165,9 @@ export function SettingsOverlay() {
   const modelDirectoryLocked = modelStatuses.some(
     (status) => status.state === "downloading",
   );
+  const modelDirectoryChanged =
+    draft.modelDirectory !== (settings.modelDirectory ?? "");
+  const showModelDirRestartHint = modelDirectoryLocked || modelDirectoryChanged;
   const pickDirectory = async (key: DirectorySettingKey) => {
     const selected = await api.selectDirectory(
       draft[key] ||
@@ -434,6 +442,25 @@ export function SettingsOverlay() {
                 }
               />
 
+              {showModelDirRestartHint ? (
+                <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-200">
+                  <span className="flex-1">
+                    {t("settings.restartForModelDir")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void api.restartBackend().then(() => {
+                        addToast("success", t("settings.backendRestarted"));
+                      });
+                    }}
+                    className="inline-flex h-7 shrink-0 items-center rounded-md border border-amber-500/30 bg-amber-500/15 px-2.5 text-[11px] font-medium text-amber-200 transition-colors hover:bg-amber-500/25"
+                  >
+                    {t("settings.restartNow")}
+                  </button>
+                </div>
+              ) : null}
+
               <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3">
                 <input
                   type="checkbox"
@@ -482,6 +509,29 @@ export function SettingsOverlay() {
                   ))}
                 </select>
               </label>
+
+              <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={draft.checkForUpdates}
+                  onChange={(event) =>
+                    setDraft((current) => ({
+                      ...current,
+                      checkForUpdates: event.target.checked,
+                    }))
+                  }
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-white">
+                    {t("settings.checkForUpdates")}
+                  </p>
+                  <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
+                    {t("settings.checkForUpdatesDescription")}
+                  </p>
+                </div>
+              </label>
+
               {saveNotice ? (
                 <div className="rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-2 text-[12px] text-white">
                   {saveNotice}
@@ -715,6 +765,7 @@ export function SettingsOverlay() {
                     defaultDurationSeconds: String(settings.defaultDurationSeconds),
                     defaultAudioFormat: settings.defaultAudioFormat,
                     defaultThinking: settings.defaultThinking,
+                    checkForUpdates: settings.checkForUpdates ?? true,
                   });
                   setSaveNotice(null);
                 }}
@@ -766,6 +817,10 @@ export function SettingsOverlay() {
                       persistSetting(
                         "defaultThinking",
                         draft.defaultThinking,
+                      ),
+                      persistSetting(
+                        "checkForUpdates",
+                        draft.checkForUpdates,
                       ),
                     ]);
                     await hydrateFromPersistence();

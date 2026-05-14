@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -119,6 +119,14 @@ function etaFromBytes(totalBytes: number, speedBps = 10 * 1024 * 1024) {
   return `${hours}h ${mins}m`;
 }
 
+function formatEta(seconds: number): string {
+  if (seconds < 0) seconds = 0;
+  if (seconds < 60) return `~${Math.ceil(seconds)} sec`;
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.ceil(seconds % 60);
+  return `~${mins} min ${secs} sec`;
+}
+
 function PackDownloadCard({
   packId,
   state,
@@ -139,6 +147,31 @@ function PackDownloadCard({
   const { t } = useTranslation();
   const pack = MODEL_PACKS[packId];
   const percent = progressPercent(downloadedBytes, totalBytes);
+
+  // Track download speed for real-time ETA
+  const lastBytesRef = useRef(downloadedBytes);
+  const lastTimeRef = useRef(Date.now());
+  const [speedBps, setSpeedBps] = useState(0);
+
+  useEffect(() => {
+    if (state === "downloading" && totalBytes > 0) {
+      const now = Date.now();
+      const elapsed = (now - lastTimeRef.current) / 1000;
+      const bytesDiff = downloadedBytes - lastBytesRef.current;
+
+      if (bytesDiff !== 0) {
+        if (elapsed >= 0.5 && bytesDiff > 0) {
+          setSpeedBps(Math.round(bytesDiff / elapsed));
+        }
+        lastBytesRef.current = downloadedBytes;
+        lastTimeRef.current = now;
+      }
+    } else {
+      setSpeedBps(0);
+      lastBytesRef.current = downloadedBytes;
+      lastTimeRef.current = Date.now();
+    }
+  }, [downloadedBytes, state, totalBytes]);
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
@@ -164,6 +197,11 @@ function PackDownloadCard({
           <p className="font-mono text-[10px] tabular-nums text-[var(--color-text-dimmer)]">
             {bytesToLabel(downloadedBytes)} / {bytesToLabel(totalBytes)}
             {state === "downloading" ? ` · ${percent}%` : null}
+            {state === "downloading" && speedBps > 0 && totalBytes > 0 ? (
+              <span className="ml-2 inline-flex items-center gap-1 text-[var(--color-text-dim)]">
+                ~{formatEta((totalBytes - downloadedBytes) / speedBps)}
+              </span>
+            ) : null}
             {state === "not_installed" && totalBytes > 0 ? (
               <span className="ml-2 inline-flex items-center gap-1 text-[var(--color-text-dim)]">
                 <Clock size={9} />
@@ -546,6 +584,15 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
 
         {step === "done" ? (
           <div className="space-y-5 text-left">
+            {/* Quick-start hint */}
+            <div className="text-center">
+              <p className="text-[13px] leading-6 text-[var(--color-text-dim)]">
+                {t("setup.shortcutHint", {
+                  shortcut: getShortcutDisplay(APP_SHORTCUTS.submitGeneration),
+                })}
+              </p>
+            </div>
+
             {/* Keyboard shortcuts hint */}
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
               <div className="flex items-center gap-2 text-[var(--color-accent)]">

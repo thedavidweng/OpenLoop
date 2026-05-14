@@ -77,6 +77,8 @@
     "backendPortReset": "后端端口已恢复为 8001。",
     "repairRuntime": "一键修复运行配置",
     "runtimeSettingsRepaired": "运行配置已修复。",
+    "restartForModelDir": "重新启动后端以应用新的模型目录",
+    "restartNow": "立即重启",
     "save": "保存更改",
     "saved": "设置已保存。",
     "unsavedChanges": "未保存的更改",

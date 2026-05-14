@@ -76,6 +76,8 @@
     "backendPortReset": "Backend port reset to 8001.",
     "repairRuntime": "Repair runtime config",
     "runtimeSettingsRepaired": "Runtime configuration repaired.",
+    "restartForModelDir": "Restart backend to apply new model directory",
+    "restartNow": "Restart now",
     "save": "Save changes",
     "saved": "Settings saved.",
     "unsavedChanges": "Unsaved changes",

@@ -165,7 +165,7 @@ fn parse_setting_value(key: &str, value: &str) -> AppResult<serde_json::Value> {
                 "invalid format '{value}'. Use wav, mp3, flac, or ogg."
             ))),
         },
-        "defaultThinking" | "firstRunCompleted" => match value.to_lowercase().as_str() {
+        "defaultThinking" | "firstRunCompleted" | "checkForUpdates" => match value.to_lowercase().as_str() {
             "on" | "true" => Ok(serde_json::Value::Bool(true)),
             "off" | "false" => Ok(serde_json::Value::Bool(false)),
             _ => Err(cli_error(format!(
@@ -189,7 +189,7 @@ fn parse_setting_value(key: &str, value: &str) -> AppResult<serde_json::Value> {
             Ok(serde_json::Value::String(value.to_owned()))
         }
         _ => Err(cli_error(format!(
-            "unknown setting key '{key}'. Available: backendPort, defaultDurationSeconds, defaultAudioFormat, defaultThinking, modelVariant, modelDirectory, outputDirectory, logDirectory, language, firstRunCompleted"
+            "unknown setting key '{key}'. Available: backendPort, defaultDurationSeconds, defaultAudioFormat, defaultThinking, modelVariant, modelDirectory, outputDirectory, logDirectory, language, firstRunCompleted, checkForUpdates"
         ))),
     }
 }
@@ -296,6 +296,7 @@ Settings keys:
   outputDirectory         Output directory path (string)
   logDirectory            Log directory path (string)
   language                Language (string)
-  firstRunCompleted       First run completed (true/false)",
+  firstRunCompleted       First run completed (true/false)
+  checkForUpdates         Check for updates on startup (on/off, true/false)",
     );
 }

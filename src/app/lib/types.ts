@@ -197,6 +197,7 @@ export type AppSettings = {
   backendWorkingDirectory?: string | null;
   logDirectory?: string | null;
   modelMirror?: string | null;
+  checkForUpdates?: boolean;
   recentPrompts?: string[];
   favoritePrompts?: string[];
 };

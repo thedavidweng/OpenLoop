@@ -51,8 +51,19 @@ Before publishing a release, install the generated DMG and verify:
 - CLI `openloop run` generates headlessly and saves to disk;
 - CLI `openloop list --json` outputs valid JSON matching GUI history.
 
-## Signing and notarization
+## Gatekeeper and code signing
 
-Public macOS distribution still needs Apple Developer ID signing and notarization before users should trust the DMG without manual override.
+OpenLoop uses **Ad-hoc code signing** (no Apple Developer ID required). This means macOS Gatekeeper will show a security warning on first launch for DMG installs.
 
-Do not mark a public stable release as ready until the release workflow is extended with the required Apple credentials and notarization steps.
+**Bypass options:**
+- **Homebrew** (recommended): `brew tap thedavidweng/tap && brew install --cask openloop` — automatically clears quarantine.
+- **Manual**: Right-click the app → **Open** on the first launch.
+- **Terminal**: `xattr -cr /Applications/OpenLoop.app`
+
+> Apple Developer ID signing and notarization will be added before a stable public release. Until then, Ad-hoc signing is the intentional distribution strategy for the open-source Alpha phase.
+
+## GitHub release workflow prerequisites
+
+Before publishing a release, ensure:
+- The `TAURI_SIGNING_PRIVATE_KEY` GitHub Secret is set (for updater signature verification).
+- `latest.json` is published alongside the DMG so the in-app updater can detect new versions.

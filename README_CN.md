@@ -13,6 +13,8 @@
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
+> **状态：** v0.1 Alpha — 仅支持 macOS Apple Silicon。Windows / Linux 在路线图中。
+
 ![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
@@ -48,7 +50,17 @@ AI 音乐工具很强，但它们常见的问题也很一致：
 brew tap thedavidweng/tap && brew install --cask openloop
 ```
 
-Homebrew 自动将 `openloop` 添加到 PATH 并清除 macOS 隔离标记。直接 DMG 下载可在 [Releases](https://github.com/thedavidweng/OpenLoop/releases) 获取 — 安装后打开设置 → "添加到 PATH" 即可启用 CLI。
+Homebrew 自动将 `openloop` 添加到 PATH 并清除 macOS 隔离标记。
+
+### 从 DMG 安装（手动）
+
+1. 从 [Releases](https://github.com/thedavidweng/OpenLoop/releases) 下载最新 `.dmg`。
+2. 将 **OpenLoop** 拖入 **应用程序**。
+3. **首次启动：** macOS 可能因 Ad-hoc 签名显示 Gatekeeper 警告。右键点击应用选择**打开**，或在终端运行：
+   ```bash
+   xattr -cr /Applications/OpenLoop.app
+   ```
+4. 打开设置 → "添加到 PATH" 启用 CLI。
 
 ---
 

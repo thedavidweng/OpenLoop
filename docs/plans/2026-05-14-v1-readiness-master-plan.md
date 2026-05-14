@@ -69,14 +69,14 @@ P1 ──┬──────────────────────�
 
 **任务清单：**
 
-- [ ] 1.1.1 明确 `src-tauri/tauri.conf.json` 中 macOS 平台的打包策略，不配置外部证书，保留默认的 Ad-hoc 签名。
-- [ ] 1.1.2 新建 `src-tauri/macos/entitlements.plist`，明确包含 MLX 运行所需的权限配置，保证本地构建和运行稳定：
+- [x] 1.1.1 明确 `src-tauri/tauri.conf.json` 中 macOS 平台的打包策略，不配置外部证书，保留默认的 Ad-hoc 签名。
+- [x] 1.1.2 新建 `src-tauri/macos/entitlements.plist`，明确包含 MLX 运行所需的权限配置，保证本地构建和运行稳定：
   - `com.apple.security.cs.allow-jit`
   - `com.apple.security.cs.allow-unsigned-executable-memory`（MLX 与内嵌 Python 环境需要）
   - `com.apple.security.network.client`（允许 HF 下载与本地 backend HTTP）
   - `com.apple.security.cs.disable-library-validation`（避免依赖的第三方 dylib 加载受阻）
-- [ ] 1.1.3 修改 `src-tauri/tauri.conf.json` 引用该 entitlements 文件。
-- [ ] 1.1.4 在 `.github/workflows/release.yml` 中配置标准的 Tauri build 打包流程，产出 DMG 文件。
+- [x] 1.1.3 修改 `src-tauri/tauri.conf.json` 引用该 entitlements 文件。
+- [x] 1.1.4 在 `.github/workflows/release.yml` 中配置标准的 Tauri build 打包流程，产出 DMG 文件。
 - [ ] 1.1.5 在 `README.md` 与 Release Notes 模板中增加「macOS 安装与打开指南」段落，明确指导用户使用 `右键 -> 打开` 或终端运行 `xattr -cr /Applications/OpenLoop.app` 绕过 Gatekeeper 提示。
 
 **涉及文件：**
@@ -107,9 +107,9 @@ P1 ──┬──────────────────────�
 
 **任务：**
 
-- [ ] 1.2.1 替换 `csp: null`。
-- [ ] 1.2.2 跑 `pnpm tauri dev`，逐个 console error 加白名单。
-- [ ] 1.2.3 若 Tailwind 4 注入需要更宽松 `style-src`，确认是否能去掉 `'unsafe-inline'`（理想是用 nonce）。
+- [x] 1.2.1 替换 `csp: null`。（已实现于 `tauri.conf.json:27`）
+- [x] 1.2.2 跑 `pnpm tauri dev`，逐个 console error 加白名单。
+- [x] 1.2.3 若 Tailwind 4 注入需要更宽松 `style-src`，确认是否能去掉 `'unsafe-inline'`（理想是用 nonce）。——保留 `'unsafe-inline'`，Tauri 2 + Tailwind 4 现阶段必需。
 - [ ] 1.2.4 文档化最终 CSP 到 `docs/adr/0003-content-security-policy.md`。
 
 **风险：** Tauri 内部 IPC 协议 `tauri://` 与 `ipc:` 在不同版本可能要求不同 connect-src；锁紧后必须完整跑通 happy path 才能合入。
@@ -122,15 +122,15 @@ P1 ──┬──────────────────────�
 
 **任务：**
 
-- [ ] 1.3.1 在 `src-tauri/src/services/model_manager.rs` 中为每个 `AceModelDescriptor` 增加 `files: &[ModelFileSpec { path, sha256, size_bytes }]` 字段（manifest 内嵌或读自 `src-tauri/resources/models.manifest.json`）。
-- [ ] 1.3.2 下载完成时计算 SHA256，与 manifest 比对；不一致 → 删除 `.openloop-part` 与目标文件，返回 `MODEL_INTEGRITY_MISMATCH` 错误。
-- [ ] 1.3.3 抽象 `HF_RESOLVE_BASE` 为可配置 `model_mirrors: Vec<String>` 设置项，默认值：
+- [x] 1.3.1 在 `src-tauri/src/services/model_manager.rs` 中为每个 `AceModelDescriptor` 增加 `files: &[ModelFileSpec { path, sha256, size_bytes }]` 字段（manifest 内嵌或读自 `src-tauri/resources/models.manifest.json`）。——已实现于 `services/model_manager/specs.rs`
+- [~] 1.3.2 下载完成时计算 SHA256，与 manifest 比对；不一致 → 删除 `.openloop-part` 与目标文件，返回 `MODEL_INTEGRITY_MISMATCH` 错误。——逻辑已存在（`verify_sha256`），但所有 `spec.sha256` 仍为 `None`，需填入实际哈希值才能生效。
+- [~] 1.3.3 抽象 `HF_RESOLVE_BASE` 为可配置 `model_mirrors: Vec<String>` 设置项，默认值：——当前仅支持单镜像配置，未实现多镜像列表。
   - `https://huggingface.co`
   - `https://hf-mirror.com`
   - `https://modelscope.cn/models`（路径需 mapping）
 - [ ] 1.3.4 下载失败 → 自动切到下一个镜像；UI 显示当前镜像名。
-- [ ] 1.3.5 `AppSettings` 增加 `modelMirror?: string`，Settings 页 Advanced 暴露选择器。
-- [ ] 1.3.6 CLI：`openloop pull <variant> --mirror hf-mirror`。
+- [x] 1.3.5 `AppSettings` 增加 `modelMirror?: string`，Settings 页 Advanced 暴露选择器。——已实现于 `models/settings.rs` 和 `SettingsOverlay`。
+- [x] 1.3.6 CLI：`openloop pull <variant> --mirror hf-mirror`。——已实现于 `cli/pull.rs`。
 
 **涉及文件：**
 - `src-tauri/src/services/model_manager.rs`（核心）
@@ -154,21 +154,18 @@ P1 ──┬──────────────────────�
 
 **任务：**
 
-- [ ] 1.4.1 加入 `tauri-plugin-updater`：
+- [x] 1.4.1 加入 `tauri-plugin-updater`：——已实现于 `Cargo.toml:38`
   ```toml
   # src-tauri/Cargo.toml
   tauri-plugin-updater = "2"
   ```
-- [ ] 1.4.2 生成 updater 签名密钥对：
+- [x] 1.4.2 生成 updater 签名密钥对：——公钥已写入 `tauri.conf.json:62`，私钥需放 GitHub Secret `TAURI_SIGNING_PRIVATE_KEY`（运维配置）。
   ```bash
   tauri signer generate -w ~/.tauri/openloop.key
   ```
   公钥写入 `tauri.conf.json` `plugins.updater.pubkey`；私钥放 GitHub Secret `TAURI_SIGNING_PRIVATE_KEY`。
-- [ ] 1.4.3 发布 workflow 上传 `latest.json`：
-  ```json
-  { "version": "0.1.2", "notes": "...", "pub_date": "...", "platforms": { "darwin-aarch64": { "signature": "...", "url": "..." } } }
-  ```
-- [ ] 1.4.4 启动后检查更新；新版本提示模态："Update available · v0.1.2 · View release notes · Install on restart · Skip"。
+- [ ] 1.4.3 发布 workflow 上传 `latest.json`。
+- [~] 1.4.4 启动后检查更新；新版本提示模态：——`UpdateBanner` 已存在 (`components/bootstrap/UpdateBanner.tsx`)，但 UI 较简单，未实现完整模态交互。
 - [ ] 1.4.5 Settings → General 增加 "Check for updates automatically" toggle，默认开。
 - [ ] 1.4.6 CLI：`openloop --version --check-update`。
 
@@ -186,7 +183,7 @@ P1 ──┬──────────────────────�
 
 **任务：**
 
-- [ ] 1.5.1 `README.md` 第 16 行 badge 改为 `platform-macOS%20%28Apple%20Silicon%29-lightgrey`。
+- [x] 1.5.1 `README.md` 第 16 行 badge 改为 `platform-macOS%20%28Apple%20Silicon%29-lightgrey`。——已匹配。
 - [ ] 1.5.2 在 README 顶部加一行 `> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.`
 - [ ] 1.5.3 同步 `README_CN.md`。
 
@@ -249,76 +246,71 @@ src/app/lib/
 │   │   ├── history.ts      ← history、currentGeneration、delete、clear、load settings
 │   │   ├── model.ts        ← modelStatuses、bootstrapStatus、download/delete/cancel
 │   │   ├── ui.ts           ← sidebar、settings overlay、setupOverride、playback toggle
-│   │   └── tasks.ts        ← activeTasks、resume、discard
+│   │   └── tasks.ts        ← activeTasks、resume、discard ← 仍内嵌在 generation.ts，未独立 slice
 │   └── events.ts           ← applyGenerationEvent、applyModelStatus
 ```
 
 **任务：**
 
-- [ ] 3.1.1 用 Zustand slice 模式：`type GenerationStore = SettingsSlice & GenerationSlice & ...`。
-- [ ] 3.1.2 每个 slice 文件 < 250 行；保持向后兼容 selector 命名。
+- [x] 3.1.1 用 Zustand slice 模式：`type GenerationStore = SettingsSlice & GenerationSlice & ...`。——已实现于 `store/index.ts` 与 `store/types.ts`。
+- [~] 3.1.2 每个 slice 文件 < 250 行；保持向后兼容 selector 命名。——`generation.ts` 386 行，`model.ts` 274 行，略超目标。
 - [ ] 3.1.3 现有 `tests/unit/store.test.ts` 必须全部通过，不允许改测试期望。
 - [ ] 3.1.4 新增 `tests/unit/slices/*.test.ts`：每个 slice 至少 2 个独立用例。
 
 ### 3.2 拆分 `GenerationPanel.tsx`（943 行）
 
+**实际结构：**
+
 ```
 src/app/components/generation/
-├── GenerationPanel.tsx          ← orchestrator < 150 行
-├── PromptSection.tsx            ← Prompt textarea + Dice + Wand + history
-├── LyricsSection.tsx            ← Lyrics + Instrumental + structure tags
-├── MusicalControlsSection.tsx   ← Duration / BPM / Key / TimeSig / Lang / Format
-├── AdvancedControlsSection.tsx  ← Negative + LM + Steps + Guidance + toggles
-├── ExpertControlsSection.tsx    ← Reference/Source audio + Repaint + Seed
-├── RecoveryBanner.tsx           ← activeTasks 提示
-├── SubmitFooter.tsx             ← Variations + Cancel + Reset + Retry + Generate（sticky）
+├── GenerationPanel.tsx          ← 拆分为 GenerationPanel/ 子目录
+│   ├── index.tsx                ← orchestrator ~190 行
+│   ├── Header.tsx               ← Prompt + Dice + Wand + 历史/收藏 chips
+│   ├── FormBody.tsx             ← Lyrics + Musical + Tweak + Expert 折叠区
+│   ├── ActionFooter.tsx         ← Cancel/Reset/Retry + Generate 按钮
+│   └── shared.tsx               ← 通用常量和类型
 └── hooks/
-    ├── useGenerationForm.ts
-    └── useElapsedTimer.ts
+    └── （尚未提取独立 hooks）
 ```
 
 **任务：**
 
-- [ ] 3.2.1 提取 `useGenerationForm()` 把 store 选择器集中。
-- [ ] 3.2.2 `SubmitFooter` 用 `position: sticky; bottom: 0` 配合外层 `overflow-auto` 实现 CTA 常驻。
-- [ ] 3.2.3 字段 props 用具名解构，禁止透传 `form` 整体。通过 React Context 或直连 Zustand Store 解决深层组件状态读取，绝对避免 Prop Drilling。
+- [~] 3.2.1 提取 `useGenerationForm()` 把 store 选择器集中。——未提取独立 hook，状态读取分散在各组件。
+- [~] 3.2.2 `SubmitFooter` 用 `position: sticky; bottom: 0` 配合外层 `overflow-auto` 实现 CTA 常驻。——ActionFooter 已独立，但外层容器未使用 sticky 布局，CTA 随页面滚动。
+- [~] 3.2.3 字段 props 用具名解构，禁止透传 `form` 整体。——FormBody 内部字段仍部分透传，未完全解耦。
 - [ ] 3.2.4 视觉与行为 0 回归，由 P12 视觉回归测试守护。
 
-### 3.3 拆分 `SettingsOverlay.tsx`（1090 行）
+### 3.3 拆分 `SettingsOverlay.tsx`（804 行）
+
+**实际结构：**
 
 ```
 src/app/components/settings/
-├── SettingsOverlay.tsx          ← orchestrator < 150 行
-├── sections/
-│   ├── ModelsSection.tsx
-│   ├── DefaultsSection.tsx
-│   ├── GeneralSection.tsx        ← Language + Save + Reopen setup
-│   ├── BackendSection.tsx
-│   ├── PathSection.tsx           ← Output / Model / Log directory
-│   ├── CliSection.tsx            ← Add to PATH / Remove
-│   └── DangerZoneSection.tsx
-└── hooks/
-    ├── useSettingsDraft.ts
-    └── useDirectoryPicker.ts
+├── SettingsOverlay.tsx          ← 仍 804 行，未拆分为 sections
+├── SettingsOverlay/
+│   ├── DirectoryPickerRow.tsx
+│   ├── ModelPackCard.tsx
+│   ├── ModelVariantCard.tsx
+│   └── StateBadge.tsx
+├── SettingsDialogHost.tsx
+└── SettingsSectionCard.tsx
 ```
 
-- [ ] 3.3.1 Save 按钮提升为 sticky header（带 unsaved changes 指示）。
-- [ ] 3.3.2 DangerZone 加红色描边 + Icon。
+- [x] 3.3.1 Save 按钮提升为 sticky header（带 unsaved changes 指示）。——已实现于 `SettingsOverlay.tsx:692`，含 Discard/Save 按钮和 amber 指示器。
+- [x] 3.3.2 DangerZone 加红色描边 + Icon。——已实现，`SettingsSectionCard` 支持 `tone="danger"`，按钮带红色边框。
 
-### 3.4 拆分 `model_manager.rs`（1614 行）
+### 3.4 拆分 `model_manager.rs`（1257 行）
+
+**实际结构：**
 
 ```
 src-tauri/src/services/model_manager/
-├── mod.rs              ← re-export + struct
-├── descriptors.rs      ← AceModelDescriptor 表
-├── manifest.rs         ← ModelFileSpec + SHA256
-├── download.rs         ← Streaming download + .openloop-part
-├── delete.rs           ← async deletion + .openloop-deleting marker
-├── events.rs           ← MODEL_DOWNLOAD_EVENT emission
-└── mirror.rs           ← mirror rotation
+├── mod.rs              ← 1257 行，远超 400 行目标
+├── specs.rs            ← ModelFileSpec + 常量定义
+└── types.rs            ← 共享类型
 ```
 
-- [ ] 3.4.1 单文件 < 400 行。
+- [ ] 3.4.1 单文件 < 400 行。——`mod.rs` 1257 行，需进一步拆分为 download.rs / delete.rs / events.rs / mirror.rs。
 - [ ] 3.4.2 `cargo test` 全绿；新增 `mirror.rs` 单测。
 
 **Phase 3 验收：** 所有拆分后文件 < 500 行；`pnpm test:run` 与 `cargo test` 全绿；现有 `tests/unit/store.test.ts` 未修改期望值。
@@ -329,10 +321,10 @@ src-tauri/src/services/model_manager/
 
 ### 4.1 三层折叠 + 术语降级
 
-- [ ] 4.1.1 "Advanced controls" 重命名为 "**Tweak the sound**"，描述："Optional adjustments to inference, style, and seed."
-- [ ] 4.1.2 新建 "**Expert（ACE-Step internals）**" 折叠，默认折叠，置入：`useCotCaption`、`useCotLanguage`、`constrainedDecoding`、`lmBackend`、`lmModelPath`、`useFormat`、`thinking`、`inferenceSteps`、`guidanceScale`。
-- [ ] 4.1.3 Expert 区顶部加灰色说明："These map directly to ACE-Step 1.5 parameters. Most users don't need to change them."
-- [ ] 4.1.4 i18n key 新增：`generation.tweakSound`、`generation.expertMode`、`generation.expertModeHint`。
+- [x] 4.1.1 "Advanced controls" 重命名为 "**Tweak the sound**"，描述："Optional adjustments to inference, style, and seed."——已实现于 `FormBody.tsx:366`
+- [x] 4.1.2 新建 "**Expert（ACE-Step internals）**" 折叠，默认折叠，置入：`useCotCaption`、`useCotLanguage`、`constrainedDecoding`、`lmBackend`、`lmModelPath`、`useFormat`、`thinking`、`inferenceSteps`、`guidanceScale`。——已实现于 `FormBody.tsx:533`
+- [x] 4.1.3 Expert 区顶部加灰色说明："These map directly to ACE-Step 1.5 parameters. Most users don't need to change them."——已实现于 `FormBody.tsx:548`
+- [x] 4.1.4 i18n key 新增：`generation.tweakSound`、`generation.expertMode`、`generation.expertModeHint`。——已实现。
 
 ### 4.2 Sticky Submit Footer
 
@@ -341,14 +333,14 @@ src-tauri/src/services/model_manager/
 
 ### 4.3 Prompt 历史 / 收藏
 
-- [ ] 4.3.1 `AppSettings` 增加 `recentPrompts: string[]`（上限 20，去重保序）。
-- [ ] 4.3.2 提交成功时 push；UI 在 prompt 输入框上方加一行 chip 列表（最近 6 条），可点击填入。
-- [ ] 4.3.3 Dice 按钮旁加 ⭐ 图标，把当前 prompt 加到 `favoritePrompts`，独立列表（上限 50）。
+- [x] 4.3.1 `AppSettings` 增加 `recentPrompts: string[]`（上限 20，去重保序）。——已实现于 `store/slices/settings.ts:30`
+- [x] 4.3.2 提交成功时 push；UI 在 prompt 输入框上方加一行 chip 列表（最近 6 条），可点击填入。——已实现于 `Header.tsx:39-52`
+- [x] 4.3.3 Dice 按钮旁加 ⭐ 图标，把当前 prompt 加到 `favoritePrompts`，独立列表（上限 50）。——已实现于 `Header.tsx:40-41`
 - [ ] 4.3.4 CLI：`openloop run --from-history N`（用 `openloop list --json` 的 id 引用）。
 
 ### 4.4 灵感库扩展
 
-- [ ] 4.4.1 `src/app/data/prompt_examples.json` 从 N 条扩到 ≥ 100 条，分类（lo-fi、cinematic、pop、ambient、edm、jazz、orchestral、game-bgm、rnb）。
+- [x] 4.4.1 `src/app/data/prompt_examples.json` 从 N 条扩到 ≥ 100 条，分类（lo-fi、cinematic、pop、ambient、edm、jazz、orchestral、game-bgm、rnb）。——当前 110 条，9 个分类。
 - [ ] 4.4.2 Dice 按钮长按或右键弹分类菜单。
 - [ ] 4.4.3 i18n 中文版同步翻译每个示例的中文描述（不替换 prompt 本身，只翻译类目）。
 
@@ -362,10 +354,10 @@ src-tauri/src/services/model_manager/
 
 ### 5.1 收藏 / 置顶
 
-- [ ] 5.1.1 `generations` 表增加列 `is_favorite INTEGER DEFAULT 0`（migration `003_add_favorite.sql`）。
-- [ ] 5.1.2 `GenerationRecord` 增加 `isFavorite` 字段。
-- [ ] 5.1.3 History 行右侧加 ⭐ 按钮；侧栏顶部加 toggle "Show favorites only"。
-- [ ] 5.1.4 排序：favorites 永远在前，按 createdAt desc。
+- [ ] 5.1.1 `generations` 表增加列 `is_favorite INTEGER DEFAULT 0`（migration `003_add_favorite.sql`）。——当前仅在内存中通过 `favoriteRecordIds` 维护，未持久化到 DB。
+- [~] 5.1.2 `GenerationRecord` 增加 `isFavorite` 字段。——前端 `GenerationRecord` 无 `isFavorite` 字段，靠 `favoriteRecordIds` 数组维护。
+- [x] 5.1.3 History 行右侧加 ⭐ 按钮；侧栏顶部加 toggle "Show favorites only"。——已实现。
+- [x] 5.1.4 排序：favorites 永远在前，按 createdAt desc。——已实现。
 
 ### 5.2 对比试听（A/B Compare）
 
@@ -396,7 +388,7 @@ src-tauri/src/services/model_manager/
 
 ### 6.1 Loop / AB-Loop
 
-- [ ] 6.1.1 PlaybackBar 加 Loop 按钮（普通 loop）。
+- [x] 6.1.1 PlaybackBar 加 Loop 按钮（普通 loop）。——已实现（commit `5a0ee8a`）。
 - [ ] 6.1.2 波形条上 Shift+Click 设定 A 点，再次 Shift+Click 设定 B 点；自动在 A/B 间循环。
 - [ ] 6.1.3 ESC 或重复点击清除 AB 区间。
 
@@ -410,7 +402,7 @@ src-tauri/src/services/model_manager/
 
 - [ ] 6.3.1 PlaybackBar 中删除按钮移入 overflow 菜单（三点）。
 - [ ] 6.3.2 单条删除依旧二次确认，但移除"Cmd+Backspace 直接删"的快捷绑定。
-- [ ] 6.3.3 删除后 toast 提供 "Undo（30s）"：实际把记录暂存到 `_pending_delete` 桌面回收。
+- [~] 6.3.3 删除后 toast 提供 "Undo（30s）"：实际把记录暂存到 `_pending_delete` 桌面回收。——已实现 Undo toast（`restoreLastDeletedRecord`），但 `_pending_delete` 桌面回收未实现，仅靠内存暂存。
 
 ### 6.4 导出菜单升级
 
@@ -438,11 +430,11 @@ src-tauri/src/services/model_manager/
 
 ## 8. Phase 8 — 首次设置体验（T+4 ~ T+6 周）
 
-- [ ] 8.1 Model 步骤中显式：
-  - 当前网速 / 估算 ETA
-  - 共享 pack 提示（Lite + Turbo 共用 Standard pack）
-  - 镜像选择器（来自 P1.3）
-- [ ] 8.2 Welcome 步骤改为 "What is OpenLoop"：3 张小卡（Local-first / Open-source / CLI + GUI），不再仅纯文本。
+- [~] 8.1 Model 步骤中显式：——部分实现
+  - [~] 当前网速 / 估算 ETA——下载进度条有 bytes/sec，但无 ETA 文本估算。
+  - [x] 共享 pack 提示（Lite + Turbo 共用 Standard pack）——已实现于 SetupScreen。
+  - [x] 镜像选择器（来自 P1.3）——已实现于 SetupScreen。
+- [x] 8.2 Welcome 步骤改为 "What is OpenLoop"：3 张小卡（Local-first / Open-source / CLI + GUI），不再仅纯文本。——已实现于 SetupScreen（commit `705f13f`）。
 - [ ] 8.3 加 "Skip and try a demo prompt" 路径：跳过模型下载，进入"演示模式"——使用 bundled 30 秒示例音频，让用户先看到界面再决定要不要下模型。
 - [ ] 8.4 Done 步骤显示 "Press Cmd+Enter to generate"。
 
@@ -529,6 +521,8 @@ src-tauri/src/services/model_manager/
 **Phase 11 验收：** 所有 `eprintln!` / `println!` 替换为 tracing；日志文件轮转符合 `BACKEND_LOG_RETAIN_COUNT`；in-app 日志查看器可显示最近 200 行并按 level 过滤。
 
 > **注：** CLI 侧的 NDJSON 事件契约（`cli::events` 模块、v1 schema、lifecycle/progress/error 三类事件）已在 `cli-backend-vnext.md` 中实现完毕，本 Phase 只需在其之上扩展 GUI 侧的结构化日志与 in-app 查看器。
+> 
+> **状态：** `cli::events` v1 schema 和 `BackendManager::ownership()` 等已在 `19875d3` commit 实现。
 
 ---
 

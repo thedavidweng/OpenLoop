@@ -7,10 +7,12 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Cpu,
   Download,
   FolderOpen,
   FolderOutput,
+  Keyboard,
   Loader2,
   Sparkles,
 } from "lucide-react";
@@ -24,6 +26,11 @@ import {
 } from "@/app/lib/model-packs";
 import { useGenerationStore } from "@/app/lib/store";
 import type { ModelDownloadState, ModelVariant } from "@/app/lib/types";
+import {
+  APP_SHORTCUTS,
+  getShortcutDisplay,
+  getShortcutPlatform,
+} from "@/app/lib/app-shortcuts";
 
 interface SetupScreenProps {
   onClose?: () => void;
@@ -103,6 +110,15 @@ function progressPercent(downloadedBytes: number, totalBytes?: number | null) {
   );
 }
 
+function etaFromBytes(totalBytes: number, speedBps = 10 * 1024 * 1024) {
+  const seconds = totalBytes / speedBps;
+  if (seconds < 60) return `${Math.ceil(seconds)}s`;
+  if (seconds < 3600) return `${Math.ceil(seconds / 60)} min`;
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.ceil((seconds % 3600) / 60);
+  return `${hours}h ${mins}m`;
+}
+
 function PackDownloadCard({
   packId,
   state,
@@ -148,6 +164,12 @@ function PackDownloadCard({
           <p className="font-mono text-[10px] tabular-nums text-[var(--color-text-dimmer)]">
             {bytesToLabel(downloadedBytes)} / {bytesToLabel(totalBytes)}
             {state === "downloading" ? ` · ${percent}%` : null}
+            {state === "not_installed" && totalBytes > 0 ? (
+              <span className="ml-2 inline-flex items-center gap-1 text-[var(--color-text-dim)]">
+                <Clock size={9} />
+                ~{etaFromBytes(totalBytes)}
+              </span>
+            ) : null}
           </p>
         </div>
         <button
@@ -517,6 +539,46 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                     {t("settings.chooseFolder")}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {step === "done" ? (
+          <div className="space-y-5 text-left">
+            {/* Keyboard shortcuts hint */}
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
+              <div className="flex items-center gap-2 text-[var(--color-accent)]">
+                <Keyboard size={16} />
+                <p className="text-[13px] font-semibold text-white">
+                  {t("setup.shortcutsHint", { defaultValue: "Keyboard shortcuts" })}
+                </p>
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    ["toggleSidebar", APP_SHORTCUTS.toggleSidebar],
+                    ["newGeneration", APP_SHORTCUTS.newGeneration],
+                    ["toggleSettings", APP_SHORTCUTS.toggleSettings],
+                    ["submitGeneration", APP_SHORTCUTS.submitGeneration],
+                    ["togglePlayback", APP_SHORTCUTS.togglePlayback],
+                  ] as const
+                ).map(([labelKey, shortcut]) => {
+                  const platform = getShortcutPlatform();
+                  return (
+                    <div
+                      key={shortcut.id}
+                      className="flex items-center justify-between rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2"
+                    >
+                      <span className="text-[12px] text-[var(--color-text-dim)]">
+                        {t(`setup.shortcut_${labelKey}`, { defaultValue: labelKey })}
+                      </span>
+                      <kbd className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-0.5 font-mono text-[11px] text-[var(--color-text)]">
+                        {getShortcutDisplay(shortcut, platform)}
+                      </kbd>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

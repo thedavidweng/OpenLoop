@@ -37,6 +37,8 @@ export interface GenerationStore {
   settings: AppSettings;
   recentPrompts: string[];
   favoritePrompts: string[];
+  favoriteRecordIds: string[];
+  lastDeletedRecord: GenerationRecord | null;
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -75,11 +77,13 @@ export interface GenerationStore {
   loadGenerationSettings: (id: string, mode: "settings" | "reproduce") => void;
   deleteGenerationRecord: (
     id: string,
-    options?: { alreadyDeleted?: boolean },
+    options?: { alreadyDeleted?: boolean; undoable?: boolean },
   ) => Promise<void>;
   clearGenerationHistory: () => Promise<void>;
   resetForm: () => void;
   addRecentPrompt: (prompt: string) => void;
   toggleFavoritePrompt: (prompt: string) => void;
   removeRecentPrompt: (prompt: string) => void;
+  toggleFavoriteRecord: (id: string) => void;
+  restoreLastDeletedRecord: () => void;
 }

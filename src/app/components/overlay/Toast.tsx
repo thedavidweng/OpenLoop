@@ -11,15 +11,22 @@ import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 
 type ToastType = "success" | "error" | "info";
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: string;
   type: ToastType;
   message: string;
+  duration?: number;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
   toasts: Toast[];
-  addToast: (type: ToastType, message: string) => void;
+  addToast: (type: ToastType, message: string, options?: { duration?: number; action?: ToastAction }) => string;
   removeToast: (id: string) => void;
 }
 
@@ -47,11 +54,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToast = useCallback(
-    (type: ToastType, message: string) => {
+    (type: ToastType, message: string, options?: { duration?: number; action?: ToastAction }) => {
       const id = crypto.randomUUID();
-      setToasts((prev) => [...prev, { id, type, message }]);
-      const timer = setTimeout(() => removeToast(id), 3000);
+      setToasts((prev) => [...prev, { id, type, message, duration: options?.duration, action: options?.action }]);
+      const timer = setTimeout(() => removeToast(id), options?.duration ?? 3000);
       timersRef.current.set(id, timer);
+      return id;
     },
     [removeToast],
   );
@@ -107,6 +115,18 @@ function ToastItem({
     >
       <Icon size={14} className="shrink-0" />
       <span className="min-w-0 flex-1">{toast.message}</span>
+      {toast.action ? (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action!.onClick();
+            onDismiss();
+          }}
+          className="shrink-0 rounded-md border border-current/30 px-2 py-0.5 text-[11px] font-semibold hover:bg-white/10 transition-colors"
+        >
+          {toast.action.label}
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onDismiss}

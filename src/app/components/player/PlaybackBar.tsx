@@ -12,6 +12,7 @@ import {
   Music4,
   Pause,
   Play,
+  Repeat,
   SkipBack,
   SkipForward,
   Trash2,
@@ -111,6 +112,7 @@ export function PlaybackBar() {
   const [volume, setVolume] = useState(loadPersistedVolume);
   const [previousVolume, setPreviousVolume] = useState(1);
   const [speed, setSpeed] = useState(loadPersistedSpeed);
+  const [loop, setLoop] = useState(false);
   const [measuredWidth, setMeasuredWidth] = useState(1280);
   const [measuredDensity, setMeasuredDensity] =
     useState<PlaybackBarDensity>("relaxed");
@@ -138,13 +140,14 @@ export function PlaybackBar() {
     if (audioRef.current) audioRef.current.playbackRate = speed;
   }, [speed]);
 
-  // Apply volume and speed when audio source changes
+  // Apply volume, speed, and loop when audio source changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
       audioRef.current.playbackRate = speed;
+      audioRef.current.loop = loop;
     }
-  }, [audioSrc, volume, speed]);
+  }, [audioSrc, volume, speed, loop]);
 
   useEffect(() => {
     setIsPlaying(false);
@@ -478,6 +481,18 @@ export function PlaybackBar() {
             className="native-slider w-16"
             disabled={!audioSrc}
           />
+
+          {/* Loop toggle */}
+          <Tooltip label={t("player.loop")}>
+            <button
+              type="button"
+              className={`motion-icon-button rounded-full p-2 disabled:opacity-30 ${loop ? "text-[var(--color-accent)]" : "text-[var(--color-text-dim)]"} hover:bg-[var(--color-ghost-hover)] hover:text-white`}
+              disabled={!audioSrc}
+              onClick={() => setLoop((v) => !v)}
+            >
+              <Repeat size={16} />
+            </button>
+          </Tooltip>
 
           {/* Speed control */}
           <Tooltip label={t("player.speed")}>

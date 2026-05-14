@@ -19,6 +19,8 @@ export function createHistorySlice(
     history: [] as GenerationRecord[],
     currentGeneration: null as GenerationRecord | null,
     historyQuery: "",
+    favoriteRecordIds: [] as string[],
+    lastDeletedRecord: null as GenerationRecord | null,
 
     selectGenerationRecord: (id: string) => {
       set((state) => ({
@@ -30,8 +32,9 @@ export function createHistorySlice(
 
     deleteGenerationRecord: async (
       id: string,
-      options: { alreadyDeleted?: boolean } = {},
+      options: { alreadyDeleted?: boolean; undoable?: boolean } = {},
     ) => {
+      const deleted = get().history.find((r) => r.id === id) ?? null;
       if (api.isTauriRuntime() && !options.alreadyDeleted) {
         await api.deleteGenerationFileAndRecord(id);
       }
@@ -44,6 +47,7 @@ export function createHistorySlice(
             id,
             nextHistory,
           ),
+          lastDeletedRecord: options.undoable !== false ? deleted : null,
         };
       });
     },
@@ -67,6 +71,29 @@ export function createHistorySlice(
         currentGeneration: record,
         ...computeValidationState(nextForm),
         generationState: createIdleGenerationState(),
+      });
+    },
+
+    toggleFavoriteRecord: (id: string) => {
+      set((state) => {
+        const isFav = state.favoriteRecordIds.includes(id);
+        return {
+          favoriteRecordIds: isFav
+            ? state.favoriteRecordIds.filter((fid) => fid !== id)
+            : [...state.favoriteRecordIds, id],
+        };
+      });
+    },
+
+    restoreLastDeletedRecord: () => {
+      set((state) => {
+        if (!state.lastDeletedRecord) return state;
+        const restored = state.lastDeletedRecord;
+        return {
+          history: [restored, ...state.history],
+          lastDeletedRecord: null,
+          currentGeneration: restored,
+        };
       });
     },
   };

@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Clock3, Play, Settings2, Trash2 } from "lucide-react";
+import { Clock3, Play, Settings2, Star, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
+import { useToast } from "@/app/components/overlay/Toast";
 import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 
 export function HistorySidebar() {
@@ -12,6 +13,15 @@ export function HistorySidebar() {
   const historyQuery = useGenerationStore((state) => state.historyQuery);
   const deleteGenerationRecord = useGenerationStore(
     (state) => state.deleteGenerationRecord,
+  );
+  const toggleFavoriteRecord = useGenerationStore(
+    (state) => state.toggleFavoriteRecord,
+  );
+  const restoreLastDeletedRecord = useGenerationStore(
+    (state) => state.restoreLastDeletedRecord,
+  );
+  const favoriteRecordIds = useGenerationStore(
+    (state) => state.favoriteRecordIds,
   );
   const selectGenerationRecord = useGenerationStore(
     (state) => state.selectGenerationRecord,
@@ -25,6 +35,7 @@ export function HistorySidebar() {
   const currentGeneration = useGenerationStore(
     (state) => state.currentGeneration,
   );
+  const { addToast } = useToast();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
@@ -130,6 +141,19 @@ export function HistorySidebar() {
                         })}
                       </span>
                       <div className="flex items-center gap-1">
+                        {/* Favorite star */}
+                        <Tooltip label={favoriteRecordIds.includes(item.id) ? t("history.unfavorite") : t("history.favorite")}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavoriteRecord(item.id);
+                            }}
+                            className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIds.includes(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
+                          >
+                            <Star size={11} fill={favoriteRecordIds.includes(item.id) ? "currentColor" : "none"} />
+                          </button>
+                        </Tooltip>
                         {/* Quick play button */}
                         <Tooltip label={t("player.play")}>
                           <button
@@ -208,7 +232,18 @@ export function HistorySidebar() {
           if (!deleteTarget) return;
           const id = deleteTarget.id;
           setDeleteTargetId(null);
-          void deleteGenerationRecord(id);
+          void (async () => {
+            await deleteGenerationRecord(id, { undoable: true });
+            addToast("info", t("history.deletedUndo"), {
+              duration: 5000,
+              action: {
+                label: t("common.undo"),
+                onClick: () => {
+                  restoreLastDeletedRecord();
+                },
+              },
+            });
+          })();
         }}
       />
       <SettingsDialogHost

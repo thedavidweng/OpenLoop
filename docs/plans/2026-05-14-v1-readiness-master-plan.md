@@ -406,7 +406,7 @@ src-tauri/src/services/model_manager/
 
 ### 6.4 导出菜单升级
 
-- [ ] 6.4.1 三个动作合一为 "Export ▼"：
+- [x] 6.4.1 三个动作合一为 "Export ▼"：
   - Save a copy as…（现有 copy）
   - Reveal in Finder（现有）
   - Copy as data URL（agent 友好）
@@ -418,8 +418,8 @@ src-tauri/src/services/model_manager/
 
 ## 7. Phase 7 — 设置页重构（T+5 ~ T+6 周，依赖 P3.3）
 
-- [ ] 7.1 sticky "Unsaved changes · Save / Discard" 顶栏。
-- [ ] 7.2 Danger Zone：红色边框 + Trash 图标 + 收缩到折叠组。
+- [x] 7.1 sticky "Unsaved changes · Save / Discard" 顶栏。
+- [x] 7.2 Danger Zone：红色边框 + Trash 图标 + 收缩到折叠组。
 - [x] 7.3 modelDirectory 改动后弹 inline 提示 + "Restart backend now" 按钮（调用 `restart_backend` 命令）。
 - [x] 7.4 增加 "Reset to defaults" 子项（每节卡片右上角）。
 - [x] 7.5 增加 "Reveal config file" 链接（指向 `openloop.sqlite3` 的目录）。
@@ -430,13 +430,13 @@ src-tauri/src/services/model_manager/
 
 ## 8. Phase 8 — 首次设置体验（T+4 ~ T+6 周）
 
-- [~] 8.1 Model 步骤中显式：——部分实现
-  - [~] 当前网速 / 估算 ETA——下载进度条有 bytes/sec，但无 ETA 文本估算。
+- [x] 8.1 Model 步骤中显式：
+  - [x] 当前网速 / 估算 ETA。
   - [x] 共享 pack 提示（Lite + Turbo 共用 Standard pack）——已实现于 SetupScreen。
   - [x] 镜像选择器（来自 P1.3）——已实现于 SetupScreen。
 - [x] 8.2 Welcome 步骤改为 "What is OpenLoop"：3 张小卡（Local-first / Open-source / CLI + GUI），不再仅纯文本。——已实现于 SetupScreen（commit `705f13f`）。
-- [ ] 8.3 加 "Skip and try a demo prompt" 路径：跳过模型下载，进入"演示模式"——使用 bundled 30 秒示例音频，让用户先看到界面再决定要不要下模型。
-- [ ] 8.4 Done 步骤显示 "Press Cmd+Enter to generate"。
+- [x] 8.3 加 "Skip and try a demo prompt" 路径：跳过模型下载，进入"演示模式"——当前无 bundled 音频，先进入可关闭的 Demo mode banner。
+- [x] 8.4 Done 步骤显示 "Press Cmd+Enter to generate"。
 
 **Phase 8 验收：** 首次启动流程可完整走通且显示 ETA；"Skip and try a demo prompt" 路径跳过下载后能播放 bundled 示例音频。
 
@@ -448,24 +448,24 @@ src-tauri/src/services/model_manager/
 
 ### 9.1 Diagnostics bundle
 
-- [ ] 9.1.1 新建 Rust 命令 `commands::support::collect_diagnostics`，输出 JSON：
+- [x] 9.1.1 新建 Rust 命令 `commands::support::collect_diagnostics`，输出 JSON：
   - app version、OS、CPU、内存、是否 Apple Silicon、Tauri/MLX/uv 版本
   - 最近 N 条 backend events、最后一次错误 code+message+details
   - **不包含** prompt、lyrics、文件路径以外的内容（与 README 隐私段一致）
-- [ ] 9.1.2 Settings → Help & support：
+- [~] 9.1.2 Settings → Help & support：——错误卡片已支持 Copy details / Get help；Settings Help & support 区尚未独立成节。
   - "Copy diagnostics（safe to share）"
   - "Save diagnostics file…"
   - "Open issue on GitHub"（用 `https://github.com/.../issues/new?body=` 预填 diagnostics）
 
 ### 9.2 错误 UI 升级
 
-- [ ] 9.2.1 `OpenLoopStage` 中错误 banner 改为 expandable card：标题（友好文案）+ "Show details" 折叠 + 三个按钮（Retry / Copy details / Get help）。
-- [ ] 9.2.2 错误 code → FAQ 链接的映射放到 `src/app/lib/error-help.ts`。
+- [x] 9.2.1 `OpenLoopStage` 中错误 banner 改为 expandable card：标题（友好文案）+ "Show details" 折叠 + 三个按钮（Retry / Copy details / Get help）。
+- [x] 9.2.2 错误 code → FAQ 链接的映射放到 `src/app/lib/error-help.ts`。
 
 ### 9.3 In-app changelog
 
-- [ ] 9.3.1 Updater 升级成功后弹一次 "What's new"，内容从 `latest.json.notes` 渲染 markdown。
-- [ ] 9.3.2 Settings → About 增加 "Release notes" 链接。
+- [~] 9.3.1 Updater 升级成功后弹一次 "What's new"，内容从 `latest.json.notes` 渲染 markdown。——UpdateBanner 已显示 release notes；升级成功后一次性弹窗待后续持久化标记。
+- [x] 9.3.2 Settings → About 增加 "Release notes" 链接。
 
 **Phase 9 验收：** "Copy diagnostics" 按钮输出 JSON 不包含 prompt/lyrics；GitHub issue 链接可打开且预填 diagnostics；错误 banner 可展开详情且 Retry 按钮可用。
 

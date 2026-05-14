@@ -41,7 +41,16 @@ impl Database {
         let connection = self.connection()?;
         connection
             .execute_batch(include_str!("../../migrations/001_init.sql"))
-            .map_err(|error| AppError::db_write_failed(error.to_string()))
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+
+        // Apply 002+ migrations idempotently: ignore "duplicate column" errors
+        for sql in [include_str!(
+            "../../migrations/002_add_cancel_requested_at.sql"
+        )] {
+            let _ = connection.execute_batch(sql);
+        }
+
+        Ok(())
     }
 
     fn ensure_default_settings(&self) -> AppResult<()> {
@@ -226,7 +235,7 @@ impl Database {
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
         connection
             .execute(
-                "INSERT INTO active_generation_tasks (id, task_id, request_json, variation_index, variation_total, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT(id) DO UPDATE SET task_id = excluded.task_id, request_json = excluded.request_json, variation_index = excluded.variation_index, variation_total = excluded.variation_total, updated_at = excluded.updated_at",
+                "INSERT INTO active_generation_tasks (id, task_id, request_json, variation_index, variation_total, created_at, updated_at, cancel_requested_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) ON CONFLICT(id) DO UPDATE SET task_id = excluded.task_id, request_json = excluded.request_json, variation_index = excluded.variation_index, variation_total = excluded.variation_total, updated_at = excluded.updated_at, cancel_requested_at = excluded.cancel_requested_at",
                 params![
                     task.id,
                     task.task_id,
@@ -235,6 +244,7 @@ impl Database {
                     task.variation_total,
                     task.created_at,
                     task.updated_at,
+                    task.cancel_requested_at,
                 ],
             )
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
@@ -245,7 +255,7 @@ impl Database {
         let connection = self.connection()?;
         let mut statement = connection
             .prepare(
-                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at FROM active_generation_tasks ORDER BY created_at ASC",
+                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at, cancel_requested_at FROM active_generation_tasks ORDER BY created_at ASC",
             )
             .map_err(|error| AppError::db_read_failed(error.to_string()))?;
         let rows = statement
@@ -261,7 +271,7 @@ impl Database {
         let connection = self.connection()?;
         connection
             .query_row(
-                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at FROM active_generation_tasks WHERE id = ?1",
+                "SELECT id, task_id, request_json, variation_index, variation_total, created_at, updated_at, cancel_requested_at FROM active_generation_tasks WHERE id = ?1",
                 [id],
                 Self::map_active_generation_task_row,
             )
@@ -331,6 +341,7 @@ impl Database {
             variation_total: row.get(4)?,
             created_at: row.get(5)?,
             updated_at: row.get(6)?,
+            cancel_requested_at: row.get(7)?,
         })
     }
 }
@@ -557,6 +568,7 @@ mod tests {
             variation_total: 2,
             created_at: "2026-04-29T10:00:00Z".to_owned(),
             updated_at: "2026-04-29T10:00:01Z".to_owned(),
+            cancel_requested_at: None,
         };
 
         database

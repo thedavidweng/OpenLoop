@@ -88,6 +88,51 @@ impl GenerationTaskRunner {
         self
     }
 
+    /// Check if cancellation has been requested for a specific active task.
+    /// When `active_id` is `Some(id)`, checks only that task's `cancel_requested_at`.
+    /// When `active_id` is `None`, checks whether *any* active task has a cancel flag
+    /// (global pre-flight check before a new generation starts).
+    pub fn cancel_requested_in_db(&self, active_id: Option<&str>) -> AppResult<bool> {
+        match active_id {
+            Some(id) => {
+                let task = self.db.get_active_generation_task(id)?;
+                Ok(task
+                    .map(|t| t.cancel_requested_at.is_some())
+                    .unwrap_or(false))
+            }
+            None => {
+                let tasks = self.db.list_active_generation_tasks()?;
+                Ok(tasks.iter().any(|t| t.cancel_requested_at.is_some()))
+            }
+        }
+    }
+
+    /// Write a cross-process cancellation signal into the database.
+    /// When `task_id` is `Some(id)`, only the specific active task is marked.
+    /// When `task_id` is `None`, all active tasks are marked (global user cancellation).
+    pub fn request_cancel_via_db(&self, task_id: Option<&str>) -> AppResult<()> {
+        let now = Utc::now().to_rfc3339();
+        match task_id {
+            Some(id) => {
+                if let Some(mut task) = self.db.get_active_generation_task(id)? {
+                    task.cancel_requested_at = Some(now.clone());
+                    task.updated_at = now;
+                    self.db.upsert_active_generation_task(&task)?;
+                }
+            }
+            None => {
+                let tasks = self.db.list_active_generation_tasks()?;
+                for task in &tasks {
+                    let mut updated = task.clone();
+                    updated.cancel_requested_at = Some(now.clone());
+                    updated.updated_at = now.clone();
+                    self.db.upsert_active_generation_task(&updated)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn cancel(&self) {
         self.cancelled.store(true, Ordering::SeqCst);
     }
@@ -129,6 +174,7 @@ impl GenerationTaskRunner {
                 variation_total,
                 created_at: now.clone(),
                 updated_at: now,
+                cancel_requested_at: None,
             };
             self.db.upsert_active_generation_task(&active)?;
             sink.emit_generation_event(serde_json::json!({
@@ -192,7 +238,11 @@ impl GenerationTaskRunner {
         let mut first_running_state = true;
 
         loop {
-            if self.cancelled.load(Ordering::SeqCst) {
+            if self.cancelled.load(Ordering::SeqCst)
+                || self
+                    .cancel_requested_in_db(active_id.as_deref())
+                    .unwrap_or(false)
+            {
                 if let Some(active_id) = &active_id {
                     self.db.delete_active_generation_task(active_id)?;
                 }

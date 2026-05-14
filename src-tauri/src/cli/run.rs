@@ -74,13 +74,15 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     let settings = state.db.get_settings()?;
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let port = {
+        let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
 
-    // Auto-bootstrap backend
-    let backend_status = backend.start(&settings)?;
-    let port = match &backend_status {
-        crate::models::backend::BackendStatus::Healthy { port } => *port,
-        _ => return Err(cli_error("backend is not healthy")),
+        // Auto-bootstrap backend
+        let backend_status = backend.start(&settings)?;
+        match &backend_status {
+            crate::models::backend::BackendStatus::Healthy { port } => *port,
+            _ => return Err(cli_error("backend is not healthy")),
+        }
     };
 
     // Build GenerationRequest
@@ -221,6 +223,11 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
                 ));
             }
         }
+    }
+
+    // Detach the backend so it keeps running after this CLI command exits
+    if let Ok(mut backend) = state.backend.lock() {
+        backend.detach();
     }
 
     Ok(())

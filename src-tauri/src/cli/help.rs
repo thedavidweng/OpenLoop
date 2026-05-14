@@ -4,16 +4,32 @@ const TOP_LEVEL_HELP: &str = "\
 Usage:
   openloop <command> [flags]
 
-Commands:
+Backend commands:
+  backend   Manage the ACE-Step local engine (status, start, stop, restart, logs)
+  status    Show unified backend, model, and device status
+  doctor    Diagnose environment health
+
+Generation commands:
   run       Generate music
-  setup     Configure defaults
+  enhance   Enhance a prompt via the local engine
+  generation  Manage generation tasks (list, cancel, resume, discard)
+  stop      Cancel an ongoing generation
+
+History commands:
   list      Show generation history
-  pull      Download a model
-  models    List available models
-  ps        Show backend status
   delete    Delete a generation record
   clear     Clear all history
-  stop      Stop the backend
+
+Model commands:
+  models    List, download, delete models
+  pull      Download a model variant (alias for models download)
+
+File commands:
+  files     Manage output files (reveal, copy, exists, unlink)
+
+Settings commands:
+  setup     Configure defaults (interactive wizard or key=value)
+  settings  Manage settings (get, set, reset, paths)
 
 Global flags:
   --json    Machine-readable JSON output

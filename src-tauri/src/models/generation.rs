@@ -83,6 +83,8 @@ pub struct ActiveGenerationTask {
     pub variation_total: i64,
     pub created_at: String,
     pub updated_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cancel_requested_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

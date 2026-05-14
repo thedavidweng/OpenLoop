@@ -12,6 +12,20 @@ pub struct AppError {
 }
 
 impl AppError {
+    /// Map error code to process exit code per CLI contract:
+    ///   0 = success (not an error)
+    ///   1 = generic error
+    ///   2 = usage / validation error
+    ///   3 = backend unavailable
+    ///   4 = user cancellation
+    pub fn exit_code(&self) -> i32 {
+        match self.code.as_str() {
+            "VALIDATION_FAILED" => 2,
+            "BACKEND_START_FAILED" | "BACKEND_HEALTH_TIMEOUT" => 3,
+            _ => 1,
+        }
+    }
+
     pub fn new(
         code: impl Into<String>,
         message: impl Into<String>,

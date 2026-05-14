@@ -73,6 +73,25 @@ impl BackendManager {
             .map(|path| path.display().to_string())
     }
 
+    /// Whether this process spawned and holds the backend child process.
+    pub fn is_owned(&self) -> bool {
+        self.child.is_some()
+    }
+
+    /// Ownership label for the backend instance:
+    /// - `"owned"` — spawned by this process
+    /// - `"attached"` — found running on the port but not our child
+    /// - `"stopped"` — backend is not running
+    pub fn ownership(&self) -> &str {
+        if self.child.is_some() {
+            "owned"
+        } else if matches!(self.status, BackendStatus::Healthy { .. }) {
+            "attached"
+        } else {
+            "stopped"
+        }
+    }
+
     pub fn start(&mut self, settings: &AppSettings) -> AppResult<BackendStatus> {
         match self.status() {
             BackendStatus::Healthy { .. } | BackendStatus::Starting => {
@@ -186,6 +205,13 @@ impl BackendManager {
     pub fn restart(&mut self, settings: &AppSettings) -> AppResult<BackendStatus> {
         self.stop()?;
         self.start(settings)
+    }
+
+    /// Detach the child process so that `Drop` does not kill it.
+    /// Use this for short-lived CLI commands that should leave the backend
+    /// running for subsequent invocations or the GUI.
+    pub fn detach(&mut self) {
+        self.child = None; // Drop the handle — the OS child continues running
     }
 
     fn bundled_uv_command(&self) -> AppResult<PathBuf> {

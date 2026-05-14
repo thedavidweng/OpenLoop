@@ -197,6 +197,8 @@ export type AppSettings = {
   backendWorkingDirectory?: string | null;
   logDirectory?: string | null;
   modelMirror?: string | null;
+  recentPrompts?: string[];
+  favoritePrompts?: string[];
 };
 
 export type DeviceInfo = {

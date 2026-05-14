@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { CheckCircle2, Music4, Settings2 } from "lucide-react";
+import { CheckCircle2, Music4, Settings2, Wrench } from "lucide-react";
 import type { ChangeEvent } from "react";
 import { Collapsible } from "@/app/components/ui/Collapsible";
 import {
@@ -12,10 +12,13 @@ import {
   FieldLabel,
   FilePickerField,
   type TextField,
-  type ToggleField,
 } from "@/app/components/generation/GenerationPanel/shared";
-import type { GenerationFormValues, ValidationErrors, ModelCatalogItem } from "@/app/lib/types";
-import type { ModelDownloadState } from "@/app/lib/types";
+import type {
+  GenerationFormValues,
+  ValidationErrors,
+  ModelCatalogItem,
+  ModelDownloadState,
+} from "@/app/lib/types";
 
 interface FormBodyProps {
   form: GenerationFormValues;
@@ -24,11 +27,16 @@ interface FormBodyProps {
   selectedModel: ModelCatalogItem | null;
   modelReady: boolean;
   selectedModelState: ModelDownloadState;
-  advancedOpen: boolean;
-  setAdvancedOpen: (v: boolean) => void;
+  tweakOpen: boolean;
+  setTweakOpen: (v: boolean) => void;
+  expertOpen: boolean;
+  setExpertOpen: (v: boolean) => void;
   openSettings: () => void;
   lyricsRef: React.RefObject<HTMLTextAreaElement | null>;
-  setField: <K extends keyof GenerationFormValues>(field: K, value: GenerationFormValues[K]) => void;
+  setField: <K extends keyof GenerationFormValues>(
+    field: K,
+    value: GenerationFormValues[K],
+  ) => void;
 }
 
 export function FormBody({
@@ -38,8 +46,10 @@ export function FormBody({
   selectedModel,
   modelReady,
   selectedModelState,
-  advancedOpen,
-  setAdvancedOpen,
+  tweakOpen,
+  setTweakOpen,
+  expertOpen,
+  setExpertOpen,
   openSettings,
   lyricsRef,
   setField,
@@ -77,7 +87,7 @@ export function FormBody({
     [form.lyrics, setField, t, lyricsRef],
   );
 
-  const hasAdvancedErrors = (
+  const hasTweakErrors = (
     [
       "negativePrompt",
       "inferenceSteps",
@@ -88,15 +98,6 @@ export function FormBody({
       "seed",
     ] as const
   ).some((key) => validationErrors[key]);
-
-  const toggleItems: readonly [ToggleField, string, string][] = [
-    ["thinking", "generation.thinking", "generation.thinkingDesc"],
-    ["useRandomSeed", "generation.randomSeed", "generation.randomSeedDesc"],
-    ["useFormat", "generation.useFormat", ""],
-    ["useCotCaption", "generation.cotCaption", ""],
-    ["useCotLanguage", "generation.cotLanguage", ""],
-    ["constrainedDecoding", "generation.constrained", ""],
-  ];
 
   const variationOptions = [1, 2, 3, 4];
 
@@ -362,27 +363,30 @@ export function FormBody({
         </div>
       </div>
 
-      {/* Advanced controls - smooth collapsible */}
+      {/* Tweak the sound — smooth collapsible */}
       <Collapsible
         className="rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_58%,transparent)]"
         title={
           <span className="flex items-center gap-2">
             <Settings2 size={15} />
-            {t("generation.advancedControls")}
+            {t("generation.tweakSound")}
           </span>
         }
         badge={
-          hasAdvancedErrors ? (
+          hasTweakErrors ? (
             <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-300">
               {t("generation.needsReview")}
             </span>
           ) : null
         }
-        open={advancedOpen}
-        onOpenChange={setAdvancedOpen}
+        open={tweakOpen}
+        onOpenChange={setTweakOpen}
         contentClassName="border-t border-[var(--color-border-light)]"
       >
         <div className="space-y-4 p-4">
+          <p className="text-[12px] text-[var(--color-text-dim)]">
+            {t("generation.tweakSoundDesc")}
+          </p>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-1 md:col-span-2">
               <FieldLabel>{t("generation.negativePrompt")}</FieldLabel>
@@ -396,43 +400,6 @@ export function FormBody({
               <FieldError message={validationErrors.negativePrompt} />
             </label>
 
-            <label className="space-y-1">
-              <FieldLabel>{t("generation.lmModel")}</FieldLabel>
-              <select
-                className="select-input"
-                value={form.lmModelPath}
-                onChange={(event) =>
-                  setField("lmModelPath", event.target.value)
-                }
-                disabled={isBusy || !form.thinking}
-              >
-                {SELECT_OPTIONS.lmModelPath.map((option) => (
-                  <option key={option || "none"} value={option}>
-                    {option || "None"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="space-y-1">
-              <FieldLabel>{t("generation.lmBackend")}</FieldLabel>
-              <select
-                className="select-input"
-                value={form.lmBackend}
-                onChange={(event) =>
-                  setField(
-                    "lmBackend",
-                    event.target.value as GenerationFormValues["lmBackend"],
-                  )
-                }
-                disabled={isBusy || !form.thinking}
-              >
-                {SELECT_OPTIONS.lmBackend.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.inferenceSteps")}</FieldLabel>
               <input
@@ -458,33 +425,6 @@ export function FormBody({
               />
               <FieldError message={validationErrors.guidanceScale} />
             </label>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {toggleItems.map(([field, titleKey, descriptionKey]) => (
-              <label
-                key={field}
-                className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3"
-              >
-                <input
-                  type="checkbox"
-                  className="mt-0.5"
-                  checked={Boolean(form[field])}
-                  onChange={(event) => setField(field, event.target.checked)}
-                  disabled={isBusy}
-                />
-                <div>
-                  <p className="text-[13px] font-medium text-white">
-                    {t(titleKey)}
-                  </p>
-                  {descriptionKey ? (
-                    <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
-                      {t(descriptionKey)}
-                    </p>
-                  ) : null}
-                </div>
-              </label>
-            ))}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -566,6 +506,146 @@ export function FormBody({
               />
               <FieldError message={validationErrors.seed} />
             </label>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={Boolean(form.useRandomSeed)}
+              onChange={(event) =>
+                setField("useRandomSeed", event.target.checked)
+              }
+              disabled={isBusy}
+            />
+            <div>
+              <p className="text-[13px] font-medium text-white">
+                {t("generation.randomSeed")}
+              </p>
+              <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
+                {t("generation.randomSeedDesc")}
+              </p>
+            </div>
+          </label>
+        </div>
+      </Collapsible>
+
+      {/* Expert (ACE-Step internals) — default collapsed */}
+      <Collapsible
+        className="rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_54%,transparent)]"
+        title={
+          <span className="flex items-center gap-2">
+            <Wrench size={15} />
+            {t("generation.expertMode")}
+          </span>
+        }
+        open={expertOpen}
+        onOpenChange={setExpertOpen}
+        contentClassName="border-t border-[var(--color-border-light)]"
+      >
+        <div className="space-y-4 p-4">
+          <p className="text-[12px] text-[var(--color-text-dim)]">
+            {t("generation.expertModeHint")}
+          </p>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.lmModel")}</FieldLabel>
+              <select
+                className="select-input"
+                value={form.lmModelPath}
+                onChange={(event) =>
+                  setField("lmModelPath", event.target.value)
+                }
+                disabled={isBusy || !form.thinking}
+              >
+                {SELECT_OPTIONS.lmModelPath.map((option) => (
+                  <option key={option || "none"} value={option}>
+                    {option || "None"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <FieldLabel>{t("generation.lmBackend")}</FieldLabel>
+              <select
+                className="select-input"
+                value={form.lmBackend}
+                onChange={(event) =>
+                  setField(
+                    "lmBackend",
+                    event.target.value as GenerationFormValues["lmBackend"],
+                  )
+                }
+                disabled={isBusy || !form.thinking}
+              >
+                {SELECT_OPTIONS.lmBackend.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {(
+              [
+                [
+                  "thinking",
+                  "generation.thinking",
+                  "generation.thinkingDesc",
+                ],
+                [
+                  "useFormat",
+                  "generation.useFormat",
+                  "",
+                ],
+                [
+                  "useCotCaption",
+                  "generation.cotCaption",
+                  "",
+                ],
+                [
+                  "useCotLanguage",
+                  "generation.cotLanguage",
+                  "",
+                ],
+                [
+                  "constrainedDecoding",
+                  "generation.constrained",
+                  "",
+                ],
+              ] as const
+            ).map(([field, titleKey, descriptionKey]) => (
+              <label
+                key={field}
+                className="flex items-start gap-3 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-3"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={Boolean(form[field as keyof GenerationFormValues])}
+                  onChange={(event) =>
+                    setField(
+                      field as keyof GenerationFormValues,
+                      event.target.checked as never,
+                    )
+                  }
+                  disabled={isBusy}
+                />
+                <div>
+                  <p className="text-[13px] font-medium text-white">
+                    {t(titleKey)}
+                  </p>
+                  {descriptionKey ? (
+                    <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
+                      {t(descriptionKey)}
+                    </p>
+                  ) : null}
+                </div>
+              </label>
+            ))}
           </div>
         </div>
       </Collapsible>

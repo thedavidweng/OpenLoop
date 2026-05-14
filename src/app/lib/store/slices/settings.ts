@@ -27,6 +27,8 @@ export function createSettingsSlice(
 ) {
   return {
     settings: DEFAULT_APP_SETTINGS,
+    recentPrompts: [],
+    favoritePrompts: [],
     deviceInfo: null,
     hydrated: false,
 
@@ -87,6 +89,33 @@ export function createSettingsSlice(
         ...computeValidationState(nextForm, { showErrors: false }),
       });
       await get().refreshBootstrapStatus();
+    },
+
+    addRecentPrompt: (prompt: string) => {
+      set((state) => {
+        const trimmed = prompt.trim();
+        if (!trimmed) return state;
+        const deduped = [trimmed, ...state.recentPrompts.filter((p) => p !== trimmed)];
+        return { recentPrompts: deduped.slice(0, 20) };
+      });
+    },
+
+    toggleFavoritePrompt: (prompt: string) => {
+      set((state) => {
+        const trimmed = prompt.trim();
+        if (!trimmed) return state;
+        const isFav = state.favoritePrompts.includes(trimmed);
+        const nextFavs = isFav
+          ? state.favoritePrompts.filter((p) => p !== trimmed)
+          : [trimmed, ...state.favoritePrompts].slice(0, 50);
+        return { favoritePrompts: nextFavs };
+      });
+    },
+
+    removeRecentPrompt: (prompt: string) => {
+      set((state) => ({
+        recentPrompts: state.recentPrompts.filter((p) => p !== prompt),
+      }));
     },
 
     hydrateFromPersistence: async () => {

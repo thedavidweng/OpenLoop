@@ -35,6 +35,8 @@ export interface GenerationStore {
   activeTasks: ActiveGenerationTask[];
   playbackToggleRequest: number;
   settings: AppSettings;
+  recentPrompts: string[];
+  favoritePrompts: string[];
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -77,4 +79,7 @@ export interface GenerationStore {
   ) => Promise<void>;
   clearGenerationHistory: () => Promise<void>;
   resetForm: () => void;
+  addRecentPrompt: (prompt: string) => void;
+  toggleFavoritePrompt: (prompt: string) => void;
+  removeRecentPrompt: (prompt: string) => void;
 }

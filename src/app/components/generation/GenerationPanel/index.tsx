@@ -34,7 +34,8 @@ export function GenerationPanel() {
   const setField = useGenerationStore((state) => state.setField);
   const openSettings = useGenerationStore((state) => state.openSettings);
 
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [tweakOpen, setTweakOpen] = useState(false);
+  const [expertOpen, setExpertOpen] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const lyricsRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -88,8 +89,8 @@ export function GenerationPanel() {
 
 
 
-  // Auto-expand advanced if there are errors
-  const hasAdvancedErrors = (
+  // Auto-expand tweak section if there are errors
+  const hasTweakErrors = (
     [
       "negativePrompt",
       "inferenceSteps",
@@ -102,54 +103,61 @@ export function GenerationPanel() {
   ).some((key) => validationErrors[key]);
 
   useEffect(() => {
-    if (hasAdvancedErrors && !advancedOpen) {
-      setAdvancedOpen(true);
+    if (hasTweakErrors && !tweakOpen) {
+      setTweakOpen(true);
     }
-  }, [hasAdvancedErrors]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasTweakErrors]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <section className="rounded-[28px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] p-4 shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
+    <section className="flex flex-col h-full rounded-[28px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] shadow-[var(--chrome-panel-shadow)] backdrop-blur-xl">
       <form
-        className="space-y-4"
+        className="flex flex-col flex-1 min-h-0"
         onSubmit={(event) => {
           event.preventDefault();
           void runGeneration();
         }}
       >
+        <div className="flex-1 overflow-auto space-y-4 p-4">
         <Header
           isBusy={isBusy}
           activeTasks={activeTasks}
+          prompt={form.prompt}
           onSetField={(field, value) => setField(field, value)}
           onEnhancePrompt={enhancePrompt}
           onResumeTask={resumeActiveTask}
           onDiscardTask={discardActiveTask}
         />
 
-        <FormBody
-          form={form}
-          isBusy={isBusy}
-          validationErrors={validationErrors}
-          selectedModel={selectedModel as import("@/app/lib/types").ModelCatalogItem | null}
-          modelReady={modelReady}
-          selectedModelState={selectedModelState}
-          advancedOpen={advancedOpen}
-          setAdvancedOpen={setAdvancedOpen}
-          openSettings={openSettings}
-          lyricsRef={lyricsRef}
-          setField={setField}
-        />
+          <FormBody
+            form={form}
+            isBusy={isBusy}
+            validationErrors={validationErrors}
+            selectedModel={selectedModel as import("@/app/lib/types").ModelCatalogItem | null}
+            modelReady={modelReady}
+            selectedModelState={selectedModelState}
+            tweakOpen={tweakOpen}
+            setTweakOpen={setTweakOpen}
+            expertOpen={expertOpen}
+            setExpertOpen={setExpertOpen}
+            openSettings={openSettings}
+            lyricsRef={lyricsRef}
+            setField={setField}
+          />
+        </div>
 
-        <ActionFooter
-          isBusy={isBusy}
-          isFailed={isFailed}
-          canSubmit={canSubmit}
-          generationState={generationState}
-          elapsedTime={elapsedTime}
-          modelReady={modelReady}
-          onCancelGeneration={cancelGeneration}
-          onResetForm={resetForm}
-          onRetry={handleRetry}
-        />
+        <div className="shrink-0 p-4 pt-0">
+          <ActionFooter
+            isBusy={isBusy}
+            isFailed={isFailed}
+            canSubmit={canSubmit}
+            generationState={generationState}
+            elapsedTime={elapsedTime}
+            modelReady={modelReady}
+            onCancelGeneration={cancelGeneration}
+            onResetForm={resetForm}
+            onRetry={handleRetry}
+          />
+        </div>
       </form>
     </section>
   );

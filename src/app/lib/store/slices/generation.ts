@@ -191,9 +191,13 @@ export function createGenerationSlice(
           const result = await api.generateMusic(validation.request);
           const persistedRecords = result.records;
           const latestRecord = persistedRecords[persistedRecords.length - 1] ?? null;
+          const requestPrompt = validation.request?.prompt ?? "";
           set((state) => ({
             currentGeneration: latestRecord ?? state.currentGeneration,
             history: mergeGenerationRecords(persistedRecords, state.history),
+            recentPrompts: requestPrompt
+              ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
+              : state.recentPrompts,
             generationState: {
               status: persistedRecords.length === 0 ? "cancelled" : "completed",
               phase: persistedRecords.length === 0 ? "cancelled" : "completed",
@@ -245,9 +249,13 @@ export function createGenerationSlice(
       const persistedRecord = api.isTauriRuntime()
         ? await api.insertGeneration(completedRecord)
         : completedRecord;
+      const requestPrompt = validation.request.prompt;
       set((state) => ({
         currentGeneration: persistedRecord,
         history: [persistedRecord, ...state.history],
+        recentPrompts: requestPrompt
+          ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
+          : state.recentPrompts,
         generationState: {
           status: "completed",
           phase: "completed",

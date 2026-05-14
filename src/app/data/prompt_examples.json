@@ -1,26 +1,442 @@
 [
   {
-    "category": "pop",
-    "prompt": "bright pop anthem with punchy drums, shimmering guitars, warm bass, and a memorable uplifting chorus"
+    "category": "lo-fi",
+    "prompt": "lo-fi hip hop beat with warm vinyl crackle, soft Rhodes piano, laid-back drums, and a nostalgic late-night vibe"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "chill lo-fi study music with gentle guitar loops, distant rain sounds, muffled kick, and analog tape hiss"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "lo-fi jazzhop with smooth saxophone samples, boom-bap drums, dusty textures, and a cozy coffee shop atmosphere"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "dreamy lo-fi ambient track with reversed piano, soft pads, slowed-down beats, and a hazy sunset feeling"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "minimal lo-fi beat with finger snaps, subdued bassline, warm synth pads, and a quiet midnight mood"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "sad lo-fi instrumental with melancholic guitar, reverb-drenched drums, rain ambience, and emotional depth"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "lo-fi bedroom pop with whispery vocals, lo-fi synths, gentle percussion, and an intimate DIY aesthetic"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "vaporwave-influenced lo-fi with slowed samples, shimmering pads, soft drums, and a nostalgic 90s feeling"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "lo-fi beats to relax with soft marimba, relaxed hi-hats, warm sub-bass, and a peaceful morning mood"
+  },
+  {
+    "category": "lo-fi",
+    "prompt": "late-night lo-fi with muted trumpet samples, brushed drums, soft Rhodes, and a reflective urban atmosphere"
   },
   {
     "category": "cinematic",
     "prompt": "cinematic orchestral cue with soft piano, swelling strings, deep percussion, and a hopeful emotional arc"
   },
   {
-    "category": "edm",
-    "prompt": "high-energy EDM track with sidechained synth bass, crisp claps, euphoric supersaws, and a festival drop"
+    "category": "cinematic",
+    "prompt": "dramatic film score with solo cello, building brass, timpani rolls, and an intense climactic feel"
   },
   {
-    "category": "acoustic",
-    "prompt": "intimate acoustic folk song with fingerpicked guitar, brushed percussion, gentle bass, and natural room warmth"
+    "category": "cinematic",
+    "prompt": "romantic cinematic theme with gentle harp, soaring violins, soft choir, and a fairytale atmosphere"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "dark cinematic tension with low drones, dissonant strings, heavy percussion, and an ominous mood"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "uplifting cinematic overture with full orchestra, bright brass, rolling timpani, and a triumphant feel"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "intimate cinematic piano with subtle string accompaniment, gentle dynamics, and an emotional storytelling feel"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "cinematic sci-fi atmosphere with ethereal synth pads, glassy textures, sparse percussion, and vast space"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "epic battle score with aggressive brass, fast strings, pounding drums, and a relentless driving rhythm"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "cinematic adventure theme with playful woodwinds, heroic brass, rolling percussion, and a journey feel"
+  },
+  {
+    "category": "cinematic",
+    "prompt": "melancholic cinematic farewell with solo piano, mourning strings, distant bells, and a bittersweet tone"
+  },
+  {
+    "category": "pop",
+    "prompt": "bright pop anthem with punchy drums, shimmering guitars, warm bass, and a memorable uplifting chorus"
+  },
+  {
+    "category": "pop",
+    "prompt": "upbeat synth-pop with glossy arpeggios, tight programmed drums, catchy hooks, and a summer festival vibe"
+  },
+  {
+    "category": "pop",
+    "prompt": "intimate acoustic pop with fingerpicked guitar, warm vocals, light percussion, and an honest emotional delivery"
+  },
+  {
+    "category": "pop",
+    "prompt": "retro 80s pop with analog synths, gated reverb snare, punchy bass, and a neon-lit dancefloor energy"
+  },
+  {
+    "category": "pop",
+    "prompt": "modern alt-pop with distorted synth bass, glitchy percussion, breathy vocals, and a dark trendy aesthetic"
+  },
+  {
+    "category": "pop",
+    "prompt": "feel-good tropical pop with marimba, reggae-influenced guitars, laid-back groove, and a beach party mood"
+  },
+  {
+    "category": "pop",
+    "prompt": "power ballad pop with soaring piano, big reverb drums, emotional vocals, and a dramatic build-up"
+  },
+  {
+    "category": "pop",
+    "prompt": "minimal bedroom pop with soft synth pads, programmed beats, whispered vocals, and a late-night vibe"
+  },
+  {
+    "category": "pop",
+    "prompt": "dance-pop with sidechained synths, four-on-the-floor kick, energetic hi-hats, and a club-ready groove"
+  },
+  {
+    "category": "pop",
+    "prompt": "indie pop with jangly guitars, bouncy bass, handclaps, and a carefree youthful energy"
   },
   {
     "category": "ambient",
     "prompt": "ambient piano texture with slow evolving pads, distant granular echoes, soft sub movement, and a calm nocturnal mood"
   },
   {
+    "category": "ambient",
+    "prompt": "deep ambient drone with low-frequency oscillations, reverb-drenched layers, and an infinite spacious feel"
+  },
+  {
+    "category": "ambient",
+    "prompt": "nature ambient with soft wind, babbling brook, gentle chimes, and a meditative forest atmosphere"
+  },
+  {
+    "category": "ambient",
+    "prompt": "cosmic ambient with shimmering pads, slow morphing textures, starfield sounds, and a weightless feeling"
+  },
+  {
+    "category": "ambient",
+    "prompt": "melancholic ambient with solo cello drones, piano fragments, soft noise, and an introspective stillness"
+  },
+  {
+    "category": "ambient",
+    "prompt": "minimal ambient with single sustained notes, subtle detuning, vast reverb, and a timeless suspended mood"
+  },
+  {
+    "category": "ambient",
+    "prompt": "warm ambient with analog synth pads, tape saturation, gentle LFO movement, and a nostalgic comfort"
+  },
+  {
+    "category": "ambient",
+    "prompt": "glacial ambient with icy textures, crystal chimes, slow pads, and an arctic vastness"
+  },
+  {
+    "category": "ambient",
+    "prompt": "generative ambient with ever-changing bell tones, overlapping drones, and an organic breathing rhythm"
+  },
+  {
+    "category": "ambient",
+    "prompt": "ambient sleep music with ultra-soft pads, barely-there piano, binaural textures, and a profound relaxation"
+  },
+  {
+    "category": "edm",
+    "prompt": "high-energy EDM track with sidechained synth bass, crisp claps, euphoric supersaws, and a festival drop"
+  },
+  {
+    "category": "edm",
+    "prompt": "future bass with pitched vocal chops, wobble chords, trap-influenced drums, and an emotional euphoric build"
+  },
+  {
+    "category": "edm",
+    "prompt": "progressive house with layered arpeggios, driving kick, rising tension, and a massive anthemic drop"
+  },
+  {
+    "category": "edm",
+    "prompt": "dubstep with aggressive growl bass, syncopated drums, heavy sub drops, and a dark mechanical energy"
+  },
+  {
+    "category": "edm",
+    "prompt": "techno with pounding four-on-the-floor, industrial percussion, acid synth lines, and a hypnotic warehouse vibe"
+  },
+  {
+    "category": "edm",
+    "prompt": "trance with uplifting supersaw melodies, rolling bassline, ethereal pads, and a transcendent breakdown"
+  },
+  {
+    "category": "edm",
+    "prompt": "trap EDM hybrid with 808 bass, rapid hi-hats, orchestral brass stabs, and a cinematic festival drop"
+  },
+  {
+    "category": "edm",
+    "prompt": "melodic dubstep with soaring leads, emotional piano, heavy but melodic bass, and a cinematic feel"
+  },
+  {
+    "category": "edm",
+    "prompt": "deep house with warm Rhodes chords, groovy bass, filtered pads, and a sophisticated lounge energy"
+  },
+  {
+    "category": "edm",
+    "prompt": "big room house with massive kick, wide synth stabs, energetic build-ups, and a stadium-sized drop"
+  },
+  {
+    "category": "jazz",
+    "prompt": "smooth jazz with mellow saxophone, Rhodes piano, walking bass, brushed drums, and a late-night lounge vibe"
+  },
+  {
+    "category": "jazz",
+    "prompt": "upbeat bebop with fast trumpet, piano comping, upright bass, energetic drums, and a 1950s club energy"
+  },
+  {
+    "category": "jazz",
+    "prompt": "cool jazz with muted trumpet, sparse piano, minimal drums, and a contemplative blue atmosphere"
+  },
+  {
+    "category": "jazz",
+    "prompt": "bossa nova with nylon guitar, gentle percussion, soft flute, and a warm Brazilian afternoon feeling"
+  },
+  {
+    "category": "jazz",
+    "prompt": "modal jazz with sustained piano chords, gentle saxophone lines, sparse bass, and an introspective mood"
+  },
+  {
+    "category": "jazz",
+    "prompt": "swing jazz big band with brass section, sax solos, driving rhythm section, and a roaring 40s energy"
+  },
+  {
+    "category": "jazz",
+    "prompt": "contemporary jazz fusion with electric piano, slap bass, complex drums, and a modern urban feel"
+  },
+  {
+    "category": "jazz",
+    "prompt": "solo jazz piano with walking bass lines, rich harmonies, and an intimate cocktail bar atmosphere"
+  },
+  {
+    "category": "jazz",
+    "prompt": "ethno-jazz with sitar textures, tabla rhythms, jazz saxophone, and an East-meets-West hybrid vibe"
+  },
+  {
+    "category": "jazz",
+    "prompt": "ballad jazz with emotional tenor sax, gentle piano, soft brushes, and a romantic slow dance mood"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "heroic orchestral march with brass fanfare, snare rolls, string stabs, and a patriotic grandeur"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "pastoral orchestral with gentle woodwinds, harp, soft strings, and a countryside morning serenity"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "gothic orchestral with low organ, tremolo strings, deep choir, and a cathedral darkness"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "comedic orchestral with pizzicato strings, bouncy bassoon, playful xylophone, and a cartoonish lightness"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "romantic orchestral with lush strings, solo violin, warm brass, and a sweeping love theme"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "minimal orchestral with sparse piano, single violin, distant horns, and a modern restrained aesthetic"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "action orchestral with fast ostinato strings, aggressive percussion, heroic brass, and a chase scene energy"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "funeral orchestral with slow low brass, mournful cellos, distant timpani, and a solemn gravity"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "fairy tale orchestral with celesta, flutes, harp glissandos, light strings, and a magical wonder"
+  },
+  {
+    "category": "orchestral",
+    "prompt": "modern orchestral hybrid with epic drums, synth bass, string ostinatos, and a trailer-ready intensity"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "8-bit chiptune with square wave melodies, simple drums, arpeggios, and a retro arcade nostalgia"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "RPG overworld theme with acoustic guitar, flute, light percussion, and an adventurous exploration feel"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "boss battle music with aggressive synths, fast drums, tense strings, and a high-stakes combat energy"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "puzzle game music with marimba, glockenspiel, soft synths, and a gentle cerebral calm"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "stealth game ambient with low drones, sparse percussion, tension strings, and a shadowy suspense"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "fantasy village theme with lute, recorder, light drums, and a cozy medieval marketplace atmosphere"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "racing game music with fast synth arpeggios, driving drums, energetic bass, and a high-speed adrenaline"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "space shooter with retro synthwave, laser-like SFX tones, pulsing bass, and a neon arcade vibe"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "horror game ambient with dissonant piano, low drones, sudden string stabs, and an unsettling dread"
+  },
+  {
+    "category": "game-bgm",
+    "prompt": "platformer level music with bouncy marimba, playful synths, energetic drums, and a cheerful bounce"
+  },
+  {
+    "category": "rnb",
+    "prompt": "smooth R&B with sultry vocals, warm synth pads, programmed drums, and a midnight seduction vibe"
+  },
+  {
+    "category": "rnb",
+    "prompt": "neo-soul with live drums, Rhodes chords, warm bass, and an organic groovy intimacy"
+  },
+  {
+    "category": "rnb",
+    "prompt": "contemporary R&B with trap-influenced hi-hats, 808 bass, airy vocals, and a modern bedroom atmosphere"
+  },
+  {
+    "category": "rnb",
+    "prompt": "90s R&B with swing beat, vocal harmonies, warm synths, and a nostalgic slow jam feeling"
+  },
+  {
+    "category": "rnb",
+    "prompt": "alternative R&B with distorted drums, ambient textures, falsetto vocals, and an experimental haze"
+  },
+  {
+    "category": "rnb",
+    "prompt": "funky R&B with slap bass, clavinet, tight drums, and a danceable groove"
+  },
+  {
+    "category": "rnb",
+    "prompt": "intimate acoustic R&B with guitar, minimal percussion, heartfelt vocals, and a raw emotional honesty"
+  },
+  {
+    "category": "rnb",
+    "prompt": "chill R&B with soft pads, subdued drums, warm bass, and a relaxed sunset drive mood"
+  },
+  {
+    "category": "rnb",
+    "prompt": "dark R&B with minor key synths, heavy bass, sparse drums, and a brooding late-night atmosphere"
+  },
+  {
+    "category": "rnb",
+    "prompt": "gospel-influenced R&B with rich vocal harmonies, organ, uplifting chords, and a spiritual warmth"
+  },
+  {
     "category": "trailer",
     "prompt": "epic trailer build with pulsing low strings, hybrid drums, brass stabs, risers, and a massive final hit"
+  },
+  {
+    "category": "trailer",
+    "prompt": "emotional trailer with solo piano, building strings, vocal-like synths, and a tear-jerking climax"
+  },
+  {
+    "category": "trailer",
+    "prompt": "action trailer with distorted guitars, heavy drums, aggressive synths, and a relentless forward drive"
+  },
+  {
+    "category": "trailer",
+    "prompt": "sci-fi trailer with futuristic synths, whoosh SFX tones, deep pulses, and a technological awe"
+  },
+  {
+    "category": "trailer",
+    "prompt": "horror trailer with scraping strings, low drones, sudden silences, and a jump-scare tension"
+  },
+  {
+    "category": "trailer",
+    "prompt": "sports trailer with heavy drums, brass, crowd-like chants, and an adrenaline-fueled victory feel"
+  },
+  {
+    "category": "trailer",
+    "prompt": "fantasy trailer with ethereal choir, harp, epic brass, and a mythical grandeur"
+  },
+  {
+    "category": "trailer",
+    "prompt": "minimal trailer with single piano notes, low rumble, and an unsettling anticipation"
+  },
+  {
+    "category": "trailer",
+    "prompt": "comedy trailer with playful brass, bouncy percussion, xylophone, and a lighthearted fun energy"
+  },
+  {
+    "category": "trailer",
+    "prompt": "war trailer with militaristic drums, dark brass, tense strings, and a grim determination"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "intimate acoustic folk song with fingerpicked guitar, brushed percussion, gentle bass, and natural room warmth"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic singer-songwriter with strummed guitar, emotional vocals, light percussion, and a coffee house intimacy"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic blues with resonator guitar, foot stomp, slide guitar, and a Mississippi delta rawness"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic classical guitar with flamenco-style arpeggios, percussive body hits, and a Spanish passion"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic duo with two guitars trading melodies, light shaker, and a collaborative warmth"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic lullaby with gentle nylon guitar, soft humming, minimal percussion, and a soothing bedtime calm"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic campfire song with acoustic guitar, group handclaps, harmonica, and a nostalgic outdoor vibe"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic Celtic with tin whistle, bodhran, fiddle, and a rolling green hills atmosphere"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic bossa with nylon guitar, soft shaker, melodic bass, and a warm Brazilian cafe feeling"
+  },
+  {
+    "category": "acoustic",
+    "prompt": "acoustic indie with ukulele, light percussion, whistling melody, and a sunny carefree joy"
   }
 ]

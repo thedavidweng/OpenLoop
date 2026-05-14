@@ -1,5 +1,4 @@
-{
-  "setup": {
+{    "setup": {
     "eyebrow": "OpenLoop setup",
     "welcome": "Welcome",
     "device": "Device check",
@@ -7,6 +6,13 @@
     "output": "Output folder",
     "done": "Done",
     "welcomeBody": "OpenLoop keeps local music generation simple. Pick a model, choose where files go, and start creating. The engine is managed for you.",
+    "welcomeLocalFirst": "Local-first",
+    "welcomeLocalFirstDesc": "Everything stays on your Mac. No cloud uploads, no data leakage.",
+    "welcomeOpenSource": "Open-source",
+    "welcomeOpenSourceDesc": "Built on ACE-Step and MLX. Inspect, fork, and extend.",
+    "welcomeCliGui": "CLI + GUI",
+    "welcomeCliGuiDesc": "Generate from the terminal or the visual workspace — your choice.",
+    "shortcutHint": "Press {{shortcut}} to generate music from anywhere.",
     "downloadModel": "Download a model",
     "downloadModelDesc": "Prepare an official ACE-Step 1.5 weight pack. OpenLoop manages the local engine for you.",
     "pickOutput": "Pick an output folder",
@@ -72,9 +78,15 @@
     "runtimeSettingsRepaired": "Runtime configuration repaired.",
     "save": "Save changes",
     "saved": "Settings saved.",
+    "unsavedChanges": "Unsaved changes",
+    "discardChanges": "Discard",
+    "resetToDefaults": "Reset to defaults",
+    "restartRequired": "Backend restart required for changes to take effect.",
+    "restartNow": "Restart backend now",
+    "revealConfigFile": "Reveal config file",
     "reopenSetup": "Reopen setup",
     "danger": "Danger Zone",
-    "dangerDescription": "Destructive local actions.",
+    "dangerDescription": "Destructive local actions. These cannot be undone.",
     "clearHistory": "Clear history",
     "clearHistoryDescription": "Delete generated music history and the local audio files it points to.",
     "clearHistoryTitle": "Clear generated music history?",
@@ -285,9 +297,13 @@
     "clearTitle": "Clear generated music history?",
     "clearMessage": "This deletes {{count}} history items and their local audio files. Missing-file items are removed from history. This cannot be undone.",
     "clearConfirm": "Clear history"
-  },
-  "player": {
+  },    "player": {
     "noGeneration": "No generation selected",
+    "loop": "Loop",
+    "looping": "Looping",
+    "exportMenu": "Export",
+    "copyPath": "Copy file path",
+    "copyDataUrl": "Copy as data URL",
     "back10": "Back 10 seconds",
     "play": "Play",
     "pause": "Pause",

@@ -436,7 +436,7 @@ export function PlaybackBar() {
               {formatTime(position)}
             </span>
             <div
-              className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)]`}
+              className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)]`}
             >
               <input
                 type="range"
@@ -451,7 +451,7 @@ export function PlaybackBar() {
                     audioRef.current.currentTime = Number(event.target.value);
                   }
                 }}
-                className="absolute inset-x-0 top-1/2 z-10 h-8 -translate-y-1/2 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                className="peer absolute inset-x-0 top-1/2 z-10 h-8 -translate-y-1/2 cursor-pointer opacity-0 disabled:cursor-not-allowed"
               />
               {waveformPeaks.length > 0 ? (
                 <div className="pointer-events-none absolute inset-x-0 top-1/2 flex h-8 -translate-y-1/2 items-center gap-px opacity-40">

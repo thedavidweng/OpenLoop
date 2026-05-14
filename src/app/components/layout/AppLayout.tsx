@@ -132,11 +132,15 @@ export function AppLayout() {
       </div>
 
       {shortcutsOpen ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm">
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-6 backdrop-blur-sm"
+          onClick={() => setShortcutsOpen(false)}
+        >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="keyboard-shortcuts-title"
+            onClick={(event) => event.stopPropagation()}
             className="w-full max-w-md rounded-2xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-5 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-4">
@@ -151,7 +155,7 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={() => setShortcutsOpen(false)}
-                className="rounded-lg px-2 py-1 text-[12px] text-[var(--color-text-dim)] hover:bg-white/8 hover:text-white"
+                className="rounded-lg px-2 py-1 text-[12px] text-[var(--color-text-dim)] hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30"
               >
                 Esc
               </button>

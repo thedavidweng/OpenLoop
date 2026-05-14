@@ -53,3 +53,6 @@ src-tauri/binaries/*
 
 # Other
 reference
+
+# Local AI tooling configuration
+config.json

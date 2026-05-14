@@ -426,18 +426,30 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
         </div>
 
         {step === "welcome" ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            <SetupActionCard
-              icon={Sparkles}
-              title={t("setup.downloadModel")}
-              description={t("setup.downloadModelDesc")}
-            />
-            <SetupActionCard
-              icon={FolderOutput}
-              title={t("setup.pickOutput")}
-              description={t("setup.pickOutputDesc")}
-            />
-          </div>
+          <>
+            <div className="grid gap-3 md:grid-cols-2">
+              <SetupActionCard
+                icon={Sparkles}
+                title={t("setup.downloadModel")}
+                description={t("setup.downloadModelDesc")}
+              />
+              <SetupActionCard
+                icon={FolderOutput}
+                title={t("setup.pickOutput")}
+                description={t("setup.pickOutputDesc")}
+              />
+            </div>
+            <p className="text-center text-[11px] text-[var(--color-text-dim)]">
+              <a
+                href="https://github.com/thedavidweng/OpenLoop/blob/main/docs/privacy.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60"
+              >
+                Privacy policy
+              </a>
+            </p>
+          </>
         ) : null}
 
         {step === "device" ? (

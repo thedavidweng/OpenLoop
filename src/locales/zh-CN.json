@@ -41,7 +41,8 @@
     "modelPackHeading": "权重包",
     "modelProfileHeading": "运行配置档",
     "downloadAccent": "已下载 {{percent}}%",
-    "downloadComplete": "权重已下载"
+    "downloadComplete": "权重已下载",
+    "skipDemo": "跳过并试用演示提示词"
   },
   "settings": {
     "title": "设置",
@@ -300,7 +301,17 @@
     "deleteConfirm": "删除",
     "clearTitle": "清空生成音乐历史？",
     "clearMessage": "这会删除 {{count}} 条历史和对应的本地音频文件。文件已丢失的项目只会从历史中移除。此操作无法撤销。",
-    "clearConfirm": "清空历史"
+    "clearConfirm": "清空历史",
+    "failedRuns": "失败任务（{{count}}）",
+    "unknownError": "未知错误",
+    "noErrorMessage": "没有错误信息",
+    "failedRunRetry": "载入表单",
+    "failedRunRetryLoaded": "已将失败任务载入表单。",
+    "failedRunRetryFailed": "无法载入失败任务。",
+    "failedRunCopyDiagnostics": "复制诊断信息",
+    "failedRunCopied": "失败任务诊断信息已复制。",
+    "failedRunRemoved": "失败任务已移除。",
+    "failedRunCleared": "失败任务已清空。"
   },
   "player": {
     "noGeneration": "未选择生成记录",
@@ -451,11 +462,15 @@
       }
     }
   },
+  "demo": {
+    "banner": "演示模式 — 下载模型后即可生成自己的音乐"
+  },
   "common": {
     "cancel": "取消",
     "delete": "删除",
     "unknown": "未知",
-    "close": "关闭"
+    "close": "关闭",
+    "dismiss": "关闭提示"
   },
   "toast": {
     "generationCompleted": "生成已完成。",

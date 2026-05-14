@@ -16,7 +16,8 @@ use crate::{
     models::{
         errors::{AppError, AppResult},
         generation::{
-            ActiveGenerationTask, GenerationRecord, GenerationRequest, GenerationRunResult,
+            ActiveGenerationTask, FailedRun, GenerationRecord, GenerationRequest,
+            GenerationRunResult,
         },
         settings::AppSettings,
     },
@@ -305,6 +306,18 @@ impl GenerationTaskRunner {
                     if let Some(active_id) = &active_id {
                         self.db.delete_active_generation_task(active_id)?;
                     }
+                    // Archive the failed run for diagnostics and retry
+                    let request_json =
+                        serde_json::to_string(&request).unwrap_or_default();
+                    let failed_run = FailedRun {
+                        id: Uuid::new_v4().to_string(),
+                        created_at: Utc::now().to_rfc3339(),
+                        request_json: Some(request_json),
+                        error_code: Some(error.code.clone()),
+                        error_message: Some(error.message.clone()),
+                        error_details: error.details.clone(),
+                    };
+                    let _ = self.db.insert_failed_run(&failed_run);
                     sink.emit_generation_event(
                         serde_json::json!({ "type": "failed", "error": error.clone() }),
                     )?;
@@ -598,7 +611,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_generation_task_does_not_create_history_record() {
+    fn failed_generation_task_archives_failed_run() {
         let temp = tempfile::tempdir().expect("temp dir");
         let db = Database::new(temp.path()).expect("database");
         let settings = AppSettings {
@@ -628,6 +641,24 @@ mod tests {
             .list_active_generation_tasks()
             .expect("active tasks")
             .is_empty());
+
+        // Verify a failed_run record was archived
+        let failed_runs = db.list_failed_runs(10).expect("failed runs");
+        assert_eq!(failed_runs.len(), 1);
+        assert_eq!(
+            failed_runs[0].error_code.as_deref(),
+            Some("TASK_FAILED")
+        );
+        assert_eq!(
+            failed_runs[0].error_message.as_deref(),
+            Some("The generation task failed.")
+        );
+        assert!(failed_runs[0].request_json.is_some());
+        let parsed: serde_json::Value =
+            serde_json::from_str(failed_runs[0].request_json.as_ref().unwrap())
+                .expect("valid json");
+        assert_eq!(parsed["prompt"], "warm piano");
+
         let event_types: Vec<String> = sink
             .events
             .lock()
@@ -637,4 +668,6 @@ mod tests {
             .collect();
         assert_eq!(event_types, vec!["submitted", "failed"]);
     }
+
+
 }

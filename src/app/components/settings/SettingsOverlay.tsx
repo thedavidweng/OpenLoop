@@ -582,6 +582,27 @@ export function SettingsOverlay() {
                 </div>
               </label>
 
+              <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3 opacity-50 cursor-not-allowed">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  disabled
+                  checked={false}
+                  onChange={() => {}}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-white">
+                    {t("settings.anonymousErrorReports", { defaultValue: "Anonymous error reports" })}
+                  </p>
+                  <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
+                    {t("settings.anonymousErrorReportsDescription", {
+                      defaultValue:
+                        "Help improve OpenLoop by sending anonymous error reports. Coming in a future update.",
+                    })}
+                  </p>
+                </div>
+              </label>
+
               {saveNotice ? (
                 <div className="rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-2 text-[12px] text-white">
                   {saveNotice}

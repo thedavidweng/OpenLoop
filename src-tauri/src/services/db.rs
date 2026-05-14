@@ -9,7 +9,7 @@ use serde_json::Value;
 
 use crate::models::{
     errors::{AppError, AppResult},
-    generation::{ActiveGenerationTask, GenerationRecord, GenerationRequest},
+    generation::{ActiveGenerationTask, FailedRun, GenerationRecord, GenerationRequest},
     settings::{AppSettings, SettingKey},
 };
 
@@ -47,6 +47,7 @@ impl Database {
         for sql in [
             include_str!("../../migrations/002_add_cancel_requested_at.sql"),
             include_str!("../../migrations/003_add_favorite.sql"),
+            include_str!("../../migrations/004_add_failed_runs.sql"),
         ] {
             let _ = connection.execute_batch(sql);
         }
@@ -306,6 +307,65 @@ impl Database {
         Ok(())
     }
 
+    pub fn insert_failed_run(&self, record: &FailedRun) -> AppResult<FailedRun> {
+        let connection = self.connection()?;
+        connection
+            .execute(
+                "INSERT INTO failed_runs (id, created_at, request_json, error_code, error_message, error_details) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![
+                    record.id,
+                    record.created_at,
+                    record.request_json,
+                    record.error_code,
+                    record.error_message,
+                    record.error_details,
+                ],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(record.clone())
+    }
+
+    pub fn list_failed_runs(&self, limit: usize) -> AppResult<Vec<FailedRun>> {
+        let connection = self.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, created_at, request_json, error_code, error_message, error_details FROM failed_runs ORDER BY created_at DESC LIMIT ?1",
+            )
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        let limit_i64: i64 = limit
+            .try_into()
+            .map_err(|_| AppError::internal("limit out of range"))?;
+        let rows = statement
+            .query_map(params![limit_i64], Self::map_failed_run_row)
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        rows.into_iter()
+            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+            .collect()
+    }
+
+    pub fn delete_failed_run(&self, id: &str) -> AppResult<()> {
+        let connection = self.connection()?;
+        connection
+            .execute("DELETE FROM failed_runs WHERE id = ?1", [id])
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(())
+    }
+
+    /// Keep only the N most recent failed runs; delete the rest.
+    pub fn clear_failed_runs_older_than(&self, keep: usize) -> AppResult<()> {
+        let connection = self.connection()?;
+        let keep_i64: i64 = keep
+            .try_into()
+            .map_err(|_| AppError::internal("keep count out of range"))?;
+        connection
+            .execute(
+                "DELETE FROM failed_runs WHERE id NOT IN (SELECT id FROM failed_runs ORDER BY created_at DESC LIMIT ?1)",
+                params![keep_i64],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(())
+    }
+
     fn map_generation_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<GenerationRecord> {
         let output_path: String = row.get(17)?;
         let seed: Option<String> = row.get(15)?;
@@ -339,6 +399,17 @@ impl Database {
             error_message: row.get(19)?,
             generation_info: row.get(20)?,
             is_favorite: is_favorite_int != 0,
+        })
+    }
+
+    fn map_failed_run_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<FailedRun> {
+        Ok(FailedRun {
+            id: row.get(0)?,
+            created_at: row.get(1)?,
+            request_json: row.get(2)?,
+            error_code: row.get(3)?,
+            error_message: row.get(4)?,
+            error_details: row.get(5)?,
         })
     }
 

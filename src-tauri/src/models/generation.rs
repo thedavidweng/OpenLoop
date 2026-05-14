@@ -103,6 +103,17 @@ pub struct PromptEnhancementResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FailedRun {
+    pub id: String,
+    pub created_at: String,
+    pub request_json: Option<String>,
+    pub error_code: Option<String>,
+    pub error_message: Option<String>,
+    pub error_details: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GenerationWaveform {
     pub peaks: Vec<f32>,
 }

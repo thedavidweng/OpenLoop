@@ -47,6 +47,7 @@ Persisted local configuration for model selection, runtime directories, backend 
 - A **Generation Task** produces exactly one **Generation Record** per variation.
 - A **Generation Record** has exactly one **Output File** when created.
 - A failed **Generation Task** produces no **Generation Record**; the form remains available for correction and retry.
+- A failed **Generation Task** may also create a diagnostic `failed_runs` entry for retry/support workflows; this entry is not **History** and is not a **Generation Record**.
 - A cancelled **Generation Task** produces no **Generation Record**; the form remains on the submitted settings because generation controls are not editable while running.
 - **History** contains generated music outputs: **Generation Records** plus their **Output Files**.
 - Playback, audio reads, waveform reads, reveal, export, and file deletion require an **Output File**.
@@ -69,6 +70,7 @@ Persisted local configuration for model selection, runtime directories, backend 
 - **Advanced Settings** are opt-in; beginner workflows should work without understanding **Runtime Layout**, sidecars, IPC commands, or backend internals.
 - **History** UI should read as generated music history, not as a technical run log.
 - Failed **Generation Tasks** should present a clear retry path with optional technical details, not a **History** item.
+- `failed_runs` is a bounded diagnostic archive for recent failed **Generation Tasks**. It supports retry, opening the failed request in the form, and copying diagnostics, but it must not be displayed as generated music **History**.
 
 ## Example Dialogue
 

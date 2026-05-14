@@ -368,10 +368,10 @@ src-tauri/src/services/model_manager/
 
 ### 5.3 失败任务归档
 
-- [ ] 5.3.1 新建 `failed_runs` 表（不进 `generations`）：`id`、`createdAt`、`request_json`、`error_code`、`error_message`、`error_details`。
-- [ ] 5.3.2 失败时写入；保留最近 50 条。
-- [ ] 5.3.3 History 侧栏底部加 "Failed runs (N)" 折叠抽屉；点击 → 显示错误 + "Retry"、"Open in form"、"Copy diagnostics"。
-- [ ] 5.3.4 与 CONTEXT.md 一致：明确"Failed runs 不属于 History"。CONTEXT.md 补充一段关于 `failed_runs` 的术语。
+- [x] 5.3.1 新建 `failed_runs` 表（不进 `generations`）：`id`、`createdAt`、`request_json`、`error_code`、`error_message`、`error_details`。
+- [x] 5.3.2 失败时写入；保留最近 50 条。
+- [x] 5.3.3 History 侧栏底部加 "Failed runs (N)" 折叠抽屉；点击 → 显示错误 + "Retry"、"Open in form"、"Copy diagnostics"。
+- [x] 5.3.4 与 CONTEXT.md 一致：明确"Failed runs 不属于 History"。CONTEXT.md 补充一段关于 `failed_runs` 的术语。
 
 ### 5.4 批量操作
 
@@ -401,7 +401,7 @@ src-tauri/src/services/model_manager/
 ### 6.3 误删保护
 
 - [ ] 6.3.1 PlaybackBar 中删除按钮移入 overflow 菜单（三点）。
-- [ ] 6.3.2 单条删除依旧二次确认，但移除"Cmd+Backspace 直接删"的快捷绑定。
+- [x] 6.3.2 单条删除依旧二次确认，但移除"Cmd+Backspace 直接删"的快捷绑定。——验证：代码中不存在此快捷绑定。
 - [~] 6.3.3 删除后 toast 提供 "Undo（30s）"：实际把记录暂存到 `_pending_delete` 桌面回收。——已实现 Undo toast（`restoreLastDeletedRecord`），但 `_pending_delete` 桌面回收未实现，仅靠内存暂存。
 
 ### 6.4 导出菜单升级
@@ -477,7 +477,7 @@ src-tauri/src/services/model_manager/
 
 ### 10.1 颜色对比
 
-- [ ] 10.1.1 `--color-text-dimmer` 由 `#48484a` 改为 `#7a7a82`（在 `#121212` 上对比度 ≥ 4.5）。
+- [x] 10.1.1 `--color-text-dimmer` 由 `#48484a` 改为 `#7a7a82`（在 `#121212` 上对比度 ≥ 4.5）。
 - [ ] 10.1.2 所有依赖 `text-dimmer` 的占位、placeholder 重新审视。
 - [ ] 10.1.3 Settings 增加 "High contrast mode" toggle（写入 `data-contrast="high"`，CSS 覆盖）。
 
@@ -490,7 +490,7 @@ src-tauri/src/services/model_manager/
 
 ### 10.3 i18n 覆盖审计
 
-- [ ] 10.3.1 写脚本 `scripts/i18n-audit.mjs`：比对 `en.json` / `zh-CN.json` 的 key 差集，CI 卡死。
+- [x] 10.3.1 写脚本 `scripts/i18n-audit.mjs`：比对 `en.json` / `zh-CN.json` 的 key 差集，CI 卡死。
 - [ ] 10.3.2 移除 `SettingsOverlay.tsx` 中所有硬编码 `defaultValue` 兜底字符串。
 - [ ] 10.3.3 评估增加 `ja-JP`、`ko-KR`（占位准备，不必首版翻译完）。
 

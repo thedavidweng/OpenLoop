@@ -1,7 +1,10 @@
 use tauri::State;
 
 use crate::{
-    models::{errors::AppResult, generation::GenerationRecord},
+    models::{
+        errors::AppResult,
+        generation::{FailedRun, GenerationRecord},
+    },
     services::history::HistoryService,
     AppState,
 };
@@ -35,4 +38,19 @@ pub fn clear_generation_history(state: State<'_, AppState>) -> AppResult<()> {
 #[tauri::command]
 pub fn toggle_generation_favorite(state: State<'_, AppState>, id: String) -> AppResult<bool> {
     HistoryService::new(state.db.clone()).toggle_favorite(&id)
+}
+
+#[tauri::command]
+pub fn list_failed_runs(state: State<'_, AppState>, limit: usize) -> AppResult<Vec<FailedRun>> {
+    state.db.list_failed_runs(limit)
+}
+
+#[tauri::command]
+pub fn clear_failed_runs(state: State<'_, AppState>) -> AppResult<()> {
+    state.db.clear_failed_runs_older_than(0)
+}
+
+#[tauri::command]
+pub fn delete_failed_run(state: State<'_, AppState>, id: String) -> AppResult<()> {
+    state.db.delete_failed_run(&id)
 }

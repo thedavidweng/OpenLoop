@@ -329,6 +329,15 @@ export type WindowShellStateSnapshot = {
   sidebar_width: number;
 };
 
+export type FailedRun = {
+  id: string;
+  createdAt: string;
+  requestJson: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  errorDetails: string | null;
+};
+
 export type ValidationResult = {
   isValid: boolean;
   request: GenerationRequest | null;

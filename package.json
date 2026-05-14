@@ -18,7 +18,8 @@
     "release:check": "pnpm typecheck && pnpm test:run && pnpm build && cargo fmt --manifest-path src-tauri/Cargo.toml --check && pnpm rust:check && cargo test -q --manifest-path src-tauri/Cargo.toml",
     "release:build": "pnpm prepare:sidecars && pnpm tauri build",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
-    "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml"
+    "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",
+    "i18n:audit": "node scripts/i18n-audit.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "2.11.0",

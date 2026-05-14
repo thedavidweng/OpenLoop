@@ -269,6 +269,7 @@ export function createGenerationRecord(
     useRandomSeed: request.useRandomSeed,
     seed: request.seed,
     audioFormat: request.audioFormat,
+    isFavorite: false,
     outputPath: `/preview-output/${id}.${request.audioFormat}`,
     status: "completed",
     errorMessage: null,

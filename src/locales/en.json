@@ -300,8 +300,19 @@
     "deleteConfirm": "Delete",
     "clearTitle": "Clear generated music history?",
     "clearMessage": "This deletes {{count}} history items and their local audio files. Missing-file items are removed from history. This cannot be undone.",
-    "clearConfirm": "Clear history"
-  },    "player": {
+    "clearConfirm": "Clear history",
+    "failedRuns": "Failed runs ({{count}})",
+    "unknownError": "Unknown error",
+    "noErrorMessage": "No error message",
+    "failedRunRetry": "Open in form",
+    "failedRunRetryLoaded": "Failed run loaded into the form.",
+    "failedRunRetryFailed": "Could not load failed run.",
+    "failedRunCopyDiagnostics": "Copy diagnostics",
+    "failedRunCopied": "Failed run diagnostics copied.",
+    "failedRunRemoved": "Failed run removed.",
+    "failedRunCleared": "Failed runs cleared."
+  },
+  "player": {
     "noGeneration": "No generation selected",
     "loop": "Loop",
     "looping": "Looping",

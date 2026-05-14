@@ -35,6 +35,7 @@ function record(
     useRandomSeed: true,
     seed: undefined,
     audioFormat: "wav",
+    isFavorite: false,
     outputPath: `/tmp/${id}.wav`,
     status: "completed",
     errorMessage: null,

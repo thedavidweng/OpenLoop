@@ -6,6 +6,7 @@ import type {
   ActiveGenerationTask,
   BackendStatus,
   DeviceInfo,
+  FailedRun,
   GenerationEvent,
   GenerationRunResult,
   GenerationWaveform,
@@ -251,4 +252,16 @@ export function readGenerationWaveform(
   id: string,
 ): Promise<GenerationWaveform> {
   return invoke<GenerationWaveform>("read_generation_waveform", { id });
+}
+
+export function listFailedRuns(limit: number): Promise<FailedRun[]> {
+  return invoke<FailedRun[]>("list_failed_runs", { limit });
+}
+
+export function clearFailedRuns(): Promise<void> {
+  return invoke<void>("clear_failed_runs");
+}
+
+export function deleteFailedRun(id: string): Promise<void> {
+  return invoke<void>("delete_failed_run", { id });
 }

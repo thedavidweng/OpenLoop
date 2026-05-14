@@ -38,6 +38,7 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high --ignore-registry-errors
+      # TODO: Add `cargo audit` step when cargo-audit is available in CI runners
 
       - name: Typecheck
         run: pnpm typecheck

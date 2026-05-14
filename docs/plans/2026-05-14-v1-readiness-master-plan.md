@@ -485,8 +485,8 @@ src-tauri/src/services/model_manager/
 
 - [ ] 10.2.1 所有 `<input>` 配 `aria-describedby` 指向旁边描述。
 - [ ] 10.2.2 折叠 `Collapsible` 用 `aria-expanded` + `role="button"`。
-- [ ] 10.2.3 PlaybackBar 进度条用 `<input type="range" aria-label="Seek">`。
-- [ ] 10.2.4 全局快捷键面板：按 `Cmd+/` 弹出，列出 `APP_SHORTCUTS`。
+- [x] 10.2.3 PlaybackBar 进度条用 `<input type="range" aria-label="Seek">`。
+- [x] 10.2.4 全局快捷键面板：按 `Cmd+/` 弹出，列出 `APP_SHORTCUTS`。
 
 ### 10.3 i18n 覆盖审计
 

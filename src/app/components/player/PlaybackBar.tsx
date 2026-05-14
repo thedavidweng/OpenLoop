@@ -437,16 +437,22 @@ export function PlaybackBar() {
             </span>
             <div
               className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)]`}
-              onClick={(event) => {
-                if (!audioRef.current || !duration) return;
-                const rect = event.currentTarget.getBoundingClientRect();
-                const percent = Math.max(
-                  0,
-                  Math.min(1, (event.clientX - rect.left) / rect.width),
-                );
-                audioRef.current.currentTime = percent * duration;
-              }}
             >
+              <input
+                type="range"
+                aria-label="Seek"
+                min="0"
+                max={duration || 0}
+                step="0.01"
+                value={duration ? position : 0}
+                disabled={!audioSrc || !duration}
+                onChange={(event) => {
+                  if (audioRef.current) {
+                    audioRef.current.currentTime = Number(event.target.value);
+                  }
+                }}
+                className="absolute inset-x-0 top-1/2 z-10 h-8 -translate-y-1/2 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+              />
               {waveformPeaks.length > 0 ? (
                 <div className="pointer-events-none absolute inset-x-0 top-1/2 flex h-8 -translate-y-1/2 items-center gap-px opacity-40">
                   {waveformPeaks.map((peak, index) => (
@@ -492,6 +498,7 @@ export function PlaybackBar() {
           </Tooltip>
           <input
             type="range"
+            aria-label="Volume"
             min="0"
             max="1"
             step="0.01"

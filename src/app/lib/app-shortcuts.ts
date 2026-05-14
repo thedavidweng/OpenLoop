@@ -50,6 +50,12 @@ export const APP_SHORTCUTS = {
     displayKey: "Space",
     requiresPrimaryModifier: false,
   },
+  keyboardHelp: {
+    id: "help.shortcuts",
+    code: "Slash",
+    key: "/",
+    displayKey: "/",
+  },
 } satisfies Record<string, ShortcutDefinition>;
 
 export function getShortcutPlatform(): ShortcutPlatform {

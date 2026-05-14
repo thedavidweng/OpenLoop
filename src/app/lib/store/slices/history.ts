@@ -21,6 +21,7 @@ export function createHistorySlice(
     historyQuery: "",
     favoriteRecordIds: [] as string[],
     lastDeletedRecord: null as GenerationRecord | null,
+    selectedHistoryIds: [] as string[],
 
     selectGenerationRecord: (id: string) => {
       set((state) => ({
@@ -113,6 +114,75 @@ export function createHistorySlice(
           currentGeneration: restored,
         };
       });
+    },
+
+    toggleSelectHistory: (id: string, multi = false) => {
+      set((state) => {
+        if (multi) {
+          const selected = state.selectedHistoryIds.includes(id);
+          return {
+            selectedHistoryIds: selected
+              ? state.selectedHistoryIds.filter((sid) => sid !== id)
+              : [...state.selectedHistoryIds, id],
+          };
+        }
+        return {
+          selectedHistoryIds: state.selectedHistoryIds.includes(id) ? [] : [id],
+        };
+      });
+    },
+
+    clearSelection: () => {
+      set({ selectedHistoryIds: [] });
+    },
+
+    batchDeleteSelected: async () => {
+      const ids = get().selectedHistoryIds;
+      if (ids.length === 0) return;
+      for (const id of ids) {
+        if (api.isTauriRuntime()) {
+          await api.deleteGenerationFileAndRecord(id);
+        }
+      }
+      set((state) => {
+        const remaining = state.history.filter((r) => !ids.includes(r.id));
+        return {
+          history: remaining,
+          selectedHistoryIds: [],
+          currentGeneration:
+            ids.includes(state.currentGeneration?.id ?? "")
+              ? null
+              : state.currentGeneration,
+        };
+      });
+    },
+
+    batchFavoriteSelected: async () => {
+      const ids = get().selectedHistoryIds;
+      if (ids.length === 0) return;
+      const newFavorites: string[] = [];
+      const removedFavorites: string[] = [];
+      if (api.isTauriRuntime()) {
+        for (const id of ids) {
+          const newState = await api.toggleGenerationFavorite(id);
+          if (newState) newFavorites.push(id);
+          else removedFavorites.push(id);
+        }
+      }
+      set((state) => ({
+        favoriteRecordIds: Array.from(
+          new Set([
+            ...state.favoriteRecordIds.filter((fid) => !removedFavorites.includes(fid)),
+            ...newFavorites,
+          ]),
+        ),
+        history: state.history.map((r) =>
+          ids.includes(r.id)
+            ? { ...r, isFavorite: newFavorites.includes(r.id) }
+            : r,
+        ),
+        selectedHistoryIds: [],
+      }));
     },
   };
 }

@@ -40,6 +40,7 @@ export interface GenerationStore {
   favoriteRecordIds: string[];
   lastDeletedRecord: GenerationRecord | null;
   demoMode: boolean;
+  selectedHistoryIds: string[];
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -89,4 +90,8 @@ export interface GenerationStore {
   restoreLastDeletedRecord: () => void;
   enterDemoMode: () => void;
   dismissDemoMode: () => void;
+  toggleSelectHistory: (id: string, multi?: boolean) => void;
+  clearSelection: () => void;
+  batchDeleteSelected: () => Promise<void>;
+  batchFavoriteSelected: () => Promise<void>;
 }

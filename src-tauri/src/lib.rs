@@ -67,6 +67,7 @@ pub fn run() {
             commands::generation::list_active_generation_tasks,
             commands::generation::resume_generation_task,
             commands::generation::discard_active_generation_task,
+            commands::support::collect_diagnostics,
             commands::window_shell::get_window_shell_state,
         ]);
 

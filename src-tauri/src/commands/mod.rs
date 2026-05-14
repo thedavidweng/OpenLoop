@@ -5,4 +5,5 @@ pub mod generation;
 pub mod history;
 pub mod models;
 pub mod settings;
+pub mod support;
 pub mod window_shell;

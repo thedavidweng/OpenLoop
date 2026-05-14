@@ -13,7 +13,8 @@ import {
 } from "@/app/lib/model-packs";
 import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
-import { SUPPORTED_LANGUAGES } from "@/app/lib/i18n";
+import { SUPPORTED_LANGUAGES, detectSystemLanguage } from "@/app/lib/i18n";
+import { DEFAULT_APP_SETTINGS } from "@/app/lib/model-bootstrap";
 import type { AppSettings, ModelVariant } from "@/app/lib/types";
 import { DirectoryPickerRow } from "./SettingsOverlay/DirectoryPickerRow";
 import { ModelPackCard } from "./SettingsOverlay/ModelPackCard";
@@ -104,6 +105,13 @@ export function SettingsOverlay() {
       draft.checkForUpdates !== (settings.checkForUpdates ?? true)
     );
   }, [draft, settings]);
+
+  const configDir = useMemo(() => {
+    if (!defaultPaths?.logDirectory) return null;
+    const parts = defaultPaths.logDirectory.replace(/\/+$/, "").split("/");
+    if (parts.length < 3) return null;
+    return parts.slice(0, -2).join("/");
+  }, [defaultPaths?.logDirectory]);
 
   useEffect(() => {
     setDraft({
@@ -256,6 +264,17 @@ export function SettingsOverlay() {
               id="settings-section-models"
               title={t("settings.models")}
               description={t("settings.modelsDescription")}
+              headerAction={
+                <button
+                  type="button"
+                  onClick={() => {
+                    /* no-op: model selection is not a draft field */
+                  }}
+                  className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+                >
+                  {t("settings.resetToDefaults")}
+                </button>
+              }
             >
               <div className="space-y-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
@@ -376,6 +395,26 @@ export function SettingsOverlay() {
               id="settings-section-defaults"
               title={t("settings.defaults")}
               description={t("settings.defaultsDescription")}
+              headerAction={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft((current) => ({
+                      ...current,
+                      outputDirectory: "",
+                      defaultDurationSeconds: String(
+                        DEFAULT_APP_SETTINGS.defaultDurationSeconds,
+                      ),
+                      defaultAudioFormat:
+                        DEFAULT_APP_SETTINGS.defaultAudioFormat,
+                      defaultThinking: DEFAULT_APP_SETTINGS.defaultThinking,
+                    }));
+                  }}
+                  className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+                >
+                  {t("settings.resetToDefaults")}
+                </button>
+              }
             >
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="space-y-1.5 block">
@@ -490,6 +529,17 @@ export function SettingsOverlay() {
               id="settings-section-general"
               title={t("settings.general")}
               description={t("settings.generalDescription")}
+              headerAction={
+                <button
+                  type="button"
+                  onClick={() => {
+                    void setLanguage(detectSystemLanguage());
+                  }}
+                  className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+                >
+                  {t("settings.resetToDefaults")}
+                </button>
+              }
             >
               <label className="space-y-1.5 block">
                 <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
@@ -548,6 +598,21 @@ export function SettingsOverlay() {
                 >
                   {t("settings.reopenSetup")}
                 </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (configDir) {
+                        await api.revealInFinder(configDir);
+                      }
+                    } catch {
+                      // revealInFinder requires Tauri runtime; silently ignore
+                    }
+                  }}
+                  className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+                >
+                  {t("settings.revealConfigFile")}
+                </button>
               </div>
             </SettingsSectionCard>
 
@@ -555,6 +620,21 @@ export function SettingsOverlay() {
               id="settings-section-backend"
               title={t("settings.backend")}
               description={t("settings.backendDescription")}
+              headerAction={
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft((current) => ({
+                      ...current,
+                      backendPort: String(DEFAULT_APP_SETTINGS.backendPort),
+                      logDirectory: "",
+                    }));
+                  }}
+                  className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+                >
+                  {t("settings.resetToDefaults")}
+                </button>
+              }
             >
               <div className="grid gap-3 md:grid-cols-2">
                 <label className="space-y-1.5 block">

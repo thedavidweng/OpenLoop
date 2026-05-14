@@ -420,9 +420,9 @@ src-tauri/src/services/model_manager/
 
 - [ ] 7.1 sticky "Unsaved changes · Save / Discard" 顶栏。
 - [ ] 7.2 Danger Zone：红色边框 + Trash 图标 + 收缩到折叠组。
-- [ ] 7.3 modelDirectory 改动后弹 inline 提示 + "Restart backend now" 按钮（调用 `restart_backend` 命令）。
-- [ ] 7.4 增加 "Reset to defaults" 子项（每节卡片右上角）。
-- [ ] 7.5 增加 "Reveal config file" 链接（指向 `openloop.sqlite3` 的目录）。
+- [x] 7.3 modelDirectory 改动后弹 inline 提示 + "Restart backend now" 按钮（调用 `restart_backend` 命令）。
+- [x] 7.4 增加 "Reset to defaults" 子项（每节卡片右上角）。
+- [x] 7.5 增加 "Reveal config file" 链接（指向 `openloop.sqlite3` 的目录）。
 
 **Phase 7 验收：** 截图回归：Settings 页各 section 与基线差异 < 0.1%；Unsaved changes 指示器在修改后可见；Danger Zone 红色边框 + 折叠组呈现正确。
 

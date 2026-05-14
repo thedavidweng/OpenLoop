@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: tauri:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:*; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
     }
   },
   "bundle": {
@@ -48,7 +48,8 @@
           "width": 660,
           "height": 400
         }
-      }
+      },
+      "entitlements": "macos/entitlements.plist"
     }
   }
 }

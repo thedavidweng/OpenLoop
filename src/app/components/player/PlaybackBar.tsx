@@ -104,6 +104,12 @@ export function PlaybackBar() {
   const playbackToggleRequest = useGenerationStore(
     (state) => state.playbackToggleRequest,
   );
+  const compareModeActive = useGenerationStore(
+    (state) => state.compareModeActive,
+  );
+  const toggleCompareTarget = useGenerationStore(
+    (state) => state.toggleCompareTarget,
+  );
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
@@ -359,6 +365,11 @@ export function PlaybackBar() {
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <span className="block truncate text-[14px] font-semibold text-white">
+                  {compareModeActive && (
+                    <span className="mr-1.5 inline-flex h-4 items-center rounded bg-[var(--color-accent)]/15 px-1 text-[10px] font-bold text-[var(--color-accent)]">
+                      A
+                    </span>
+                  )}
                   {currentGeneration?.prompt ||
                     currentGeneration?.lyrics ||
                     "OpenLoop"}
@@ -507,6 +518,19 @@ export function PlaybackBar() {
             className="native-slider w-16"
             disabled={!audioSrc}
           />
+
+          {/* Compare toggle (A/B) */}
+          {compareModeActive && (
+            <Tooltip label={t("player.compareToggle")}>
+              <button
+                type="button"
+                className="motion-icon-button rounded-full p-2 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10"
+                onClick={() => toggleCompareTarget()}
+              >
+                <span className="text-[11px] font-bold tabular-nums">A↔B</span>
+              </button>
+            </Tooltip>
+          )}
 
           {/* Loop toggle */}
           <Tooltip label={t("player.loop")}>

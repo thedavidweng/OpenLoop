@@ -22,6 +22,8 @@ export function createHistorySlice(
     favoriteRecordIds: [] as string[],
     lastDeletedRecord: null as GenerationRecord | null,
     selectedHistoryIds: [] as string[],
+    compareModeActive: false,
+    compareGenerationId: null as string | null,
 
     selectGenerationRecord: (id: string) => {
       set((state) => ({
@@ -61,6 +63,9 @@ export function createHistorySlice(
         history: [],
         currentGeneration: null,
         favoriteRecordIds: [],
+        selectedHistoryIds: [],
+        compareModeActive: false,
+        compareGenerationId: null,
       });
     },
 
@@ -120,11 +125,15 @@ export function createHistorySlice(
       set((state) => {
         if (multi) {
           const selected = state.selectedHistoryIds.includes(id);
-          return {
-            selectedHistoryIds: selected
-              ? state.selectedHistoryIds.filter((sid) => sid !== id)
-              : [...state.selectedHistoryIds, id],
-          };
+          if (selected) {
+            return {
+              selectedHistoryIds: state.selectedHistoryIds.filter((sid) => sid !== id),
+            };
+          }
+          // Cap at 2 selections for A/B compare
+          const nextIds = [...state.selectedHistoryIds, id];
+          if (nextIds.length > 2) nextIds.shift();
+          return { selectedHistoryIds: nextIds };
         }
         return {
           selectedHistoryIds: state.selectedHistoryIds.includes(id) ? [] : [id],
@@ -146,13 +155,14 @@ export function createHistorySlice(
       }
       set((state) => {
         const remaining = state.history.filter((r) => !ids.includes(r.id));
+        const currentDeleted = ids.includes(state.currentGeneration?.id ?? "");
+        const compareDeleted = ids.includes(state.compareGenerationId ?? "");
         return {
           history: remaining,
           selectedHistoryIds: [],
-          currentGeneration:
-            ids.includes(state.currentGeneration?.id ?? "")
-              ? null
-              : state.currentGeneration,
+          currentGeneration: currentDeleted ? null : state.currentGeneration,
+          compareModeActive: compareDeleted ? false : state.compareModeActive,
+          compareGenerationId: compareDeleted ? null : state.compareGenerationId,
         };
       });
     },
@@ -183,6 +193,38 @@ export function createHistorySlice(
         ),
         selectedHistoryIds: [],
       }));
+    },
+
+    enterCompareMode: (id: string) => {
+      const currentId = get().currentGeneration?.id;
+      if (!currentId || currentId === id) return;
+      set({
+        compareModeActive: true,
+        compareGenerationId: id,
+        selectedHistoryIds: [],
+      });
+    },
+
+    exitCompareMode: () => {
+      set({
+        compareModeActive: false,
+        compareGenerationId: null,
+      });
+    },
+
+    toggleCompareTarget: () => {
+      set((state) => {
+        if (!state.compareModeActive || !state.compareGenerationId) return state;
+        const currentId = state.currentGeneration?.id;
+        const nextCurrent = state.history.find(
+          (r) => r.id === state.compareGenerationId,
+        );
+        if (!nextCurrent) return state;
+        return {
+          currentGeneration: nextCurrent,
+          compareGenerationId: currentId ?? state.compareGenerationId,
+        };
+      });
     },
   };
 }

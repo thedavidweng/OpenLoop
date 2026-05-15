@@ -50,6 +50,13 @@ export const APP_SHORTCUTS = {
     displayKey: "Space",
     requiresPrimaryModifier: false,
   },
+  compareToggle: {
+    id: "compare.toggle",
+    code: "Digit1",
+    key: "1",
+    displayKey: "1",
+    requiresPrimaryModifier: false,
+  },
   keyboardHelp: {
     id: "help.shortcuts",
     code: "Slash",

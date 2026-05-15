@@ -41,6 +41,8 @@ export interface GenerationStore {
   lastDeletedRecord: GenerationRecord | null;
   demoMode: boolean;
   selectedHistoryIds: string[];
+  compareModeActive: boolean;
+  compareGenerationId: string | null;
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -94,4 +96,7 @@ export interface GenerationStore {
   clearSelection: () => void;
   batchDeleteSelected: () => Promise<void>;
   batchFavoriteSelected: () => Promise<void>;
+  enterCompareMode: (id: string) => void;
+  exitCompareMode: () => void;
+  toggleCompareTarget: () => void;
 }

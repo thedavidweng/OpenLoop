@@ -27,6 +27,8 @@ export function AppLayout() {
     (state) => state.requestPlaybackToggle,
   );
   const generationState = useGenerationStore((state) => state.generationState);
+  const compareModeActive = useGenerationStore((state) => state.compareModeActive);
+  const toggleCompareTarget = useGenerationStore((state) => state.toggleCompareTarget);
   const windowShellState = useWindowShellState(sidebarWidth);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -38,6 +40,7 @@ export function AppLayout() {
       ["Generate", APP_SHORTCUTS.submitGeneration],
       ["Retry failed generation", APP_SHORTCUTS.retryGeneration],
       ["Play / pause", APP_SHORTCUTS.togglePlayback],
+      ["A / B compare", APP_SHORTCUTS.compareToggle],
       ["Keyboard shortcuts", APP_SHORTCUTS.keyboardHelp],
     ] as const,
     [],
@@ -88,6 +91,13 @@ export function AppLayout() {
         event.preventDefault();
         if (generationState.status === "failed") {
           void runGeneration();
+        }
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.compareToggle)
+      ) {
+        event.preventDefault();
+        if (compareModeActive) {
+          toggleCompareTarget();
         }
       }
     };

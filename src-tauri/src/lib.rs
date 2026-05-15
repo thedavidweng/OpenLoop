@@ -42,6 +42,8 @@ pub fn run() {
             commands::files::read_generation_waveform,
             commands::files::delete_generation_file,
             commands::files::delete_generation_file_and_record,
+            commands::files::export_generations_to_folder,
+            commands::files::prepare_drag_payload,
             commands::settings::get_settings,
             commands::settings::set_setting,
             commands::settings::reset_runtime_settings,

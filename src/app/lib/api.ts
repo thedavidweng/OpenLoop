@@ -265,3 +265,14 @@ export function clearFailedRuns(): Promise<void> {
 export function deleteFailedRun(id: string): Promise<void> {
   return invoke<void>("delete_failed_run", { id });
 }
+
+export function exportGenerationsToFolder(
+  ids: string[],
+  destination: string,
+): Promise<string[]> {
+  return invoke<string[]>("export_generations_to_folder", { ids, destination });
+}
+
+export function prepareDragPayload(id: string): Promise<string> {
+  return invoke<string>("prepare_drag_payload", { id });
+}

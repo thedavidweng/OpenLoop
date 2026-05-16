@@ -27,7 +27,7 @@ clap = { version = "4.5", features = ["derive"] }
 dialoguer = "0.11"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls", "stream"] }
 futures-util = "0.3"
-sha2 = "0.10"
+sha2 = "0.11"
 tokio = { version = "1", features = ["fs", "io-util", "rt", "rt-multi-thread", "sync", "macros", "time"] }
 rusqlite = { version = "0.39.0", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }

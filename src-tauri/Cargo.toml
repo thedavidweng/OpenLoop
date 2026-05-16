@@ -24,7 +24,7 @@ tauri-build = { version = "2", features = [] }
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
-dialoguer = "0.11"
+dialoguer = "0.12"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls", "stream"] }
 futures-util = "0.3"
 sha2 = "0.10"

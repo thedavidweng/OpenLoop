@@ -34,9 +34,7 @@ pub fn export_generations_to_folder(
             .as_ref()
             .and_then(|p| PathBuf::from(p).file_name().map(PathBuf::from))
             .ok_or_else(|| {
-                AppError::output_write_failed(format!(
-                    "generation {id} has no output file"
-                ))
+                AppError::output_write_failed(format!("generation {id} has no output file"))
             })?;
         let source = PathBuf::from(record.output_path.as_ref().unwrap());
         let target = dest.join(&src);
@@ -49,21 +47,14 @@ pub fn export_generations_to_folder(
 
 /// Prepare a temporary hard-link path for drag-out to DAW/Finder.
 #[command]
-pub fn prepare_drag_payload(
-    state: State<'_, AppState>,
-    id: String,
-) -> AppResult<String> {
+pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult<String> {
     let service = HistoryService::new(state.db.clone());
     let record = service
         .get_generation(&id)?
         .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
-    let source = PathBuf::from(
-        record
-            .output_path
-            .ok_or_else(|| AppError::output_write_failed(format!(
-                "generation {id} has no output file"
-            )))?,
-    );
+    let source = PathBuf::from(record.output_path.ok_or_else(|| {
+        AppError::output_write_failed(format!("generation {id} has no output file"))
+    })?);
     if !source.is_file() {
         return Err(AppError::not_found(
             "Generation audio",

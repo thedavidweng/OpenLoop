@@ -2,10 +2,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    errors::AppError,
-    settings::ModelVariant,
-};
+use crate::models::{errors::AppError, settings::ModelVariant};
 
 /// Event channel used to broadcast download progress to the frontend.
 pub const MODEL_DOWNLOAD_EVENT: &str = "model-download-progress";

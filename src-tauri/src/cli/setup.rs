@@ -297,9 +297,9 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
         }
         _ => {
             return Err(cli_error(format!(
-                "unknown setting '{}'. Available: model, thinking, duration, format, checkForUpdates",
-                key
-            )))
+            "unknown setting '{}'. Available: model, thinking, duration, format, checkForUpdates",
+            key
+        )))
         }
     };
 
@@ -407,7 +407,10 @@ fn print_settings_table(settings: &AppSettings) {
         "duration           = {}",
         settings.default_duration_seconds as i64
     ));
-    human_output(&format!("format             = {}", settings.default_audio_format));
+    human_output(&format!(
+        "format             = {}",
+        settings.default_audio_format
+    ));
     human_output(&format!("checkForUpdates    = {check_updates}"));
 }
 

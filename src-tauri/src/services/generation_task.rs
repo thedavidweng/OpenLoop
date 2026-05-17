@@ -307,8 +307,7 @@ impl GenerationTaskRunner {
                         self.db.delete_active_generation_task(active_id)?;
                     }
                     // Archive the failed run for diagnostics and retry
-                    let request_json =
-                        serde_json::to_string(&request).unwrap_or_default();
+                    let request_json = serde_json::to_string(&request).unwrap_or_default();
                     let failed_run = FailedRun {
                         id: Uuid::new_v4().to_string(),
                         created_at: Utc::now().to_rfc3339(),
@@ -646,10 +645,7 @@ mod tests {
         // Verify a failed_run record was archived
         let failed_runs = db.list_failed_runs(10).expect("failed runs");
         assert_eq!(failed_runs.len(), 1);
-        assert_eq!(
-            failed_runs[0].error_code.as_deref(),
-            Some("TASK_FAILED")
-        );
+        assert_eq!(failed_runs[0].error_code.as_deref(), Some("TASK_FAILED"));
         assert_eq!(
             failed_runs[0].error_message.as_deref(),
             Some("The generation task failed.")
@@ -669,6 +665,4 @@ mod tests {
             .collect();
         assert_eq!(event_types, vec!["submitted", "failed"]);
     }
-
-
 }

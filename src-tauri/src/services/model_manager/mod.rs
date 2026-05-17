@@ -1,8 +1,8 @@
-pub mod types;
 pub mod specs;
+pub mod types;
 
-pub use types::*;
 pub use specs::*;
+pub use types::*;
 
 use std::{
     fs::{self, OpenOptions},
@@ -1048,7 +1048,7 @@ fn verify_sha256(path: &Path, expected: &str) -> AppResult<()> {
             }
         }
     }
-    let actual = format!("{:x}", hasher.finalize());
+    let actual = hex_lower(hasher.finalize());
     if actual != expected {
         return Err(AppError::model_download_failed(format!(
             "SHA256 mismatch for {}: expected {expected}, got {actual}",
@@ -1056,6 +1056,18 @@ fn verify_sha256(path: &Path, expected: &str) -> AppResult<()> {
         )));
     }
     Ok(())
+}
+
+fn hex_lower(bytes: impl AsRef<[u8]>) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    let bytes = bytes.as_ref();
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    output
 }
 
 fn resolve_download_url(spec: &ModelFileSpec, mirror: &str) -> String {

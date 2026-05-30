@@ -1,5 +1,6 @@
 pub mod ace_client;
 pub mod backend_manager;
+pub mod backend_provisioner;
 pub mod db;
 pub mod device;
 pub mod file_store;

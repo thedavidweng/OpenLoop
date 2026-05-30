@@ -13,9 +13,8 @@
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
-> **状态：** v0.1 Alpha — 仅支持 macOS Apple Silicon。Windows / Linux 在路线图中。
 
-![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
+![Status](https://img.shields.io/badge/Status-v0.2.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -27,7 +26,7 @@
 | 项目                                                 | 用途                                                          | 状态         |
 | ---------------------------------------------------- | ------------------------------------------------------------- | ------------ |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | 用本地 AI 进行人声分离，并配合同步歌词，把本地歌曲变成卡拉 OK | Active       |
-| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha v0.1.0 |
+| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha v0.2.0 |
 
 这个系列的共同理念很简单：音乐工具应该本地优先、尊重所有权、透明，并且能够直接利用你手头已有的媒体和硬件。
 
@@ -94,7 +93,7 @@ done
 
 ## 功能
 
-### v0.1.0 Alpha
+### v0.2.0 Alpha
 
 - **文本生成音乐** - 例如 `lo-fi warm piano, 90 BPM, no vocal`
 - **歌词输入** - 支持 `[verse]`、`[chorus]`、`[bridge]` 这类结构标签
@@ -107,7 +106,7 @@ done
 - **波形显示** - Rust Symphonia 音频解码生成波形
 - **本地生成历史** - 搜索、加载、删除历史记录
 - **导出** - Reveal in Finder、导出复制
-- **CLI** - 10 个子命令，NDJSON 流式输出
+- **CLI** - 16 个子命令，NDJSON 流式输出
 - **i18n** - 英文、简体中文
 - **键盘快捷键** - Space、Cmd+B、Cmd+N、Cmd+,、Cmd+Enter
 
@@ -148,7 +147,15 @@ pnpm install
 pnpm release:check
 ```
 
+### 本地 Release 构建
+
+```bash
+pnpm install --frozen-lockfile
+pnpm release:build
+```
+
 详细的人工 QA 记录见 [`docs/testing.md`](docs/testing.md)。
+发布打包说明见 [`docs/release.md`](docs/release.md)。
 
 当前实现状态和更多开发细节见 [Implementation Status](./docs/implementation-status.md)。
 

@@ -134,6 +134,10 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         backend.detach();
     }
 
+    if !json {
+        human_output("Backend left running for subsequent commands.");
+    }
+
     Ok(())
 }
 

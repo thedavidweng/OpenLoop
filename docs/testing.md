@@ -63,7 +63,7 @@ pnpm release:check
 - `openloop ps` shows backend health and active tasks.
 - `openloop delete <id>` removes record and file.
 - `openloop clear --yes` removes all records and files.
-- `openloop stop` terminates the backend process.
+- `openloop stop` cancels an ongoing generation. Use `openloop backend stop` to stop the backend process.
 
 ### Privacy
 

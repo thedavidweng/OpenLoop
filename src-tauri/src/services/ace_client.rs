@@ -50,6 +50,7 @@ pub struct AceClient {
 impl AceClient {
     pub fn new(port: u16) -> AppResult<Self> {
         let http = Client::builder()
+            .timeout(std::time::Duration::from_secs(300))
             .build()
             .map_err(|error| AppError::task_submit_failed(error.to_string()))?;
 

@@ -9,6 +9,7 @@ import i18next from "@/app/lib/i18n";
 import type {
   AppError,
   AppSettings,
+  BackendProvisionStatus,
   DeviceInfo,
   ModelBootstrapStatus,
   ModelStatusSnapshot,
@@ -59,6 +60,7 @@ export function resolveModelBootstrapStatus(
   settings: AppSettings,
   deviceInfo: DeviceInfo | null,
   statuses: ModelStatusSnapshot[] = [],
+  backendProvision?: BackendProvisionStatus | null,
   isRuntime = api.isTauriRuntime(),
 ): ModelBootstrapStatus {
   if (!settings.firstRunCompleted) {
@@ -66,6 +68,35 @@ export function resolveModelBootstrapStatus(
       state: "pending",
       message: tr("status.chooseModel"),
     };
+  }
+
+  // Check backend provisioning before model status
+  if (isRuntime && backendProvision && backendProvision.state !== "ready") {
+    if (
+      backendProvision.state === "downloading" ||
+      backendProvision.state === "extracting"
+    ) {
+      return {
+        state: "provisioning_backend",
+        message: tr("status.downloadingBackend"),
+        downloadedBytes: backendProvision.downloadedBytes,
+        totalBytes: backendProvision.totalBytes ?? undefined,
+      };
+    }
+    if (backendProvision.state === "failed") {
+      return {
+        state: "failed",
+        message:
+          backendProvision.error?.message ?? tr("status.backendProvisionFailed"),
+        error: backendProvision.error,
+      };
+    }
+    if (backendProvision.state === "not_installed") {
+      return {
+        state: "pending",
+        message: tr("status.backendNotInstalled"),
+      };
+    }
   }
 
   if (!settings.modelVariant) {

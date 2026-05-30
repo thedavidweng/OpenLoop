@@ -3,8 +3,12 @@ use std::{fs, net::TcpStream, path::PathBuf};
 use super::AppState;
 use crate::{
     cli::{cli_error, human_output},
-    models::errors::AppResult,
-    services::device,
+    models::{errors::AppResult, settings::ModelVariant},
+    services::{
+        backend_provisioner::read_backend_manifest,
+        device,
+        model_manager::read_manifest,
+    },
 };
 use serde::Serialize;
 
@@ -140,9 +144,33 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     // -----------------------------------------------------------------------
-    // 5. Downloaded models
+    // 5. Downloaded models (cross-check manifest ↔ DB)
     // -----------------------------------------------------------------------
-    let downloaded = &settings.downloaded_models;
+    let mut downloaded = settings.downloaded_models.clone();
+
+    // Sync from manifest if it has entries the DB is missing
+    if let Ok(manifest) = read_manifest(&state.app_data_dir) {
+        for key in manifest.installed.keys() {
+            let variant = match key.as_str() {
+                "lite" => Some(ModelVariant::Lite),
+                "turbo" => Some(ModelVariant::Turbo),
+                "pro" => Some(ModelVariant::Pro),
+                _ => None,
+            };
+            if let Some(v) = variant {
+                if !downloaded.contains(&v) {
+                    downloaded.push(v);
+                }
+            }
+        }
+        if downloaded != settings.downloaded_models {
+            let _ = state.db.set_setting(
+                "downloadedModels",
+                serde_json::to_value(&downloaded).unwrap_or_default(),
+            );
+        }
+    }
+
     if downloaded.is_empty() {
         results.push(CheckResult {
             name: "downloaded-models".to_owned(),
@@ -153,9 +181,9 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         let labels: Vec<String> = downloaded
             .iter()
             .map(|v| match v {
-                crate::models::settings::ModelVariant::Lite => "lite".to_owned(),
-                crate::models::settings::ModelVariant::Turbo => "turbo".to_owned(),
-                crate::models::settings::ModelVariant::Pro => "pro".to_owned(),
+                ModelVariant::Lite => "lite".to_owned(),
+                ModelVariant::Turbo => "turbo".to_owned(),
+                ModelVariant::Pro => "pro".to_owned(),
             })
             .collect();
         results.push(CheckResult {
@@ -213,7 +241,41 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     // -----------------------------------------------------------------------
-    // 7. Database
+    // 7. Backend code
+    // -----------------------------------------------------------------------
+    let runtime_dir = state.app_data_dir.join("runtime").join("ACE-Step-1.5");
+    let pyproject = runtime_dir.join("pyproject.toml");
+    let manifest = read_backend_manifest(&state.app_data_dir);
+
+    if pyproject.exists() {
+        let version_info = match &manifest {
+            Some(m) => {
+                let tag = m
+                    .installed_tag
+                    .as_deref()
+                    .unwrap_or(&m.installed_commit[..7.min(m.installed_commit.len())]);
+                format!("{tag} (installed {})", m.installed_at.split('T').next().unwrap_or(""))
+            }
+            None => "present (no manifest)".to_owned(),
+        };
+        results.push(CheckResult {
+            name: "backend-code".to_owned(),
+            status: "ok".to_owned(),
+            message: format!("{} — {}", runtime_dir.display(), version_info),
+        });
+    } else {
+        results.push(CheckResult {
+            name: "backend-code".to_owned(),
+            status: "warn".to_owned(),
+            message: format!(
+                "ACE-Step backend code not installed at {}. Run 'openloop backend provision'.",
+                runtime_dir.display()
+            ),
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. Database
     // -----------------------------------------------------------------------
     let db_path = state.app_data_dir.join("openloop.sqlite3");
     if db_path.exists() {
@@ -313,6 +375,7 @@ Checks:
   model-dir         Model storage directory
   downloaded-models Installed model variants
   backend-logs      Backend log files
+  backend-code      ACE-Step backend code installation
   database          SQLite database health
   settings          Current settings summary
 

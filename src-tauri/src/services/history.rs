@@ -66,11 +66,8 @@ impl HistoryService {
     }
 
     pub fn read_generation_waveform(&self, id: &str) -> AppResult<GenerationWaveform> {
-        let record = self
-            .db
-            .get_generation(id)?
-            .ok_or_else(|| AppError::not_found("Generation record", id.to_owned()))?;
-        let path = generation_output_path(&record, id)?;
+        let record = self.resolve_by_prefix(id)?;
+        let path = generation_output_path(&record, &record.id)?;
         if !path.is_file() {
             return Err(AppError::not_found(
                 "Generation audio",
@@ -100,11 +97,8 @@ impl HistoryService {
     }
 
     fn generation_output_file(&self, id: &str) -> AppResult<PathBuf> {
-        let record = self
-            .db
-            .get_generation(id)?
-            .ok_or_else(|| AppError::not_found("Generation record", id.to_owned()))?;
-        let path = generation_output_path(&record, id)?;
+        let record = self.resolve_by_prefix(id)?;
+        let path = generation_output_path(&record, &record.id)?;
         if !path.is_file() {
             return Err(AppError::not_found(
                 "Generation audio",
@@ -112,6 +106,22 @@ impl HistoryService {
             ));
         }
         Ok(path)
+    }
+
+    /// Resolve a generation by exact ID or prefix match.
+    fn resolve_by_prefix(&self, id: &str) -> AppResult<GenerationRecord> {
+        if let Some(record) = self.db.get_generation(id)? {
+            return Ok(record);
+        }
+        let records = self.db.list_generations(None)?;
+        let matches: Vec<_> = records.iter().filter(|r| r.id.starts_with(id)).collect();
+        match matches.len() {
+            0 => Err(AppError::not_found("Generation record", id.to_owned())),
+            1 => Ok(matches.into_iter().next().unwrap().clone()),
+            n => Err(AppError::validation_failed(format!(
+                "ambiguous prefix '{id}' matches {n} records. Use a longer prefix.",
+            ))),
+        }
     }
 }
 

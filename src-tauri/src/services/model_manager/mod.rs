@@ -1095,7 +1095,7 @@ fn manifest_path(app_data_dir: &Path) -> PathBuf {
         .join("openloop-ace-manifest.json")
 }
 
-fn read_manifest(app_data_dir: &Path) -> AppResult<ModelManifest> {
+pub fn read_manifest(app_data_dir: &Path) -> AppResult<ModelManifest> {
     let path = manifest_path(app_data_dir);
     if !path.exists() {
         return Ok(ModelManifest::default());

@@ -17,6 +17,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let id_arg = args
         .iter()
+        .skip(1)
         .find(|arg| !arg.starts_with('-'))
         .ok_or_else(|| cli_error("id is required. Usage: openloop delete <id>"))?;
 

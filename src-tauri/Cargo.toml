@@ -1,6 +1,6 @@
 [package]
 name = "openloop"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenLoop desktop shell"
 authors = ["OpenLoop contributors"]
 license = "MIT"
@@ -37,6 +37,7 @@ tauri = { version = "2.11.2", features = ["unstable"] }
 tauri-plugin-dialog = "2.7.1"
 tauri-plugin-updater = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
+zip = "2"
 
 [profile.release]
 strip = true

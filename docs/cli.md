@@ -23,10 +23,28 @@ openloop run "epic cinematic" --json            # machine-readable output
 | `--lyrics`      | `-l`  | Lyrics text with optional `[verse]`/`[chorus]` tags |
 | `--bpm`         |       | BPM (30–300)                                        |
 | `--key`         |       | Key and scale (e.g. `C major`)                      |
+| `--steps`       |       | Inference steps (default: 8)                        |
+| `--guidance`    |       | Guidance scale (default: 7.0)                       |
 | `--seed`        |       | Random seed for reproducibility                     |
 | `--variations`  | `-v`  | Number of variations (1–4)                          |
 | `--no-thinking` |       | Disable thinking mode                               |
 | `--json`        |       | Stream NDJSON progress events to stdout             |
+
+### `openloop enhance`
+
+Enhance a prompt via the ACE-Step format_input API. Returns the enhanced caption together with extracted BPM, key, time signature, duration, language, and lyrics.
+
+```bash
+openloop enhance "warm piano"
+openloop enhance "upbeat pop" --duration 120 --json
+openloop enhance "ballad" --lyrics "[Verse]\nHello"
+```
+
+| Flag         | Short | Description                        |
+| ------------ | ----- | ---------------------------------- |
+| `--duration` | `-d`  | Duration in seconds (10–600)       |
+| `--lyrics`   | `-l`  | Include lyrics in the request      |
+| `--json`     |       | JSON output of enhancement result  |
 
 ### `openloop setup`
 
@@ -62,12 +80,21 @@ openloop pull pro
 
 ### `openloop models`
 
-List available models and their download status.
+Manage model variants.
 
 ```bash
-openloop models
-openloop models --json
+openloop models                           # list models (default)
+openloop models download turbo            # download a variant
+openloop models delete turbo              # delete a downloaded variant
+openloop models cancel turbo              # cancel an ongoing download
+openloop models clear-partial turbo       # remove partial download artifacts
+openloop models delete-all                # delete all downloaded models
 ```
+
+| Flag     | Description                        |
+| -------- | ---------------------------------- |
+| `--json` | JSON output                        |
+| `--yes`  | Skip confirmation (delete-all)     |
 
 ### `openloop ps`
 
@@ -97,11 +124,103 @@ openloop clear --yes             # skip confirmation
 
 ### `openloop stop`
 
-Stop the ACE-Step backend process.
+Cancel an ongoing generation. This does **not** stop the backend process — use `openloop backend stop` for that.
 
 ```bash
-openloop stop
+openloop stop                    # cancel all active generations
+openloop stop abc12345           # cancel a specific task by ID
+openloop stop --kill-backend     # also stop the backend if owned by this process
 ```
+
+### `openloop backend`
+
+Manage the local ACE-Step backend process.
+
+```bash
+openloop backend status          # show backend health and port
+openloop backend start           # start the backend
+openloop backend stop            # stop the backend
+openloop backend restart         # restart the backend
+openloop backend logs            # print the backend logs path
+openloop backend logs --open     # reveal logs in Finder (macOS only)
+openloop backend clear-cache     # stop backend and remove runtime cache
+```
+
+| Flag     | Description                 |
+| -------- | --------------------------- |
+| `--json` | JSON output                 |
+
+### `openloop generation`
+
+Manage the generation lifecycle — list, cancel, resume, or discard active tasks.
+
+```bash
+openloop generation list                 # list active generation tasks
+openloop generation list --json
+openloop generation cancel               # cancel all active tasks
+openloop generation cancel abc12345      # cancel a specific task
+openloop generation cancel --kill-backend
+openloop generation resume abc12345      # resume an active generation task
+openloop generation discard abc12345     # discard an active task from the database
+openloop generation discard abc12345 --yes
+```
+
+### `openloop status`
+
+Show unified system status: backend health, model info, active tasks, and device info.
+
+```bash
+openloop status
+openloop status --json
+```
+
+### `openloop settings`
+
+View and modify application settings.
+
+```bash
+openloop settings                        # show all settings
+openloop settings get                    # same as above
+openloop settings set modelVariant turbo # set a setting
+openloop settings set defaultDurationSeconds 60
+openloop settings reset                  # reset runtime settings to defaults
+openloop settings paths                  # show default application paths
+```
+
+**Settings keys:** `backendPort`, `defaultDurationSeconds`, `defaultAudioFormat`, `defaultThinking`, `modelVariant`, `modelDirectory`, `outputDirectory`, `logDirectory`, `language`, `firstRunCompleted`, `checkForUpdates`
+
+| Flag     | Description                                    |
+| -------- | ---------------------------------------------- |
+| `--json` | JSON output                                    |
+| `--yes`  | Skip confirmation for destructive operations   |
+
+### `openloop doctor`
+
+Run environment diagnostics: system info, port occupancy, app data dir, model dir, downloaded models, backend logs, database health, and settings summary.
+
+```bash
+openloop doctor
+openloop doctor --json
+```
+
+### `openloop files`
+
+File and output management.
+
+```bash
+openloop files reveal <path>       # open Finder at file location
+openloop files copy <src> <dst>    # copy a file
+openloop files exists <path>       # check if a file exists
+openloop files read-audio <id>     # read audio bytes for a generation record
+openloop files read-audio <id> --output -   # pipe raw audio to stdout
+openloop files waveform <id>       # read waveform peaks
+openloop files unlink <id>         # delete record and its file
+openloop files unlink <id> --keep-record    # delete file only, keep DB record
+```
+
+| Flag     | Description                                |
+| -------- | ------------------------------------------ |
+| `--json` | JSON output (supported by most subcommands) |
 
 ## Agent Pipelines
 

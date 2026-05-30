@@ -8,7 +8,7 @@ use crate::{
     models::{errors::AppResult, settings::ModelVariant},
     services::{
         model_bootstrap::{checkpoints_dir_for, descriptor_for},
-        model_manager::{ModelManager, ACE_MODEL_DESCRIPTORS},
+        model_manager::{read_manifest, ModelManager, ACE_MODEL_DESCRIPTORS},
     },
 };
 
@@ -45,7 +45,32 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 }
 
 fn execute_list(state: &AppState, _args: &[String], json: bool) -> AppResult<()> {
-    let settings = state.db.get_settings()?;
+    let mut settings = state.db.get_settings()?;
+
+    // Sync downloaded_models from manifest if it has entries the DB is missing
+    if let Ok(manifest) = read_manifest(&state.app_data_dir) {
+        let mut changed = false;
+        for key in manifest.installed.keys() {
+            let variant = match key.as_str() {
+                "lite" => Some(ModelVariant::Lite),
+                "turbo" => Some(ModelVariant::Turbo),
+                "pro" => Some(ModelVariant::Pro),
+                _ => None,
+            };
+            if let Some(v) = variant {
+                if !settings.downloaded_models.contains(&v) {
+                    settings.downloaded_models.push(v);
+                    changed = true;
+                }
+            }
+        }
+        if changed {
+            let _ = state.db.set_setting(
+                "downloadedModels",
+                serde_json::to_value(&settings.downloaded_models).unwrap_or_default(),
+            );
+        }
+    }
 
     if json {
         let mut items = Vec::new();

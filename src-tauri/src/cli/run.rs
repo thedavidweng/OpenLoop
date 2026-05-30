@@ -1,3 +1,4 @@
+use std::io::IsTerminal;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
@@ -162,6 +163,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let sink = CliGenerationSink {
         json,
+        is_tty: std::io::stderr().is_terminal(),
         cancelled: cancelled.clone(),
     };
 
@@ -184,6 +186,11 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
             super::json_output(r#"{"event":"cancelled"}"#);
         }
         return Ok(());
+    }
+
+    // Terminate progress line before printing completion
+    if !json {
+        eprintln!();
     }
 
     // Handle output path renaming if --output specified
@@ -280,6 +287,7 @@ fn resolve_output_path(
 
 struct CliGenerationSink {
     json: bool,
+    is_tty: bool,
     cancelled: Arc<AtomicBool>,
 }
 
@@ -326,13 +334,8 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
                     ));
                 }
                 "completed" => {
-                    let path = payload
-                        .get("outputPath")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("");
-                    super::json_output(&format!(
-                        r#"{{"event":"completed","output_path":"{path}"}}"#
-                    ));
+                    // Suppressed: the post-generation loop emits the final
+                    // "completed" event with the correct (possibly renamed) path.
                 }
                 "cancelled" => {
                     super::json_output(r#"{"event":"cancelled"}"#);
@@ -357,10 +360,18 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
                         .get("variationTotal")
                         .and_then(|v| v.as_i64())
                         .unwrap_or(1);
-                    eprint!("\r  Generating variation {variation}/{total}…");
+                    if self.is_tty {
+                        eprint!("\r  Generating variation {variation}/{total}…");
+                    } else {
+                        eprintln!("  Generating variation {variation}/{total}…");
+                    }
                 }
                 "downloading" => {
-                    eprint!("\r  Downloading audio…");
+                    if self.is_tty {
+                        eprint!("\r  Downloading audio…");
+                    } else {
+                        eprintln!("  Downloading audio…");
+                    }
                 }
                 _ => {}
             }

@@ -14,9 +14,8 @@ An open-source desktop AI music generator powered by local inference, built for 
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
-> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.
 
-![Status](https://img.shields.io/badge/Status-v0.1.0%20Alpha-orange)
+![Status](https://img.shields.io/badge/Status-v0.2.0%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -28,7 +27,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 | Project                                              | Purpose                                                                                  | Status       |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active       |
-| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha v0.1.0 |
+| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha v0.2.0 |
 
 The shared philosophy is simple: music tools should be local-first, ownership-friendly, transparent, and useful with the media and hardware you already have.
 
@@ -101,7 +100,7 @@ done
 
 ## Features
 
-### v0.1 Alpha
+### v0.2 Alpha
 
 - **Text-to-Music Generation** — Generate music from prompts such as `lo-fi warm piano, 90 BPM, no vocal`.
 - **Lyrics Input** — Add lyrics with optional structure tags like `[verse]`, `[chorus]`, and `[bridge]`.

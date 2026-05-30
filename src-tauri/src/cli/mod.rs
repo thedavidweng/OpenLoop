@@ -26,7 +26,8 @@ pub fn run(args: Vec<String>) -> i32 {
     match run_inner(args) {
         Ok(()) => 0,
         Err(error) => {
-            eprintln!("\x1b[31m✗\x1b[0m Error: {}", error.message);
+            let msg = error.details.as_deref().unwrap_or(&error.message);
+            eprintln!("\x1b[31m✗\x1b[0m Error: {msg}");
             error.exit_code()
         }
     }

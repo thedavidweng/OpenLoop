@@ -321,7 +321,6 @@ OpenLoop is part of the OpenMusic series by [David Weng](https://github.com/thed
 For the detailed development roadmap and planning documents, see:
 
 - **[Implementation Status](./docs/implementation-status.md)** — Current implementation status and completed milestones
-- **[Development Plan](./docs/plans/Development_Plan.md)** — Full development timeline, phases, and technical planning
-- **[Testing Guide](./testing.md)** — QA procedures and manual test coverage notes
+- **[Testing Guide](./docs/testing.md)** — QA procedures and manual test coverage notes
 
 ---

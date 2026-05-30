@@ -107,7 +107,7 @@ done
 - **波形显示** - Rust Symphonia 音频解码生成波形
 - **本地生成历史** - 搜索、加载、删除历史记录
 - **导出** - Reveal in Finder、导出复制
-- **CLI** - 10 个子命令，NDJSON 流式输出
+- **CLI** - 16 个子命令，NDJSON 流式输出
 - **i18n** - 英文、简体中文
 - **键盘快捷键** - Space、Cmd+B、Cmd+N、Cmd+,、Cmd+Enter
 
@@ -148,7 +148,15 @@ pnpm install
 pnpm release:check
 ```
 
+### 本地 Release 构建
+
+```bash
+pnpm install --frozen-lockfile
+pnpm release:build
+```
+
 详细的人工 QA 记录见 [`docs/testing.md`](docs/testing.md)。
+发布打包说明见 [`docs/release.md`](docs/release.md)。
 
 当前实现状态和更多开发细节见 [Implementation Status](./docs/implementation-status.md)。
 

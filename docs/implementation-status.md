@@ -24,7 +24,7 @@
 - Global keyboard shortcuts (Space, Cmd+B, Cmd+N, Cmd+,, Cmd+Enter, Cmd+Shift+Enter).
 - i18n support: English and Simplified Chinese (zh-CN).
 - Toast notification system for success/error feedback.
-- CLI mode with 10 subcommands (run, setup, list, pull, models, ps, delete, clear, stop, help).
+- CLI mode with 16 subcommands (run, setup, list, pull, models, ps, delete, clear, stop, enhance, backend, generation, settings, status, doctor, files).
 - NDJSON streaming for agent pipeline integration.
 - Comprehensive test suite: frontend unit tests (Vitest) + Rust unit tests.
 

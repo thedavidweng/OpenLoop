@@ -17,14 +17,15 @@ export function ModelBootstrapBanner() {
     return null;
   }
 
-  const downloadedBytes =
-    bootstrapStatus.state === "downloading"
-      ? (bootstrapStatus.downloadedBytes ?? 0)
-      : 0;
-  const totalBytes =
-    bootstrapStatus.state === "downloading" ? bootstrapStatus.totalBytes : null;
+  const isProgressState =
+    bootstrapStatus.state === "downloading" ||
+    bootstrapStatus.state === "provisioning_backend";
+  const downloadedBytes = isProgressState
+    ? (bootstrapStatus.downloadedBytes ?? 0)
+    : 0;
+  const totalBytes = isProgressState ? bootstrapStatus.totalBytes : null;
   const percent =
-    bootstrapStatus.state === "downloading" && totalBytes
+    isProgressState && totalBytes
       ? Math.min(
           100,
           Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
@@ -46,7 +47,8 @@ export function ModelBootstrapBanner() {
     >
       <div className="flex flex-wrap items-center gap-3 px-4 py-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          {bootstrapStatus.state === "downloading" ? (
+          {bootstrapStatus.state === "downloading" ||
+          bootstrapStatus.state === "provisioning_backend" ? (
             <Loader2
               size={14}
               className="shrink-0 animate-spin text-[var(--color-accent)]"
@@ -66,7 +68,7 @@ export function ModelBootstrapBanner() {
           </p>
         </div>
 
-        {bootstrapStatus.state === "downloading" && totalBytes ? (
+        {isProgressState && totalBytes ? (
           <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-dim)] tabular-nums">
             {formatGigabytes(downloadedBytes)} / {formatGigabytes(totalBytes)}
             {percent !== null ? ` · ${percent}%` : null}
@@ -96,7 +98,7 @@ export function ModelBootstrapBanner() {
         ) : null}
       </div>
 
-      {bootstrapStatus.state === "downloading" && totalBytes ? (
+      {isProgressState && totalBytes ? (
         <div className="h-[3px] w-full overflow-hidden bg-[var(--color-border)]/60">
           <div
             className="h-full bg-[var(--color-accent)] transition-[width] duration-200 ease-out"

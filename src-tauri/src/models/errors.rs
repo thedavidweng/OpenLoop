@@ -21,7 +21,7 @@ impl AppError {
     pub fn exit_code(&self) -> i32 {
         match self.code.as_str() {
             "VALIDATION_FAILED" => 2,
-            "BACKEND_START_FAILED" | "BACKEND_HEALTH_TIMEOUT" => 3,
+            "BACKEND_START_FAILED" | "BACKEND_HEALTH_TIMEOUT" | "BACKEND_PROVISION_FAILED" => 3,
             _ => 1,
         }
     }
@@ -161,6 +161,15 @@ impl AppError {
         Self::new(
             "DB_READ_FAILED",
             "OpenLoop could not read from the local database.",
+            Some(details.into()),
+            true,
+        )
+    }
+
+    pub fn backend_provision_failed(details: impl Into<String>) -> Self {
+        Self::new(
+            "BACKEND_PROVISION_FAILED",
+            "OpenLoop could not download the ACE-Step backend code.",
             Some(details.into()),
             true,
         )

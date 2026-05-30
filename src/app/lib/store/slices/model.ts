@@ -1,6 +1,6 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type { AppSettings, ModelVariant, ModelStatusSnapshot } from "@/app/lib/types";
+import type { AppSettings, ModelVariant, ModelStatusSnapshot, BackendProvisionStatus } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   MODEL_PACKS,
@@ -45,6 +45,7 @@ export function createModelSlice(
       recommendedMemoryGb: variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
     })),
     modelStatuses: [],
+    backendProvisionStatus: { state: "not_installed" } as BackendProvisionStatus,
 
     downloadModelVariant: async (variant: ModelVariant) => {
       const packId = packIdForVariant(variant);
@@ -170,6 +171,7 @@ export function createModelSlice(
           { ...prev.settings, downloadedModels, modelVariant: nextModelVariant },
           null,
           modelStatuses,
+          prev.backendProvisionStatus,
         ),
       }));
       void api.setSetting("downloadedModels", downloadedModels);
@@ -178,15 +180,17 @@ export function createModelSlice(
 
     refreshModelStatuses: async () => {
       if (!api.isTauriRuntime()) return;
-      const [modelCatalog, rawModelStatuses] = await Promise.all([
+      const [modelCatalog, rawModelStatuses, backendProvision] = await Promise.all([
         api.listModelCatalog(),
         api.getModelStatus(),
+        api.getBackendProvisionStatus().catch(() => ({ state: "not_installed" }) as BackendProvisionStatus),
       ]);
       const modelStatuses = localizeModelStatuses(rawModelStatuses);
       const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
       set((state) => ({
         modelCatalog,
         modelStatuses,
+        backendProvisionStatus: backendProvision,
         settings: {
           ...state.settings,
           downloadedModels,
@@ -199,6 +203,7 @@ export function createModelSlice(
           { ...state.settings, downloadedModels, modelVariant: state.settings.modelVariant },
           state.deviceInfo,
           modelStatuses,
+          backendProvision,
         ),
       }));
     },
@@ -261,7 +266,7 @@ export function createModelSlice(
                         state: "pending",
                         message: tr("status.downloadModelToStart", { model: MODEL_PACKS[eventPack].label }),
                       }
-              : resolveModelBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses),
+              : resolveModelBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses, state.backendProvisionStatus),
         };
       });
     },
@@ -297,12 +302,63 @@ export function createModelSlice(
     },
 
     refreshBootstrapStatus: async () => {
-      const bootstrapStatus = await resolveModelBootstrapStatus(
+      const bootstrapStatus = resolveModelBootstrapStatus(
         get().settings,
         get().deviceInfo,
         get().modelStatuses,
+        get().backendProvisionStatus,
       );
       set({ bootstrapStatus });
+    },
+
+    refreshBackendProvisionStatus: async () => {
+      if (!api.isTauriRuntime()) return;
+      try {
+        const status = await api.getBackendProvisionStatus();
+        set({ backendProvisionStatus: status });
+      } catch {
+        // Ignore errors — provisioner may not be available
+      }
+    },
+
+    provisionBackend: async () => {
+      if (!api.isTauriRuntime()) return;
+      try {
+        const status = await api.provisionBackend();
+        set({ backendProvisionStatus: status });
+        // Refresh bootstrap status after provisioning
+        await get().refreshBootstrapStatus();
+      } catch (error) {
+        set({
+          backendProvisionStatus: {
+            state: "failed",
+            installedCommit: null,
+            installedTag: null,
+            latestCommit: null,
+            latestTag: null,
+            updateAvailable: false,
+            downloadedBytes: 0,
+            error: error instanceof Error ? { code: "BACKEND_PROVISION_FAILED", message: error.message, recoverable: true } : undefined,
+          },
+        });
+      }
+    },
+
+    updateBackend: async () => {
+      if (!api.isTauriRuntime()) return;
+      try {
+        const status = await api.updateBackend();
+        set({ backendProvisionStatus: status });
+        await get().refreshBootstrapStatus();
+      } catch (error) {
+        set({
+          backendProvisionStatus: {
+            ...get().backendProvisionStatus,
+            state: "failed",
+            error: error instanceof Error ? { code: "BACKEND_PROVISION_FAILED", message: error.message, recoverable: true } : undefined,
+          },
+        });
+      }
     },
   };
 }

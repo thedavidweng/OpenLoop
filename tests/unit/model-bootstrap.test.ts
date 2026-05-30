@@ -52,6 +52,7 @@ describe("model bootstrap status", () => {
       { ...readySettings, firstRunCompleted: false },
       deviceInfo,
       [status("ready")],
+      null,
       true,
     );
 
@@ -64,6 +65,7 @@ describe("model bootstrap status", () => {
       readySettings,
       deviceInfo,
       [status("downloading")],
+      null,
       true,
     );
 
@@ -80,6 +82,7 @@ describe("model bootstrap status", () => {
       readySettings,
       deviceInfo,
       [status("ready")],
+      null,
       true,
     );
 

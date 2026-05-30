@@ -6,7 +6,10 @@ use std::{
 
 use crate::{
     models::errors::{AppError, AppResult},
-    services::{backend_manager::BackendManager, db::Database, model_manager::ModelManager},
+    services::{
+        backend_manager::BackendManager, backend_provisioner::BackendProvisioner, db::Database,
+        model_manager::ModelManager,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -15,6 +18,7 @@ pub struct AppState {
     pub db: Database,
     pub backend: Arc<Mutex<BackendManager>>,
     pub models: Arc<Mutex<ModelManager>>,
+    pub provisioner: Arc<Mutex<BackendProvisioner>>,
     pub generation_cancelled: Arc<AtomicBool>,
 }
 
@@ -27,6 +31,7 @@ impl AppState {
             sidecar_dir,
         )));
         let models = Arc::new(Mutex::new(ModelManager::new(app_data_dir.clone())));
+        let provisioner = Arc::new(Mutex::new(BackendProvisioner::new(app_data_dir.clone())));
         let generation_cancelled = Arc::new(AtomicBool::new(false));
 
         Ok(Self {
@@ -34,6 +39,7 @@ impl AppState {
             db,
             backend,
             models,
+            provisioner,
             generation_cancelled,
         })
     }

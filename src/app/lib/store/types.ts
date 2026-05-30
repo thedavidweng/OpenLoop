@@ -1,6 +1,7 @@
 import type {
   ActiveGenerationTask,
   AppSettings,
+  BackendProvisionStatus,
   DeviceInfo,
   GenerationEvent,
   GenerationFormValues,
@@ -20,6 +21,7 @@ export interface GenerationStore {
   bootstrapStatus: ModelBootstrapStatus;
   modelCatalog: ModelCatalogItem[];
   modelStatuses: ModelStatusSnapshot[];
+  backendProvisionStatus: BackendProvisionStatus;
   isSettingsOpen: boolean;
   sidebarVisible: boolean;
   sidebarWidth: number;
@@ -55,6 +57,9 @@ export interface GenerationStore {
   deleteAllModels: () => Promise<void>;
   refreshModelStatuses: () => Promise<void>;
   applyModelStatus: (status: ModelStatusSnapshot) => void;
+  refreshBackendProvisionStatus: () => Promise<void>;
+  provisionBackend: () => Promise<void>;
+  updateBackend: () => Promise<void>;
   setLanguage: (language: string) => Promise<void>;
   openSettings: () => void;
   reopenSetup: () => void;

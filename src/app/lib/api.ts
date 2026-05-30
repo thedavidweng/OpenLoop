@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import type {
   AppSettings,
   ActiveGenerationTask,
+  BackendProvisionStatus,
   BackendStatus,
   DeviceInfo,
   FailedRun,
@@ -137,6 +138,30 @@ export function getBackendLogsPath(): Promise<string | null> {
 
 export function clearBackendCache(): Promise<void> {
   return invoke<void>("clear_backend_cache");
+}
+
+export function getBackendProvisionStatus(): Promise<BackendProvisionStatus> {
+  return invoke<BackendProvisionStatus>("get_backend_provision_status");
+}
+
+export function provisionBackend(): Promise<BackendProvisionStatus> {
+  return invoke<BackendProvisionStatus>("provision_backend");
+}
+
+export function checkBackendUpdates(): Promise<BackendProvisionStatus> {
+  return invoke<BackendProvisionStatus>("check_backend_updates");
+}
+
+export function updateBackend(): Promise<BackendProvisionStatus> {
+  return invoke<BackendProvisionStatus>("update_backend");
+}
+
+export function listenToBackendProvisionEvents(
+  onEvent: (event: BackendProvisionStatus) => void,
+) {
+  return listen<BackendProvisionStatus>("backend-provision-progress", (event) => {
+    onEvent(event.payload);
+  });
 }
 
 export function listenToGenerationEvents(

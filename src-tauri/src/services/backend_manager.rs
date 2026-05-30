@@ -25,6 +25,7 @@ pub struct BackendManager {
     child: Option<Child>,
     status: BackendStatus,
     logs_path: Option<PathBuf>,
+    configured_port: Option<u16>,
 }
 
 impl BackendManager {
@@ -35,10 +36,19 @@ impl BackendManager {
             child: None,
             status: BackendStatus::Stopped,
             logs_path: None,
+            configured_port: None,
         }
     }
 
     pub fn status(&mut self) -> BackendStatus {
+        self.status_with_port(None)
+    }
+
+    /// Check backend status, optionally probing a port for an externally-running
+    /// backend when we have no child process. This allows commands like
+    /// `backend status` to discover backends started by other CLI invocations
+    /// or the GUI.
+    pub fn status_with_port(&mut self, probe_port: Option<u16>) -> BackendStatus {
         if let Some(child) = &mut self.child {
             if let Ok(Some(exit_status)) = child.try_wait() {
                 self.child = None;
@@ -60,6 +70,20 @@ impl BackendManager {
                             backend_health_url(port)
                         )),
                     };
+                }
+            }
+        }
+
+        // Probe for an externally-running backend when we have no child and
+        // current status is Stopped (e.g., fresh CLI invocation discovering a
+        // backend started by a previous CLI run or the GUI).
+        if self.child.is_none() && matches!(self.status, BackendStatus::Stopped) {
+            let port = probe_port.or(self.configured_port);
+            if let Some(port) = port {
+                if let Ok(client) = backend_health_client() {
+                    if backend_is_healthy(&client, port) {
+                        self.status = BackendStatus::Healthy { port };
+                    }
                 }
             }
         }
@@ -93,6 +117,8 @@ impl BackendManager {
     }
 
     pub fn start(&mut self, settings: &AppSettings) -> AppResult<BackendStatus> {
+        self.configured_port = Some(settings.backend_port);
+
         match self.status() {
             BackendStatus::Healthy { .. } | BackendStatus::Starting => {
                 return Ok(self.status.clone())
@@ -123,6 +149,20 @@ impl BackendManager {
         }
 
         let layout = prepare_runtime_layout(&self.app_data_dir, settings)?;
+
+        // Ensure backend code is provisioned before attempting to start
+        {
+            let provisioner =
+                crate::services::backend_provisioner::BackendProvisioner::new(
+                    self.app_data_dir.clone(),
+                );
+            if !provisioner.is_provisioned() {
+                return Err(AppError::backend_start_failed(
+                    "ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings.",
+                ));
+            }
+        }
+
         let working_directory = layout.working_directory;
         let model_directory = layout.checkpoints_directory;
         let descriptor = layout.descriptor;
@@ -442,6 +482,37 @@ mod tests {
     }
 
     #[test]
+    fn discovers_externally_running_backend_via_status_probe() {
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let sidecar_dir = temp_dir.path().join("sidecars");
+        fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
+        let listener = TcpListener::bind("127.0.0.1:0").expect("test health server should bind");
+        let port = listener
+            .local_addr()
+            .expect("listener should have local addr")
+            .port();
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("health request should arrive");
+            let mut buffer = [0_u8; 512];
+            let _ = stream.read(&mut buffer);
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                .expect("health response should write");
+        });
+
+        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        // Fresh manager — no start(), no configured_port
+        let status = manager.status();
+        assert!(matches!(status, BackendStatus::Stopped));
+
+        // Pass port via status_with_port — should discover the running backend
+        let status = manager.status_with_port(Some(port));
+        assert!(matches!(status, BackendStatus::Healthy { port: actual } if actual == port));
+        assert!(matches!(manager.ownership(), "attached"));
+        server.join().expect("health server should exit");
+    }
+
+    #[test]
     fn marks_previously_healthy_backend_failed_when_health_disappears() {
         let temp_dir = tempfile::tempdir().expect("temp dir should exist");
         let sidecar_dir = temp_dir.path().join("sidecars");
@@ -518,6 +589,22 @@ PY
         fs::set_permissions(&script_path, permissions).expect("permissions should set");
         fs::copy(&script_path, sidecar_dir.join(BUNDLED_UV_EXECUTABLE_NAME))
             .expect("mock sidecar should copy");
+
+        // Create a mock pyproject.toml and manifest so the provision check passes
+        let runtime_dir = temp_dir.path().join("runtime").join("ACE-Step-1.5");
+        fs::create_dir_all(&runtime_dir).expect("runtime dir should create");
+        fs::write(runtime_dir.join("pyproject.toml"), b"[project]\nname = 'acestep'")
+            .expect("mock pyproject should write");
+        let manifest = serde_json::json!({
+            "installedCommit": "test123",
+            "installedTag": null,
+            "installedAt": "2026-01-01T00:00:00Z"
+        });
+        fs::write(
+            temp_dir.path().join("runtime").join("backend-manifest.json"),
+            serde_json::to_string_pretty(&manifest).expect("manifest should serialize"),
+        )
+        .expect("manifest should write");
 
         let mut settings = AppSettings::default();
         settings.backend_working_directory = Some(temp_dir.path().display().to_string());

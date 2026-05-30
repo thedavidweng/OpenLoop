@@ -279,6 +279,12 @@ export type BackendStatus =
 export type ModelBootstrapStatus =
   | { state: "pending"; message: string }
   | {
+      state: "provisioning_backend";
+      message: string;
+      downloadedBytes?: number;
+      totalBytes?: number;
+    }
+  | {
       state: "downloading";
       message: string;
       downloadedBytes?: number;
@@ -293,6 +299,25 @@ export type ModelDownloadState =
   | "downloading"
   | "ready"
   | "failed";
+
+export type BackendProvisionState =
+  | "not_installed"
+  | "downloading"
+  | "extracting"
+  | "ready"
+  | "failed";
+
+export type BackendProvisionStatus = {
+  state: BackendProvisionState;
+  installedCommit: string | null;
+  installedTag: string | null;
+  latestCommit: string | null;
+  latestTag: string | null;
+  updateAvailable: boolean;
+  downloadedBytes: number;
+  totalBytes?: number | null;
+  error?: AppError | null;
+};
 
 export type ModelStatusSnapshot = {
   variant: ModelVariant;

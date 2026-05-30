@@ -318,6 +318,12 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
     (state) => state.selectModelVariant,
   );
   const enterDemoMode = useGenerationStore((state) => state.enterDemoMode);
+  const backendProvisionStatus = useGenerationStore(
+    (state) => state.backendProvisionStatus,
+  );
+  const provisionBackend = useGenerationStore(
+    (state) => state.provisionBackend,
+  );
   const [step, setStep] = useState<SetupStep>("welcome");
   const [busyVariant, setBusyVariant] = useState<ModelVariant | null>(null);
   const [outputDirectory, setOutputDirectory] = useState(
@@ -431,7 +437,10 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               <SetupActionCard
                 icon={Sparkles}
                 title={t("setup.downloadModel")}
-                description={t("setup.downloadModelDesc")}
+                description={t("setup.downloadModelDesc", {
+                  defaultValue:
+                    "Download the ACE-Step engine and a model weight pack to start generating.",
+                })}
               />
               <SetupActionCard
                 icon={FolderOutput}
@@ -495,6 +504,93 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
 
         {step === "model" ? (
           <div className="space-y-5 text-left">
+            {/* Engine provisioning card */}
+            <div className="space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
+                {t("settings.backendEngine", { defaultValue: "Backend engine" })}
+              </p>
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[13px] font-semibold text-white">
+                        ACE-Step Engine
+                      </p>
+                      {backendProvisionStatus.state === "ready" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
+                          <CheckCircle2 size={10} />
+                          {t("setup.downloadComplete", { defaultValue: "Ready" })}
+                        </span>
+                      ) : backendProvisionStatus.state === "failed" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">
+                          <AlertCircle size={10} />
+                          {t("model.failed")}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
+                      {t("settings.backendEngineDescription", {
+                        defaultValue:
+                          "The ACE-Step Python engine runs locally to generate music.",
+                      })}
+                    </p>
+                    {backendProvisionStatus.state === "ready" &&
+                    backendProvisionStatus.installedTag ? (
+                      <p className="font-mono text-[10px] tabular-nums text-[var(--color-text-dimmer)]">
+                        {backendProvisionStatus.installedTag}
+                      </p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void provisionBackend()}
+                    disabled={
+                      backendProvisionStatus.state === "ready" ||
+                      backendProvisionStatus.state === "downloading" ||
+                      backendProvisionStatus.state === "extracting"
+                    }
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {backendProvisionStatus.state === "downloading" ||
+                    backendProvisionStatus.state === "extracting" ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin" />
+                        {t("settings.provisioningBackend", {
+                          defaultValue: "Downloading…",
+                        })}
+                      </>
+                    ) : backendProvisionStatus.state === "ready" ? (
+                      <>
+                        <CheckCircle2 size={12} />
+                        {t("setup.downloaded")}
+                      </>
+                    ) : backendProvisionStatus.state === "failed" ? (
+                      <>
+                        <Download size={12} />
+                        {t("model.retry")}
+                      </>
+                    ) : (
+                      <>
+                        <Download size={12} />
+                        {t("setup.downloadModelButton")}
+                      </>
+                    )}
+                  </button>
+                </div>
+                {backendProvisionStatus.state === "downloading" ||
+                backendProvisionStatus.state === "extracting" ? (
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+                    <div
+                      className="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-300 ease-out"
+                      style={{
+                        width: `${backendProvisionStatus.totalBytes ? Math.min(100, Math.round((backendProvisionStatus.downloadedBytes / backendProvisionStatus.totalBytes) * 100)) : 0}%`,
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
                 {t("setup.modelPackHeading", { defaultValue: "Weight packs" })}

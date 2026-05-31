@@ -64,7 +64,13 @@ jobs:
       - name: Read release notes
         id: notes
         run: |
-          NOTES=$(cat docs/release-notes/v0.1.0.md)
+          TAG="${{ steps.release.outputs.tag }}"
+          NOTES_FILE="docs/release-notes/${TAG}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES=$(cat "$NOTES_FILE")
+          else
+            NOTES="Release ${TAG}"
+          fi
           echo "body<<EOF" >> "$GITHUB_OUTPUT"
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"

@@ -295,3 +295,83 @@ impl AppSettings {
             .collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{AppSettings, SettingKey};
+
+    #[test]
+    fn setting_key_parse_rejects_unknown_key() {
+        let error = SettingKey::parse("nonexistentKey").expect_err("unknown key should error");
+        assert_eq!(error.code, "VALIDATION_FAILED");
+        assert!(error.details.unwrap().contains("nonexistentKey"));
+    }
+
+    #[test]
+    fn setting_key_parse_accepts_all_known_keys() {
+        let keys = [
+            "profile",
+            "modelVariant",
+            "downloadedModels",
+            "outputDirectory",
+            "backendPort",
+            "defaultDurationSeconds",
+            "defaultAudioFormat",
+            "defaultThinking",
+            "firstRunCompleted",
+            "checkForUpdates",
+            "language",
+            "modelDirectory",
+            "backendWorkingDirectory",
+            "logDirectory",
+            "modelMirror",
+        ];
+        for key in keys {
+            SettingKey::parse(key).expect("known key should parse: {key}");
+        }
+    }
+
+    #[test]
+    fn setting_key_as_str_round_trips_from_parse() {
+        let keys = [
+            "profile",
+            "modelVariant",
+            "backendPort",
+            "defaultDurationSeconds",
+            "modelMirror",
+        ];
+        for key in keys {
+            let parsed = SettingKey::parse(key).expect("should parse");
+            assert_eq!(parsed.as_str(), key, "as_str should round-trip for {key}");
+        }
+    }
+
+    #[test]
+    fn impacts_backend_startup_flags_directory_and_port_keys() {
+        assert!(SettingKey::BackendPort.impacts_backend_startup());
+        assert!(SettingKey::ModelDirectory.impacts_backend_startup());
+        assert!(SettingKey::BackendWorkingDirectory.impacts_backend_startup());
+        assert!(SettingKey::LogDirectory.impacts_backend_startup());
+        assert!(SettingKey::ModelVariant.impacts_backend_startup());
+        assert!(SettingKey::ModelMirror.impacts_backend_startup());
+    }
+
+    #[test]
+    fn impacts_backend_startup_does_not_flag_user_preference_keys() {
+        assert!(!SettingKey::DefaultDurationSeconds.impacts_backend_startup());
+        assert!(!SettingKey::DefaultAudioFormat.impacts_backend_startup());
+        assert!(!SettingKey::DefaultThinking.impacts_backend_startup());
+        assert!(!SettingKey::Language.impacts_backend_startup());
+        assert!(!SettingKey::OutputDirectory.impacts_backend_startup());
+        assert!(!SettingKey::CheckForUpdates.impacts_backend_startup());
+    }
+
+    #[test]
+    fn apply_setting_rejects_invalid_value_type() {
+        let mut settings = AppSettings::default();
+        let error = settings
+            .apply_setting(SettingKey::BackendPort, serde_json::json!("not-a-number"))
+            .expect_err("invalid type should error");
+        assert_eq!(error.code, "VALIDATION_FAILED");
+    }
+}

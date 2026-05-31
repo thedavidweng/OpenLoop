@@ -186,8 +186,8 @@ impl AceClient {
 
     pub fn release_task(&self, request: &GenerationRequest) -> AppResult<AceReleasedTask> {
         let payload = AcePayload::from(request);
-        let payload_value =
-            serde_json::to_value(&payload).map_err(|e| AppError::task_submit_failed(e.to_string()))?;
+        let payload_value = serde_json::to_value(&payload)
+            .map_err(|e| AppError::task_submit_failed(e.to_string()))?;
 
         let envelope: AceEnvelope<Value> = self.post_envelope(
             "/release_task",
@@ -697,7 +697,10 @@ mod tests {
         assert_eq!(payload.audio_format, "wav");
         assert_eq!(payload.model, Some("acestep-v15-turbo".to_owned()));
         assert_eq!(payload.task_type, "text2music");
-        assert_eq!(payload.lm_model_path, Some("acestep-5Hz-lm-0.6B".to_owned()));
+        assert_eq!(
+            payload.lm_model_path,
+            Some("acestep-5Hz-lm-0.6B".to_owned())
+        );
         assert_eq!(payload.lm_backend, Some("mlx".to_owned()));
         assert!(payload.thinking);
         assert_eq!(payload.inference_steps, 8);

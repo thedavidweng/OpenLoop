@@ -166,4 +166,45 @@ mod tests {
         assert!(!first_path.exists());
         assert!(db.list_generations(None).expect("history").is_empty());
     }
+
+    #[test]
+    fn resolve_by_prefix_finds_unique_prefix_match() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        db.insert_generation(&sample_record(Some("/tmp/out.wav".to_owned())))
+            .expect("insert");
+        let mut other = sample_record(Some("/tmp/out2.wav".to_owned()));
+        other.id = "gen_999_other".to_owned();
+        db.insert_generation(&other).expect("insert");
+
+        let record = super::resolve_by_prefix(&db, "gen_001").expect("should resolve");
+        assert_eq!(record.id, "gen_001");
+    }
+
+    #[test]
+    fn resolve_by_prefix_errors_on_ambiguous_match() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        db.insert_generation(&sample_record(Some("/tmp/out.wav".to_owned())))
+            .expect("insert");
+        let mut other = sample_record(Some("/tmp/out2.wav".to_owned()));
+        other.id = "gen_002".to_owned();
+        db.insert_generation(&other).expect("insert");
+
+        let error =
+            super::resolve_by_prefix(&db, "gen_00").expect_err("ambiguous prefix should error");
+        assert_eq!(error.code, "VALIDATION_FAILED");
+        assert!(error.details.unwrap().contains("ambiguous"));
+    }
+
+    #[test]
+    fn resolve_by_prefix_errors_on_no_match() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let db = Database::new(temp.path()).expect("database");
+        db.insert_generation(&sample_record(None)).expect("insert");
+
+        let error =
+            super::resolve_by_prefix(&db, "nonexistent").expect_err("no match should error");
+        assert_eq!(error.code, "NOT_FOUND");
+    }
 }

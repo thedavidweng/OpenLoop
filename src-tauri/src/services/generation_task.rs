@@ -571,6 +571,70 @@ mod tests {
     }
 
     #[test]
+    fn variant_seed_wraps_around_i32_max_boundary() {
+        const I32_MAX: i64 = 2_147_483_647;
+        let mut request = sample_request();
+        request.seed = Some(I32_MAX);
+        request.variation_count = 3;
+        let mut used = HashSet::new();
+
+        let first = request_for_variation(&request, 1, &mut used);
+        let second = request_for_variation(&request, 2, &mut used);
+        let third = request_for_variation(&request, 3, &mut used);
+
+        assert_eq!(
+            first.seed,
+            Some(I32_MAX),
+            "first seed should be at the boundary"
+        );
+        assert_eq!(
+            second.seed,
+            Some(-2_147_483_648),
+            "second seed should wrap to i32::MIN"
+        );
+        assert_eq!(
+            third.seed,
+            Some(-2_147_483_647),
+            "third seed should be i32::MIN + 1"
+        );
+    }
+
+    #[test]
+    fn variant_seed_wraps_around_i32_min_boundary() {
+        const I32_MIN: i64 = -2_147_483_648;
+        let mut request = sample_request();
+        request.seed = Some(I32_MIN);
+        request.variation_count = 3;
+        let mut used = HashSet::new();
+
+        let first = request_for_variation(&request, 1, &mut used);
+        let second = request_for_variation(&request, 2, &mut used);
+        let third = request_for_variation(&request, 3, &mut used);
+
+        assert_eq!(first.seed, Some(I32_MIN));
+        assert_eq!(second.seed, Some(I32_MIN + 1));
+        assert_eq!(third.seed, Some(I32_MIN + 2));
+    }
+
+    #[test]
+    fn variant_seed_deduplicates_on_collision() {
+        let mut request = sample_request();
+        request.seed = Some(100);
+        request.variation_count = 4;
+        let mut used = HashSet::new();
+
+        // Pre-insert the seed that variation 2 would naturally get (101)
+        used.insert(101);
+
+        let first = request_for_variation(&request, 1, &mut used);
+        let second = request_for_variation(&request, 2, &mut used);
+
+        assert_eq!(first.seed, Some(100));
+        // 101 is already used, so it should skip to 102
+        assert_eq!(second.seed, Some(102));
+    }
+
+    #[test]
     fn cancelled_generation_task_does_not_create_history_record() {
         let temp = tempfile::tempdir().expect("temp dir");
         let db = Database::new(temp.path()).expect("database");
@@ -664,5 +728,69 @@ mod tests {
             .map(|event| event["type"].as_str().unwrap().to_owned())
             .collect();
         assert_eq!(event_types, vec!["submitted", "failed"]);
+    }
+
+    #[test]
+    fn build_generation_record_maps_request_fields_to_record() {
+        let request = GenerationRequest {
+            prompt: "jazz piano".to_owned(),
+            negative_prompt: Some("no drums".to_owned()),
+            lyrics: "[Verse]\nLa la".to_owned(),
+            vocal_language: "zh".to_owned(),
+            duration_seconds: 120.0,
+            bpm: Some(120),
+            key_scale: Some("D Minor".to_owned()),
+            time_signature: "3".to_owned(),
+            audio_format: "flac".to_owned(),
+            model: Some("acestep-v15-pro".to_owned()),
+            task_type: "text2music".to_owned(),
+            lm_model_path: Some("acestep-5Hz-lm-1.7B".to_owned()),
+            lm_backend: Some("pt".to_owned()),
+            thinking: true,
+            inference_steps: 16,
+            guidance_scale: 12.0,
+            use_format: true,
+            use_cot_caption: true,
+            use_cot_language: true,
+            constrained_decoding: true,
+            reference_audio_path: None,
+            src_audio_path: None,
+            instruction: None,
+            repainting_start: None,
+            repainting_end: None,
+            audio_cover_strength: None,
+            use_random_seed: false,
+            seed: Some(42),
+            variation_count: 1,
+        };
+
+        let record = build_generation_record(
+            &request,
+            "completed",
+            Some("/tmp/out.flac".to_owned()),
+            None,
+            Some("generation info".to_owned()),
+        );
+
+        assert_eq!(record.prompt, "jazz piano");
+        assert_eq!(record.lyrics, "[Verse]\nLa la");
+        assert_eq!(record.vocal_language, "zh");
+        assert_eq!(record.duration_seconds, 120.0);
+        assert_eq!(record.bpm, Some(120));
+        assert_eq!(record.key_scale.as_deref(), Some("D Minor"));
+        assert_eq!(record.time_signature, "3");
+        assert_eq!(record.audio_format, "flac");
+        assert_eq!(record.model.as_deref(), Some("acestep-v15-pro"));
+        assert_eq!(record.lm_model.as_deref(), Some("acestep-5Hz-lm-1.7B"));
+        assert!(record.thinking);
+        assert_eq!(record.inference_steps, 16);
+        assert_eq!(record.guidance_scale, 12.0);
+        assert!(!record.use_random_seed);
+        assert_eq!(record.seed, Some(42));
+        assert_eq!(record.output_path, Some("/tmp/out.flac".to_owned()));
+        assert_eq!(record.status, "completed");
+        assert!(record.error_message.is_none());
+        assert_eq!(record.generation_info.as_deref(), Some("generation info"));
+        assert!(!record.is_favorite);
     }
 }

@@ -128,7 +128,10 @@ pub fn read_generation_audio(state: State<'_, AppState>, id: String) -> AppResul
         .as_ref()
         .map(PathBuf::from)
         .ok_or_else(|| {
-            AppError::not_found("Generation audio", format!("record {id} has no output path"))
+            AppError::not_found(
+                "Generation audio",
+                format!("record {id} has no output path"),
+            )
         })?;
     if !path.is_file() {
         return Err(AppError::not_found(

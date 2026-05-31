@@ -4,11 +4,7 @@ use super::AppState;
 use crate::{
     cli::{cli_error, human_output},
     models::{errors::AppResult, settings::ModelVariant},
-    services::{
-        backend_provisioner::read_backend_manifest,
-        device,
-        model_manager::read_manifest,
-    },
+    services::{backend_provisioner::read_backend_manifest, device, model_manager::read_manifest},
 };
 use serde::Serialize;
 
@@ -254,7 +250,10 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
                     .installed_tag
                     .as_deref()
                     .unwrap_or(&m.installed_commit[..7.min(m.installed_commit.len())]);
-                format!("{tag} (installed {})", m.installed_at.split('T').next().unwrap_or(""))
+                format!(
+                    "{tag} (installed {})",
+                    m.installed_at.split('T').next().unwrap_or("")
+                )
             }
             None => "present (no manifest)".to_owned(),
         };

@@ -152,10 +152,9 @@ impl BackendManager {
 
         // Ensure backend code is provisioned before attempting to start
         {
-            let provisioner =
-                crate::services::backend_provisioner::BackendProvisioner::new(
-                    self.app_data_dir.clone(),
-                );
+            let provisioner = crate::services::backend_provisioner::BackendProvisioner::new(
+                self.app_data_dir.clone(),
+            );
             if !provisioner.is_provisioned() {
                 return Err(AppError::backend_start_failed(
                     "ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings.",
@@ -593,15 +592,21 @@ PY
         // Create a mock pyproject.toml and manifest so the provision check passes
         let runtime_dir = temp_dir.path().join("runtime").join("ACE-Step-1.5");
         fs::create_dir_all(&runtime_dir).expect("runtime dir should create");
-        fs::write(runtime_dir.join("pyproject.toml"), b"[project]\nname = 'acestep'")
-            .expect("mock pyproject should write");
+        fs::write(
+            runtime_dir.join("pyproject.toml"),
+            b"[project]\nname = 'acestep'",
+        )
+        .expect("mock pyproject should write");
         let manifest = serde_json::json!({
             "installedCommit": "test123",
             "installedTag": null,
             "installedAt": "2026-01-01T00:00:00Z"
         });
         fs::write(
-            temp_dir.path().join("runtime").join("backend-manifest.json"),
+            temp_dir
+                .path()
+                .join("runtime")
+                .join("backend-manifest.json"),
             serde_json::to_string_pretty(&manifest).expect("manifest should serialize"),
         )
         .expect("manifest should write");

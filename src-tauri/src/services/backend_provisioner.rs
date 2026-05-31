@@ -269,9 +269,7 @@ impl BackendProvisioner {
         let client = blocking_http_client()?;
         let temp_dir = std::env::temp_dir().join("openloop-backend-update");
         fs::create_dir_all(&temp_dir).map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to create temp directory: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to create temp directory: {error}"))
         })?;
         let archive_path = temp_dir.join(format!("acestep-{latest_commit}.zip"));
         download_archive_blocking(&client, &latest_commit, &archive_path)?;
@@ -329,8 +327,7 @@ impl BackendProvisioner {
         emit_status(&app, &status);
 
         tauri::async_runtime::spawn(async move {
-            let result =
-                update_async_inner(&app, &app_data_dir, &runtime_dir, &status).await;
+            let result = update_async_inner(&app, &app_data_dir, &runtime_dir, &status).await;
 
             match result {
                 Ok((tag, commit)) => {
@@ -445,9 +442,7 @@ async fn update_async_inner(
     let client = http_client()?;
     let temp_dir = std::env::temp_dir().join("openloop-backend-update");
     fs::create_dir_all(&temp_dir).map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to create temp directory: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to create temp directory: {error}"))
     })?;
     let archive_path = temp_dir.join(format!("acestep-{latest_commit}.zip"));
 
@@ -497,9 +492,7 @@ async fn update_async_inner(
 
 fn archive_url(git_ref: &str) -> String {
     // Use codeload.github.com directly to avoid the 302 redirect from github.com
-    format!(
-        "https://codeload.github.com/{ACE_STEP_REPO}/zip/{git_ref}"
-    )
+    format!("https://codeload.github.com/{ACE_STEP_REPO}/zip/{git_ref}")
 }
 
 fn blocking_http_client() -> AppResult<reqwest::blocking::Client> {
@@ -510,9 +503,7 @@ fn blocking_http_client() -> AppResult<reqwest::blocking::Client> {
         .timeout(Duration::from_secs(300))
         .build()
         .map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to build HTTP client: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to build HTTP client: {error}"))
         })
 }
 
@@ -524,9 +515,7 @@ fn http_client() -> AppResult<Client> {
         .timeout(Duration::from_secs(300))
         .build()
         .map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to build HTTP client: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to build HTTP client: {error}"))
         })
 }
 
@@ -595,9 +584,7 @@ fn download_archive_blocking(
                 ))
             })?;
         writer.write_all(&bytes).map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to write archive file: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to write archive file: {error}"))
         })?;
         writer.flush().ok();
         drop(writer);
@@ -745,9 +732,7 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
     })?;
 
     let mut archive = zip::ZipArchive::new(file).map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to read zip archive: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to read zip archive: {error}"))
     })?;
 
     // GitHub zips have a single top-level directory like "ACE-Step-1.5-d5d958e/"
@@ -756,9 +741,7 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to read zip entry {i}: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to read zip entry {i}: {error}"))
         })?;
 
         let entry_name = entry.mangled_name().to_string_lossy().to_string();
@@ -846,9 +829,7 @@ fn find_top_level_prefix(archive: &mut zip::ZipArchive<fs::File>) -> AppResult<T
 
     for i in 0..archive.len() {
         let entry = archive.by_index(i).map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to read zip entry {i}: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to read zip entry {i}: {error}"))
         })?;
 
         let name = entry.mangled_name().to_string_lossy().to_string();
@@ -877,28 +858,19 @@ fn find_top_level_prefix(archive: &mut zip::ZipArchive<fs::File>) -> AppResult<T
 // ---------------------------------------------------------------------------
 
 pub fn read_backend_manifest(app_data_dir: &Path) -> Option<BackendManifest> {
-    let path = app_data_dir
-        .join("runtime")
-        .join(BACKEND_MANIFEST_FILENAME);
+    let path = app_data_dir.join("runtime").join(BACKEND_MANIFEST_FILENAME);
     let content = fs::read_to_string(&path).ok()?;
     serde_json::from_str(&content).ok()
 }
 
-fn write_backend_manifest(
-    app_data_dir: &Path,
-    manifest: &BackendManifest,
-) -> AppResult<()> {
+fn write_backend_manifest(app_data_dir: &Path, manifest: &BackendManifest) -> AppResult<()> {
     let dir = app_data_dir.join("runtime");
     fs::create_dir_all(&dir).map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to create runtime directory: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to create runtime directory: {error}"))
     })?;
     let path = dir.join(BACKEND_MANIFEST_FILENAME);
     let payload = serde_json::to_string_pretty(manifest).map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to serialize manifest: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to serialize manifest: {error}"))
     })?;
     fs::write(&path, &payload).map_err(|error| {
         AppError::backend_provision_failed(format!(
@@ -944,14 +916,10 @@ struct GitHubRelease {
 
 fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
     let client = blocking_http_client()?;
-    let url = format!(
-        "https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest"
-    );
+    let url = format!("https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest");
 
     let response = client.get(&url).send().map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to check for updates: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to check for updates: {error}"))
     })?;
 
     if !response.status().is_success() {
@@ -962,9 +930,7 @@ fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
     }
 
     let release: GitHubRelease = response.json().map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to parse GitHub release: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to parse GitHub release: {error}"))
     })?;
 
     // Resolve tag to commit SHA via git ref API
@@ -973,15 +939,11 @@ fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
         release.tag_name
     );
     let ref_response = client.get(&ref_url).send().map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to resolve tag: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to resolve tag: {error}"))
     })?;
 
     let ref_json: serde_json::Value = ref_response.json().map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to parse tag ref: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to parse tag ref: {error}"))
     })?;
 
     // The SHA might be in object.sha (for lightweight tags) or need dereferencing (annotated tags)
@@ -1004,14 +966,10 @@ fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
 
 async fn fetch_latest_release_async() -> AppResult<(String, String)> {
     let client = http_client()?;
-    let url = format!(
-        "https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest"
-    );
+    let url = format!("https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest");
 
     let response = client.get(&url).send().await.map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to check for updates: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to check for updates: {error}"))
     })?;
 
     if !response.status().is_success() {
@@ -1022,9 +980,7 @@ async fn fetch_latest_release_async() -> AppResult<(String, String)> {
     }
 
     let release: GitHubRelease = response.json().await.map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to parse GitHub release: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to parse GitHub release: {error}"))
     })?;
 
     let ref_url = format!(
@@ -1032,15 +988,11 @@ async fn fetch_latest_release_async() -> AppResult<(String, String)> {
         release.tag_name
     );
     let ref_response = client.get(&ref_url).send().await.map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to resolve tag: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to resolve tag: {error}"))
     })?;
 
     let ref_json: serde_json::Value = ref_response.json().await.map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to parse tag ref: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to parse tag ref: {error}"))
     })?;
 
     let commit_sha = ref_json
@@ -1065,9 +1017,7 @@ async fn fetch_latest_release_async() -> AppResult<(String, String)> {
 
 fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
     fs::create_dir_all(backup_dir).map_err(|error| {
-        AppError::backend_provision_failed(format!(
-            "failed to create backup directory: {error}"
-        ))
+        AppError::backend_provision_failed(format!("failed to create backup directory: {error}"))
     })?;
 
     let backup_name = backup_dir
@@ -1078,9 +1028,7 @@ fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
     // Move Python source files to backup, preserving checkpoints symlink
     let entries: Vec<_> = fs::read_dir(runtime_dir)
         .map_err(|error| {
-            AppError::backend_provision_failed(format!(
-                "failed to read runtime directory: {error}"
-            ))
+            AppError::backend_provision_failed(format!("failed to read runtime directory: {error}"))
         })?
         .filter_map(|e| e.ok())
         .collect();
@@ -1137,7 +1085,8 @@ mod tests {
         let temp = tempfile::tempdir().expect("temp dir");
         let runtime = temp.path().join("runtime").join("ACE-Step-1.5");
         fs::create_dir_all(&runtime).expect("create runtime");
-        fs::write(runtime.join("pyproject.toml"), b"[project]\nname = 'test'").expect("write pyproject");
+        fs::write(runtime.join("pyproject.toml"), b"[project]\nname = 'test'")
+            .expect("write pyproject");
 
         let manifest = BackendManifest {
             installed_commit: "abc1234".to_owned(),
@@ -1190,8 +1139,7 @@ mod tests {
             .expect("write file");
         zip.start_file("ACE-Step-1.5-abc123/acestep/__init__.py", options)
             .expect("start file");
-        zip.write_all(b"")
-            .expect("write file");
+        zip.write_all(b"").expect("write file");
         zip.finish().expect("finish zip");
 
         extract_archive(&zip_path, &runtime_dir).expect("extract");

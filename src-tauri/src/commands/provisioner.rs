@@ -1,8 +1,7 @@
 use tauri::{AppHandle, State};
 
 use crate::{
-    app_state::AppState,
-    models::errors::AppResult,
+    app_state::AppState, models::errors::AppResult,
     services::backend_provisioner::BackendProvisionStatus,
 };
 
@@ -31,9 +30,7 @@ pub fn provision_backend(
 }
 
 #[tauri::command]
-pub fn check_backend_updates(
-    state: State<'_, AppState>,
-) -> AppResult<BackendProvisionStatus> {
+pub fn check_backend_updates(state: State<'_, AppState>) -> AppResult<BackendProvisionStatus> {
     let provisioner = state
         .provisioner
         .lock()

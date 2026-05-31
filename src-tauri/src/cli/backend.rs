@@ -84,17 +84,23 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
             obj.insert("ownership".to_owned(), serde_json::json!(ownership));
             match &provision_info {
                 Some(manifest) => {
-                    obj.insert("backendCode".to_owned(), serde_json::json!({
-                        "installed": true,
-                        "commit": manifest.installed_commit,
-                        "tag": manifest.installed_tag,
-                        "installedAt": manifest.installed_at,
-                    }));
+                    obj.insert(
+                        "backendCode".to_owned(),
+                        serde_json::json!({
+                            "installed": true,
+                            "commit": manifest.installed_commit,
+                            "tag": manifest.installed_tag,
+                            "installedAt": manifest.installed_at,
+                        }),
+                    );
                 }
                 None => {
-                    obj.insert("backendCode".to_owned(), serde_json::json!({
-                        "installed": false,
-                    }));
+                    obj.insert(
+                        "backendCode".to_owned(),
+                        serde_json::json!({
+                            "installed": false,
+                        }),
+                    );
                 }
             }
         }
@@ -119,10 +125,9 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
 
         match &provision_info {
             Some(manifest) => {
-                let version = manifest
-                    .installed_tag
-                    .as_deref()
-                    .unwrap_or(&manifest.installed_commit[..7.min(manifest.installed_commit.len())]);
+                let version = manifest.installed_tag.as_deref().unwrap_or(
+                    &manifest.installed_commit[..7.min(manifest.installed_commit.len())],
+                );
                 human_output(&format!("Backend code: {version} (installed)"));
             }
             None => {
@@ -291,7 +296,9 @@ fn execute_clear_cache(state: &AppState) -> AppResult<()> {
 }
 
 /// Format a manifest version for display: prefer tag, fall back to short commit.
-fn format_manifest_version(manifest: &Option<crate::services::backend_provisioner::BackendManifest>) -> String {
+fn format_manifest_version(
+    manifest: &Option<crate::services::backend_provisioner::BackendManifest>,
+) -> String {
     match manifest {
         Some(m) => {
             if let Some(tag) = &m.installed_tag {
@@ -335,9 +342,7 @@ fn execute_provision(state: &AppState, args: &[String]) -> AppResult<()> {
     let version = format_manifest_version(&manifest);
 
     if json {
-        super::json_output(&format!(
-            r#"{{"event":"installed","version":"{version}"}}"#
-        ));
+        super::json_output(&format!(r#"{{"event":"installed","version":"{version}"}}"#));
     } else {
         events::human_success(&format!("Backend code installed ({version})."));
     }
@@ -390,9 +395,7 @@ fn execute_update(state: &AppState, args: &[String]) -> AppResult<()> {
     provisioner.update_blocking()?;
 
     if json {
-        super::json_output(&format!(
-            r#"{{"event":"updated","version":"{latest}"}}"#
-        ));
+        super::json_output(&format!(r#"{{"event":"updated","version":"{latest}"}}"#));
     } else {
         events::human_success(&format!("Backend updated to {latest}."));
     }

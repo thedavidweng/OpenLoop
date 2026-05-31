@@ -11,6 +11,7 @@ export const MODEL_VARIANTS = {
     label: "Lite",
     description: "Official lower-memory profile: turbo DiT + 0.6B LM.",
     modelName: "acestep-v15-turbo",
+    lmModelPath: "acestep-5Hz-lm-0.6B",
   },
   turbo: {
     id: "turbo",
@@ -18,16 +19,24 @@ export const MODEL_VARIANTS = {
     description:
       "Recommended profile for 16 GB Apple Silicon Macs: turbo DiT + 0.6B LM.",
     modelName: "acestep-v15-turbo",
+    lmModelPath: "acestep-5Hz-lm-0.6B",
   },
   pro: {
     id: "pro",
     label: "XL Turbo",
     description: "Official XL turbo profile for larger-memory machines.",
     modelName: "acestep-v15-xl-turbo",
+    lmModelPath: "acestep-5Hz-lm-1.7B",
   },
 } as const satisfies Record<
   ModelVariant,
-  { id: ModelVariant; label: string; description: string; modelName: string }
+  {
+    id: ModelVariant;
+    label: string;
+    description: string;
+    modelName: string;
+    lmModelPath: string;
+  }
 >;
 
 export const MODEL_PACKS = {
@@ -63,6 +72,10 @@ export interface ModelPackStatus {
 
 export function modelNameForVariant(variant: ModelVariant): string {
   return MODEL_VARIANTS[variant].modelName;
+}
+
+export function lmModelPathForVariant(variant: ModelVariant): string {
+  return MODEL_VARIANTS[variant].lmModelPath;
 }
 
 export function packIdForVariant(variant: ModelVariant): ModelPackId {

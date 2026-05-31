@@ -14,7 +14,7 @@ pub fn list_generations(
     state: State<'_, AppState>,
     query: Option<String>,
 ) -> AppResult<Vec<GenerationRecord>> {
-    HistoryService::new(state.db.clone()).list_generations(query.as_deref())
+    state.db.list_generations(query.as_deref())
 }
 
 #[tauri::command]
@@ -22,12 +22,12 @@ pub fn get_generation(
     state: State<'_, AppState>,
     id: String,
 ) -> AppResult<Option<GenerationRecord>> {
-    HistoryService::new(state.db.clone()).get_generation(&id)
+    state.db.get_generation(&id)
 }
 
 #[tauri::command]
 pub fn delete_generation(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    HistoryService::new(state.db.clone()).delete_generation(&id)
+    state.db.delete_generation(&id)
 }
 
 #[tauri::command]
@@ -37,7 +37,13 @@ pub fn clear_generation_history(state: State<'_, AppState>) -> AppResult<()> {
 
 #[tauri::command]
 pub fn toggle_generation_favorite(state: State<'_, AppState>, id: String) -> AppResult<bool> {
-    HistoryService::new(state.db.clone()).toggle_favorite(&id)
+    let record = state
+        .db
+        .get_generation(&id)?
+        .ok_or_else(|| crate::models::errors::AppError::not_found("Generation record", id))?;
+    let new_state = !record.is_favorite;
+    state.db.set_generation_favorite(&record.id, new_state)?;
+    Ok(new_state)
 }
 
 #[tauri::command]

@@ -42,6 +42,75 @@ pub enum AceTaskState {
     Failed { error: AppError },
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct AcePayload {
+    pub prompt: String,
+    pub negative_prompt: Option<String>,
+    pub lyrics: String,
+    pub vocal_language: String,
+    pub audio_duration: f64,
+    pub bpm: Option<i64>,
+    pub key_scale: Option<String>,
+    pub time_signature: String,
+    pub audio_format: String,
+    pub model: Option<String>,
+    pub task_type: String,
+    pub lm_model_path: Option<String>,
+    pub lm_backend: Option<String>,
+    pub thinking: bool,
+    pub inference_steps: i64,
+    pub guidance_scale: f64,
+    pub use_format: bool,
+    pub use_cot_caption: bool,
+    pub use_cot_language: bool,
+    pub constrained_decoding: bool,
+    pub reference_audio_path: Option<String>,
+    pub src_audio_path: Option<String>,
+    pub instruction: Option<String>,
+    pub repainting_start: Option<f64>,
+    pub repainting_end: Option<f64>,
+    pub audio_cover_strength: Option<f64>,
+    pub use_random_seed: bool,
+    pub seed: i64,
+    pub batch_size: i64,
+}
+
+impl From<&GenerationRequest> for AcePayload {
+    fn from(request: &GenerationRequest) -> Self {
+        Self {
+            prompt: request.prompt.clone(),
+            negative_prompt: request.negative_prompt.clone(),
+            lyrics: request.lyrics.clone(),
+            vocal_language: request.vocal_language.clone(),
+            audio_duration: request.duration_seconds,
+            bpm: request.bpm,
+            key_scale: request.key_scale.clone(),
+            time_signature: request.time_signature.clone(),
+            audio_format: request.audio_format.clone(),
+            model: request.model.clone(),
+            task_type: request.task_type.clone(),
+            lm_model_path: request.lm_model_path.clone(),
+            lm_backend: request.lm_backend.clone(),
+            thinking: request.thinking,
+            inference_steps: request.inference_steps,
+            guidance_scale: request.guidance_scale,
+            use_format: request.use_format,
+            use_cot_caption: request.use_cot_caption,
+            use_cot_language: request.use_cot_language,
+            constrained_decoding: request.constrained_decoding,
+            reference_audio_path: request.reference_audio_path.clone(),
+            src_audio_path: request.src_audio_path.clone(),
+            instruction: request.instruction.clone(),
+            repainting_start: request.repainting_start,
+            repainting_end: request.repainting_end,
+            audio_cover_strength: request.audio_cover_strength,
+            use_random_seed: request.use_random_seed,
+            seed: request.seed.unwrap_or(-1),
+            batch_size: 1,
+        }
+    }
+}
+
 pub struct AceClient {
     base_url: String,
     http: Client,
@@ -116,41 +185,13 @@ impl AceClient {
     }
 
     pub fn release_task(&self, request: &GenerationRequest) -> AppResult<AceReleasedTask> {
-        let payload = json!({
-            "prompt": request.prompt,
-            "negative_prompt": request.negative_prompt,
-            "lyrics": request.lyrics,
-            "vocal_language": request.vocal_language,
-            "audio_duration": request.duration_seconds,
-            "bpm": request.bpm,
-            "key_scale": request.key_scale,
-            "time_signature": request.time_signature,
-            "audio_format": request.audio_format,
-            "model": request.model,
-            "task_type": request.task_type,
-            "lm_model_path": request.lm_model_path,
-            "lm_backend": request.lm_backend,
-            "thinking": request.thinking,
-            "inference_steps": request.inference_steps,
-            "guidance_scale": request.guidance_scale,
-            "use_format": request.use_format,
-            "use_cot_caption": request.use_cot_caption,
-            "use_cot_language": request.use_cot_language,
-            "constrained_decoding": request.constrained_decoding,
-            "reference_audio_path": request.reference_audio_path,
-            "src_audio_path": request.src_audio_path,
-            "instruction": request.instruction,
-            "repainting_start": request.repainting_start,
-            "repainting_end": request.repainting_end,
-            "audio_cover_strength": request.audio_cover_strength,
-            "use_random_seed": request.use_random_seed,
-            "seed": request.seed.unwrap_or(-1),
-            "batch_size": 1,
-        });
+        let payload = AcePayload::from(request);
+        let payload_value =
+            serde_json::to_value(&payload).map_err(|e| AppError::task_submit_failed(e.to_string()))?;
 
         let envelope: AceEnvelope<Value> = self.post_envelope(
             "/release_task",
-            &payload,
+            &payload_value,
             RELEASE_TASK_TIMEOUT,
             AppError::task_submit_failed,
         )?;
@@ -598,5 +639,119 @@ mod tests {
             .download_audio("generated.wav")
             .expect("audio should download");
         assert_eq!(bytes, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn ace_payload_round_trips_all_generation_request_fields() {
+        use crate::models::generation::GenerationRequest;
+
+        let request = GenerationRequest {
+            prompt: "test prompt".to_owned(),
+            negative_prompt: Some("avoid this".to_owned()),
+            lyrics: "la la la".to_owned(),
+            vocal_language: "en".to_owned(),
+            duration_seconds: 30.5,
+            bpm: Some(120),
+            key_scale: Some("C major".to_owned()),
+            time_signature: "4".to_owned(),
+            audio_format: "wav".to_owned(),
+            model: Some("acestep-v15-turbo".to_owned()),
+            task_type: "text2music".to_owned(),
+            lm_model_path: Some("acestep-5Hz-lm-0.6B".to_owned()),
+            lm_backend: Some("mlx".to_owned()),
+            thinking: true,
+            inference_steps: 8,
+            guidance_scale: 7.0,
+            use_format: false,
+            use_cot_caption: true,
+            use_cot_language: true,
+            constrained_decoding: true,
+            reference_audio_path: Some("/ref.wav".to_owned()),
+            src_audio_path: Some("/src.wav".to_owned()),
+            instruction: Some("slow down".to_owned()),
+            repainting_start: Some(0.5),
+            repainting_end: Some(0.8),
+            audio_cover_strength: Some(0.9),
+            use_random_seed: false,
+            seed: Some(42),
+            variation_count: 2,
+        };
+
+        let payload = super::AcePayload::from(&request);
+
+        // Verify field mapping: GenerationRequest.duration_seconds -> AcePayload.audio_duration
+        assert_eq!(payload.audio_duration, 30.5);
+        // Verify seed: Some(42) -> 42
+        assert_eq!(payload.seed, 42);
+        // Verify batch_size is always 1
+        assert_eq!(payload.batch_size, 1);
+
+        // Verify all other fields map correctly
+        assert_eq!(payload.prompt, "test prompt");
+        assert_eq!(payload.negative_prompt, Some("avoid this".to_owned()));
+        assert_eq!(payload.lyrics, "la la la");
+        assert_eq!(payload.vocal_language, "en");
+        assert_eq!(payload.bpm, Some(120));
+        assert_eq!(payload.key_scale, Some("C major".to_owned()));
+        assert_eq!(payload.time_signature, "4");
+        assert_eq!(payload.audio_format, "wav");
+        assert_eq!(payload.model, Some("acestep-v15-turbo".to_owned()));
+        assert_eq!(payload.task_type, "text2music");
+        assert_eq!(payload.lm_model_path, Some("acestep-5Hz-lm-0.6B".to_owned()));
+        assert_eq!(payload.lm_backend, Some("mlx".to_owned()));
+        assert!(payload.thinking);
+        assert_eq!(payload.inference_steps, 8);
+        assert_eq!(payload.guidance_scale, 7.0);
+        assert!(!payload.use_format);
+        assert!(payload.use_cot_caption);
+        assert!(payload.use_cot_language);
+        assert!(payload.constrained_decoding);
+        assert_eq!(payload.reference_audio_path, Some("/ref.wav".to_owned()));
+        assert_eq!(payload.src_audio_path, Some("/src.wav".to_owned()));
+        assert_eq!(payload.instruction, Some("slow down".to_owned()));
+        assert_eq!(payload.repainting_start, Some(0.5));
+        assert_eq!(payload.repainting_end, Some(0.8));
+        assert_eq!(payload.audio_cover_strength, Some(0.9));
+        assert!(!payload.use_random_seed);
+    }
+
+    #[test]
+    fn ace_payload_defaults_seed_to_negative_one_when_none() {
+        use crate::models::generation::GenerationRequest;
+
+        let request = GenerationRequest {
+            prompt: "test".to_owned(),
+            negative_prompt: None,
+            lyrics: String::new(),
+            vocal_language: "en".to_owned(),
+            duration_seconds: 30.0,
+            bpm: None,
+            key_scale: None,
+            time_signature: "4".to_owned(),
+            audio_format: "wav".to_owned(),
+            model: None,
+            task_type: "text2music".to_owned(),
+            lm_model_path: None,
+            lm_backend: None,
+            thinking: false,
+            inference_steps: 8,
+            guidance_scale: 7.0,
+            use_format: false,
+            use_cot_caption: false,
+            use_cot_language: false,
+            constrained_decoding: false,
+            reference_audio_path: None,
+            src_audio_path: None,
+            instruction: None,
+            repainting_start: None,
+            repainting_end: None,
+            audio_cover_strength: None,
+            use_random_seed: true,
+            seed: None,
+            variation_count: 1,
+        };
+
+        let payload = super::AcePayload::from(&request);
+        assert_eq!(payload.seed, -1);
     }
 }

@@ -5,7 +5,7 @@ use tauri::{command, ipc::Response, State};
 use crate::{
     models::errors::{AppError, AppResult},
     models::generation::GenerationWaveform,
-    services::history::HistoryService,
+    services::history::{self, HistoryService},
     AppState,
 };
 
@@ -16,7 +16,6 @@ pub fn export_generations_to_folder(
     ids: Vec<String>,
     destination: String,
 ) -> AppResult<Vec<String>> {
-    let service = HistoryService::new(state.db.clone());
     let dest = PathBuf::from(&destination);
     if !dest.is_dir() {
         return Err(AppError::output_write_failed(format!(
@@ -26,7 +25,8 @@ pub fn export_generations_to_folder(
     }
     let mut copied = Vec::with_capacity(ids.len());
     for id in ids {
-        let record = service
+        let record = state
+            .db
             .get_generation(&id)?
             .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
         let src = record
@@ -48,8 +48,8 @@ pub fn export_generations_to_folder(
 /// Prepare a temporary hard-link path for drag-out to DAW/Finder.
 #[command]
 pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult<String> {
-    let service = HistoryService::new(state.db.clone());
-    let record = service
+    let record = state
+        .db
         .get_generation(&id)?
         .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
     let source = PathBuf::from(record.output_path.ok_or_else(|| {
@@ -122,7 +122,22 @@ pub fn file_exists(path: String) -> AppResult<bool> {
 
 #[command]
 pub fn read_generation_audio(state: State<'_, AppState>, id: String) -> AppResult<Response> {
-    HistoryService::new(state.db.clone()).read_generation_audio_response(&id)
+    let record = history::resolve_by_prefix(&state.db, &id)?;
+    let path = record
+        .output_path
+        .as_ref()
+        .map(PathBuf::from)
+        .ok_or_else(|| {
+            AppError::not_found("Generation audio", format!("record {id} has no output path"))
+        })?;
+    if !path.is_file() {
+        return Err(AppError::not_found(
+            "Generation audio",
+            path.display().to_string(),
+        ));
+    }
+    let bytes = fs::read(&path).map_err(|error| AppError::output_read_failed(error.to_string()))?;
+    Ok(Response::new(bytes))
 }
 
 #[command]

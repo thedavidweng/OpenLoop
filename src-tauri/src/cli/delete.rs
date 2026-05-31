@@ -21,8 +21,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         .find(|arg| !arg.starts_with('-'))
         .ok_or_else(|| cli_error("id is required. Usage: openloop delete <id>"))?;
 
-    let history = HistoryService::new(state.db.clone());
-    let records = history.list_generations(None)?;
+    let records = state.db.list_generations(None)?;
 
     let record = records
         .iter()
@@ -38,7 +37,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         )));
     }
 
-    history.delete_generation_file_and_record(&record.id)?;
+    HistoryService::new(state.db.clone()).delete_generation_file_and_record(&record.id)?;
 
     if json {
         super::json_output(&format!(r#"{{"deleted":"{}"}}"#, record.id));

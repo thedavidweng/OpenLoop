@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     cli::{cli_error, human_output},
     models::errors::{AppError, AppResult},
-    services::history::HistoryService,
+    services::history::{self, HistoryService},
 };
 
 use super::AppState;
@@ -145,8 +145,21 @@ fn cmd_read_audio(state: &AppState, args: &[String], json: bool) -> AppResult<()
         .find(|a| !a.starts_with('-'))
         .ok_or_else(|| cli_error("id is required. Usage: openloop files read-audio <id>"))?;
 
-    let history = HistoryService::new(state.db.clone());
-    let bytes = history.read_generation_audio_bytes(id)?;
+    let record = history::resolve_by_prefix(&state.db, id)?;
+    let path = record
+        .output_path
+        .as_ref()
+        .map(std::path::PathBuf::from)
+        .ok_or_else(|| {
+            AppError::not_found("Generation audio", format!("record {id} has no output path"))
+        })?;
+    if !path.is_file() {
+        return Err(AppError::not_found(
+            "Generation audio",
+            path.display().to_string(),
+        ));
+    }
+    let bytes = fs::read(&path).map_err(|error| AppError::output_read_failed(error.to_string()))?;
 
     // Parse --output flag
     let output_to_stdout = args.windows(2).any(|w| w[0] == "--output" && w[1] == "-");
@@ -206,8 +219,7 @@ fn cmd_unlink(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
         .ok_or_else(|| cli_error("id is required. Usage: openloop files unlink <id>"))?;
 
     let keep_record = args.contains(&"--keep-record".to_owned());
-    let history = HistoryService::new(state.db.clone());
-    let records = history.list_generations(None)?;
+    let records = state.db.list_generations(None)?;
 
     let record = records
         .iter()
@@ -240,7 +252,7 @@ fn cmd_unlink(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
         }
     } else {
         // Delete both file and record
-        history.delete_generation_file_and_record(&record.id)?;
+        HistoryService::new(state.db.clone()).delete_generation_file_and_record(&record.id)?;
 
         if json {
             super::json_output(&format!(r#"{{"unlinked":"{}"}}"#, record.id));

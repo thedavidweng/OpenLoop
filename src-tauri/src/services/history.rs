@@ -1,7 +1,5 @@
 use std::{fs, path::PathBuf};
 
-use tauri::ipc::Response;
-
 use crate::{
     audio::{decode::decode_bytes, waveform::waveform_peaks},
     models::{
@@ -21,28 +19,6 @@ impl HistoryService {
         Self { db }
     }
 
-    pub fn list_generations(&self, query: Option<&str>) -> AppResult<Vec<GenerationRecord>> {
-        self.db.list_generations(query)
-    }
-
-    pub fn get_generation(&self, id: &str) -> AppResult<Option<GenerationRecord>> {
-        self.db.get_generation(id)
-    }
-
-    pub fn delete_generation(&self, id: &str) -> AppResult<()> {
-        self.db.delete_generation(id)
-    }
-
-    pub fn toggle_favorite(&self, id: &str) -> AppResult<bool> {
-        let record = self
-            .db
-            .get_generation(id)?
-            .ok_or_else(|| AppError::not_found("Generation record", id.to_owned()))?;
-        let new_state = !record.is_favorite;
-        self.db.set_generation_favorite(id, new_state)?;
-        Ok(new_state)
-    }
-
     pub fn clear_generation_history(&self) -> AppResult<()> {
         let records = self.db.list_generations(None)?;
         for record in records {
@@ -56,17 +32,8 @@ impl HistoryService {
         self.db.clear_generations()
     }
 
-    pub fn read_generation_audio_response(&self, id: &str) -> AppResult<Response> {
-        self.read_generation_audio_bytes(id).map(Response::new)
-    }
-
-    pub fn read_generation_audio_bytes(&self, id: &str) -> AppResult<Vec<u8>> {
-        let path = self.generation_output_file(id)?;
-        fs::read(&path).map_err(|error| AppError::output_read_failed(error.to_string()))
-    }
-
     pub fn read_generation_waveform(&self, id: &str) -> AppResult<GenerationWaveform> {
-        let record = self.resolve_by_prefix(id)?;
+        let record = resolve_by_prefix(&self.db, id)?;
         let path = generation_output_path(&record, &record.id)?;
         if !path.is_file() {
             return Err(AppError::not_found(
@@ -95,33 +62,21 @@ impl HistoryService {
         }
         self.db.delete_generation(id)
     }
+}
 
-    fn generation_output_file(&self, id: &str) -> AppResult<PathBuf> {
-        let record = self.resolve_by_prefix(id)?;
-        let path = generation_output_path(&record, &record.id)?;
-        if !path.is_file() {
-            return Err(AppError::not_found(
-                "Generation audio",
-                path.display().to_string(),
-            ));
-        }
-        Ok(path)
+/// Resolve a generation by exact ID or prefix match.
+pub fn resolve_by_prefix(db: &Database, id: &str) -> AppResult<GenerationRecord> {
+    if let Some(record) = db.get_generation(id)? {
+        return Ok(record);
     }
-
-    /// Resolve a generation by exact ID or prefix match.
-    fn resolve_by_prefix(&self, id: &str) -> AppResult<GenerationRecord> {
-        if let Some(record) = self.db.get_generation(id)? {
-            return Ok(record);
-        }
-        let records = self.db.list_generations(None)?;
-        let matches: Vec<_> = records.iter().filter(|r| r.id.starts_with(id)).collect();
-        match matches.len() {
-            0 => Err(AppError::not_found("Generation record", id.to_owned())),
-            1 => Ok(matches.into_iter().next().unwrap().clone()),
-            n => Err(AppError::validation_failed(format!(
-                "ambiguous prefix '{id}' matches {n} records. Use a longer prefix.",
-            ))),
-        }
+    let records = db.list_generations(None)?;
+    let matches: Vec<_> = records.iter().filter(|r| r.id.starts_with(id)).collect();
+    match matches.len() {
+        0 => Err(AppError::not_found("Generation record", id.to_owned())),
+        1 => Ok(matches.into_iter().next().unwrap().clone()),
+        n => Err(AppError::validation_failed(format!(
+            "ambiguous prefix '{id}' matches {n} records. Use a longer prefix.",
+        ))),
     }
 }
 
@@ -187,23 +142,6 @@ mod tests {
 
         assert!(!output_path.exists());
         assert!(db.get_generation("gen_001").expect("get").is_none());
-    }
-
-    #[test]
-    fn missing_generation_file_returns_not_found() {
-        let temp = tempfile::tempdir().expect("temp dir");
-        let db = Database::new(temp.path()).expect("database");
-        db.insert_generation(&sample_record(Some(
-            temp.path().join("missing.wav").display().to_string(),
-        )))
-        .expect("insert");
-        let history = HistoryService::new(db);
-
-        let error = history
-            .read_generation_audio_bytes("gen_001")
-            .expect_err("missing file should fail");
-
-        assert_eq!(error.code, "NOT_FOUND");
     }
 
     #[test]

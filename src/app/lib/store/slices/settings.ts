@@ -2,13 +2,13 @@ import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
 
 import * as api from "@/app/lib/api";
+import { localizeModelStatuses } from "@/app/lib/errors";
 import {
   PROFILE_FORM_PRESETS,
   applyModelVariantToForm,
   applyProfilePreset,
-  computeValidationState,
-  localizeModelStatuses,
-} from "@/app/lib/store-helpers";
+} from "@/app/lib/profile-presets";
+import { computeValidationState } from "@/app/lib/validation-helpers";
 import {
   DEFAULT_APP_SETTINGS,
   resolveModelBootstrapStatus,

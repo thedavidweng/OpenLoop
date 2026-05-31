@@ -1,4 +1,4 @@
-use crate::{cli::human_output, models::errors::AppResult, services::history::HistoryService};
+use crate::{cli::human_output, models::errors::AppResult};
 
 use super::AppState;
 
@@ -13,8 +13,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let limit = parse_limit(args);
 
-    let history = HistoryService::new(state.db.clone());
-    let records = history.list_generations(None)?;
+    let records = state.db.list_generations(None)?;
     let records: Vec<_> = records.into_iter().take(limit).collect();
 
     if json {

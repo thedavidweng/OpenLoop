@@ -12,9 +12,11 @@ use crate::{
     models::{
         errors::AppResult,
         generation::{GenerationRecord, GenerationRequest},
+        settings::ModelVariant,
     },
     services::{
         ace_client::AceClient, file_store::FileStore, generation_task::GenerationTaskRunner,
+        model_bootstrap::descriptor_for,
     },
 };
 
@@ -87,30 +89,29 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     };
 
     // Build GenerationRequest
-    let model_variant = model.as_deref().or_else(|| {
-        settings.model_variant.map(|v| match v {
-            crate::models::settings::ModelVariant::Lite => "lite",
-            crate::models::settings::ModelVariant::Turbo => "turbo",
-            crate::models::settings::ModelVariant::Pro => "pro",
-        })
-    });
+    let model_variant: Option<ModelVariant> = match model.as_deref() {
+        Some("lite") => Some(ModelVariant::Lite),
+        Some("turbo") => Some(ModelVariant::Turbo),
+        Some("pro") => Some(ModelVariant::Pro),
+        Some(other) => return Err(cli_error(format!("unknown model variant: {other}"))),
+        None => settings.model_variant,
+    };
 
     let audio_format = format
         .clone()
         .or_else(|| Some(settings.default_audio_format.clone()))
         .unwrap_or_else(|| "wav".to_owned());
 
-    let model_name = model_variant.and_then(|v| match v {
-        "lite" | "turbo" => Some("acestep-v15-turbo".to_owned()),
-        "pro" => Some("acestep-v15-xl-turbo".to_owned()),
-        _ => None,
-    });
-
-    let lm_model_path = model_variant.and_then(|v| match v {
-        "lite" | "turbo" => Some("acestep-5Hz-lm-0.6B".to_owned()),
-        "pro" => Some("acestep-5Hz-lm-1.7B".to_owned()),
-        _ => None,
-    });
+    let (model_name, lm_model_path) = model_variant
+        .map(|v| {
+            let d = descriptor_for(v)?;
+            Ok((
+                Some(d.model_name.to_owned()),
+                d.lm_model.map(|s| s.to_owned()),
+            ))
+        })
+        .transpose()?
+        .unwrap_or((None, None));
 
     let request = GenerationRequest {
         prompt: prompt.clone(),

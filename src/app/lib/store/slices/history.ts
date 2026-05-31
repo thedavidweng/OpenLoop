@@ -2,10 +2,8 @@ import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
 import type { GenerationRecord } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
-import {
-  computeValidationState,
-  createIdleGenerationState,
-} from "@/app/lib/store-helpers";
+import { createIdleGenerationState } from "@/app/lib/store-helpers";
+import { computeValidationState } from "@/app/lib/validation-helpers";
 import {
   nextCurrentGenerationAfterDelete,
   recordToGenerationForm,

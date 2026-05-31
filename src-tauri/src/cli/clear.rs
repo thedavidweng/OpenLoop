@@ -16,8 +16,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         return Ok(());
     }
 
-    let history = HistoryService::new(state.db.clone());
-    let records = history.list_generations(None)?;
+    let records = state.db.list_generations(None)?;
     let count = records.len();
 
     if count == 0 {
@@ -43,7 +42,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         }
     }
 
-    history.clear_generation_history()?;
+    HistoryService::new(state.db.clone()).clear_generation_history()?;
 
     if json {
         super::json_output(&format!(r#"{{"cleared":{count}}}"#));

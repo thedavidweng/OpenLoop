@@ -4,9 +4,7 @@ import type { GenerationFormValues } from "@/app/lib/types";
 import {
   DEFAULT_GENERATION_FORM_VALUES,
 } from "@/app/lib/validation";
-import {
-  computeValidationState,
-} from "@/app/lib/store-helpers";
+import { computeValidationState } from "@/app/lib/validation-helpers";
 import { INITIAL_CURRENT_REQUEST } from "@/app/lib/history-workflow";
 
 const MIN_SIDEBAR_WIDTH = 240;

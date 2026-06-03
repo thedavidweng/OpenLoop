@@ -584,29 +584,19 @@ export function PlaybackBar() {
                         t("player.copyPrompt"),
                         currentGeneration?.outputPath ?? "",
                       );
-                      if (
-                        !destination ||
-                        !currentGeneration?.outputPath
-                      ) {
+                      if (!destination || !currentGeneration?.outputPath) {
                         return;
                       }
                       void api
-                        .copyAudioTo(
-                          currentGeneration.outputPath,
-                          destination,
-                        )
+                        .copyAudioTo(currentGeneration.outputPath, destination)
                         .then((result) => {
-                          setCopyStatus(
-                            t("player.copied", { path: result }),
-                          );
+                          setCopyStatus(t("player.copied", { path: result }));
                           addToast("success", t("toast.fileExported"));
                         });
                     }}
                   >
                     <Copy size={16} className="shrink-0 opacity-70" />
-                    <span className="flex-1">
-                      {t("player.saveCopyAs")}
-                    </span>
+                    <span className="flex-1">{t("player.saveCopyAs")}</span>
                   </button>
                   <button
                     type="button"
@@ -614,19 +604,12 @@ export function PlaybackBar() {
                     onClick={() => {
                       setExportDropdownOpen(false);
                       if (currentGeneration?.outputPath) {
-                        void api.revealInFinder(
-                          currentGeneration.outputPath,
-                        );
+                        void api.revealInFinder(currentGeneration.outputPath);
                       }
                     }}
                   >
-                    <FolderOutput
-                      size={16}
-                      className="shrink-0 opacity-70"
-                    />
-                    <span className="flex-1">
-                      {t("player.revealInFinder")}
-                    </span>
+                    <FolderOutput size={16} className="shrink-0 opacity-70" />
+                    <span className="flex-1">{t("player.revealInFinder")}</span>
                   </button>
                   <div className="mx-3 border-t border-[var(--color-border-light)]" />
                   <button
@@ -637,18 +620,15 @@ export function PlaybackBar() {
                       if (!currentGeneration?.id) return;
                       void (async () => {
                         try {
-                          const payload =
-                            await api.readGenerationAudio(
-                              currentGeneration.id,
-                            );
+                          const payload = await api.readGenerationAudio(
+                            currentGeneration.id,
+                          );
                           const bytes =
                             payload instanceof ArrayBuffer
                               ? new Uint8Array(payload)
                               : Uint8Array.from(payload);
                           const blob = new Blob([bytes], {
-                            type: audioMimeType(
-                              currentGeneration.audioFormat,
-                            ),
+                            type: audioMimeType(currentGeneration.audioFormat),
                           });
                           const reader = new FileReader();
                           reader.onload = () => {
@@ -656,17 +636,11 @@ export function PlaybackBar() {
                             void navigator.clipboard
                               .writeText(dataUrl)
                               .then(() => {
-                                addToast(
-                                  "success",
-                                  t("toast.dataUrlCopied"),
-                                );
+                                addToast("success", t("toast.dataUrlCopied"));
                               });
                           };
                           reader.onerror = () => {
-                            addToast(
-                              "error",
-                              t("toast.copyFailed"),
-                            );
+                            addToast("error", t("toast.copyFailed"));
                           };
                           reader.readAsDataURL(blob);
                         } catch {
@@ -676,9 +650,7 @@ export function PlaybackBar() {
                     }}
                   >
                     <Copy size={16} className="shrink-0 opacity-70" />
-                    <span className="flex-1">
-                      {t("player.copyDataUrl")}
-                    </span>
+                    <span className="flex-1">{t("player.copyDataUrl")}</span>
                   </button>
                   <button
                     type="button"
@@ -689,23 +661,15 @@ export function PlaybackBar() {
                       void navigator.clipboard
                         .writeText(currentGeneration.outputPath)
                         .then(() => {
-                          addToast(
-                            "success",
-                            t("toast.pathCopied"),
-                          );
+                          addToast("success", t("toast.pathCopied"));
                         })
                         .catch(() => {
-                          addToast(
-                            "error",
-                            t("toast.copyFailed"),
-                          );
+                          addToast("error", t("toast.copyFailed"));
                         });
                     }}
                   >
                     <Copy size={16} className="shrink-0 opacity-70" />
-                    <span className="flex-1">
-                      {t("player.copyPath")}
-                    </span>
+                    <span className="flex-1">{t("player.copyPath")}</span>
                   </button>
                 </div>
               </div>

@@ -43,9 +43,7 @@ export function SettingsSectionCard({
             </p>
           ) : null}
         </div>
-        {headerAction ? (
-          <div className="shrink-0">{headerAction}</div>
-        ) : null}
+        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </div>
 
       {children}

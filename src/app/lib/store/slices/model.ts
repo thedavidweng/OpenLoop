@@ -1,6 +1,11 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type { AppSettings, ModelVariant, ModelStatusSnapshot, BackendProvisionStatus } from "@/app/lib/types";
+import type {
+  AppSettings,
+  ModelVariant,
+  ModelStatusSnapshot,
+  BackendProvisionStatus,
+} from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   MODEL_PACKS,
@@ -29,23 +34,46 @@ export function createModelSlice(
   get: StoreApi<GenerationStore>["getState"],
 ) {
   return {
-    bootstrapStatus: { state: "pending", message: tr("status.chooseAndDownload") } as const,
+    bootstrapStatus: {
+      state: "pending",
+      message: tr("status.chooseAndDownload"),
+    } as const,
     modelCatalog: Object.values({
-      lite: { id: "lite", label: "Lite", modelName: "acestep-v15-turbo", description: "" },
-      turbo: { id: "turbo", label: "Turbo", modelName: "acestep-v15-turbo", description: "" },
-      pro: { id: "pro", label: "XL Turbo", modelName: "acestep-v15-xl-turbo", description: "" },
+      lite: {
+        id: "lite",
+        label: "Lite",
+        modelName: "acestep-v15-turbo",
+        description: "",
+      },
+      turbo: {
+        id: "turbo",
+        label: "Turbo",
+        modelName: "acestep-v15-turbo",
+        description: "",
+      },
+      pro: {
+        id: "pro",
+        label: "XL Turbo",
+        modelName: "acestep-v15-xl-turbo",
+        description: "",
+      },
     }).map((variant) => ({
       variant: variant.id as ModelVariant,
       label: variant.label,
       modelName: variant.modelName,
-      lmModel: variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
+      lmModel:
+        variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
       lmBackend: "mlx" as const,
-      estimatedSizeBytes: variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : 8 * 1024 * 1024 * 1024,
+      estimatedSizeBytes:
+        variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : 8 * 1024 * 1024 * 1024,
       description: variant.description,
-      recommendedMemoryGb: variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
+      recommendedMemoryGb:
+        variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
     })),
     modelStatuses: [],
-    backendProvisionStatus: { state: "not_installed" } as BackendProvisionStatus,
+    backendProvisionStatus: {
+      state: "not_installed",
+    } as BackendProvisionStatus,
 
     downloadModelVariant: async (variant: ModelVariant) => {
       const packId = packIdForVariant(variant);
@@ -54,9 +82,12 @@ export function createModelSlice(
       set({
         bootstrapStatus: {
           state: "downloading",
-          message: tr("status.preparingModel", { model: MODEL_PACKS[packId].label }),
+          message: tr("status.preparingModel", {
+            model: MODEL_PACKS[packId].label,
+          }),
           downloadedBytes: packAggregate.downloadedBytes,
-          totalBytes: packAggregate.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes,
+          totalBytes:
+            packAggregate.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes,
         },
       });
 
@@ -66,7 +97,10 @@ export function createModelSlice(
         await Promise.all([
           api.setSetting("modelVariant", variant),
           api.setSetting("profile", profileForVariant(variant)),
-          api.setSetting("defaultThinking", PROFILE_FORM_PRESETS[profileForVariant(variant)].thinking),
+          api.setSetting(
+            "defaultThinking",
+            PROFILE_FORM_PRESETS[profileForVariant(variant)].thinking,
+          ),
         ]);
         const profile = profileForVariant(variant);
         const nextForm = applyModelVariantToForm(
@@ -87,7 +121,10 @@ export function createModelSlice(
       }
 
       const nextDownloadedModels = Array.from(
-        new Set([...get().settings.downloadedModels, ...MODEL_PACKS[packId].variants]),
+        new Set([
+          ...get().settings.downloadedModels,
+          ...MODEL_PACKS[packId].variants,
+        ]),
       );
       const nextSettings = {
         ...get().settings,
@@ -105,7 +142,9 @@ export function createModelSlice(
         ...computeValidationState(nextForm, { showErrors: false }),
         bootstrapStatus: {
           state: "ready",
-          message: tr("status.modelReady", { model: MODEL_PACKS[packId].label }),
+          message: tr("status.modelReady", {
+            model: MODEL_PACKS[packId].label,
+          }),
         },
       });
     },
@@ -123,7 +162,8 @@ export function createModelSlice(
       );
       const currentSelected = get().settings.modelVariant;
       const nextSelected =
-        currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
+        currentSelected &&
+        MODEL_PACKS[packId].variants.includes(currentSelected)
           ? null
           : currentSelected;
       set((state) => ({
@@ -156,7 +196,8 @@ export function createModelSlice(
       const state = get();
       const rawModelStatuses = await api.deleteAllModels();
       const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
+      const downloadedModels =
+        expandDownloadedVariantsFromStatuses(modelStatuses);
       const nextModelVariant = (
         downloadedModels.length === 0 ? "" : state.settings.modelVariant
       ) as AppSettings["modelVariant"];
@@ -168,7 +209,11 @@ export function createModelSlice(
           modelVariant: nextModelVariant,
         },
         bootstrapStatus: resolveModelBootstrapStatus(
-          { ...prev.settings, downloadedModels, modelVariant: nextModelVariant },
+          {
+            ...prev.settings,
+            downloadedModels,
+            modelVariant: nextModelVariant,
+          },
           null,
           modelStatuses,
           prev.backendProvisionStatus,
@@ -180,13 +225,19 @@ export function createModelSlice(
 
     refreshModelStatuses: async () => {
       if (!api.isTauriRuntime()) return;
-      const [modelCatalog, rawModelStatuses, backendProvision] = await Promise.all([
-        api.listModelCatalog(),
-        api.getModelStatus(),
-        api.getBackendProvisionStatus().catch(() => ({ state: "not_installed" }) as BackendProvisionStatus),
-      ]);
+      const [modelCatalog, rawModelStatuses, backendProvision] =
+        await Promise.all([
+          api.listModelCatalog(),
+          api.getModelStatus(),
+          api
+            .getBackendProvisionStatus()
+            .catch(
+              () => ({ state: "not_installed" }) as BackendProvisionStatus,
+            ),
+        ]);
       const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
+      const downloadedModels =
+        expandDownloadedVariantsFromStatuses(modelStatuses);
       set((state) => ({
         modelCatalog,
         modelStatuses,
@@ -195,12 +246,17 @@ export function createModelSlice(
           ...state.settings,
           downloadedModels,
           modelVariant:
-            state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
+            state.settings.modelVariant &&
+            downloadedModels.includes(state.settings.modelVariant)
               ? state.settings.modelVariant
               : state.settings.modelVariant,
         },
         bootstrapStatus: resolveModelBootstrapStatus(
-          { ...state.settings, downloadedModels, modelVariant: state.settings.modelVariant },
+          {
+            ...state.settings,
+            downloadedModels,
+            modelVariant: state.settings.modelVariant,
+          },
           state.deviceInfo,
           modelStatuses,
           backendProvision,
@@ -211,11 +267,16 @@ export function createModelSlice(
     applyModelStatus: (status: ModelStatusSnapshot) => {
       set((state) => {
         const modelStatuses = [
-          ...state.modelStatuses.filter((current) => current.variant !== status.variant),
+          ...state.modelStatuses.filter(
+            (current) => current.variant !== status.variant,
+          ),
           status,
         ];
-        const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-        const selectedPack = state.settings.modelVariant ? packIdForVariant(state.settings.modelVariant) : null;
+        const downloadedModels =
+          expandDownloadedVariantsFromStatuses(modelStatuses);
+        const selectedPack = state.settings.modelVariant
+          ? packIdForVariant(state.settings.modelVariant)
+          : null;
         const eventPack = packIdForVariant(status.variant);
         const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
         const nextSettings = { ...state.settings, downloadedModels };
@@ -247,26 +308,39 @@ export function createModelSlice(
               ? packAggregate.state === "downloading"
                 ? {
                     state: "downloading",
-                    message: tr("status.downloadingModel", { model: MODEL_PACKS[eventPack].label }),
+                    message: tr("status.downloadingModel", {
+                      model: MODEL_PACKS[eventPack].label,
+                    }),
                     downloadedBytes: packAggregate.downloadedBytes,
                     totalBytes: packAggregate.totalBytes,
                   }
                 : packAggregate.state === "failed"
                   ? {
                       state: "failed",
-                      message: packAggregate.error?.message ?? tr("status.stackReportedError"),
+                      message:
+                        packAggregate.error?.message ??
+                        tr("status.stackReportedError"),
                       error: packAggregate.error ?? null,
                     }
                   : packAggregate.state === "ready"
                     ? {
                         state: "ready",
-                        message: tr("status.modelReady", { model: MODEL_PACKS[eventPack].label }),
+                        message: tr("status.modelReady", {
+                          model: MODEL_PACKS[eventPack].label,
+                        }),
                       }
                     : {
                         state: "pending",
-                        message: tr("status.downloadModelToStart", { model: MODEL_PACKS[eventPack].label }),
+                        message: tr("status.downloadModelToStart", {
+                          model: MODEL_PACKS[eventPack].label,
+                        }),
                       }
-              : resolveModelBootstrapStatus(nextSettings, state.deviceInfo, modelStatuses, state.backendProvisionStatus),
+              : resolveModelBootstrapStatus(
+                  nextSettings,
+                  state.deviceInfo,
+                  modelStatuses,
+                  state.backendProvisionStatus,
+                ),
         };
       });
     },
@@ -277,7 +351,10 @@ export function createModelSlice(
         await Promise.all([
           api.setSetting("modelVariant", variant),
           api.setSetting("profile", profile),
-          api.setSetting("defaultThinking", PROFILE_FORM_PRESETS[profile].thinking),
+          api.setSetting(
+            "defaultThinking",
+            PROFILE_FORM_PRESETS[profile].thinking,
+          ),
         ]);
         await get().hydrateFromPersistence();
         await get().refreshBootstrapStatus();
@@ -338,7 +415,14 @@ export function createModelSlice(
             latestTag: null,
             updateAvailable: false,
             downloadedBytes: 0,
-            error: error instanceof Error ? { code: "BACKEND_PROVISION_FAILED", message: error.message, recoverable: true } : undefined,
+            error:
+              error instanceof Error
+                ? {
+                    code: "BACKEND_PROVISION_FAILED",
+                    message: error.message,
+                    recoverable: true,
+                  }
+                : undefined,
           },
         });
       }
@@ -355,7 +439,14 @@ export function createModelSlice(
           backendProvisionStatus: {
             ...get().backendProvisionStatus,
             state: "failed",
-            error: error instanceof Error ? { code: "BACKEND_PROVISION_FAILED", message: error.message, recoverable: true } : undefined,
+            error:
+              error instanceof Error
+                ? {
+                    code: "BACKEND_PROVISION_FAILED",
+                    message: error.message,
+                    recoverable: true,
+                  }
+                : undefined,
           },
         });
       }

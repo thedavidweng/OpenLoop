@@ -21,7 +21,11 @@ import { Tooltip } from "@/app/components/overlay/Tooltip";
 import { useToast } from "@/app/components/overlay/Toast";
 import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 import * as api from "@/app/lib/api";
-import type { FailedRun, GenerationFormValues, GenerationRequest } from "@/app/lib/types";
+import type {
+  FailedRun,
+  GenerationFormValues,
+  GenerationRequest,
+} from "@/app/lib/types";
 import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 
 export function HistorySidebar() {
@@ -68,9 +72,7 @@ export function HistorySidebar() {
   const enterCompareMode = useGenerationStore(
     (state) => state.enterCompareMode,
   );
-  const exitCompareMode = useGenerationStore(
-    (state) => state.exitCompareMode,
-  );
+  const exitCompareMode = useGenerationStore((state) => state.exitCompareMode);
   const compareModeActive = useGenerationStore(
     (state) => state.compareModeActive,
   );
@@ -159,7 +161,14 @@ export function HistorySidebar() {
                   onClick={() => {
                     const [a, b] = selectedHistoryIds;
                     const currentId = currentGeneration?.id;
-                    const otherId = a === currentId ? b : a === b ? a : currentId === b ? a : b;
+                    const otherId =
+                      a === currentId
+                        ? b
+                        : a === b
+                          ? a
+                          : currentId === b
+                            ? a
+                            : b;
                     if (otherId) {
                       enterCompareMode(otherId);
                     }
@@ -260,7 +269,10 @@ export function HistorySidebar() {
                       if (!item.outputPath || !api.isTauriRuntime()) return;
                       try {
                         const tempPath = await api.prepareDragPayload(item.id);
-                        e.dataTransfer.setData("text/uri-list", `file://${tempPath}`);
+                        e.dataTransfer.setData(
+                          "text/uri-list",
+                          `file://${tempPath}`,
+                        );
                         e.dataTransfer.setData("text/plain", tempPath);
                         e.dataTransfer.effectAllowed = "copy";
                       } catch {
@@ -307,7 +319,13 @@ export function HistorySidebar() {
                       </span>
                       <div className="flex items-center gap-1">
                         {/* Favorite star */}
-                        <Tooltip label={favoriteRecordIds.includes(item.id) ? t("history.unfavorite") : t("history.favorite")}>
+                        <Tooltip
+                          label={
+                            favoriteRecordIds.includes(item.id)
+                              ? t("history.unfavorite")
+                              : t("history.favorite")
+                          }
+                        >
                           <button
                             type="button"
                             onClick={(e) => {
@@ -316,7 +334,14 @@ export function HistorySidebar() {
                             }}
                             className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIds.includes(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
                           >
-                            <Star size={11} fill={favoriteRecordIds.includes(item.id) ? "currentColor" : "none"} />
+                            <Star
+                              size={11}
+                              fill={
+                                favoriteRecordIds.includes(item.id)
+                                  ? "currentColor"
+                                  : "none"
+                              }
+                            />
                           </button>
                         </Tooltip>
                         {/* Quick play button */}
@@ -498,9 +523,7 @@ function requestToFormValues(request: GenerationRequest): GenerationFormValues {
         ? ""
         : String(request.repaintingStart),
     repaintingEnd:
-      request.repaintingEnd === undefined
-        ? ""
-        : String(request.repaintingEnd),
+      request.repaintingEnd === undefined ? "" : String(request.repaintingEnd),
     audioCoverStrength:
       request.audioCoverStrength === undefined
         ? "1.0"

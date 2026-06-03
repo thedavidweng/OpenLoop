@@ -5,7 +5,10 @@ import { useToast } from "@/app/components/overlay/Toast";
 import * as api from "@/app/lib/api";
 import { DEFAULT_APP_SETTINGS } from "@/app/lib/model-bootstrap";
 import type { AppSettings } from "@/app/lib/types";
-import type { SettingsDraft, DirectorySettingKey } from "../hooks/useSettingsDraft";
+import type {
+  SettingsDraft,
+  DirectorySettingKey,
+} from "../hooks/useSettingsDraft";
 
 interface DefaultsSectionProps {
   draft: SettingsDraft;

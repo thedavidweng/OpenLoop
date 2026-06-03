@@ -125,7 +125,9 @@ export function createHistorySlice(
           const selected = state.selectedHistoryIds.includes(id);
           if (selected) {
             return {
-              selectedHistoryIds: state.selectedHistoryIds.filter((sid) => sid !== id),
+              selectedHistoryIds: state.selectedHistoryIds.filter(
+                (sid) => sid !== id,
+              ),
             };
           }
           // Cap at 2 selections for A/B compare
@@ -160,7 +162,9 @@ export function createHistorySlice(
           selectedHistoryIds: [],
           currentGeneration: currentDeleted ? null : state.currentGeneration,
           compareModeActive: compareDeleted ? false : state.compareModeActive,
-          compareGenerationId: compareDeleted ? null : state.compareGenerationId,
+          compareGenerationId: compareDeleted
+            ? null
+            : state.compareGenerationId,
         };
       });
     },
@@ -180,7 +184,9 @@ export function createHistorySlice(
       set((state) => ({
         favoriteRecordIds: Array.from(
           new Set([
-            ...state.favoriteRecordIds.filter((fid) => !removedFavorites.includes(fid)),
+            ...state.favoriteRecordIds.filter(
+              (fid) => !removedFavorites.includes(fid),
+            ),
             ...newFavorites,
           ]),
         ),
@@ -212,7 +218,8 @@ export function createHistorySlice(
 
     toggleCompareTarget: () => {
       set((state) => {
-        if (!state.compareModeActive || !state.compareGenerationId) return state;
+        if (!state.compareModeActive || !state.compareGenerationId)
+          return state;
         const currentId = state.currentGeneration?.id;
         const nextCurrent = state.history.find(
           (r) => r.id === state.compareGenerationId,

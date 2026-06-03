@@ -4,7 +4,10 @@ import { DirectoryPickerRow } from "@/app/components/settings/SettingsOverlay/Di
 import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
 import { DEFAULT_APP_SETTINGS } from "@/app/lib/model-bootstrap";
-import type { SettingsDraft, DirectorySettingKey } from "../hooks/useSettingsDraft";
+import type {
+  SettingsDraft,
+  DirectorySettingKey,
+} from "../hooks/useSettingsDraft";
 import { Loader2 } from "lucide-react";
 
 interface BackendSectionProps {

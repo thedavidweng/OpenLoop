@@ -1,4 +1,5 @@
-{    "setup": {
+{
+  "setup": {
     "eyebrow": "OpenLoop setup",
     "welcome": "Welcome",
     "device": "Device check",
@@ -257,19 +258,19 @@
     "recentPrompts": "Recent",
     "favoritePrompts": "Favorites",
     "enhancePrompt": "Enhance prompt locally",
-     "category": {
-       "lo-fi": "Lo-Fi",
-       "cinematic": "Cinematic",
-       "pop": "Pop",
-       "ambient": "Ambient",
-       "edm": "EDM",
-       "acoustic": "Acoustic",
-       "trailer": "Trailer",
-       "jazz": "Jazz",
-       "orchestral": "Orchestral",
-       "game-bgm": "Game BGM",
-       "rnb": "R&B"
-     },
+    "category": {
+      "lo-fi": "Lo-Fi",
+      "cinematic": "Cinematic",
+      "pop": "Pop",
+      "ambient": "Ambient",
+      "edm": "EDM",
+      "acoustic": "Acoustic",
+      "trailer": "Trailer",
+      "jazz": "Jazz",
+      "orchestral": "Orchestral",
+      "game-bgm": "Game BGM",
+      "rnb": "R&B"
+    },
     "recoveryAvailable": "{{count}} unfinished local task is available for resume polling.",
     "resumeTask": "Resume polling",
     "discardTask": "Discard",

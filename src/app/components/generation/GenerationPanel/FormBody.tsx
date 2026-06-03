@@ -591,31 +591,11 @@ export function FormBody({
           <div className="grid gap-3 md:grid-cols-2">
             {(
               [
-                [
-                  "thinking",
-                  "generation.thinking",
-                  "generation.thinkingDesc",
-                ],
-                [
-                  "useFormat",
-                  "generation.useFormat",
-                  "",
-                ],
-                [
-                  "useCotCaption",
-                  "generation.cotCaption",
-                  "",
-                ],
-                [
-                  "useCotLanguage",
-                  "generation.cotLanguage",
-                  "",
-                ],
-                [
-                  "constrainedDecoding",
-                  "generation.constrained",
-                  "",
-                ],
+                ["thinking", "generation.thinking", "generation.thinkingDesc"],
+                ["useFormat", "generation.useFormat", ""],
+                ["useCotCaption", "generation.cotCaption", ""],
+                ["useCotLanguage", "generation.cotLanguage", ""],
+                ["constrainedDecoding", "generation.constrained", ""],
               ] as const
             ).map(([field, titleKey, descriptionKey]) => (
               <label

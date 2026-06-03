@@ -14,11 +14,12 @@ import {
   createValidationError,
   localizeAppError,
 } from "@/app/lib/errors";
-import { createGenerationRecord, shouldPreviewFail } from "@/app/lib/preview-record";
-import { computeValidationState } from "@/app/lib/validation-helpers";
 import {
-  shouldMarkBootstrapFailed,
-} from "@/app/lib/model-bootstrap";
+  createGenerationRecord,
+  shouldPreviewFail,
+} from "@/app/lib/preview-record";
+import { computeValidationState } from "@/app/lib/validation-helpers";
+import { shouldMarkBootstrapFailed } from "@/app/lib/model-bootstrap";
 import {
   mergeGenerationRecords,
   recordToGenerationForm,
@@ -45,7 +46,10 @@ export function createGenerationSlice(
       switch (event.type) {
         case "backend_starting":
           set({
-            bootstrapStatus: { state: "downloading", message: tr("status.preparingBackend") },
+            bootstrapStatus: {
+              state: "downloading",
+              message: tr("status.preparingBackend"),
+            },
             generationState: {
               status: "running",
               phase: "backend_starting",
@@ -108,7 +112,10 @@ export function createGenerationSlice(
           break;
         case "completed":
           set({
-            bootstrapStatus: { state: "ready", message: tr("status.localStackReady") },
+            bootstrapStatus: {
+              state: "ready",
+              message: tr("status.localStackReady"),
+            },
             generationState: {
               status: "completed",
               phase: "completed",
@@ -191,18 +198,25 @@ export function createGenerationSlice(
         try {
           const result = await api.generateMusic(validation.request);
           const persistedRecords = result.records;
-          const latestRecord = persistedRecords[persistedRecords.length - 1] ?? null;
+          const latestRecord =
+            persistedRecords[persistedRecords.length - 1] ?? null;
           const requestPrompt = validation.request?.prompt ?? "";
           set((state) => ({
             currentGeneration: latestRecord ?? state.currentGeneration,
             history: mergeGenerationRecords(persistedRecords, state.history),
             recentPrompts: requestPrompt
-              ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
+              ? [
+                  requestPrompt,
+                  ...state.recentPrompts.filter((p) => p !== requestPrompt),
+                ].slice(0, 20)
               : state.recentPrompts,
             generationState: {
               status: persistedRecords.length === 0 ? "cancelled" : "completed",
               phase: persistedRecords.length === 0 ? "cancelled" : "completed",
-              statusMessage: persistedRecords.length === 0 ? tr("status.cancelled") : tr("status.completed"),
+              statusMessage:
+                persistedRecords.length === 0
+                  ? tr("status.cancelled")
+                  : tr("status.completed"),
               error: null,
             },
           }));
@@ -255,7 +269,10 @@ export function createGenerationSlice(
         currentGeneration: persistedRecord,
         history: [persistedRecord, ...state.history],
         recentPrompts: requestPrompt
-          ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
+          ? [
+              requestPrompt,
+              ...state.recentPrompts.filter((p) => p !== requestPrompt),
+            ].slice(0, 20)
           : state.recentPrompts,
         generationState: {
           status: "completed",
@@ -306,7 +323,10 @@ export function createGenerationSlice(
         bpm: enhanced.bpm === undefined ? get().form.bpm : String(enhanced.bpm),
         keyScale: enhanced.keyScale ?? get().form.keyScale,
         timeSignature: enhanced.timeSignature ?? get().form.timeSignature,
-        durationSeconds: enhanced.durationSeconds === undefined ? get().form.durationSeconds : String(enhanced.durationSeconds),
+        durationSeconds:
+          enhanced.durationSeconds === undefined
+            ? get().form.durationSeconds
+            : String(enhanced.durationSeconds),
         vocalLanguage: enhanced.vocalLanguage ?? get().form.vocalLanguage,
       };
       set({
@@ -336,7 +356,10 @@ export function createGenerationSlice(
         set((state) => ({
           activeTasks: state.activeTasks.filter((task) => task.id !== id),
           currentGeneration: record,
-          history: [record, ...state.history.filter((item) => item.id !== record.id)],
+          history: [
+            record,
+            ...state.history.filter((item) => item.id !== record.id),
+          ],
           generationState: {
             status: "completed",
             phase: "completed",

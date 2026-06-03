@@ -68,11 +68,7 @@ export function ActionFooter({
           {t("generation.reset")}
         </button>
         {isFailed && !isBusy && (
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={onRetry}
-          >
+          <button className="secondary-button" type="button" onClick={onRetry}>
             <Play size={13} />
             {t("generation.retry")}
           </button>

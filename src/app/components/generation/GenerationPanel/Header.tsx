@@ -37,9 +37,7 @@ export function Header({
   const categoryMenuRef = useRef<HTMLDivElement>(null);
 
   const recentPrompts = useGenerationStore((state) => state.recentPrompts);
-  const favoritePrompts = useGenerationStore(
-    (state) => state.favoritePrompts,
-  );
+  const favoritePrompts = useGenerationStore((state) => state.favoritePrompts);
   const toggleFavoritePrompt = useGenerationStore(
     (state) => state.toggleFavoritePrompt,
   );
@@ -131,10 +129,7 @@ export function Header({
               onClick={handleFavoriteToggle}
               disabled={isBusy}
             >
-              <Star
-                size={14}
-                className={isFavorited ? "fill-amber-300" : ""}
-              />
+              <Star size={14} className={isFavorited ? "fill-amber-300" : ""} />
             </button>
           </Tooltip>
           <div className="relative" ref={categoryMenuRef}>

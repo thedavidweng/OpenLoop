@@ -1,4 +1,5 @@
-const GITHUB_ISSUES_BASE = "https://github.com/thedavidweng/OpenLoop/issues/new";
+const GITHUB_ISSUES_BASE =
+  "https://github.com/thedavidweng/OpenLoop/issues/new";
 
 const ERROR_HELP_MAP: Record<string, { title: string; url: string }> = {
   BACKEND_START_FAILED: {

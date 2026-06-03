@@ -87,7 +87,8 @@ export function resolveModelBootstrapStatus(
       return {
         state: "failed",
         message:
-          backendProvision.error?.message ?? tr("status.backendProvisionFailed"),
+          backendProvision.error?.message ??
+          tr("status.backendProvisionFailed"),
         error: backendProvision.error,
       };
     }

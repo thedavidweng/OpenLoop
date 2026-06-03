@@ -27,22 +27,27 @@ export function AppLayout() {
     (state) => state.requestPlaybackToggle,
   );
   const generationState = useGenerationStore((state) => state.generationState);
-  const compareModeActive = useGenerationStore((state) => state.compareModeActive);
-  const toggleCompareTarget = useGenerationStore((state) => state.toggleCompareTarget);
+  const compareModeActive = useGenerationStore(
+    (state) => state.compareModeActive,
+  );
+  const toggleCompareTarget = useGenerationStore(
+    (state) => state.toggleCompareTarget,
+  );
   const windowShellState = useWindowShellState(sidebarWidth);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const shortcutRows = useMemo(
-    () => [
-      ["Toggle sidebar", APP_SHORTCUTS.toggleSidebar],
-      ["New generation", APP_SHORTCUTS.newGeneration],
-      ["Open settings", APP_SHORTCUTS.toggleSettings],
-      ["Generate", APP_SHORTCUTS.submitGeneration],
-      ["Retry failed generation", APP_SHORTCUTS.retryGeneration],
-      ["Play / pause", APP_SHORTCUTS.togglePlayback],
-      ["A / B compare", APP_SHORTCUTS.compareToggle],
-      ["Keyboard shortcuts", APP_SHORTCUTS.keyboardHelp],
-    ] as const,
+    () =>
+      [
+        ["Toggle sidebar", APP_SHORTCUTS.toggleSidebar],
+        ["New generation", APP_SHORTCUTS.newGeneration],
+        ["Open settings", APP_SHORTCUTS.toggleSettings],
+        ["Generate", APP_SHORTCUTS.submitGeneration],
+        ["Retry failed generation", APP_SHORTCUTS.retryGeneration],
+        ["Play / pause", APP_SHORTCUTS.togglePlayback],
+        ["A / B compare", APP_SHORTCUTS.compareToggle],
+        ["Keyboard shortcuts", APP_SHORTCUTS.keyboardHelp],
+      ] as const,
     [],
   );
 
@@ -57,7 +62,9 @@ export function AppLayout() {
       if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.togglePlayback)) {
         event.preventDefault();
         requestPlaybackToggle();
-      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.keyboardHelp)) {
+      } else if (
+        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.keyboardHelp)
+      ) {
         event.preventDefault();
         setShortcutsOpen((open) => !open);
       } else if (
@@ -155,7 +162,10 @@ export function AppLayout() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 id="keyboard-shortcuts-title" className="text-base font-semibold text-white">
+                <h2
+                  id="keyboard-shortcuts-title"
+                  className="text-base font-semibold text-white"
+                >
                   Keyboard shortcuts
                 </h2>
                 <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
@@ -172,8 +182,13 @@ export function AppLayout() {
             </div>
             <div className="mt-4 space-y-2">
               {shortcutRows.map(([label, shortcut]) => (
-                <div key={shortcut.id} className="flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border-light)] bg-black/10 px-3 py-2">
-                  <span className="text-[13px] text-[var(--color-text-primary)]">{label}</span>
+                <div
+                  key={shortcut.id}
+                  className="flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border-light)] bg-black/10 px-3 py-2"
+                >
+                  <span className="text-[13px] text-[var(--color-text-primary)]">
+                    {label}
+                  </span>
                   <kbd className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-1 text-[11px] font-semibold text-white">
                     {getShortcutDisplay(shortcut)}
                   </kbd>

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import * as api from "@/app/lib/api";
-import type { AppSettings, AudioFormat, ModelStatusSnapshot } from "@/app/lib/types";
+import type {
+  AppSettings,
+  AudioFormat,
+  ModelStatusSnapshot,
+} from "@/app/lib/types";
 
 export type EditableSettingKey =
   | "outputDirectory"
@@ -127,10 +131,7 @@ export function useSettingsDraft(
     if (!backendPortValid) return false;
 
     await Promise.all([
-      persistSetting(
-        "outputDirectory",
-        draft.outputDirectory || null,
-      ),
+      persistSetting("outputDirectory", draft.outputDirectory || null),
       persistSetting(
         "modelDirectory",
         modelDirectoryLocked

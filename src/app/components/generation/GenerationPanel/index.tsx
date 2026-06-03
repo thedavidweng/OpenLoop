@@ -83,12 +83,6 @@ export function GenerationPanel() {
     void runGeneration();
   }, [runGeneration]);
 
-
-
-
-
-
-
   // Auto-expand tweak section if there are errors
   const hasTweakErrors = (
     [
@@ -118,21 +112,23 @@ export function GenerationPanel() {
         }}
       >
         <div className="flex-1 overflow-auto space-y-4 p-4">
-        <Header
-          isBusy={isBusy}
-          activeTasks={activeTasks}
-          prompt={form.prompt}
-          onSetField={(field, value) => setField(field, value)}
-          onEnhancePrompt={enhancePrompt}
-          onResumeTask={resumeActiveTask}
-          onDiscardTask={discardActiveTask}
-        />
+          <Header
+            isBusy={isBusy}
+            activeTasks={activeTasks}
+            prompt={form.prompt}
+            onSetField={(field, value) => setField(field, value)}
+            onEnhancePrompt={enhancePrompt}
+            onResumeTask={resumeActiveTask}
+            onDiscardTask={discardActiveTask}
+          />
 
           <FormBody
             form={form}
             isBusy={isBusy}
             validationErrors={validationErrors}
-            selectedModel={selectedModel as import("@/app/lib/types").ModelCatalogItem | null}
+            selectedModel={
+              selectedModel as import("@/app/lib/types").ModelCatalogItem | null
+            }
             modelReady={modelReady}
             selectedModelState={selectedModelState}
             tweakOpen={tweakOpen}

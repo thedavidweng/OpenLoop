@@ -204,8 +204,7 @@ function PackDownloadCard({
             ) : null}
             {state === "not_installed" && totalBytes > 0 ? (
               <span className="ml-2 inline-flex items-center gap-1 text-[var(--color-text-dim)]">
-                <Clock size={9} />
-                ~{etaFromBytes(totalBytes)}
+                <Clock size={9} />~{etaFromBytes(totalBytes)}
               </span>
             ) : null}
           </p>
@@ -507,7 +506,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             {/* Engine provisioning card */}
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-                {t("settings.backendEngine", { defaultValue: "Backend engine" })}
+                {t("settings.backendEngine", {
+                  defaultValue: "Backend engine",
+                })}
               </p>
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -519,7 +520,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       {backendProvisionStatus.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                           <CheckCircle2 size={10} />
-                          {t("setup.downloadComplete", { defaultValue: "Ready" })}
+                          {t("setup.downloadComplete", {
+                            defaultValue: "Ready",
+                          })}
                         </span>
                       ) : backendProvisionStatus.state === "failed" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">
@@ -735,7 +738,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               <div className="flex items-center gap-2 text-[var(--color-accent)]">
                 <Keyboard size={16} />
                 <p className="text-[13px] font-semibold text-white">
-                  {t("setup.shortcutsHint", { defaultValue: "Keyboard shortcuts" })}
+                  {t("setup.shortcutsHint", {
+                    defaultValue: "Keyboard shortcuts",
+                  })}
                 </p>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -755,7 +760,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       className="flex items-center justify-between rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2"
                     >
                       <span className="text-[12px] text-[var(--color-text-dim)]">
-                        {t(`setup.shortcut_${labelKey}`, { defaultValue: labelKey })}
+                        {t(`setup.shortcut_${labelKey}`, {
+                          defaultValue: labelKey,
+                        })}
                       </span>
                       <kbd className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-0.5 font-mono text-[11px] text-[var(--color-text)]">
                         {getShortcutDisplay(shortcut, platform)}

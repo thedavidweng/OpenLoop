@@ -45,7 +45,12 @@ export function createSettingsSlice(
           modelStatuses,
           generationState:
             state.generationState.status === "idle"
-              ? { status: "idle", phase: "idle", statusMessage: "Ready", error: null }
+              ? {
+                  status: "idle",
+                  phase: "idle",
+                  statusMessage: "Ready",
+                  error: null,
+                }
               : state.generationState,
           bootstrapStatus: resolveModelBootstrapStatus(
             settings,
@@ -95,7 +100,10 @@ export function createSettingsSlice(
       set((state) => {
         const trimmed = prompt.trim();
         if (!trimmed) return state;
-        const deduped = [trimmed, ...state.recentPrompts.filter((p) => p !== trimmed)];
+        const deduped = [
+          trimmed,
+          ...state.recentPrompts.filter((p) => p !== trimmed),
+        ];
         return { recentPrompts: deduped.slice(0, 20) };
       });
     },
@@ -156,7 +164,8 @@ export function createSettingsSlice(
           ...persistedSettings,
           profile,
           defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-          downloadedModels: expandDownloadedVariantsFromStatuses(rawModelStatuses),
+          downloadedModels:
+            expandDownloadedVariantsFromStatuses(rawModelStatuses),
         };
         const language = mergedSettings.language ?? detectSystemLanguage();
         await i18next.changeLanguage(language);
@@ -178,7 +187,12 @@ export function createSettingsSlice(
           settings: mergedSettings,
           form: nextForm,
           ...computeValidationState(nextForm, { showErrors: false }),
-          generationState: { status: "idle", phase: "idle", statusMessage: "Ready", error: null },
+          generationState: {
+            status: "idle",
+            phase: "idle",
+            statusMessage: "Ready",
+            error: null,
+          },
           history: persistedHistory,
           favoriteRecordIds,
           activeTasks,

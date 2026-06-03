@@ -1,9 +1,7 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
 import type { GenerationFormValues } from "@/app/lib/types";
-import {
-  DEFAULT_GENERATION_FORM_VALUES,
-} from "@/app/lib/validation";
+import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { INITIAL_CURRENT_REQUEST } from "@/app/lib/history-workflow";
 
@@ -52,7 +50,12 @@ export function createUISlice(
           state.generationState.status === "running" ||
           state.generationState.status === "validating"
             ? state.generationState
-            : { status: "idle", phase: "idle", statusMessage: "Ready", error: null },
+            : {
+                status: "idle",
+                phase: "idle",
+                statusMessage: "Ready",
+                error: null,
+              },
       }));
     },
 
@@ -105,7 +108,12 @@ export function createUISlice(
         form: DEFAULT_GENERATION_FORM_VALUES,
         validationErrors: {},
         currentRequest: INITIAL_CURRENT_REQUEST,
-        generationState: { status: "idle", phase: "idle", statusMessage: "Ready", error: null },
+        generationState: {
+          status: "idle",
+          phase: "idle",
+          statusMessage: "Ready",
+          error: null,
+        },
         lyricsPanelOpen: false,
       });
     },

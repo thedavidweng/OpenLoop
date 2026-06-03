@@ -159,9 +159,12 @@ export function updateBackend(): Promise<BackendProvisionStatus> {
 export function listenToBackendProvisionEvents(
   onEvent: (event: BackendProvisionStatus) => void,
 ) {
-  return listen<BackendProvisionStatus>("backend-provision-progress", (event) => {
-    onEvent(event.payload);
-  });
+  return listen<BackendProvisionStatus>(
+    "backend-provision-progress",
+    (event) => {
+      onEvent(event.payload);
+    },
+  );
 }
 
 export function listenToGenerationEvents(

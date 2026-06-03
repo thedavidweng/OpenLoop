@@ -1,5 +1,10 @@
 import { useCallback } from "react";
-import { AlertCircle, ClipboardCopy, ExternalLink, RefreshCw } from "lucide-react";
+import {
+  AlertCircle,
+  ClipboardCopy,
+  ExternalLink,
+  RefreshCw,
+} from "lucide-react";
 import { Collapsible } from "@/app/components/ui/Collapsible";
 import { GenerationPanel } from "@/app/components/generation/GenerationPanel";
 import { useGenerationStore } from "@/app/lib/store";

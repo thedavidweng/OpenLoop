@@ -29,14 +29,13 @@ pub fn export_generations_to_folder(
             .db
             .get_generation(&id)?
             .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
-        let src = record
-            .output_path
-            .as_ref()
-            .and_then(|p| PathBuf::from(p).file_name().map(PathBuf::from))
-            .ok_or_else(|| {
-                AppError::output_write_failed(format!("generation {id} has no output file"))
-            })?;
-        let source = PathBuf::from(record.output_path.as_ref().unwrap());
+        let output_path = record.output_path.as_ref().ok_or_else(|| {
+            AppError::output_write_failed(format!("generation {id} has no output file"))
+        })?;
+        let source = PathBuf::from(output_path);
+        let src = source.file_name().map(PathBuf::from).ok_or_else(|| {
+            AppError::output_write_failed(format!("generation {id} output path has no filename"))
+        })?;
         let target = dest.join(&src);
         fs::copy(&source, &target)
             .map_err(|error| AppError::output_write_failed(error.to_string()))?;

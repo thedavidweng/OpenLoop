@@ -36,7 +36,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 10.33.2
+          version: 11
 
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
@@ -95,3 +95,16 @@ jobs:
             src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
           if-no-files-found: error
+
+      - name: Upload latest.json to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
+          LATEST_JSON=$(find src-tauri/target -name "latest.json" -path "*/bundle/*" | head -1)
+          if [ -n "$LATEST_JSON" ]; then
+            gh release upload "$TAG" "$LATEST_JSON" --clobber
+            echo "Uploaded latest.json to release $TAG"
+          else
+            echo "::warning::latest.json not found in build output — updater may not detect this release"
+          fi

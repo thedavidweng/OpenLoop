@@ -1,6 +1,6 @@
 # OpenLoop Release Checklist
 
-OpenLoop v0.1.0 targets macOS Apple Silicon DMG builds, distributed via Homebrew Cask and direct download.
+OpenLoop targets macOS Apple Silicon DMG builds, distributed via Homebrew Cask and direct download.
 
 ## Release readiness
 
@@ -56,6 +56,7 @@ Before publishing a release, install the generated DMG and verify:
 OpenLoop uses **Ad-hoc code signing** (no Apple Developer ID required). This means macOS Gatekeeper will show a security warning on first launch for DMG installs.
 
 **Bypass options:**
+
 - **Homebrew** (recommended): `brew tap thedavidweng/tap && brew install --cask openloop` — automatically clears quarantine.
 - **Manual**: Right-click the app → **Open** on the first launch.
 - **Terminal**: `xattr -cr /Applications/OpenLoop.app`
@@ -65,5 +66,6 @@ OpenLoop uses **Ad-hoc code signing** (no Apple Developer ID required). This mea
 ## GitHub release workflow prerequisites
 
 Before publishing a release, ensure:
+
 - The `TAURI_SIGNING_PRIVATE_KEY` GitHub Secret is set (for updater signature verification).
 - `latest.json` is published alongside the DMG so the in-app updater can detect new versions.

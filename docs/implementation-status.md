@@ -1,8 +1,8 @@
 # Current Implementation Status
 
-> **Last updated:** 2026-05-05 · This file mirrors the implementation status section from the main README and is updated alongside releases.
+> **Last updated:** 2026-06-03 · This file mirrors the implementation status section from the main README and is updated alongside releases.
 
-## Current Implementation Status (v0.1.0 Alpha)
+## Current Implementation Status (v0.2.0 Alpha)
 
 **Completed and Live:**
 
@@ -27,11 +27,18 @@
 - CLI mode with 16 subcommands (run, setup, list, pull, models, ps, delete, clear, stop, enhance, backend, generation, settings, status, doctor, files).
 - NDJSON streaming for agent pipeline integration.
 - Comprehensive test suite: frontend unit tests (Vitest) + Rust unit tests.
+- Backend auto-provisioning: automatic ACE-Step backend download, installation, and lifecycle management via `BackendProvisioner`.
+- Backend management CLI: `backend provision`, `backend update`, `backend status` subcommands.
+- History multi-select with batch export.
+- Drag-and-drop audio export to DAW/Finder.
+- Failed run diagnostics archive with retry, copy diagnostics, and remove actions.
+- Strict Content Security Policy (ADR-0003) and documented network trust boundary (ADR-0004).
+- CodeQL security scanning and dependency auditing in CI.
 
-**Planned after v0.1:**
+**Planned after v0.2:**
 
 - Repaint / local audio region regeneration.
 - Multi-model profile management.
-- More robust model downloader.
 - macOS signing and notarization.
 - Advanced export and audio conversion options.
+- Cross-platform support (Windows, Linux).

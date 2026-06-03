@@ -24,7 +24,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6.0.8
         with:
-          version: 10.33.2
+          version: 11
 
       - name: Setup Node
         uses: actions/setup-node@v6.4.0
@@ -38,7 +38,6 @@ jobs:
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high --ignore-registry-errors
-      # TODO: Add `cargo audit` step when cargo-audit is available in CI runners
 
       - name: Typecheck
         run: pnpm typecheck
@@ -108,6 +107,11 @@ jobs:
 
       - name: Rust compile check
         run: cargo check --manifest-path src-tauri/Cargo.toml
+
+      - name: Rust audit
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit -f src-tauri/Cargo.lock
 
       - name: Rust tests
         run: cargo test -q --manifest-path src-tauri/Cargo.toml

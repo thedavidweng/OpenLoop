@@ -1,8 +1,8 @@
 # OpenLoop Product Requirements Document
 
 **版本**: 1.0  
-**状态**: Implemented (v0.1.0 Alpha released)  
-**最后更新**: 2026-05-05  
+**状态**: Implemented (v0.2.0 Alpha released)  
+**最后更新**: 2026-06-03  
 **目标平台**: macOS Apple Silicon  
 **项目类型**: 开源、本地优先、离线 AI 音乐生成桌面应用  
 **内部代号**: OpenLoop  

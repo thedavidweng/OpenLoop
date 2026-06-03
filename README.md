@@ -131,7 +131,7 @@ done
 - macOS 14+ recommended
 - Apple Silicon Mac recommended
 - Node.js 20+
-- pnpm 10+
+- pnpm 11+
 - Rust stable toolchain
 - Tauri 2 platform dependencies
 

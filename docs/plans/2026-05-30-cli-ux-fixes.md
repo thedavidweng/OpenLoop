@@ -25,6 +25,7 @@
 ## P1 — Duplicate `completed` event in `--json` output
 
 **Problem:** `openloop run --json` emits two `completed` events:
+
 1. From `CliGenerationSink::emit_generation_event` (line 328-335 in `run.rs`) — path from the backend response
 2. From the post-generation loop (line 202-206 in `run.rs`) — path after `--output` rename
 

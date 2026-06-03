@@ -5,11 +5,11 @@
 **范围：** 把 v0.1.x Alpha 推到具备「可正式公开发布 + 具备商业化雏形」状态所需的全部工作。
 **目标版本节点：**
 
-| 版本 | 时间窗口 | 目标 |
-|------|----------|------|
-| `v0.1.x` 维护版 | T+0 ~ T+2 周 | 发布阻塞项（签名、CSP、模型校验、自动更新） |
-| `v0.2.0` | T+2 ~ T+6 周 | 体验重构 + 代码拆分 + 错误链路 + 可访问性 |
-| `v0.3.0` | T+6 ~ T+10 周 | E2E、可观测性、Project 概念、对比试听 |
+| 版本               | 时间窗口       | 目标                                             |
+| ------------------ | -------------- | ------------------------------------------------ |
+| `v0.1.x` 维护版    | T+0 ~ T+2 周   | 发布阻塞项（签名、CSP、模型校验、自动更新）      |
+| `v0.2.0`           | T+2 ~ T+6 周   | 体验重构 + 代码拆分 + 错误链路 + 可访问性        |
+| `v0.3.0`           | T+6 ~ T+10 周  | E2E、可观测性、Project 概念、对比试听            |
 | `v0.4.0 / v1.0-rc` | T+10 ~ T+14 周 | 商业化雏形：决策书 + Repaint / Stem / 跨平台预研 |
 
 > 文档下半部按 **Phase（阶段）→ Task（任务）→ Files（涉及文件）→ Acceptance（验收）** 展开。
@@ -19,25 +19,25 @@
 
 ## 0. 全文索引
 
-| Phase | 主题 | 关键交付物 |
-|-------|------|------------|
-| **P1** 发布阻塞项 | 签名、公证、CSP、模型完整性、自动更新 | 可放心给陌生人安装的 DMG |
-| **P2** 安全与可信任度 | 网络白名单、Updater 签名、依赖审计、Privacy Policy | 通过 Vercel/Apple/企业用户初轮审查 |
-| **P3** 代码拆分与可维护性 | `store.ts`、`GenerationPanel`、`SettingsOverlay`、`model_manager.rs` | 单文件 < 500 行，模块清晰 |
-| **P4** 主表单 UX 重构 | 三层折叠、Sticky CTA、Prompt 历史、灵感库 | 新用户能在 60 秒内完成首次生成 |
-| **P5** 历史与多结果体验 | 收藏、对比、批量、失败归档 | 高频用户场景留存 |
-| **P6** 播放器与导出 | Loop / AB / 拖入 DAW / 误删保护 | 创作工作流可串联 |
-| **P7** 设置页重构 | 分子节卡片、立即生效提示、Danger Zone | 减少配置疑惑 |
-| **P8** 首次设置体验 | ETA、网络降级、镜像选择、共享 pack 解释 | 首跑漏斗率提升 |
-| **P9** 错误与反馈链路 | Copy diagnostics、GitHub issue 预填、in-app changelog | issue 质量倍增 |
-| **P10** 可访问性 / 国际化 | WCAG AA、aria、快捷键面板、i18n 覆盖审计 | 通过基本可访问性审 |
-| **P11** 可观测性 | tracing / NDJSON 一致化、本地日志查看器 | 排障可自助 |
-| **P12** 测试矩阵 | E2E、性能基准、迁移测试、视觉回归 | 发版信心 |
-| **P13** 跨平台预研 | Windows / Linux / Intel Mac 适配评估 | 平台路线图 |
-| **P14a** Project 概念（核心） | Project 数据模型、侧栏分组 | 摆脱「单 prompt 单 clip」工具感 |
-| **P14b** 产品探索（可选） | Repaint、Stem、MIDI、模型市场 | 根据战略优先级挑选 |
-| **P15** 合规与运营 | Privacy / ToS / EULA / 模型 license 清单 / 客服 | 合规可上 App Store / 企业部署 |
-| **P16** 商业化决策 | PROJECT_STRATEGY.md、Pro / Cloud / Marketplace 抉择 | 后续投入方向确定 |
+| Phase                         | 主题                                                                 | 关键交付物                         |
+| ----------------------------- | -------------------------------------------------------------------- | ---------------------------------- |
+| **P1** 发布阻塞项             | 签名、公证、CSP、模型完整性、自动更新                                | 可放心给陌生人安装的 DMG           |
+| **P2** 安全与可信任度         | 网络白名单、Updater 签名、依赖审计、Privacy Policy                   | 通过 Vercel/Apple/企业用户初轮审查 |
+| **P3** 代码拆分与可维护性     | `store.ts`、`GenerationPanel`、`SettingsOverlay`、`model_manager.rs` | 单文件 < 500 行，模块清晰          |
+| **P4** 主表单 UX 重构         | 三层折叠、Sticky CTA、Prompt 历史、灵感库                            | 新用户能在 60 秒内完成首次生成     |
+| **P5** 历史与多结果体验       | 收藏、对比、批量、失败归档                                           | 高频用户场景留存                   |
+| **P6** 播放器与导出           | Loop / AB / 拖入 DAW / 误删保护                                      | 创作工作流可串联                   |
+| **P7** 设置页重构             | 分子节卡片、立即生效提示、Danger Zone                                | 减少配置疑惑                       |
+| **P8** 首次设置体验           | ETA、网络降级、镜像选择、共享 pack 解释                              | 首跑漏斗率提升                     |
+| **P9** 错误与反馈链路         | Copy diagnostics、GitHub issue 预填、in-app changelog                | issue 质量倍增                     |
+| **P10** 可访问性 / 国际化     | WCAG AA、aria、快捷键面板、i18n 覆盖审计                             | 通过基本可访问性审                 |
+| **P11** 可观测性              | tracing / NDJSON 一致化、本地日志查看器                              | 排障可自助                         |
+| **P12** 测试矩阵              | E2E、性能基准、迁移测试、视觉回归                                    | 发版信心                           |
+| **P13** 跨平台预研            | Windows / Linux / Intel Mac 适配评估                                 | 平台路线图                         |
+| **P14a** Project 概念（核心） | Project 数据模型、侧栏分组                                           | 摆脱「单 prompt 单 clip」工具感    |
+| **P14b** 产品探索（可选）     | Repaint、Stem、MIDI、模型市场                                        | 根据战略优先级挑选                 |
+| **P15** 合规与运营            | Privacy / ToS / EULA / 模型 license 清单 / 客服                      | 合规可上 App Store / 企业部署      |
+| **P16** 商业化决策            | PROJECT_STRATEGY.md、Pro / Cloud / Marketplace 抉择                  | 后续投入方向确定                   |
 
 ---
 
@@ -80,6 +80,7 @@ P1 ──┬──────────────────────�
 - [ ] 1.1.5 在 `README.md` 与 Release Notes 模板中增加「macOS 安装与打开指南」段落，明确指导用户使用 `右键 -> 打开` 或终端运行 `xattr -cr /Applications/OpenLoop.app` 绕过 Gatekeeper 提示。
 
 **涉及文件：**
+
 - `.github/workflows/release.yml`
 - `src-tauri/tauri.conf.json`
 - `src-tauri/macos/entitlements.plist`（新建）
@@ -133,6 +134,7 @@ P1 ──┬──────────────────────�
 - [x] 1.3.6 CLI：`openloop pull <variant> --mirror hf-mirror`。——已实现于 `cli/pull.rs`。
 
 **涉及文件：**
+
 - `src-tauri/src/services/model_manager.rs`（核心）
 - `src-tauri/src/models/settings.rs`
 - `src-tauri/resources/models.manifest.json`（新建，由发布脚本生成）
@@ -141,10 +143,9 @@ P1 ──┬──────────────────────�
 - `docs/release.md`
 
 **验收：**
+
 - 单元测试：构造 SHA256 不匹配的下载 → 抛 `MODEL_INTEGRITY_MISMATCH`。
 - 手动测试：断网切换镜像后下载继续。
-
-
 
 ---
 
@@ -170,6 +171,7 @@ P1 ──┬──────────────────────�
 - [ ] 1.4.6 CLI：`openloop --version --check-update`。
 
 **涉及文件：**
+
 - `src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json`
 - `src-tauri/src/lib.rs`（注册 plugin）
 - `src/app/lib/api.ts`、`src/app/components/common/UpdateBanner.tsx`（新建）
@@ -187,19 +189,17 @@ P1 ──┬──────────────────────�
 - [ ] 1.5.2 在 README 顶部加一行 `> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.`
 - [ ] 1.5.3 同步 `README_CN.md`。
 
-
-
 ---
 
 **Phase 1 汇总表**
 
-| 任务 | P | 依赖 |
-|------|---|------|
-| 1.1 开源分发与签名 | P0 | — |
-| 1.2 CSP | P0 | — |
-| 1.3 模型完整性 + 镜像 | P0 | — |
-| 1.4 自动更新 | P0 | — |
-| 1.5 README 平台 | P0 | — |
+| 任务                  | P   | 依赖 |
+| --------------------- | --- | ---- |
+| 1.1 开源分发与签名    | P0  | —    |
+| 1.2 CSP               | P0  | —    |
+| 1.3 模型完整性 + 镜像 | P0  | —    |
+| 1.4 自动更新          | P0  | —    |
+| 1.5 README 平台       | P0  | —    |
 
 全部完成即可释出 `v0.1.2`（首个真正可对外的版本）。
 
@@ -521,7 +521,7 @@ src-tauri/src/services/model_manager/
 **Phase 11 验收：** 所有 `eprintln!` / `println!` 替换为 tracing；日志文件轮转符合 `BACKEND_LOG_RETAIN_COUNT`；in-app 日志查看器可显示最近 200 行并按 level 过滤。
 
 > **注：** CLI 侧的 NDJSON 事件契约（`cli::events` 模块、v1 schema、lifecycle/progress/error 三类事件）已在 `cli-backend-vnext.md` 中实现完毕，本 Phase 只需在其之上扩展 GUI 侧的结构化日志与 in-app 查看器。
-> 
+>
 > **状态：** `cli::events` v1 schema 和 `BackendManager::ownership()` 等已在 `19875d3` commit 实现。
 
 ---
@@ -668,27 +668,27 @@ P16 商业化决策                              #######
 
 ## 18. 立即可启动的"第一周 Day-1 计划"
 
-| Day | 任务 |
-|-----|------|
+| Day     | 任务                                                                               |
+| ------- | ---------------------------------------------------------------------------------- |
 | D1 上午 | 明确 entitlements 策略并测试打包（P1.1） + 修 README badge（P1.5）+ 改 CSP（P1.2） |
-| D1 下午 | 跑 `pnpm release:check`，把 CSP 改动后的所有 console error 修完 |
-| D2 | 新建 `models.manifest.json` 草稿、为 Standard pack 计算 SHA256（P1.3.1–1.3.2） |
-| D3 | 实现镜像 fallback（P1.3.3–1.3.6） |
-| D4 | Tauri updater 接入（P1.4） |
-| D5 | 完善 Gatekeeper 文档（P1.1）；同时启动 P3.1 store 拆分 |
+| D1 下午 | 跑 `pnpm release:check`，把 CSP 改动后的所有 console error 修完                    |
+| D2      | 新建 `models.manifest.json` 草稿、为 Standard pack 计算 SHA256（P1.3.1–1.3.2）     |
+| D3      | 实现镜像 fallback（P1.3.3–1.3.6）                                                  |
+| D4      | Tauri updater 接入（P1.4）                                                         |
+| D5      | 完善 Gatekeeper 文档（P1.1）；同时启动 P3.1 store 拆分                             |
 
 ---
 
 ## 19. 风险与缓解
 
-| 风险 | 概率 | 影响 | 缓解 |
-|------|------|------|------|
-| 缺乏公证导致用户流失 | 中 | 阻塞开源采纳 | 在显著位置提供清晰的 Gatekeeper 绕过图文教程 |
-| MLX 在 entitlements 限制下加载失败 | 中 | 严重 | 必须在打包后进行充分测试，确保不闪退 |
-| HF 镜像 manifest 不一致 | 高 | 中 | `models.manifest.json` 只信任官方源做主，镜像只做 mirror，SHA256 卡校验 |
-| Tauri / MLX / ACE-Step 上游变更 | 中 | 中 | Cargo.lock + pnpm-lock 锁死；Dependabot 灰度 |
-| 单人推进时间漂移 | 高 | 中 | 每个 Phase 设独立 PR，避免互相阻塞 |
-| 商业化方向反复 | 中 | 高 | P16 不阻塞前面工程；P1–P12 在任意商业化方向上都不会浪费 |
+| 风险                               | 概率 | 影响         | 缓解                                                                    |
+| ---------------------------------- | ---- | ------------ | ----------------------------------------------------------------------- |
+| 缺乏公证导致用户流失               | 中   | 阻塞开源采纳 | 在显著位置提供清晰的 Gatekeeper 绕过图文教程                            |
+| MLX 在 entitlements 限制下加载失败 | 中   | 严重         | 必须在打包后进行充分测试，确保不闪退                                    |
+| HF 镜像 manifest 不一致            | 高   | 中           | `models.manifest.json` 只信任官方源做主，镜像只做 mirror，SHA256 卡校验 |
+| Tauri / MLX / ACE-Step 上游变更    | 中   | 中           | Cargo.lock + pnpm-lock 锁死；Dependabot 灰度                            |
+| 单人推进时间漂移                   | 高   | 中           | 每个 Phase 设独立 PR，避免互相阻塞                                      |
+| 商业化方向反复                     | 中   | 高           | P16 不阻塞前面工程；P1–P12 在任意商业化方向上都不会浪费                 |
 
 ---
 

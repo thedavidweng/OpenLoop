@@ -14,12 +14,12 @@ OpenLoop is local-first by design. This document explains what data stays on you
 
 ## When the app uses the network
 
-| Scenario | Destination | Purpose |
-|----------|-------------|---------|
-| First model download | `huggingface.co` (or configured mirror) | Download ACE-Step model weights |
-| Backend health check | `127.0.0.1:*` or `localhost:*` | Talk to the local ACE-Step API server |
-| Automatic updates (if enabled) | GitHub Releases | Check for and download app updates |
-| User-initiated external links | Various | Only when you click a link that opens in your browser |
+| Scenario                       | Destination                             | Purpose                                               |
+| ------------------------------ | --------------------------------------- | ----------------------------------------------------- |
+| First model download           | `huggingface.co` (or configured mirror) | Download ACE-Step model weights                       |
+| Backend health check           | `127.0.0.1:*` or `localhost:*`          | Talk to the local ACE-Step API server                 |
+| Automatic updates (if enabled) | GitHub Releases                         | Check for and download app updates                    |
+| User-initiated external links  | Various                                 | Only when you click a link that opens in your browser |
 
 ## What we do NOT collect
 
@@ -30,13 +30,13 @@ OpenLoop is local-first by design. This document explains what data stays on you
 
 ## Third-party components
 
-| Component | License | Purpose |
-|-----------|---------|---------|
-| ACE-Step 1.5 | Apache 2.0 | Local music generation backend |
-| MLX | MIT | Apple Silicon inference |
-| Tauri | MIT / Apache 2.0 | Desktop framework |
-| FFmpeg | LGPL | Audio decoding (via Symphonia in Rust) |
-| Symphonia | MPL 2.0 | Rust audio decoding for waveforms |
+| Component    | License          | Purpose                                |
+| ------------ | ---------------- | -------------------------------------- |
+| ACE-Step 1.5 | Apache 2.0       | Local music generation backend         |
+| MLX          | MIT              | Apple Silicon inference                |
+| Tauri        | MIT / Apache 2.0 | Desktop framework                      |
+| FFmpeg       | LGPL             | Audio decoding (via Symphonia in Rust) |
+| Symphonia    | MPL 2.0          | Rust audio decoding for waveforms      |
 
 ## Contact
 
@@ -60,12 +60,12 @@ OpenLoop 以本地优先为设计原则。本文档说明哪些数据保留在�
 
 ## 应用何时使用网络
 
-| 场景 | 目标地址 | 目的 |
-|------|----------|------|
-| 首次模型下载 | `huggingface.co`（或配置的镜像源） | 下载 ACE-Step 模型权重 |
-| 后端健康检查 | `127.0.0.1:*` 或 `localhost:*` | 与本地 ACE-Step API 服务器通信 |
-| 自动更新（如启用） | GitHub Releases | 检查并下载应用更新 |
-| 用户主动打开的外部链接 | 多个 | 仅当你点击在浏览器中打开的链接时 |
+| 场景                   | 目标地址                           | 目的                             |
+| ---------------------- | ---------------------------------- | -------------------------------- |
+| 首次模型下载           | `huggingface.co`（或配置的镜像源） | 下载 ACE-Step 模型权重           |
+| 后端健康检查           | `127.0.0.1:*` 或 `localhost:*`     | 与本地 ACE-Step API 服务器通信   |
+| 自动更新（如启用）     | GitHub Releases                    | 检查并下载应用更新               |
+| 用户主动打开的外部链接 | 多个                               | 仅当你点击在浏览器中打开的链接时 |
 
 ## 我们不收集什么
 
@@ -76,13 +76,13 @@ OpenLoop 以本地优先为设计原则。本文档说明哪些数据保留在�
 
 ## 第三方组件
 
-| 组件 | 许可证 | 用途 |
-|------|--------|------|
-| ACE-Step 1.5 | Apache 2.0 | 本地音乐生成后端 |
-| MLX | MIT | Apple Silicon 推理 |
-| Tauri | MIT / Apache 2.0 | 桌面框架 |
-| FFmpeg | LGPL | 音频解码（通过 Rust 的 Symphonia） |
-| Symphonia | MPL 2.0 | Rust 音频解码生成波形 |
+| 组件         | 许可证           | 用途                               |
+| ------------ | ---------------- | ---------------------------------- |
+| ACE-Step 1.5 | Apache 2.0       | 本地音乐生成后端                   |
+| MLX          | MIT              | Apple Silicon 推理                 |
+| Tauri        | MIT / Apache 2.0 | 桌面框架                           |
+| FFmpeg       | LGPL             | 音频解码（通过 Rust 的 Symphonia） |
+| Symphonia    | MPL 2.0          | Rust 音频解码生成波形              |
 
 ## 联系方式
 

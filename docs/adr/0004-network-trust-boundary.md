@@ -26,11 +26,11 @@ OpenLoop's network trust boundary is defined as follows:
 
 The application makes outbound connections only in these scenarios:
 
-| Scenario | Destination | URL Source | User Control |
-|----------|-------------|------------|--------------|
-| Model download | `huggingface.co` or a configured mirror | Settings (`modelDirectory`, HF mirror URL) | Configurable via Settings UI |
-| Update check | `api.github.com/repos/openmusic/openloop/releases/latest` | Manifest (`tauri.conf.json` → `plugins.updater.endpoints`) | Can be disabled; open-source users can build without updater |
-| Update download | GitHub Releases asset URL (derived from check response) | Runtime (from updater response) | Same as update check |
+| Scenario        | Destination                                               | URL Source                                                 | User Control                                                 |
+| --------------- | --------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| Model download  | `huggingface.co` or a configured mirror                   | Settings (`modelDirectory`, HF mirror URL)                 | Configurable via Settings UI                                 |
+| Update check    | `api.github.com/repos/openmusic/openloop/releases/latest` | Manifest (`tauri.conf.json` → `plugins.updater.endpoints`) | Can be disabled; open-source users can build without updater |
+| Update download | GitHub Releases asset URL (derived from check response)   | Runtime (from updater response)                            | Same as update check                                         |
 
 ### What never crosses the boundary
 

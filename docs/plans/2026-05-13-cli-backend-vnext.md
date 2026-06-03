@@ -1,6 +1,6 @@
 # OpenLoop CLI / 后端通信 — 下一版本开发计划
 
-**目标版本代号：** CLI & Backend vNext（建议在 CHANGELOG 中单列为 *CLI parity + backend lifecycle*）  
+**目标版本代号：** CLI & Backend vNext（建议在 CHANGELOG 中单列为 _CLI parity + backend lifecycle_）  
 **文档日期：** 2026-05-13  
 **范围：** 提升 CLI 可用性与可预期性；后端状态与进度对用户**显式、可查询**；取消生成时**完整结束本地引擎进程**、避免孤儿进程；CLI 与 Tauri 命令层**能力对齐**。
 
@@ -30,14 +30,14 @@
 
 ## 2. 里程碑与优先级
 
-| 阶段 | 内容 | 依赖 |
-|------|------|------|
-| **M0** | [x] 契约与文档：事件 schema、退出码、`backend` 子命令树 | 无 |
-| **M1** | [x] 后端归属模型 + 终止策略（孤儿进程治理） | M0 |
-| **M2** | [x] 取消生成与后端关停联动 + 跨进程取消 | M1 |
-| **M3** | [x] 统一遥测输出（人类 / JSON / NDJSON）与 `doctor`/`status` | M0、部分 M1 |
-| **M4** | [x] CLI 子命令补齐（对齐 Tauri） | M1–M3 并行可规划接口 |
-| **M5** | [x] 测试、发布说明、迁移指南 | 全部 |
+| 阶段   | 内容                                                         | 依赖                 |
+| ------ | ------------------------------------------------------------ | -------------------- |
+| **M0** | [x] 契约与文档：事件 schema、退出码、`backend` 子命令树      | 无                   |
+| **M1** | [x] 后端归属模型 + 终止策略（孤儿进程治理）                  | M0                   |
+| **M2** | [x] 取消生成与后端关停联动 + 跨进程取消                      | M1                   |
+| **M3** | [x] 统一遥测输出（人类 / JSON / NDJSON）与 `doctor`/`status` | M0、部分 M1          |
+| **M4** | [x] CLI 子命令补齐（对齐 Tauri）                             | M1–M3 并行可规划接口 |
+| **M5** | [x] 测试、发布说明、迁移指南                                 | 全部                 |
 
 建议 **M1 → M2 → M3** 为关键路径；M4 可按子域并行（backend / models / generation / files / settings）。
 
@@ -49,11 +49,11 @@
 
 建议在实现与文档中统一用语：
 
-| 状态 | 含义 | 本进程能否 `kill` |
-|------|------|-------------------|
-| **Owned** | 本 `BackendManager` 通过 `spawn` 启动并持有 `Child` | 是 |
+| 状态         | 含义                                                               | 本进程能否 `kill`                       |
+| ------------ | ------------------------------------------------------------------ | --------------------------------------- |
+| **Owned**    | 本 `BackendManager` 通过 `spawn` 启动并持有 `Child`                | 是                                      |
 | **Attached** | 健康检查发现在配置端口上已有进程，但非本进程 `spawn`（无 `Child`） | 否（除非实现端口/PID 级「协作式关停」） |
-| **Stopped** | 端口无健康响应 | — |
+| **Stopped**  | 端口无健康响应                                                     | —                                       |
 
 ### 3.2 取消生成时的目标行为（产品决策 — 写入发行说明）
 
@@ -117,12 +117,12 @@
 
 ### 4.3 命令级要求
 
-| 命令域 | 用户不再「需要猜」的内容 |
-|--------|-------------------------|
-| `openloop run` | 启动前打印/流式：`port`、`owned/attached`、模型是否已缓存；失败时明确超时阶段 |
-| `openloop pull` | 下载前后端是否需启动、当前下载字节/总估算 |
-| `openloop ps` / `openloop status` | 与 `backend_status` 一致的结构化字段 + 活跃任务列表与任务来源（若可区分） |
-| `openloop doctor` | 环境、端口占用、可执行 sidecar、磁盘、模型目录、最近一次后端日志路径 |
+| 命令域                            | 用户不再「需要猜」的内容                                                      |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `openloop run`                    | 启动前打印/流式：`port`、`owned/attached`、模型是否已缓存；失败时明确超时阶段 |
+| `openloop pull`                   | 下载前后端是否需启动、当前下载字节/总估算                                     |
+| `openloop ps` / `openloop status` | 与 `backend_status` 一致的结构化字段 + 活跃任务列表与任务来源（若可区分）     |
+| `openloop doctor`                 | 环境、端口占用、可执行 sidecar、磁盘、模型目录、最近一次后端日志路径          |
 
 ---
 
@@ -154,74 +154,74 @@
 
 ### 6.1 后端 `commands::backend`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `backend_status` | `openloop backend status`（或并入 `openloop status`） |
-| `start_backend` | `openloop backend start` |
-| `stop_backend` | `openloop backend stop`（含 `--force` 策略见 3.2） |
-| `restart_backend` | `openloop backend restart` |
-| `get_backend_logs_path` | `openloop backend logs`（打印路径；`--open` 可选仅 macOS） |
-| `clear_backend_cache` | `openloop backend clear-cache`（与 GUI 相同前置 `stop` 逻辑） |
+| Tauri                   | 建议 CLI                                                      |
+| ----------------------- | ------------------------------------------------------------- |
+| `backend_status`        | `openloop backend status`（或并入 `openloop status`）         |
+| `start_backend`         | `openloop backend start`                                      |
+| `stop_backend`          | `openloop backend stop`（含 `--force` 策略见 3.2）            |
+| `restart_backend`       | `openloop backend restart`                                    |
+| `get_backend_logs_path` | `openloop backend logs`（打印路径；`--open` 可选仅 macOS）    |
+| `clear_backend_cache`   | `openloop backend clear-cache`（与 GUI 相同前置 `stop` 逻辑） |
 
 ### 6.2 设备 `commands::device`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
+| Tauri             | 建议 CLI                                        |
+| ----------------- | ----------------------------------------------- |
 | `get_device_info` | `openloop device` 或作为 `openloop doctor` 一节 |
 
 ### 6.3 文件 `commands::files`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `reveal_in_finder` | `openloop files reveal <path>`（非 macOS 提示用资源管理器或打印路径） |
-| `copy_audio_to` | `openloop files copy <src> <dst>` |
-| `file_exists` | `openloop files exists <path>` → 退出码 0/1 |
-| `read_generation_audio` | `openloop files read-audio <id|path> [--output -]`（大文件默认写临时路径） |
-| `read_generation_waveform` | `openloop files waveform <id|path> [--json]` |
+| Tauri                                                          | 建议 CLI                                                                                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `reveal_in_finder`                                             | `openloop files reveal <path>`（非 macOS 提示用资源管理器或打印路径）                                                                       |
+| `copy_audio_to`                                                | `openloop files copy <src> <dst>`                                                                                                           |
+| `file_exists`                                                  | `openloop files exists <path>` → 退出码 0/1                                                                                                 |
+| `read_generation_audio`                                        | `openloop files read-audio <id                                                                                                              | path> [--output -]`（大文件默认写临时路径） |
+| `read_generation_waveform`                                     | `openloop files waveform <id                                                                                                                | path> [--json]`                             |
 | `delete_generation_file` + `delete_generation_file_and_record` | **合并为** `openloop files unlink <path\|id> [--keep-record]`；默认同时删除 DB 记录，`--keep-record` 仅删文件；避免两条语义相近命令造成混淆 |
 
 ### 6.4 设置 `commands::settings`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `get_settings` | `openloop settings get` / `openloop settings show --json` |
-| `set_setting` | `openloop settings set <key> <value>` |
-| `reset_runtime_settings` | `openloop settings reset` |
-| `get_default_app_paths` | `openloop settings paths` |
-| `add_cli_to_path` / `remove_cli_from_path` / `is_cli_in_path` | `openloop settings path [--add|--remove|--check]` |
+| Tauri                                                         | 建议 CLI                                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------- | -------- | --------- |
+| `get_settings`                                                | `openloop settings get` / `openloop settings show --json` |
+| `set_setting`                                                 | `openloop settings set <key> <value>`                     |
+| `reset_runtime_settings`                                      | `openloop settings reset`                                 |
+| `get_default_app_paths`                                       | `openloop settings paths`                                 |
+| `add_cli_to_path` / `remove_cli_from_path` / `is_cli_in_path` | `openloop settings path [--add                            | --remove | --check]` |
 
 ### 6.5 模型 `commands::models`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `list_model_catalog` | `openloop models catalog`（与 `models` 列表区分：远端/本地元数据） |
-| `get_model_status` | `openloop models status [variant]` |
-| `download_model` | 已有 `pull` — **统一别名** `openloop models download <variant>` 或内部复用 |
-| `delete_model` | `openloop models delete <variant>` |
-| `clear_partial_downloads` | `openloop models clear-partial` |
-| `cancel_download` | `openloop models cancel` |
-| `delete_all_models` | `openloop models delete-all --yes` |
+| Tauri                     | 建议 CLI                                                                   |
+| ------------------------- | -------------------------------------------------------------------------- |
+| `list_model_catalog`      | `openloop models catalog`（与 `models` 列表区分：远端/本地元数据）         |
+| `get_model_status`        | `openloop models status [variant]`                                         |
+| `download_model`          | 已有 `pull` — **统一别名** `openloop models download <variant>` 或内部复用 |
+| `delete_model`            | `openloop models delete <variant>`                                         |
+| `clear_partial_downloads` | `openloop models clear-partial`                                            |
+| `cancel_download`         | `openloop models cancel`                                                   |
+| `delete_all_models`       | `openloop models delete-all --yes`                                         |
 
 ### 6.6 历史 `commands::history`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `list_generations` | 已有 `list` — 增加与 IPC 相同过滤/分页 flags |
-| `get_generation` | `openloop list --id <uuid>` 或 `openloop history get <id>` |
-| `delete_generation` | 已有 `delete` |
-| `clear_generation_history` | 已有 `clear` |
+| Tauri                      | 建议 CLI                                                   |
+| -------------------------- | ---------------------------------------------------------- |
+| `list_generations`         | 已有 `list` — 增加与 IPC 相同过滤/分页 flags               |
+| `get_generation`           | `openloop list --id <uuid>` 或 `openloop history get <id>` |
+| `delete_generation`        | 已有 `delete`                                              |
+| `clear_generation_history` | 已有 `clear`                                               |
 
 ### 6.7 生成 `commands::generation`
 
-| Tauri | 建议 CLI |
-|-------|-----------|
-| `insert_generation` | `openloop history import` 或 `openloop generation insert`（低优先级，面向脚本） |
-| `generate_music` | 已有 `run` |
-| `cancel_generation` | 重写 `openloop cancel` / `openloop generation cancel [--kill-backend]`，结合 5.1、5.2 |
-| `enhance_prompt` | `openloop enhance "<prompt>"` 或 `openloop generation enhance`（与 IPC `enhance_prompt` 命名对齐；不使用 `format` 避免与 `--format` 音频标志混淆） |
-| `list_active_generation_tasks` | 并入 `openloop status` / `openloop ps` |
-| `resume_generation_task` | `openloop generation resume <id>` |
-| `discard_active_generation_task` | `openloop generation discard <id>` |
+| Tauri                            | 建议 CLI                                                                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `insert_generation`              | `openloop history import` 或 `openloop generation insert`（低优先级，面向脚本）                                                                    |
+| `generate_music`                 | 已有 `run`                                                                                                                                         |
+| `cancel_generation`              | 重写 `openloop cancel` / `openloop generation cancel [--kill-backend]`，结合 5.1、5.2                                                              |
+| `enhance_prompt`                 | `openloop enhance "<prompt>"` 或 `openloop generation enhance`（与 IPC `enhance_prompt` 命名对齐；不使用 `format` 避免与 `--format` 音频标志混淆） |
+| `list_active_generation_tasks`   | 并入 `openloop status` / `openloop ps`                                                                                                             |
+| `resume_generation_task`         | `openloop generation resume <id>`                                                                                                                  |
+| `discard_active_generation_task` | `openloop generation discard <id>`                                                                                                                 |
 
 ---
 
@@ -247,7 +247,7 @@
 
 ## 9. 文档与发布
 
-- 更新 `docs/specs/2026-05-04-openloop-cli-design.md`：与本文冲突处以 **vNext 行为**为准并加迁移表。特别**废止**原 spec *Backend Coordination* 第 2 段（「Neither CLI nor GUI should kill a backend they didn't start. The backend process persists after the CLI exits.」）——本版本在 Owned 路径下引入了「取消后可 kill」语义，直接与之矛盾。
+- 更新 `docs/specs/2026-05-04-openloop-cli-design.md`：与本文冲突处以 **vNext 行为**为准并加迁移表。特别**废止**原 spec _Backend Coordination_ 第 2 段（「Neither CLI nor GUI should kill a backend they didn't start. The backend process persists after the CLI exits.」）——本版本在 Owned 路径下引入了「取消后可 kill」语义，直接与之矛盾。
 - CHANGELOG **Breaking 项**：
   - `openloop stop` 语义变更（由「后端停止」改为「取消生成」）；
   - `BackendManager::Drop` / `AppState` CLI 模式下的后端关闭行为（待 3.3 决策后落字）；
@@ -266,12 +266,12 @@
 
 ## 11. 建议排期（相对顺序，非绝对人天）
 
-1. **Week 1：** M0 契约 + `backend` 子命令壳 + `status`/`doctor` 骨架  
-2. **Week 2：** M1 归属模型 + 终止路径审计 + 测试基线  
-3. **Week 3：** M2 取消 + DB 标志 + Owned 杀进程 + 文档  
-4. **Week 4–5：** M4 分批交付 models / settings / files / generation  
+1. **Week 1：** M0 契约 + `backend` 子命令壳 + `status`/`doctor` 骨架
+2. **Week 2：** M1 归属模型 + 终止路径审计 + 测试基线
+3. **Week 3：** M2 取消 + DB 标志 + Owned 杀进程 + 文档
+4. **Week 4–5：** M4 分批交付 models / settings / files / generation
 5. **Week 6：** M5 硬化、性能、发布候选
 
 ---
 
-*本计划由代码库当前 `invoke_handler` 与 CLI 实现差距分析整理；实施时以代码审查与产品最终决策为准。*
+_本计划由代码库当前 `invoke_handler` 与 CLI 实现差距分析整理；实施时以代码审查与产品最终决策为准。_

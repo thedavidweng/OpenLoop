@@ -35,13 +35,13 @@ This plan keeps the first implementation pass narrow:
 
 ## Current Hotspots
 
-| Area | Location | Current pattern | Current complexity | Priority |
-|------|----------|-----------------|--------------------|----------|
-| History DB list/search | `src-tauri/src/services/db.rs` | Full completed-history query, optional `%LIKE%`, favorite/newest ordering | `O(n log n)` list, `O(n * text)` search | P0 |
-| Frontend history search | `src/app/components/history/HistorySidebar.tsx` | Client filters all hydrated history on each query | `O(n * text)` per query | P0 |
-| History row membership | `HistorySidebar.tsx` | `includes` on favorite/selected arrays inside each row | `O(rows * selected/favorites)` | P1 |
-| CLI prefix lookup | `src-tauri/src/cli/delete.rs`, `src-tauri/src/cli/files.rs` | Load all records, then scan for prefix and ambiguity | `O(n)` load + scans | P1 |
-| Model pack status aggregation | `src/app/lib/model-packs.ts`, settings/setup UI | Re-filter statuses per pack/variant | Small `O(pack_count * statuses)` | P2 |
+| Area                          | Location                                                    | Current pattern                                                           | Current complexity                      | Priority |
+| ----------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------------- | -------- |
+| History DB list/search        | `src-tauri/src/services/db.rs`                              | Full completed-history query, optional `%LIKE%`, favorite/newest ordering | `O(n log n)` list, `O(n * text)` search | P0       |
+| Frontend history search       | `src/app/components/history/HistorySidebar.tsx`             | Client filters all hydrated history on each query                         | `O(n * text)` per query                 | P0       |
+| History row membership        | `HistorySidebar.tsx`                                        | `includes` on favorite/selected arrays inside each row                    | `O(rows * selected/favorites)`          | P1       |
+| CLI prefix lookup             | `src-tauri/src/cli/delete.rs`, `src-tauri/src/cli/files.rs` | Load all records, then scan for prefix and ambiguity                      | `O(n)` load + scans                     | P1       |
+| Model pack status aggregation | `src/app/lib/model-packs.ts`, settings/setup UI             | Re-filter statuses per pack/variant                                       | Small `O(pack_count * statuses)`        | P2       |
 
 ## Phase 0 - Baseline and Guardrails
 
@@ -261,13 +261,13 @@ Manual checks:
 
 ## Risk Register
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Index does not match SQL predicate | Query planner may still scan | Use `EXPLAIN QUERY PLAN` locally and adjust the index to the actual query |
-| Search semantics change under FTS | Users may see different matches | Keep `%LIKE%` first; make FTS a separate, tested migration |
-| GUI limit hides older records | Users may think history disappeared | Pair limit with backend search and explicit CLI behavior |
-| Prefix lookup accidentally ignores current completed/output filters | CLI may delete unexpected records | Reuse the same completed-output predicate and test it |
-| Over-optimizing small fixed arrays | More code, no benefit | Treat scanner output as leads, not proof |
+| Risk                                                                | Impact                              | Mitigation                                                                |
+| ------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| Index does not match SQL predicate                                  | Query planner may still scan        | Use `EXPLAIN QUERY PLAN` locally and adjust the index to the actual query |
+| Search semantics change under FTS                                   | Users may see different matches     | Keep `%LIKE%` first; make FTS a separate, tested migration                |
+| GUI limit hides older records                                       | Users may think history disappeared | Pair limit with backend search and explicit CLI behavior                  |
+| Prefix lookup accidentally ignores current completed/output filters | CLI may delete unexpected records   | Reuse the same completed-output predicate and test it                     |
+| Over-optimizing small fixed arrays                                  | More code, no benefit               | Treat scanner output as leads, not proof                                  |
 
 ## Suggested Implementation Order
 
@@ -277,4 +277,3 @@ Manual checks:
 4. Phase 4 CLI prefix lookup.
 5. Phase 2 backend-driven search.
 6. Phase 5 only if profiling justifies it.
-

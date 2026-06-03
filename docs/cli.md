@@ -40,11 +40,11 @@ openloop enhance "upbeat pop" --duration 120 --json
 openloop enhance "ballad" --lyrics "[Verse]\nHello"
 ```
 
-| Flag         | Short | Description                        |
-| ------------ | ----- | ---------------------------------- |
-| `--duration` | `-d`  | Duration in seconds (10–600)       |
-| `--lyrics`   | `-l`  | Include lyrics in the request      |
-| `--json`     |       | JSON output of enhancement result  |
+| Flag         | Short | Description                       |
+| ------------ | ----- | --------------------------------- |
+| `--duration` | `-d`  | Duration in seconds (10–600)      |
+| `--lyrics`   | `-l`  | Include lyrics in the request     |
+| `--json`     |       | JSON output of enhancement result |
 
 ### `openloop setup`
 
@@ -91,10 +91,10 @@ openloop models clear-partial turbo       # remove partial download artifacts
 openloop models delete-all                # delete all downloaded models
 ```
 
-| Flag     | Description                        |
-| -------- | ---------------------------------- |
-| `--json` | JSON output                        |
-| `--yes`  | Skip confirmation (delete-all)     |
+| Flag     | Description                    |
+| -------- | ------------------------------ |
+| `--json` | JSON output                    |
+| `--yes`  | Skip confirmation (delete-all) |
 
 ### `openloop ps`
 
@@ -146,9 +146,9 @@ openloop backend logs --open     # reveal logs in Finder (macOS only)
 openloop backend clear-cache     # stop backend and remove runtime cache
 ```
 
-| Flag     | Description                 |
-| -------- | --------------------------- |
-| `--json` | JSON output                 |
+| Flag     | Description |
+| -------- | ----------- |
+| `--json` | JSON output |
 
 ### `openloop generation`
 
@@ -189,10 +189,10 @@ openloop settings paths                  # show default application paths
 
 **Settings keys:** `backendPort`, `defaultDurationSeconds`, `defaultAudioFormat`, `defaultThinking`, `modelVariant`, `modelDirectory`, `outputDirectory`, `logDirectory`, `language`, `firstRunCompleted`, `checkForUpdates`
 
-| Flag     | Description                                    |
-| -------- | ---------------------------------------------- |
-| `--json` | JSON output                                    |
-| `--yes`  | Skip confirmation for destructive operations   |
+| Flag     | Description                                  |
+| -------- | -------------------------------------------- |
+| `--json` | JSON output                                  |
+| `--yes`  | Skip confirmation for destructive operations |
 
 ### `openloop doctor`
 
@@ -218,8 +218,8 @@ openloop files unlink <id>         # delete record and its file
 openloop files unlink <id> --keep-record    # delete file only, keep DB record
 ```
 
-| Flag     | Description                                |
-| -------- | ------------------------------------------ |
+| Flag     | Description                                 |
+| -------- | ------------------------------------------- |
 | `--json` | JSON output (supported by most subcommands) |
 
 ## Agent Pipelines

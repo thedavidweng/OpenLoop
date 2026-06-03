@@ -15,7 +15,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
-![Status](https://img.shields.io/badge/Status-v0.2.0%20Alpha-orange)
+![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>

@@ -14,7 +14,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
-![Status](https://img.shields.io/badge/Status-v0.2.0%20Alpha-orange)
+![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
 ![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
 
 </div>
@@ -26,7 +26,7 @@
 | 项目                                                 | 用途                                                          | 状态         |
 | ---------------------------------------------------- | ------------------------------------------------------------- | ------------ |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | 用本地 AI 进行人声分离，并配合同步歌词，把本地歌曲变成卡拉 OK | Active       |
-| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha v0.2.0 |
+| OpenLoop                                             | 根据提示词、歌词和音乐参数，在本地生成新音乐                  | Alpha v0.2.1 |
 
 这个系列的共同理念很简单：音乐工具应该本地优先、尊重所有权、透明，并且能够直接利用你手头已有的媒体和硬件。
 
@@ -93,7 +93,7 @@ done
 
 ## 功能
 
-### v0.2.0 Alpha
+### v0.2.1 Alpha
 
 - **文本生成音乐** - 例如 `lo-fi warm piano, 90 BPM, no vocal`
 - **歌词输入** - 支持 `[verse]`、`[chorus]`、`[bridge]` 这类结构标签

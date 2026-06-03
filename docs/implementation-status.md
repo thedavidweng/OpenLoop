@@ -2,7 +2,7 @@
 
 > **Last updated:** 2026-06-03 · This file mirrors the implementation status section from the main README and is updated alongside releases.
 
-## Current Implementation Status (v0.2.0 Alpha)
+## Current Implementation Status (v0.2.1 Alpha)
 
 **Completed and Live:**
 

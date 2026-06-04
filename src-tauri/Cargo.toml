@@ -17,7 +17,7 @@ name = "openloop"
 path = "src/main.rs"
 
 [build-dependencies]
-cc = "1.2.62"
+cc = "1.2.63"
 tauri-build = { version = "2.6.2", features = [] }
 
 [dependencies]

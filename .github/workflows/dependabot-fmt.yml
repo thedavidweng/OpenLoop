@@ -31,7 +31,9 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
+        env:
+          npm_config_minimumReleaseAge: 0
 
       - name: Run Prettier
         run: pnpm format

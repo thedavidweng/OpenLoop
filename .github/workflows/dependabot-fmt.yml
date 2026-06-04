@@ -30,10 +30,11 @@ jobs:
           node-version: 24
           cache: pnpm
 
+      - name: Disable pnpm minimum release age
+        run: echo "minimum-release-age=0" >> .npmrc
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-        env:
-          npm_config_minimumReleaseAge: 0
 
       - name: Run Prettier
         run: pnpm format

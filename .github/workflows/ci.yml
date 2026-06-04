@@ -33,8 +33,6 @@ jobs:
       - name: Install dependencies
         id: install
         run: pnpm install --frozen-lockfile
-        env:
-          npm_config_minimumReleaseAge: 0
 
       - name: Audit dependencies
         run: pnpm audit --audit-level=high --ignore-registry-errors

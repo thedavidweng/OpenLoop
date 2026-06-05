@@ -8,7 +8,7 @@ import { fileURLToPath, URL } from "node:url";
 // @ts-expect-error process is a Node.js global
 const host = process.env.TAURI_DEV_HOST;
 
-export default defineConfig(() => ({
+export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -21,6 +21,24 @@ export default defineConfig(() => ({
     exclude: ["node_modules/**", "src-tauri/**", "reference/**"],
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+  },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/zustand/")) {
+            return "vendor-state";
+          }
+          if (id.includes("node_modules/i18next/") || id.includes("node_modules/react-i18next/")) {
+            return "vendor-i18n";
+          }
+        },
+      },
+    },
   },
   clearScreen: false,
   server: {

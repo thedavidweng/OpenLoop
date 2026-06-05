@@ -1,9 +1,15 @@
+import React, { Suspense } from "react";
 import { DemoBanner } from "@/app/components/bootstrap/DemoBanner";
 import { ModelBootstrapBanner } from "@/app/components/bootstrap/ModelBootstrapBanner";
 import { OpenLoopStage } from "@/app/components/layout/OpenLoopStage";
 import { PlaybackBar } from "@/app/components/player/PlaybackBar";
-import { SettingsOverlay } from "@/app/components/settings/SettingsOverlay";
 import { useGenerationStore } from "@/app/lib/store";
+
+const SettingsOverlay = React.lazy(() =>
+  import("@/app/components/settings/SettingsOverlay").then((m) => ({
+    default: m.SettingsOverlay,
+  })),
+);
 
 export function MainContentView() {
   const settingsOpen = useGenerationStore((state) => state.isSettingsOpen);
@@ -23,7 +29,11 @@ export function MainContentView() {
           {demoMode ? <DemoBanner /> : <ModelBootstrapBanner />}
           <OpenLoopStage />
         </div>
-        {settingsOpen ? <SettingsOverlay /> : null}
+        {settingsOpen ? (
+          <Suspense fallback={null}>
+            <SettingsOverlay />
+          </Suspense>
+        ) : null}
       </div>
       <PlaybackBar />
     </div>

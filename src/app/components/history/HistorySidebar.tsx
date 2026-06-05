@@ -97,7 +97,7 @@ export function HistorySidebar() {
     });
   }, [history, historyQuery]);
 
-  const parentRef = useRef<HTMLUListElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: filteredHistory.length,
     getScrollElement: () => parentRef.current,
@@ -266,8 +266,9 @@ export function HistorySidebar() {
             {t("history.empty")}
           </div>
         ) : (
-          <ul
+          <div
             ref={parentRef}
+            role="list"
             className="custom-scrollbar overflow-auto px-1 pb-3"
           >
             <div
@@ -283,6 +284,7 @@ export function HistorySidebar() {
                 return (
                   <div
                     key={virtualItem.key}
+                    role="listitem"
                     data-index={virtualItem.index}
                     ref={virtualizer.measureElement}
                     style={{
@@ -441,7 +443,7 @@ export function HistorySidebar() {
                 );
               })}
             </div>
-          </ul>
+          </div>
         )}
       </div>
       {/* Failed runs drawer */}

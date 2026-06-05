@@ -8,7 +8,7 @@ import { fileURLToPath, URL } from "node:url";
 // @ts-expect-error process is a Node.js global
 const host = process.env.TAURI_DEV_HOST;
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

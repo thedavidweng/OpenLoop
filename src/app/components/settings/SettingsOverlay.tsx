@@ -129,7 +129,7 @@ export function SettingsOverlay() {
               onClick={() =>
                 document
                   .getElementById(`settings-section-${s.id}`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  ?.scrollIntoView({ block: "start" })
               }
               className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
             >

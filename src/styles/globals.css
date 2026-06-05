@@ -24,6 +24,43 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable] {
+    cursor: text;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .user-content {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  a,
+  button {
+    -webkit-touch-callout: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+
   :root {
     color: var(--color-text);
     background-color: var(--color-surface);
@@ -123,6 +160,9 @@
 }
 
 @layer utilities {
+  .custom-scrollbar {
+    overscroll-behavior: contain;
+  }
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -316,6 +356,13 @@
   .primary-button:focus-visible:not(:disabled),
   .secondary-button:focus-visible:not(:disabled) {
     transform: translateY(-1px);
+  }
+
+  .primary-button:active:not(:disabled),
+  .secondary-button:active:not(:disabled),
+  .motion-icon-button:active:not(:disabled) {
+    transform: scale(0.97);
+    opacity: 0.8;
   }
 
   .primary-button:hover:not(:disabled),

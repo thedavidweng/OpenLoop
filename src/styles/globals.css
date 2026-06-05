@@ -40,9 +40,8 @@
     -webkit-user-select: text;
   }
 
-  .user-content {
-    user-select: text;
-    -webkit-user-select: text;
+  a[href] {
+    cursor: pointer;
   }
 
   a,

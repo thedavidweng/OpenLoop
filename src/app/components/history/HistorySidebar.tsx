@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ChevronDown,
@@ -14,6 +14,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
 import { useGenerationStore } from "@/app/lib/store";
@@ -95,6 +96,14 @@ export function HistorySidebar() {
       return `${record.prompt} ${record.lyrics}`.toLowerCase().includes(query);
     });
   }, [history, historyQuery]);
+
+  const parentRef = useRef<HTMLUListElement>(null);
+  const virtualizer = useVirtualizer({
+    count: filteredHistory.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 90,
+    overscan: 5,
+  });
 
   const deleteTarget = useMemo(
     () => history.find((item) => item.id === deleteTargetId) ?? null,
@@ -257,153 +266,181 @@ export function HistorySidebar() {
             {t("history.empty")}
           </div>
         ) : (
-          <ul className="custom-scrollbar space-y-2 overflow-auto px-1 pb-3">
-            {filteredHistory.map((item) => {
-              const selected = currentGeneration?.id === item.id;
-              const isMultiSelected = selectedHistoryIds.includes(item.id);
-              return (
-                <li key={item.id}>
+          <ul
+            ref={parentRef}
+            className="custom-scrollbar overflow-auto px-1 pb-3"
+          >
+            <div
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                position: "relative",
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const item = filteredHistory[virtualItem.index];
+                const selected = currentGeneration?.id === item.id;
+                const isMultiSelected = selectedHistoryIds.includes(item.id);
+                return (
                   <div
-                    draggable={item.outputPath !== null && api.isTauriRuntime()}
-                    onDragStart={async (e) => {
-                      if (!item.outputPath || !api.isTauriRuntime()) return;
-                      try {
-                        const tempPath = await api.prepareDragPayload(item.id);
-                        e.dataTransfer.setData(
-                          "text/uri-list",
-                          `file://${tempPath}`,
-                        );
-                        e.dataTransfer.setData("text/plain", tempPath);
-                        e.dataTransfer.effectAllowed = "copy";
-                      } catch {
-                        // silently ignore drag failures
-                      }
+                    key={virtualItem.key}
+                    data-index={virtualItem.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualItem.start}px)`,
                     }}
-                    className={`group rounded-xl border border-l-2 border-l-emerald-500 px-3 py-3 transition-colors ${
-                      isMultiSelected
-                        ? "border-[var(--color-accent)] bg-[var(--color-accent)]/8"
-                        : selected
-                          ? "border-[var(--sidebar-row-selected-border)] bg-[var(--sidebar-row-selected-bg)]"
-                          : "border-[var(--color-border-light)] bg-[var(--color-surface)] hover:bg-[var(--color-hover)]"
-                    } ${item.outputPath ? "cursor-grab active:cursor-grabbing" : ""}`}
                   >
-                    <button
-                      type="button"
-                      onClick={(e) => handleItemClick(item.id, e)}
-                      className="flex w-full items-start justify-between gap-3 text-left"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium text-white">
-                          {item.prompt ||
-                            item.lyrics.slice(0, 48) ||
-                            t("history.untitled")}
-                        </p>
-                        {/* Key parameters row */}
-                        <p className="mt-1 truncate text-[11px] text-[var(--color-text-dim)]">
-                          {item.bpm ? `${item.bpm} BPM` : null}
-                          {item.bpm && item.keyScale ? " · " : null}
-                          {item.keyScale || null}
-                          {(item.bpm || item.keyScale) && " · "}
-                          {item.audioFormat.toUpperCase()} ·{" "}
-                          {Math.round(item.durationSeconds)}s
-                        </p>
-                      </div>
-                    </button>
-                    <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-[var(--color-text-dim)]">
-                      <span className="flex items-center gap-1.5">
-                        <Clock3 size={11} />
-                        {new Date(item.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {/* Favorite star */}
-                        <Tooltip
-                          label={
-                            favoriteRecordIds.includes(item.id)
-                              ? t("history.unfavorite")
-                              : t("history.favorite")
+                    <div className="pb-2">
+                      <div
+                        draggable={
+                          item.outputPath !== null && api.isTauriRuntime()
+                        }
+                        onDragStart={async (e) => {
+                          if (!item.outputPath || !api.isTauriRuntime()) return;
+                          try {
+                            const tempPath = await api.prepareDragPayload(
+                              item.id,
+                            );
+                            e.dataTransfer.setData(
+                              "text/uri-list",
+                              `file://${tempPath}`,
+                            );
+                            e.dataTransfer.setData("text/plain", tempPath);
+                            e.dataTransfer.effectAllowed = "copy";
+                          } catch {
+                            // silently ignore drag failures
                           }
+                        }}
+                        className={`group rounded-xl border border-l-2 border-l-emerald-500 px-3 py-3 transition-colors ${
+                          isMultiSelected
+                            ? "border-[var(--color-accent)] bg-[var(--color-accent)]/8"
+                            : selected
+                              ? "border-[var(--sidebar-row-selected-border)] bg-[var(--sidebar-row-selected-bg)]"
+                              : "border-[var(--color-border-light)] bg-[var(--color-surface)] hover:bg-[var(--color-hover)]"
+                        } ${item.outputPath ? "cursor-grab active:cursor-grabbing" : ""}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleItemClick(item.id, e)}
+                          className="flex w-full items-start justify-between gap-3 text-left"
                         >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavoriteRecord(item.id);
-                            }}
-                            className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIds.includes(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
-                          >
-                            <Star
-                              size={11}
-                              fill={
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-medium text-white">
+                              {item.prompt ||
+                                item.lyrics.slice(0, 48) ||
+                                t("history.untitled")}
+                            </p>
+                            {/* Key parameters row */}
+                            <p className="mt-1 truncate text-[11px] text-[var(--color-text-dim)]">
+                              {item.bpm ? `${item.bpm} BPM` : null}
+                              {item.bpm && item.keyScale ? " · " : null}
+                              {item.keyScale || null}
+                              {(item.bpm || item.keyScale) && " · "}
+                              {item.audioFormat.toUpperCase()} ·{" "}
+                              {Math.round(item.durationSeconds)}s
+                            </p>
+                          </div>
+                        </button>
+                        <div className="mt-3 flex items-center justify-between gap-3 text-[11px] text-[var(--color-text-dim)]">
+                          <span className="flex items-center gap-1.5">
+                            <Clock3 size={11} />
+                            {new Date(item.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            {/* Favorite star */}
+                            <Tooltip
+                              label={
                                 favoriteRecordIds.includes(item.id)
-                                  ? "currentColor"
-                                  : "none"
+                                  ? t("history.unfavorite")
+                                  : t("history.favorite")
                               }
-                            />
-                          </button>
-                        </Tooltip>
-                        {/* Quick play button */}
-                        <Tooltip label={t("player.play")}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              selectGenerationRecord(item.id);
-                            }}
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
-                          >
-                            <Play size={11} fill="currentColor" />
-                          </button>
-                        </Tooltip>
-                        {/* Always-visible Use Settings button */}
-                        <Tooltip label={t("history.useSettings")}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              loadGenerationSettings(item.id, "settings");
-                            }}
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
-                          >
-                            <Settings2 size={11} />
-                          </button>
-                        </Tooltip>
-                        {/* Reproduce button */}
-                        <Tooltip label={t("history.reproduce")}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              loadGenerationSettings(item.id, "reproduce");
-                            }}
-                            className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
-                            data-visible={selected}
-                          >
-                            <Play size={11} />
-                          </button>
-                        </Tooltip>
-                        {/* Delete button */}
-                        <Tooltip label={t("common.delete")}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTargetId(item.id);
-                            }}
-                            className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
-                            data-visible={selected}
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </Tooltip>
+                            >
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavoriteRecord(item.id);
+                                }}
+                                className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIds.includes(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
+                              >
+                                <Star
+                                  size={11}
+                                  fill={
+                                    favoriteRecordIds.includes(item.id)
+                                      ? "currentColor"
+                                      : "none"
+                                  }
+                                />
+                              </button>
+                            </Tooltip>
+                            {/* Quick play button */}
+                            <Tooltip label={t("player.play")}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  selectGenerationRecord(item.id);
+                                }}
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                              >
+                                <Play size={11} fill="currentColor" />
+                              </button>
+                            </Tooltip>
+                            {/* Always-visible Use Settings button */}
+                            <Tooltip label={t("history.useSettings")}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  loadGenerationSettings(item.id, "settings");
+                                }}
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                              >
+                                <Settings2 size={11} />
+                              </button>
+                            </Tooltip>
+                            {/* Reproduce button */}
+                            <Tooltip label={t("history.reproduce")}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  loadGenerationSettings(item.id, "reproduce");
+                                }}
+                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                data-visible={selected}
+                              >
+                                <Play size={11} />
+                              </button>
+                            </Tooltip>
+                            {/* Delete button */}
+                            <Tooltip label={t("common.delete")}>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteTargetId(item.id);
+                                }}
+                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
+                                data-visible={selected}
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </li>
-              );
-            })}
+                );
+              })}
+            </div>
           </ul>
         )}
       </div>

@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <QuartzCore/QuartzCore.h>
 #import <dispatch/dispatch.h>
 #import <objc/runtime.h>
 #import <stdbool.h>
@@ -154,12 +155,36 @@ bool ok_window_shell_configure_main_window(
         window.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
         window.movableByWindowBackground = NO;
 
-        window.backgroundColor = [NSColor windowBackgroundColor];
+        window.backgroundColor = [NSColor clearColor];
 
         NSWindowStyleMask styleMask = [window styleMask];
         if ((styleMask & NSWindowStyleMaskFullSizeContentView) == 0) {
             [window setStyleMask:(styleMask | NSWindowStyleMaskFullSizeContentView)];
         }
+
+        // Add NSVisualEffectView for native frosted glass background (once)
+        NSView *containerView = window.contentView.superview;
+        if (containerView != nil) {
+            BOOL alreadyAdded = NO;
+            for (NSView *subview in containerView.subviews) {
+                if ([subview isKindOfClass:[NSVisualEffectView class]]) {
+                    alreadyAdded = YES;
+                    break;
+                }
+            }
+            if (!alreadyAdded) {
+                NSVisualEffectView *effectView = [[NSVisualEffectView alloc] initWithFrame:containerView.bounds];
+                effectView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+                effectView.material = NSVisualEffectMaterialUnderWindowBackground;
+                effectView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+                effectView.state = NSVisualEffectStateActive;
+                containerView.wantsLayer = YES;
+                [containerView addSubview:effectView positioned:NSWindowBelow relativeTo:window.contentView];
+            }
+        }
+
+        // Disable occlusion detection to prevent WebKit throttling when offscreen
+        [window setValue:@NO forKey:@"windowOcclusionDetectionEnabled"];
 
         [window setToolbar:nil];
 
@@ -192,4 +217,31 @@ bool ok_window_shell_configure_main_window(
     });
 
     return configured;
+}
+
+bool ok_window_shell_animate_resize(
+    void *ns_view_ptr,
+    double x, double y, double width, double height,
+    double duration
+) {
+    if (ns_view_ptr == NULL) return false;
+
+    __block BOOL result = NO;
+    openloop_run_on_main_thread_sync(^{
+        NSView *view = (__bridge NSView *)ns_view_ptr;
+        NSWindow *window = view.window;
+        if (window == nil) return;
+
+        NSRect newFrame = NSMakeRect(x, y, width, height);
+
+        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *ctx) {
+            ctx.duration = duration;
+            ctx.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
+            ctx.allowsImplicitAnimation = YES;
+            [window setFrame:newFrame display:YES];
+        } completionHandler:nil];
+
+        result = YES;
+    });
+    return result;
 }

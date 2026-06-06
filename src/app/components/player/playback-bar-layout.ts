@@ -19,10 +19,7 @@ export interface PlaybackBarLayoutTokens {
   barHeightClass: string;
 }
 
-const PLAYBACK_BAR_LAYOUT_TOKENS: Record<
-  PlaybackBarDensity,
-  PlaybackBarLayoutTokens
-> = {
+const PLAYBACK_BAR_LAYOUT_TOKENS: Record<PlaybackBarDensity, PlaybackBarLayoutTokens> = {
   relaxed: {
     leftMaxWidth: 228,
     masterVolumeWidth: 72,
@@ -58,21 +55,13 @@ export function getPlaybackBarDensity(width: number): PlaybackBarDensity {
   return "relaxed";
 }
 
-export function getPlaybackBarLayoutTokens(
-  density: PlaybackBarDensity,
-): PlaybackBarLayoutTokens {
+export function getPlaybackBarLayoutTokens(density: PlaybackBarDensity): PlaybackBarLayoutTokens {
   return PLAYBACK_BAR_LAYOUT_TOKENS[density];
 }
 
-export function getPlaybackBarCenterMinWidth(
-  density: PlaybackBarDensity,
-): number {
+export function getPlaybackBarCenterMinWidth(density: PlaybackBarDensity): number {
   const { zoneGap } = getPlaybackBarLayoutTokens(density);
-  return (
-    PLAYBACK_BAR_CONTROL_CLUSTER_MIN_WIDTH +
-    PLAYBACK_BAR_SEEK_MIN_WIDTH +
-    zoneGap
-  );
+  return PLAYBACK_BAR_CONTROL_CLUSTER_MIN_WIDTH + PLAYBACK_BAR_SEEK_MIN_WIDTH + zoneGap;
 }
 
 export function shouldCollapsePlaybackBarMetadata(width: number): boolean {

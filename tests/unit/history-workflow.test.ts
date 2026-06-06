@@ -7,10 +7,7 @@ import {
 } from "@/app/lib/history-workflow";
 import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 
-function record(
-  id: string,
-  overrides: Partial<GenerationRecord> = {},
-): GenerationRecord {
+function record(id: string, overrides: Partial<GenerationRecord> = {}): GenerationRecord {
   return {
     id,
     createdAt: `2026-04-29T00:00:00Z`,
@@ -75,13 +72,11 @@ describe("history workflow", () => {
   it("selects the next current generation after deleting the active record", () => {
     const remaining = [record("next"), record("later")];
 
-    expect(
-      nextCurrentGenerationAfterDelete(record("deleted"), "deleted", remaining)
-        ?.id,
-    ).toBe("next");
-    expect(
-      nextCurrentGenerationAfterDelete(record("current"), "other", remaining)
-        ?.id,
-    ).toBe("current");
+    expect(nextCurrentGenerationAfterDelete(record("deleted"), "deleted", remaining)?.id).toBe(
+      "next",
+    );
+    expect(nextCurrentGenerationAfterDelete(record("current"), "other", remaining)?.id).toBe(
+      "current",
+    );
   });
 });

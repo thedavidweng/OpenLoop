@@ -3,10 +3,7 @@ import { MainContentView } from "@/app/components/layout/MainContentView";
 import { SidebarRail } from "@/app/components/layout/SidebarRail";
 import { WindowChrome } from "@/app/components/layout/WindowChrome";
 import { HistorySidebar } from "@/app/components/history/HistorySidebar";
-import {
-  createWindowShellStyle,
-  useWindowShellState,
-} from "@/app/lib/window-shell";
+import { createWindowShellStyle, useWindowShellState } from "@/app/lib/window-shell";
 import { useGenerationStore } from "@/app/lib/store";
 import {
   APP_SHORTCUTS,
@@ -23,16 +20,10 @@ export function AppLayout() {
   const toggleSettings = useGenerationStore((state) => state.toggleSettings);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
-  const requestPlaybackToggle = useGenerationStore(
-    (state) => state.requestPlaybackToggle,
-  );
+  const requestPlaybackToggle = useGenerationStore((state) => state.requestPlaybackToggle);
   const generationState = useGenerationStore((state) => state.generationState);
-  const compareModeActive = useGenerationStore(
-    (state) => state.compareModeActive,
-  );
-  const toggleCompareTarget = useGenerationStore(
-    (state) => state.toggleCompareTarget,
-  );
+  const compareModeActive = useGenerationStore((state) => state.compareModeActive);
+  const toggleCompareTarget = useGenerationStore((state) => state.toggleCompareTarget);
   const windowShellState = useWindowShellState(sidebarWidth);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -62,46 +53,29 @@ export function AppLayout() {
       if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.togglePlayback)) {
         event.preventDefault();
         requestPlaybackToggle();
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.keyboardHelp)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.keyboardHelp)) {
         event.preventDefault();
         setShortcutsOpen((open) => !open);
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSidebar)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSidebar)) {
         event.preventDefault();
         toggleSidebar();
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.newGeneration)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.newGeneration)) {
         event.preventDefault();
         resetForm();
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSettings)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.toggleSettings)) {
         event.preventDefault();
         toggleSettings();
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.submitGeneration)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.submitGeneration)) {
         event.preventDefault();
-        if (
-          generationState.status !== "running" &&
-          generationState.status !== "validating"
-        ) {
+        if (generationState.status !== "running" && generationState.status !== "validating") {
           void runGeneration();
         }
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.retryGeneration)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.retryGeneration)) {
         event.preventDefault();
         if (generationState.status === "failed") {
           void runGeneration();
         }
-      } else if (
-        shouldHandleGlobalShortcut(event, APP_SHORTCUTS.compareToggle)
-      ) {
+      } else if (shouldHandleGlobalShortcut(event, APP_SHORTCUTS.compareToggle)) {
         event.preventDefault();
         if (compareModeActive) {
           toggleCompareTarget();
@@ -137,11 +111,7 @@ export function AppLayout() {
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <SidebarRail
-          visible={sidebarVisible}
-          width={sidebarWidth}
-          onResize={setSidebarWidth}
-        >
+        <SidebarRail visible={sidebarVisible} width={sidebarWidth} onResize={setSidebarWidth}>
           <HistorySidebar />
         </SidebarRail>
 
@@ -162,10 +132,7 @@ export function AppLayout() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2
-                  id="keyboard-shortcuts-title"
-                  className="text-base font-semibold text-white"
-                >
+                <h2 id="keyboard-shortcuts-title" className="text-base font-semibold text-white">
                   Keyboard shortcuts
                 </h2>
                 <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
@@ -186,9 +153,7 @@ export function AppLayout() {
                   key={shortcut.id}
                   className="flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border-light)] bg-black/10 px-3 py-2"
                 >
-                  <span className="text-[13px] text-[var(--color-text-primary)]">
-                    {label}
-                  </span>
+                  <span className="text-[13px] text-[var(--color-text-primary)]">{label}</span>
                   <kbd className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-1 text-[11px] font-semibold text-white">
                     {getShortcutDisplay(shortcut)}
                   </kbd>

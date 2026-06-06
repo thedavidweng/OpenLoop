@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import {
-  getShortcutPlatform,
-  type ShortcutPlatform,
-} from "@/app/lib/app-shortcuts";
+import { getShortcutPlatform, type ShortcutPlatform } from "@/app/lib/app-shortcuts";
 import { getWindowShellState as getWindowShellStateSnapshot } from "@/app/lib/api";
 import type {
   WindowShellChromeVariant,
@@ -41,9 +38,7 @@ function isPositiveNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-function snapshotToWindowShellState(
-  snapshot: WindowShellStateSnapshot,
-): WindowShellState {
+function snapshotToWindowShellState(snapshot: WindowShellStateSnapshot): WindowShellState {
   return {
     chromeVariant: snapshot.chrome_variant,
     tier: snapshot.tier,
@@ -57,9 +52,7 @@ function snapshotToWindowShellState(
 export function getDefaultWindowShellState(
   platform: ShortcutPlatform = getShortcutPlatform(),
 ): WindowShellState {
-  return platform === "mac"
-    ? { ...MAC_WINDOW_SHELL_STATE }
-    : { ...DESKTOP_WINDOW_SHELL_STATE };
+  return platform === "mac" ? { ...MAC_WINDOW_SHELL_STATE } : { ...DESKTOP_WINDOW_SHELL_STATE };
 }
 
 export function resolveWindowShellState(
@@ -73,8 +66,7 @@ export function resolveWindowShellState(
   const fallback = MAC_WINDOW_SHELL_STATE;
 
   return {
-    chromeVariant:
-      state?.chromeVariant === "mac" ? "mac" : fallback.chromeVariant,
+    chromeVariant: state?.chromeVariant === "mac" ? "mac" : fallback.chromeVariant,
     tier: "mac",
     toolbarHeight: isPositiveNumber(state?.toolbarHeight)
       ? state.toolbarHeight

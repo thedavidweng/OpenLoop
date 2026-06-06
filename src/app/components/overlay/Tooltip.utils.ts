@@ -47,8 +47,7 @@ export function getTooltipPosition(
   tooltipSize: TooltipSize,
   viewport: TooltipViewport,
 ): { left: number; top: number } {
-  const unclampedLeft =
-    anchorRect.left + anchorRect.width / 2 - tooltipSize.width / 2;
+  const unclampedLeft = anchorRect.left + anchorRect.width / 2 - tooltipSize.width / 2;
   const left = Math.min(
     Math.max(unclampedLeft, TOOLTIP_VIEWPORT_PADDING_PX),
     viewport.width - tooltipSize.width - TOOLTIP_VIEWPORT_PADDING_PX,

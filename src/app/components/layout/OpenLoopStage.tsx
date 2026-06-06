@@ -1,10 +1,5 @@
 import { useCallback } from "react";
-import {
-  AlertCircle,
-  ClipboardCopy,
-  ExternalLink,
-  RefreshCw,
-} from "lucide-react";
+import { AlertCircle, ClipboardCopy, ExternalLink, RefreshCw } from "lucide-react";
 import { Collapsible } from "@/app/components/ui/Collapsible";
 import { GenerationPanel } from "@/app/components/generation/GenerationPanel";
 import { useGenerationStore } from "@/app/lib/store";
@@ -15,9 +10,7 @@ export function OpenLoopStage() {
   const runGeneration = useGenerationStore((state) => state.runGeneration);
 
   const isFailed = generationState.status === "failed";
-  const isRunning =
-    generationState.status === "running" ||
-    generationState.status === "validating";
+  const isRunning = generationState.status === "running" || generationState.status === "validating";
 
   const error = generationState.error;
 
@@ -67,9 +60,7 @@ export function OpenLoopStage() {
               {/* Header row */}
               <div className="flex items-center gap-3">
                 <AlertCircle size={18} className="shrink-0 text-red-300" />
-                <span className="font-semibold text-white">
-                  Something went wrong
-                </span>
+                <span className="font-semibold text-white">Something went wrong</span>
               </div>
 
               {/* Expandable details */}
@@ -84,17 +75,14 @@ export function OpenLoopStage() {
                 contentClassName="rounded-lg bg-white/5 p-3 font-mono text-[12px] text-red-200/90 space-y-1"
               >
                 <div>
-                  <span className="font-semibold text-red-200">Code:</span>{" "}
-                  {error.code}
+                  <span className="font-semibold text-red-200">Code:</span> {error.code}
                 </div>
                 <div>
-                  <span className="font-semibold text-red-200">Message:</span>{" "}
-                  {error.message}
+                  <span className="font-semibold text-red-200">Message:</span> {error.message}
                 </div>
                 {error.details && (
                   <div>
-                    <span className="font-semibold text-red-200">Details:</span>{" "}
-                    {error.details}
+                    <span className="font-semibold text-red-200">Details:</span> {error.details}
                   </div>
                 )}
               </Collapsible>

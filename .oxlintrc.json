@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "rules": {
+    "no-ternary": "off",
+    "func-style": "off",
+    "sort-imports": "off",
+    "sort-keys": "off",
+    "no-magic-numbers": "off",
+    "id-length": "off",
+    "unicorn/no-null": "off",
+    "unicorn/filename-case": "off"
+  }
+}

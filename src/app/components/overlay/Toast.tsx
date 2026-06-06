@@ -44,9 +44,7 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const removeToast = useCallback((id: string) => {
     const timer = timersRef.current.get(id);
@@ -58,11 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addToast = useCallback(
-    (
-      type: ToastType,
-      message: string,
-      options?: { duration?: number; action?: ToastAction },
-    ) => {
+    (type: ToastType, message: string, options?: { duration?: number; action?: ToastAction }) => {
       const id = crypto.randomUUID();
       setToasts((prev) => [
         ...prev,
@@ -74,10 +68,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           action: options?.action,
         },
       ]);
-      const timer = setTimeout(
-        () => removeToast(id),
-        options?.duration ?? 3000,
-      );
+      const timer = setTimeout(() => removeToast(id), options?.duration ?? 3000);
       timersRef.current.set(id, timer);
       return id;
     },
@@ -97,11 +88,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="pointer-events-none fixed right-4 top-4 z-[100] flex flex-col gap-2">
         {toasts.map((toast) => (
-          <ToastItem
-            key={toast.id}
-            toast={toast}
-            onDismiss={() => removeToast(toast.id)}
-          />
+          <ToastItem key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />
         ))}
       </div>
     </ToastContext.Provider>
@@ -120,13 +107,7 @@ const TONE_MAP = {
   info: "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]",
 } as const;
 
-function ToastItem({
-  toast,
-  onDismiss,
-}: {
-  toast: Toast;
-  onDismiss: () => void;
-}) {
+function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const Icon = ICON_MAP[toast.type];
 
   return (

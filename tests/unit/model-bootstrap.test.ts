@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type {
-  AppSettings,
-  DeviceInfo,
-  ModelStatusSnapshot,
-} from "@/app/lib/types";
-import {
-  DEFAULT_APP_SETTINGS,
-  resolveModelBootstrapStatus,
-} from "@/app/lib/model-bootstrap";
+import type { AppSettings, DeviceInfo, ModelStatusSnapshot } from "@/app/lib/types";
+import { DEFAULT_APP_SETTINGS, resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 
 const readySettings: AppSettings = {
   ...DEFAULT_APP_SETTINGS,

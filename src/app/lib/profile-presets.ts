@@ -1,12 +1,5 @@
-import {
-  modelNameForVariant,
-  lmModelPathForVariant,
-} from "@/app/lib/model-packs";
-import type {
-  AppSettings,
-  GenerationFormValues,
-  ModelVariant,
-} from "@/app/lib/types";
+import { modelNameForVariant, lmModelPathForVariant } from "@/app/lib/model-packs";
+import type { AppSettings, GenerationFormValues, ModelVariant } from "@/app/lib/types";
 
 const VARIANT_BY_PROFILE = {
   "low-memory": "lite" as const,
@@ -85,10 +78,7 @@ export const PROFILE_FORM_PRESETS = {
   >
 >;
 
-export function applyProfilePreset(
-  form: GenerationFormValues,
-  profile: AppSettings["profile"],
-) {
+export function applyProfilePreset(form: GenerationFormValues, profile: AppSettings["profile"]) {
   const preset = PROFILE_FORM_PRESETS[profile];
   return {
     ...form,
@@ -105,10 +95,7 @@ export function applyProfilePreset(
   };
 }
 
-export function applyModelVariantToForm(
-  form: GenerationFormValues,
-  variant: ModelVariant | null,
-) {
+export function applyModelVariantToForm(form: GenerationFormValues, variant: ModelVariant | null) {
   if (!variant) {
     return form;
   }

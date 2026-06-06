@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run Prettier
+      - name: Run oxfmt
         run: pnpm format
 
       - name: Setup Rust

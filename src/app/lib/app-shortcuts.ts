@@ -68,8 +68,8 @@ export const APP_SHORTCUTS = {
 export function getShortcutPlatform(): ShortcutPlatform {
   const platform =
     typeof navigator !== "undefined"
-      ? (navigator as Navigator & { userAgentData?: { platform?: string } })
-          .userAgentData?.platform || navigator.platform
+      ? (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+          ?.platform || navigator.platform
       : "";
 
   if (/mac|darwin/i.test(platform)) return "mac";
@@ -101,10 +101,7 @@ export function isInputFocused(): boolean {
   );
 }
 
-export function matchesShortcut(
-  event: KeyboardEvent,
-  shortcut: ShortcutDefinition,
-): boolean {
+export function matchesShortcut(event: KeyboardEvent, shortcut: ShortcutDefinition): boolean {
   const platform = getShortcutPlatform();
   const modifierKey = platform === "mac" ? event.metaKey : event.ctrlKey;
 

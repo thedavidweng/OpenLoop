@@ -19,21 +19,9 @@ export const SELECT_OPTIONS = {
   ] as const,
   timeSignature: ["2", "3", "4", "6"] as const,
   audioFormat: ["wav", "mp3", "flac", "ogg"] as const,
-  taskType: [
-    "text2music",
-    "cover",
-    "repaint",
-    "lego",
-    "extract",
-    "complete",
-  ] as const,
+  taskType: ["text2music", "cover", "repaint", "lego", "extract", "complete"] as const,
   lmBackend: ["mlx", "pt", "vllm"] as const,
-  lmModelPath: [
-    "",
-    "acestep-5Hz-lm-0.6B",
-    "acestep-5Hz-lm-1.7B",
-    "acestep-5Hz-lm-4B",
-  ] as const,
+  lmModelPath: ["", "acestep-5Hz-lm-0.6B", "acestep-5Hz-lm-1.7B", "acestep-5Hz-lm-4B"] as const,
 };
 
 export const STRUCTURE_TAGS = [

@@ -8,14 +8,11 @@ import "@/styles/globals.css";
 function prewarmFontFallbacks() {
   const span = document.createElement("span");
   span.setAttribute("aria-hidden", "true");
-  span.style.cssText =
-    "position:absolute;left:-9999px;top:0;opacity:0;pointer-events:none";
+  span.style.cssText = "position:absolute;left:-9999px;top:0;opacity:0;pointer-events:none";
   span.textContent = "🎵🎶🎸🎹🥁 中文 日本語 한국어 ∑∫√ ✓✗";
   document.body.appendChild(span);
   void span.getBoundingClientRect();
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => span.remove()),
-  );
+  requestAnimationFrame(() => requestAnimationFrame(() => span.remove()));
 }
 
 function Root() {

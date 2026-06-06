@@ -11,10 +11,7 @@ function bytesToLabel(bytes: number) {
 
 function progressPercent(downloadedBytes: number, totalBytes?: number | null) {
   if (!totalBytes) return 0;
-  return Math.min(
-    100,
-    Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
-  );
+  return Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)));
 }
 
 interface ModelPackCardProps {
@@ -144,9 +141,7 @@ export function ModelPackCard({
         <div className="mt-3 rounded-md border border-red-500/25 bg-red-500/8 px-3 py-2">
           <p className="text-[11px] leading-5 text-red-200">{errorMessage}</p>
           {errorDetails ? (
-            <p className="mt-1 text-[10px] leading-4 text-red-300/70">
-              {errorDetails}
-            </p>
+            <p className="mt-1 text-[10px] leading-4 text-red-300/70">{errorDetails}</p>
           ) : null}
         </div>
       ) : null}

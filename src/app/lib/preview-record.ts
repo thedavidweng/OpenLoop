@@ -10,9 +10,7 @@ export function shouldPreviewFail(request: GenerationRequest) {
   return haystack.includes("fail");
 }
 
-export function createGenerationRecord(
-  request: GenerationRequest,
-): GenerationRecord {
+export function createGenerationRecord(request: GenerationRequest): GenerationRecord {
   const id = globalThis.crypto.randomUUID();
   const createdAt = new Date().toISOString();
   return {

@@ -1,12 +1,5 @@
-import {
-  DEFAULT_GENERATION_FORM_VALUES,
-  validateGenerationForm,
-} from "@/app/lib/validation";
-import type {
-  GenerationFormValues,
-  GenerationRecord,
-  GenerationRequest,
-} from "@/app/lib/types";
+import { DEFAULT_GENERATION_FORM_VALUES, validateGenerationForm } from "@/app/lib/validation";
+import type { GenerationFormValues, GenerationRecord, GenerationRequest } from "@/app/lib/types";
 
 export function mergeGenerationRecords(
   incoming: GenerationRecord[],
@@ -14,9 +7,7 @@ export function mergeGenerationRecords(
 ): GenerationRecord[] {
   return [
     ...incoming,
-    ...existing.filter(
-      (record) => !incoming.some((persisted) => persisted.id === record.id),
-    ),
+    ...existing.filter((record) => !incoming.some((persisted) => persisted.id === record.id)),
   ];
 }
 
@@ -25,9 +16,7 @@ export function nextCurrentGenerationAfterDelete(
   deletedId: string,
   remainingHistory: GenerationRecord[],
 ): GenerationRecord | null {
-  return currentGeneration?.id === deletedId
-    ? (remainingHistory[0] ?? null)
-    : currentGeneration;
+  return currentGeneration?.id === deletedId ? (remainingHistory[0] ?? null) : currentGeneration;
 }
 
 export function recordToGenerationForm(
@@ -61,16 +50,10 @@ export function recordToGenerationForm(
     referenceAudioPath: record.referenceAudioPath ?? "",
     srcAudioPath: record.srcAudioPath ?? "",
     instruction: record.instruction ?? "",
-    repaintingStart:
-      record.repaintingStart === undefined
-        ? ""
-        : String(record.repaintingStart),
-    repaintingEnd:
-      record.repaintingEnd === undefined ? "" : String(record.repaintingEnd),
+    repaintingStart: record.repaintingStart === undefined ? "" : String(record.repaintingStart),
+    repaintingEnd: record.repaintingEnd === undefined ? "" : String(record.repaintingEnd),
     audioCoverStrength:
-      record.audioCoverStrength === undefined
-        ? "1.0"
-        : String(record.audioCoverStrength),
+      record.audioCoverStrength === undefined ? "1.0" : String(record.audioCoverStrength),
     useRandomSeed: mode === "reproduce" ? false : record.useRandomSeed,
     seed:
       mode === "reproduce" && record.seed !== undefined
@@ -81,5 +64,6 @@ export function recordToGenerationForm(
   };
 }
 
-export const INITIAL_CURRENT_REQUEST: GenerationRequest | null =
-  validateGenerationForm(DEFAULT_GENERATION_FORM_VALUES).request;
+export const INITIAL_CURRENT_REQUEST: GenerationRequest | null = validateGenerationForm(
+  DEFAULT_GENERATION_FORM_VALUES,
+).request;

@@ -66,9 +66,7 @@ export function FilePickerField({
     try {
       const selected = await api.openFileDialog({
         multiple: false,
-        filters: filters ?? [
-          { name: "Audio", extensions: ["mp3", "wav", "flac", "m4a", "ogg"] },
-        ],
+        filters: filters ?? [{ name: "Audio", extensions: ["mp3", "wav", "flac", "m4a", "ogg"] }],
       });
       if (selected && typeof selected === "string") {
         onChange(selected);

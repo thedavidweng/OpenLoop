@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import * as api from "@/app/lib/api";
-import type {
-  AppSettings,
-  AudioFormat,
-  ModelStatusSnapshot,
-} from "@/app/lib/types";
+import type { AppSettings, AudioFormat, ModelStatusSnapshot } from "@/app/lib/types";
 
 export type EditableSettingKey =
   | "outputDirectory"
@@ -16,10 +12,7 @@ export type EditableSettingKey =
   | "defaultThinking"
   | "checkForUpdates";
 
-export type DirectorySettingKey =
-  | "outputDirectory"
-  | "modelDirectory"
-  | "logDirectory";
+export type DirectorySettingKey = "outputDirectory" | "modelDirectory" | "logDirectory";
 
 export interface SettingsDraft {
   outputDirectory: string;
@@ -45,14 +38,16 @@ function draftFromSettings(settings: AppSettings): SettingsDraft {
   };
 }
 
+async function persistSetting<K extends EditableSettingKey>(key: K, value: AppSettings[K]) {
+  await api.setSetting(key, value);
+}
+
 export function useSettingsDraft(
   settings: AppSettings,
   modelStatuses: ModelStatusSnapshot[],
   defaultPaths: api.DefaultAppPaths | null,
 ) {
-  const [draft, setDraft] = useState<SettingsDraft>(() =>
-    draftFromSettings(settings),
-  );
+  const [draft, setDraft] = useState<SettingsDraft>(() => draftFromSettings(settings));
 
   // Sync draft when settings change externally
   useEffect(() => {
@@ -84,15 +79,10 @@ export function useSettingsDraft(
 
   const backendPortNumber = Number(draft.backendPort);
   const backendPortValid =
-    Number.isInteger(backendPortNumber) &&
-    backendPortNumber >= 1024 &&
-    backendPortNumber <= 65535;
+    Number.isInteger(backendPortNumber) && backendPortNumber >= 1024 && backendPortNumber <= 65535;
 
-  const modelDirectoryLocked = modelStatuses.some(
-    (status) => status.state === "downloading",
-  );
-  const modelDirectoryChanged =
-    draft.modelDirectory !== (settings.modelDirectory ?? "");
+  const modelDirectoryLocked = modelStatuses.some((status) => status.state === "downloading");
+  const modelDirectoryChanged = draft.modelDirectory !== (settings.modelDirectory ?? "");
   const showModelDirRestartHint = modelDirectoryLocked || modelDirectoryChanged;
 
   const configDir = useMemo(() => {
@@ -101,13 +91,6 @@ export function useSettingsDraft(
     if (parts.length < 3) return null;
     return parts.slice(0, -2).join("/");
   }, [defaultPaths?.logDirectory]);
-
-  const persistSetting = async <K extends EditableSettingKey>(
-    key: K,
-    value: AppSettings[K],
-  ) => {
-    await api.setSetting(key, value);
-  };
 
   const pickDirectory = async (key: DirectorySettingKey) => {
     const selected = await api.selectDirectory(
@@ -134,16 +117,11 @@ export function useSettingsDraft(
       persistSetting("outputDirectory", draft.outputDirectory || null),
       persistSetting(
         "modelDirectory",
-        modelDirectoryLocked
-          ? (settings.modelDirectory ?? null)
-          : draft.modelDirectory || null,
+        modelDirectoryLocked ? (settings.modelDirectory ?? null) : draft.modelDirectory || null,
       ),
       persistSetting("backendPort", Number(draft.backendPort)),
       persistSetting("logDirectory", draft.logDirectory || null),
-      persistSetting(
-        "defaultDurationSeconds",
-        Number(draft.defaultDurationSeconds),
-      ),
+      persistSetting("defaultDurationSeconds", Number(draft.defaultDurationSeconds)),
       persistSetting("defaultAudioFormat", draft.defaultAudioFormat),
       persistSetting("defaultThinking", draft.defaultThinking),
       persistSetting("checkForUpdates", draft.checkForUpdates),

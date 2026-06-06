@@ -38,12 +38,8 @@ export function Header({
 
   const recentPrompts = useGenerationStore((state) => state.recentPrompts);
   const favoritePrompts = useGenerationStore((state) => state.favoritePrompts);
-  const toggleFavoritePrompt = useGenerationStore(
-    (state) => state.toggleFavoritePrompt,
-  );
-  const removeRecentPrompt = useGenerationStore(
-    (state) => state.removeRecentPrompt,
-  );
+  const toggleFavoritePrompt = useGenerationStore((state) => state.toggleFavoritePrompt);
+  const removeRecentPrompt = useGenerationStore((state) => state.removeRecentPrompt);
 
   const displayedRecents = recentPrompts.slice(0, 6);
   const displayedFavorites = favoritePrompts.slice(0, 6);
@@ -65,10 +61,7 @@ export function Header({
   useEffect(() => {
     if (!showCategoryMenu) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        categoryMenuRef.current &&
-        !categoryMenuRef.current.contains(e.target as Node)
-      ) {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(e.target as Node)) {
         setShowCategoryMenu(false);
       }
     };
@@ -90,10 +83,7 @@ export function Header({
       return;
     }
     toggleFavoritePrompt(trimmed);
-    addToast(
-      "success",
-      isFavorited ? t("toast.promptUnfavorited") : t("toast.promptFavorited"),
-    );
+    addToast("success", isFavorited ? t("toast.promptUnfavorited") : t("toast.promptFavorited"));
   }, [prompt, isFavorited, toggleFavoritePrompt, addToast, t]);
 
   return (
@@ -104,9 +94,7 @@ export function Header({
             <Music2 size={17} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-white">
-              {t("generation.composerTitle")}
-            </p>
+            <p className="text-[13px] font-semibold text-white">{t("generation.composerTitle")}</p>
             <p className="text-[12px] leading-5 text-[var(--color-text-dim)]">
               {t("generation.composerDescription")}
             </p>
@@ -114,17 +102,11 @@ export function Header({
         </div>
         <div className="flex items-center gap-2">
           <Tooltip
-            label={
-              isFavorited
-                ? t("generation.removeFavorite")
-                : t("generation.addFavorite")
-            }
+            label={isFavorited ? t("generation.removeFavorite") : t("generation.addFavorite")}
           >
             <button
               type="button"
-              className={`secondary-button shrink-0 px-2 ${
-                isFavorited ? "text-amber-300" : ""
-              }`}
+              className={`secondary-button shrink-0 px-2 ${isFavorited ? "text-amber-300" : ""}`}
               aria-label={t("generation.addFavorite")}
               onClick={handleFavoriteToggle}
               disabled={isBusy}

@@ -16,16 +16,9 @@ function clampWidth(width: number): number {
   return Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, width));
 }
 
-export function SidebarRail({
-  visible,
-  width,
-  onResize,
-  children,
-}: SidebarRailProps) {
+export function SidebarRail({ visible, width, onResize, children }: SidebarRailProps) {
   const { t } = useTranslation();
-  const dragStateRef = useRef<{ startX: number; startWidth: number } | null>(
-    null,
-  );
+  const dragStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   const handleDragStart = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {

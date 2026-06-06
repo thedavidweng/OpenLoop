@@ -7,9 +7,7 @@ import { useGenerationStore } from "@/app/lib/store";
 
 export function UpdateBanner() {
   const { t } = useTranslation();
-  const checkForUpdates = useGenerationStore(
-    (state) => state.settings.checkForUpdates,
-  );
+  const checkForUpdates = useGenerationStore((state) => state.settings.checkForUpdates);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
   const [notes, setNotes] = useState<string | null>(null);

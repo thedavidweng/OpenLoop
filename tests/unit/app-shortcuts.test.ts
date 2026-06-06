@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  APP_SHORTCUTS,
-  shouldHandleGlobalShortcut,
-} from "@/app/lib/app-shortcuts";
+import { APP_SHORTCUTS, shouldHandleGlobalShortcut } from "@/app/lib/app-shortcuts";
 
 function keyboardEvent(init: KeyboardEventInit) {
   return new KeyboardEvent("keydown", init);

@@ -57,12 +57,8 @@ export function FormBody({
   const { t } = useTranslation();
 
   const handleTextFieldChange =
-    (field: TextField) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      (setField as (field: TextField, value: string) => void)(
-        field,
-        event.target.value,
-      );
+    (field: TextField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      (setField as (field: TextField, value: string) => void)(field, event.target.value);
     };
 
   const insertTag = useCallback(
@@ -74,8 +70,7 @@ export function FormBody({
       const end = textarea.selectionEnd;
       const before = form.lyrics.slice(0, start);
       const after = form.lyrics.slice(end);
-      const insertion =
-        (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
+      const insertion = (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
       setField("lyrics", before + insertion + after);
       requestAnimationFrame(() => {
         const newPos = start + insertion.length;
@@ -111,10 +106,7 @@ export function FormBody({
             className="select-input"
             value={form.taskType}
             onChange={(event) =>
-              setField(
-                "taskType",
-                event.target.value as GenerationFormValues["taskType"],
-              )
+              setField("taskType", event.target.value as GenerationFormValues["taskType"])
             }
             disabled={isBusy}
           >
@@ -226,9 +218,7 @@ export function FormBody({
           ref={lyricsRef}
           className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
           placeholder={
-            form.instrumental
-              ? t("generation.instrumentalDesc")
-              : t("generation.lyricsPlaceholder")
+            form.instrumental ? t("generation.instrumentalDesc") : t("generation.lyricsPlaceholder")
           }
           value={form.lyrics}
           onChange={handleTextFieldChange("lyrics")}
@@ -264,10 +254,7 @@ export function FormBody({
                 className="select-input"
                 value={form.bpmMode}
                 onChange={(event) =>
-                  setField(
-                    "bpmMode",
-                    event.target.value as GenerationFormValues["bpmMode"],
-                  )
+                  setField("bpmMode", event.target.value as GenerationFormValues["bpmMode"])
                 }
                 disabled={isBusy}
               >
@@ -328,9 +315,7 @@ export function FormBody({
             <select
               className="select-input"
               value={form.vocalLanguage}
-              onChange={(event) =>
-                setField("vocalLanguage", event.target.value)
-              }
+              onChange={(event) => setField("vocalLanguage", event.target.value)}
               disabled={isBusy || form.instrumental}
             >
               {SELECT_OPTIONS.vocalLanguage.map((option) => (
@@ -346,10 +331,7 @@ export function FormBody({
               className="select-input"
               value={form.audioFormat}
               onChange={(event) =>
-                setField(
-                  "audioFormat",
-                  event.target.value as GenerationFormValues["audioFormat"],
-                )
+                setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])
               }
               disabled={isBusy}
             >
@@ -496,9 +478,7 @@ export function FormBody({
                 type="number"
                 step="1"
                 placeholder={
-                  form.useRandomSeed
-                    ? t("generation.randomSeedEnabled")
-                    : t("generation.optional")
+                  form.useRandomSeed ? t("generation.randomSeedEnabled") : t("generation.optional")
                 }
                 value={form.seed}
                 onChange={handleTextFieldChange("seed")}
@@ -513,15 +493,11 @@ export function FormBody({
               type="checkbox"
               className="mt-0.5"
               checked={Boolean(form.useRandomSeed)}
-              onChange={(event) =>
-                setField("useRandomSeed", event.target.checked)
-              }
+              onChange={(event) => setField("useRandomSeed", event.target.checked)}
               disabled={isBusy}
             />
             <div>
-              <p className="text-[13px] font-medium text-white">
-                {t("generation.randomSeed")}
-              </p>
+              <p className="text-[13px] font-medium text-white">{t("generation.randomSeed")}</p>
               <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
                 {t("generation.randomSeedDesc")}
               </p>
@@ -554,9 +530,7 @@ export function FormBody({
               <select
                 className="select-input"
                 value={form.lmModelPath}
-                onChange={(event) =>
-                  setField("lmModelPath", event.target.value)
-                }
+                onChange={(event) => setField("lmModelPath", event.target.value)}
                 disabled={isBusy || !form.thinking}
               >
                 {SELECT_OPTIONS.lmModelPath.map((option) => (
@@ -572,10 +546,7 @@ export function FormBody({
                 className="select-input"
                 value={form.lmBackend}
                 onChange={(event) =>
-                  setField(
-                    "lmBackend",
-                    event.target.value as GenerationFormValues["lmBackend"],
-                  )
+                  setField("lmBackend", event.target.value as GenerationFormValues["lmBackend"])
                 }
                 disabled={isBusy || !form.thinking}
               >
@@ -607,17 +578,12 @@ export function FormBody({
                   className="mt-0.5"
                   checked={Boolean(form[field as keyof GenerationFormValues])}
                   onChange={(event) =>
-                    setField(
-                      field as keyof GenerationFormValues,
-                      event.target.checked as never,
-                    )
+                    setField(field as keyof GenerationFormValues, event.target.checked as never)
                   }
                   disabled={isBusy}
                 />
                 <div>
-                  <p className="text-[13px] font-medium text-white">
-                    {t(titleKey)}
-                  </p>
+                  <p className="text-[13px] font-medium text-white">{t(titleKey)}</p>
                   {descriptionKey ? (
                     <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
                       {t(descriptionKey)}

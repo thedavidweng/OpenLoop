@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-  type CSSProperties,
-} from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
 import {
   ChevronDown,
   Copy,
@@ -45,9 +38,7 @@ const VOLUME_STORAGE_KEY = "openloop-volume";
 const SPEED_STORAGE_KEY = "openloop-speed";
 
 function audioPayloadToBytes(payload: ArrayBuffer | number[]) {
-  return payload instanceof ArrayBuffer
-    ? new Uint8Array(payload)
-    : Uint8Array.from(payload);
+  return payload instanceof ArrayBuffer ? new Uint8Array(payload) : Uint8Array.from(payload);
 }
 
 function audioMimeType(format: string) {
@@ -80,10 +71,7 @@ function loadPersistedSpeed(): number {
     const stored = localStorage.getItem(SPEED_STORAGE_KEY);
     if (stored) {
       const v = parseFloat(stored);
-      if (
-        Number.isFinite(v) &&
-        SPEED_OPTIONS.includes(v as (typeof SPEED_OPTIONS)[number])
-      )
+      if (Number.isFinite(v) && SPEED_OPTIONS.includes(v as (typeof SPEED_OPTIONS)[number]))
         return v;
     }
   } catch {
@@ -92,24 +80,21 @@ function loadPersistedSpeed(): number {
   return 1;
 }
 
+function formatTime(seconds: number) {
+  const safe = Number.isFinite(seconds) ? Math.floor(seconds) : 0;
+  const minutes = Math.floor(safe / 60);
+  const remainder = safe % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
 export function PlaybackBar() {
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const currentGeneration = useGenerationStore(
-    (state) => state.currentGeneration,
-  );
-  const deleteGenerationRecord = useGenerationStore(
-    (state) => state.deleteGenerationRecord,
-  );
-  const playbackToggleRequest = useGenerationStore(
-    (state) => state.playbackToggleRequest,
-  );
-  const compareModeActive = useGenerationStore(
-    (state) => state.compareModeActive,
-  );
-  const toggleCompareTarget = useGenerationStore(
-    (state) => state.toggleCompareTarget,
-  );
+  const currentGeneration = useGenerationStore((state) => state.currentGeneration);
+  const deleteGenerationRecord = useGenerationStore((state) => state.deleteGenerationRecord);
+  const playbackToggleRequest = useGenerationStore((state) => state.playbackToggleRequest);
+  const compareModeActive = useGenerationStore((state) => state.compareModeActive);
+  const toggleCompareTarget = useGenerationStore((state) => state.toggleCompareTarget);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
@@ -124,8 +109,7 @@ export function PlaybackBar() {
   const [speed, setSpeed] = useState(loadPersistedSpeed);
   const [loop, setLoop] = useState(false);
   const [measuredWidth, setMeasuredWidth] = useState(1280);
-  const [measuredDensity, setMeasuredDensity] =
-    useState<PlaybackBarDensity>("relaxed");
+  const [measuredDensity, setMeasuredDensity] = useState<PlaybackBarDensity>("relaxed");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastPlaybackToggleRequest = useRef(playbackToggleRequest);
@@ -218,12 +202,7 @@ export function PlaybackBar() {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [
-    currentGeneration?.audioFormat,
-    currentGeneration?.id,
-    currentGeneration?.outputPath,
-    t,
-  ]);
+  }, [currentGeneration?.audioFormat, currentGeneration?.id, currentGeneration?.outputPath, t]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -233,9 +212,7 @@ export function PlaybackBar() {
       const width = Math.ceil(container.getBoundingClientRect().width);
       setMeasuredWidth((current) => (current === width ? current : width));
       const nextDensity = getPlaybackBarDensity(width);
-      setMeasuredDensity((current) =>
-        current === nextDensity ? current : nextDensity,
-      );
+      setMeasuredDensity((current) => (current === nextDensity ? current : nextDensity));
     };
 
     measure();
@@ -254,23 +231,13 @@ export function PlaybackBar() {
   useEffect(() => {
     if (!exportDropdownOpen) return;
     const handleClick = (event: MouseEvent) => {
-      if (
-        exportMenuRef.current &&
-        !exportMenuRef.current.contains(event.target as Node)
-      ) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
         setExportDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [exportDropdownOpen]);
-
-  const formatTime = (seconds: number) => {
-    const safe = Number.isFinite(seconds) ? Math.floor(seconds) : 0;
-    const minutes = Math.floor(safe / 60);
-    const remainder = safe % 60;
-    return `${minutes}:${String(remainder).padStart(2, "0")}`;
-  };
 
   const progressPercent = useMemo(() => {
     if (!duration || !Number.isFinite(duration)) {
@@ -307,9 +274,7 @@ export function PlaybackBar() {
 
   const cycleSpeed = useCallback(() => {
     setSpeed((current) => {
-      const idx = SPEED_OPTIONS.indexOf(
-        current as (typeof SPEED_OPTIONS)[number],
-      );
+      const idx = SPEED_OPTIONS.indexOf(current as (typeof SPEED_OPTIONS)[number]);
       return SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length];
     });
   }, []);
@@ -355,10 +320,7 @@ export function PlaybackBar() {
 
       <div className="grid w-full min-w-0 items-center" style={zoneStyle}>
         {!shouldHideNowPlaying && (
-          <div
-            className="min-w-0"
-            style={{ maxWidth: layoutTokens.leftMaxWidth }}
-          >
+          <div className="min-w-0" style={{ maxWidth: layoutTokens.leftMaxWidth }}>
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border border-[var(--color-border-light)] bg-[var(--color-surface)] text-[var(--color-text-dim)]">
                 <Music4 size={18} />
@@ -370,9 +332,7 @@ export function PlaybackBar() {
                       A
                     </span>
                   )}
-                  {currentGeneration?.prompt ||
-                    currentGeneration?.lyrics ||
-                    "OpenLoop"}
+                  {currentGeneration?.prompt || currentGeneration?.lyrics || "OpenLoop"}
                 </span>
                 <span className="block truncate text-[12px] text-[var(--color-text-dim)]">
                   {currentGeneration
@@ -395,10 +355,7 @@ export function PlaybackBar() {
                 disabled={!audioSrc}
                 onClick={() => {
                   if (audioRef.current) {
-                    audioRef.current.currentTime = Math.max(
-                      0,
-                      audioRef.current.currentTime - 10,
-                    );
+                    audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 10);
                   }
                 }}
               >
@@ -620,9 +577,7 @@ export function PlaybackBar() {
                       if (!currentGeneration?.id) return;
                       void (async () => {
                         try {
-                          const payload = await api.readGenerationAudio(
-                            currentGeneration.id,
-                          );
+                          const payload = await api.readGenerationAudio(currentGeneration.id);
                           const bytes =
                             payload instanceof ArrayBuffer
                               ? new Uint8Array(payload)
@@ -631,17 +586,15 @@ export function PlaybackBar() {
                             type: audioMimeType(currentGeneration.audioFormat),
                           });
                           const reader = new FileReader();
-                          reader.onload = () => {
+                          reader.addEventListener("load", () => {
                             const dataUrl = reader.result as string;
-                            void navigator.clipboard
-                              .writeText(dataUrl)
-                              .then(() => {
-                                addToast("success", t("toast.dataUrlCopied"));
-                              });
-                          };
-                          reader.onerror = () => {
+                            void navigator.clipboard.writeText(dataUrl).then(() => {
+                              addToast("success", t("toast.dataUrlCopied"));
+                            });
+                          });
+                          reader.addEventListener("error", () => {
                             addToast("error", t("toast.copyFailed"));
-                          };
+                          });
                           reader.readAsDataURL(blob);
                         } catch {
                           addToast("error", t("toast.copyFailed"));

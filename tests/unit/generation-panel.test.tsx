@@ -90,23 +90,19 @@ function makeStoreOverrides(
 let currentStoreState: ReturnType<typeof makeStoreOverrides>;
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (
-    selector: (state: ReturnType<typeof makeStoreOverrides>) => unknown,
-  ) => selector(currentStoreState),
+  useGenerationStore: (selector: (state: ReturnType<typeof makeStoreOverrides>) => unknown) =>
+    selector(currentStoreState),
   MODEL_VARIANTS: {
     turbo: { label: "ACE-Step Turbo" },
     lite: { label: "ACE-Step Lite" },
     pro: { label: "ACE-Step Pro" },
   },
   isModelDownloaded: (settings: Record<string, unknown>) =>
-    (settings.downloadedModels as string[])?.includes(
-      settings.modelVariant as string,
-    ),
+    (settings.downloadedModels as string[])?.includes(settings.modelVariant as string),
   modelDownloadStateForVariant: () => "ready",
 }));
 
-const { GenerationPanel } =
-  await import("@/app/components/generation/GenerationPanel");
+const { GenerationPanel } = await import("@/app/components/generation/GenerationPanel");
 
 describe("GenerationPanel", () => {
   beforeEach(() => {
@@ -116,18 +112,14 @@ describe("GenerationPanel", () => {
 
   it("renders the prompt textarea with the current form value", () => {
     render(<GenerationPanel />);
-    const textarea = screen.getByPlaceholderText(
-      "generation.promptPlaceholder",
-    );
+    const textarea = screen.getByPlaceholderText("generation.promptPlaceholder");
     expect(textarea).toHaveValue("ambient piano");
   });
 
   it("calls setField when user types in the prompt", async () => {
     const user = userEvent.setup();
     render(<GenerationPanel />);
-    const textarea = screen.getByPlaceholderText(
-      "generation.promptPlaceholder",
-    );
+    const textarea = screen.getByPlaceholderText("generation.promptPlaceholder");
     await user.clear(textarea);
     await user.type(textarea, "jazz");
     expect(mockSetField).toHaveBeenCalledWith("prompt", expect.any(String));
@@ -167,9 +159,7 @@ describe("GenerationPanel", () => {
       },
     });
     render(<GenerationPanel />);
-    expect(
-      screen.getByRole("button", { name: /common\.cancel/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /common\.cancel/i })).toBeInTheDocument();
   });
 
   it("calls resetForm when reset button is clicked", async () => {
@@ -190,10 +180,7 @@ describe("GenerationPanel", () => {
     });
     await user.click(diceButton);
     expect(getRandomPromptExample).toHaveBeenCalledOnce();
-    expect(mockSetField).toHaveBeenCalledWith(
-      "prompt",
-      "lo-fi warm piano, 90 BPM",
-    );
+    expect(mockSetField).toHaveBeenCalledWith("prompt", "lo-fi warm piano, 90 BPM");
   });
 
   it("shows retry button when generation has failed", () => {
@@ -206,9 +193,7 @@ describe("GenerationPanel", () => {
       },
     });
     render(<GenerationPanel />);
-    expect(
-      screen.getByRole("button", { name: /generation\.retry/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /generation\.retry/i })).toBeInTheDocument();
   });
 
   it("renders variation selector buttons", () => {
@@ -250,15 +235,9 @@ describe("GenerationPanel", () => {
       activeTasks: [{ id: "task-1", taskId: "t-1" }],
     });
     render(<GenerationPanel />);
-    expect(
-      screen.getByText(/generation\.recoveryAvailable/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /generation\.resumeTask/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /generation\.discardTask/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/generation\.recoveryAvailable/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /generation\.resumeTask/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /generation\.discardTask/i })).toBeInTheDocument();
   });
 
   it("renders validation errors when present", () => {

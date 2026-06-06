@@ -18,18 +18,12 @@ export function ModelBootstrapBanner() {
   }
 
   const isProgressState =
-    bootstrapStatus.state === "downloading" ||
-    bootstrapStatus.state === "provisioning_backend";
-  const downloadedBytes = isProgressState
-    ? (bootstrapStatus.downloadedBytes ?? 0)
-    : 0;
+    bootstrapStatus.state === "downloading" || bootstrapStatus.state === "provisioning_backend";
+  const downloadedBytes = isProgressState ? (bootstrapStatus.downloadedBytes ?? 0) : 0;
   const totalBytes = isProgressState ? bootstrapStatus.totalBytes : null;
   const percent =
     isProgressState && totalBytes
-      ? Math.min(
-          100,
-          Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
-        )
+      ? Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)))
       : null;
 
   const accent =
@@ -40,32 +34,20 @@ export function ModelBootstrapBanner() {
         : "bg-[var(--color-sidebar)] border-[var(--color-border)] text-[var(--color-text)]";
 
   return (
-    <div
-      className={`animate-expand shrink-0 border-b ${accent}`}
-      role="status"
-      aria-live="polite"
-    >
+    <div className={`animate-expand shrink-0 border-b ${accent}`} role="status" aria-live="polite">
       <div className="flex flex-wrap items-center gap-3 px-4 py-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           {bootstrapStatus.state === "downloading" ||
           bootstrapStatus.state === "provisioning_backend" ? (
-            <Loader2
-              size={14}
-              className="shrink-0 animate-spin text-[var(--color-accent)]"
-            />
+            <Loader2 size={14} className="shrink-0 animate-spin text-[var(--color-accent)]" />
           ) : bootstrapStatus.state === "failed" ? (
             <AlertTriangle size={14} className="shrink-0 text-red-300" />
           ) : bootstrapStatus.state === "experimental" ? (
             <FlaskConical size={14} className="shrink-0 text-amber-300" />
           ) : (
-            <Download
-              size={14}
-              className="shrink-0 text-[var(--color-text-dim)]"
-            />
+            <Download size={14} className="shrink-0 text-[var(--color-text-dim)]" />
           )}
-          <p className="min-w-0 truncate text-[12px] leading-5">
-            {bootstrapStatus.message}
-          </p>
+          <p className="min-w-0 truncate text-[12px] leading-5">{bootstrapStatus.message}</p>
         </div>
 
         {isProgressState && totalBytes ? (
@@ -81,9 +63,7 @@ export function ModelBootstrapBanner() {
             onClick={settings.firstRunCompleted ? openSettings : reopenSetup}
             className="shrink-0 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
           >
-            {settings.firstRunCompleted
-              ? t("model.chooseModel")
-              : t("setup.openSetup")}
+            {settings.firstRunCompleted ? t("model.chooseModel") : t("setup.openSetup")}
           </button>
         ) : null}
 

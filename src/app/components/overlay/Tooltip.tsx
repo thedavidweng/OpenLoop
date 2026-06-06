@@ -37,9 +37,7 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
       return children;
     }
 
-    const existing = (children.props as { "aria-describedby"?: string })?.[
-      "aria-describedby"
-    ];
+    const existing = (children.props as { "aria-describedby"?: string })?.["aria-describedby"];
     const merged = existing
       ? existing.split(/\s+/).includes(tooltipId)
         ? existing
@@ -55,12 +53,7 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
   })();
 
   useLayoutEffect(() => {
-    if (
-      !open ||
-      !anchorRef.current ||
-      !tooltipRef.current ||
-      typeof window === "undefined"
-    ) {
+    if (!open || !anchorRef.current || !tooltipRef.current || typeof window === "undefined") {
       return;
     }
 

@@ -17,18 +17,10 @@ export function ModelsSection() {
   const { t } = useTranslation();
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
   const settings = useGenerationStore((state) => state.settings);
-  const selectModelVariant = useGenerationStore(
-    (state) => state.selectModelVariant,
-  );
-  const downloadModelVariant = useGenerationStore(
-    (state) => state.downloadModelVariant,
-  );
-  const deleteModelVariant = useGenerationStore(
-    (state) => state.deleteModelVariant,
-  );
-  const cancelModelDownload = useGenerationStore(
-    (state) => state.cancelModelDownload,
-  );
+  const selectModelVariant = useGenerationStore((state) => state.selectModelVariant);
+  const downloadModelVariant = useGenerationStore((state) => state.downloadModelVariant);
+  const deleteModelVariant = useGenerationStore((state) => state.deleteModelVariant);
+  const cancelModelDownload = useGenerationStore((state) => state.cancelModelDownload);
   const clearPartialModelDownloads = useGenerationStore(
     (state) => state.clearPartialModelDownloads,
   );
@@ -68,10 +60,7 @@ export function ModelsSection() {
               totalBytes={packStatus.totalBytes}
               errorMessage={packStatus.error?.message ?? null}
               errorDetails={packStatus.error?.details ?? null}
-              busy={
-                busyVariant !== null &&
-                MODEL_PACKS[packId].variants.includes(busyVariant)
-              }
+              busy={busyVariant !== null && MODEL_PACKS[packId].variants.includes(busyVariant)}
               onDownload={() => {
                 setBusyVariant(primary);
                 void downloadModelVariant(primary).finally(() => {

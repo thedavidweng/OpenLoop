@@ -19,20 +19,14 @@ function BootShell() {
 function App() {
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const hydrateFromPersistence = useGenerationStore(
-    (state) => state.hydrateFromPersistence,
-  );
+  const hydrateFromPersistence = useGenerationStore((state) => state.hydrateFromPersistence);
   const hydrated = useGenerationStore((state) => state.hydrated);
   const settings = useGenerationStore((state) => state.settings);
   const deviceInfo = useGenerationStore((state) => state.deviceInfo);
   const setupOverride = useGenerationStore((state) => state.setupOverride);
   const closeSetup = useGenerationStore((state) => state.closeSetup);
-  const applyGenerationEvent = useGenerationStore(
-    (state) => state.applyGenerationEvent,
-  );
-  const applyModelStatus = useGenerationStore(
-    (state) => state.applyModelStatus,
-  );
+  const applyGenerationEvent = useGenerationStore((state) => state.applyGenerationEvent);
+  const applyModelStatus = useGenerationStore((state) => state.applyModelStatus);
 
   useAppMenuRuntime(hydrated && api.isTauriRuntime());
 
@@ -94,11 +88,7 @@ function App() {
     (!api.isTauriRuntime() ? false : !settings.firstRunCompleted) ||
     deviceInfo?.isAppleSilicon === false
   ) {
-    return (
-      <SetupScreen
-        onClose={settings.firstRunCompleted ? closeSetup : undefined}
-      />
-    );
+    return <SetupScreen onClose={settings.firstRunCompleted ? closeSetup : undefined} />;
   }
 
   return (

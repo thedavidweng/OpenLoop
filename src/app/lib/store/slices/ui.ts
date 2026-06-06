@@ -28,10 +28,7 @@ export function createUISlice(
     validationErrors: {},
     currentRequest: INITIAL_CURRENT_REQUEST,
 
-    setField: <K extends keyof GenerationFormValues>(
-      field: K,
-      value: GenerationFormValues[K],
-    ) => {
+    setField: <K extends keyof GenerationFormValues>(field: K, value: GenerationFormValues[K]) => {
       const prevForm = get().form;
       const nextForm: GenerationFormValues = {
         ...prevForm,

@@ -69,9 +69,7 @@ export function isCliInPath(): Promise<boolean> {
   return invoke<boolean>("is_cli_in_path");
 }
 
-export async function selectDirectory(
-  defaultPath?: string | null,
-): Promise<string | null> {
+export async function selectDirectory(defaultPath?: string | null): Promise<string | null> {
   const selected = await open({
     directory: true,
     multiple: false,
@@ -100,15 +98,11 @@ export function getGeneration(id: string): Promise<GenerationRecord | null> {
   return invoke<GenerationRecord | null>("get_generation", { id });
 }
 
-export function insertGeneration(
-  record: GenerationRecord,
-): Promise<GenerationRecord> {
+export function insertGeneration(record: GenerationRecord): Promise<GenerationRecord> {
   return invoke<GenerationRecord>("insert_generation", { record });
 }
 
-export function generateMusic(
-  request: GenerationRequest,
-): Promise<GenerationRunResult> {
+export function generateMusic(request: GenerationRequest): Promise<GenerationRunResult> {
   return invoke<GenerationRunResult>("generate_music", { request });
 }
 
@@ -156,20 +150,13 @@ export function updateBackend(): Promise<BackendProvisionStatus> {
   return invoke<BackendProvisionStatus>("update_backend");
 }
 
-export function listenToBackendProvisionEvents(
-  onEvent: (event: BackendProvisionStatus) => void,
-) {
-  return listen<BackendProvisionStatus>(
-    "backend-provision-progress",
-    (event) => {
-      onEvent(event.payload);
-    },
-  );
+export function listenToBackendProvisionEvents(onEvent: (event: BackendProvisionStatus) => void) {
+  return listen<BackendProvisionStatus>("backend-provision-progress", (event) => {
+    onEvent(event.payload);
+  });
 }
 
-export function listenToGenerationEvents(
-  onEvent: (event: GenerationEvent) => void,
-) {
+export function listenToGenerationEvents(onEvent: (event: GenerationEvent) => void) {
   return listen<GenerationEvent>("generation-event", (event) => {
     onEvent(event.payload);
   });
@@ -183,21 +170,15 @@ export function getModelStatus(): Promise<ModelStatusSnapshot[]> {
   return invoke<ModelStatusSnapshot[]>("get_model_status");
 }
 
-export function downloadModel(
-  variant: ModelVariant,
-): Promise<ModelStatusSnapshot> {
+export function downloadModel(variant: ModelVariant): Promise<ModelStatusSnapshot> {
   return invoke<ModelStatusSnapshot>("download_model", { variant });
 }
 
-export function deleteModel(
-  variant: ModelVariant,
-): Promise<ModelStatusSnapshot> {
+export function deleteModel(variant: ModelVariant): Promise<ModelStatusSnapshot> {
   return invoke<ModelStatusSnapshot>("delete_model", { variant });
 }
 
-export function clearPartialDownloads(
-  variant: ModelVariant,
-): Promise<ModelStatusSnapshot> {
+export function clearPartialDownloads(variant: ModelVariant): Promise<ModelStatusSnapshot> {
   return invoke<ModelStatusSnapshot>("clear_partial_downloads", { variant });
 }
 
@@ -209,9 +190,7 @@ export function deleteAllModels(): Promise<ModelStatusSnapshot[]> {
   return invoke<ModelStatusSnapshot[]>("delete_all_models");
 }
 
-export function listenToModelDownloadEvents(
-  onEvent: (event: ModelStatusSnapshot) => void,
-) {
+export function listenToModelDownloadEvents(onEvent: (event: ModelStatusSnapshot) => void) {
   return listen<ModelStatusSnapshot>("model-download-progress", (event) => {
     onEvent(event.payload);
   });
@@ -221,10 +200,7 @@ export function revealInFinder(path: string): Promise<void> {
   return invoke<void>("reveal_in_finder", { path });
 }
 
-export function copyAudioTo(
-  path: string,
-  destination: string,
-): Promise<string> {
+export function copyAudioTo(path: string, destination: string): Promise<string> {
   return invoke<string>("copy_audio_to", { path, destination });
 }
 
@@ -240,9 +216,7 @@ export function deleteGenerationFileAndRecord(id: string): Promise<void> {
   return invoke<void>("delete_generation_file_and_record", { id });
 }
 
-export function readGenerationAudio(
-  id: string,
-): Promise<ArrayBuffer | number[]> {
+export function readGenerationAudio(id: string): Promise<ArrayBuffer | number[]> {
   return invoke<ArrayBuffer | number[]>("read_generation_audio", { id });
 }
 
@@ -254,9 +228,7 @@ export function clearGenerationHistory(): Promise<void> {
   return invoke<void>("clear_generation_history");
 }
 
-export function enhancePrompt(
-  request: GenerationRequest,
-): Promise<PromptEnhancementResult> {
+export function enhancePrompt(request: GenerationRequest): Promise<PromptEnhancementResult> {
   return invoke<PromptEnhancementResult>("enhance_prompt", { request });
 }
 
@@ -276,9 +248,7 @@ export function toggleGenerationFavorite(id: string): Promise<boolean> {
   return invoke<boolean>("toggle_generation_favorite", { id });
 }
 
-export function readGenerationWaveform(
-  id: string,
-): Promise<GenerationWaveform> {
+export function readGenerationWaveform(id: string): Promise<GenerationWaveform> {
   return invoke<GenerationWaveform>("read_generation_waveform", { id });
 }
 
@@ -294,10 +264,7 @@ export function deleteFailedRun(id: string): Promise<void> {
   return invoke<void>("delete_failed_run", { id });
 }
 
-export function exportGenerationsToFolder(
-  ids: string[],
-  destination: string,
-): Promise<string[]> {
+export function exportGenerationsToFolder(ids: string[], destination: string): Promise<string[]> {
   return invoke<string[]>("export_generations_to_folder", { ids, destination });
 }
 

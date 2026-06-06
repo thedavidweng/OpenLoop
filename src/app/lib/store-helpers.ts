@@ -25,15 +25,8 @@ export function sleep(ms: number) {
   });
 }
 
-export function variationLabel(event: {
-  variationCurrent?: number;
-  variationTotal?: number;
-}) {
-  if (
-    !event.variationCurrent ||
-    !event.variationTotal ||
-    event.variationTotal <= 1
-  ) {
+export function variationLabel(event: { variationCurrent?: number; variationTotal?: number }) {
+  if (!event.variationCurrent || !event.variationTotal || event.variationTotal <= 1) {
     return "";
   }
   return ` ${tr("generation.variationProgress", {

@@ -92,9 +92,7 @@ function FilePickerField({
     try {
       const selected = await api.openFileDialog({
         multiple: false,
-        filters: filters ?? [
-          { name: "Audio", extensions: ["mp3", "wav", "flac", "m4a", "ogg"] },
-        ],
+        filters: filters ?? [{ name: "Audio", extensions: ["mp3", "wav", "flac", "m4a", "ogg"] }],
       });
       if (selected && typeof selected === "string") {
         onChange(selected);
@@ -141,29 +139,27 @@ function FilePickerField({
   );
 }
 
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function GenerationPanel() {
   const { t } = useTranslation();
   const { addToast } = useToast();
   const form = useGenerationStore((state) => state.form);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
-  const validationErrors = useGenerationStore(
-    (state) => state.validationErrors,
-  );
+  const validationErrors = useGenerationStore((state) => state.validationErrors);
   const generationState = useGenerationStore((state) => state.generationState);
   const currentRequest = useGenerationStore((state) => state.currentRequest);
   const settings = useGenerationStore((state) => state.settings);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
-  const cancelGeneration = useGenerationStore(
-    (state) => state.cancelGeneration,
-  );
+  const cancelGeneration = useGenerationStore((state) => state.cancelGeneration);
   const enhancePrompt = useGenerationStore((state) => state.enhancePrompt);
   const activeTasks = useGenerationStore((state) => state.activeTasks);
-  const resumeActiveTask = useGenerationStore(
-    (state) => state.resumeActiveTask,
-  );
-  const discardActiveTask = useGenerationStore(
-    (state) => state.discardActiveTask,
-  );
+  const resumeActiveTask = useGenerationStore((state) => state.resumeActiveTask);
+  const discardActiveTask = useGenerationStore((state) => state.discardActiveTask);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const setField = useGenerationStore((state) => state.setField);
   const openSettings = useGenerationStore((state) => state.openSettings);
@@ -174,29 +170,19 @@ export function GenerationPanel() {
   const lyricsRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isBusy =
-    generationState.status === "validating" ||
-    generationState.status === "running";
+  const isBusy = generationState.status === "validating" || generationState.status === "running";
   const isFailed = generationState.status === "failed";
   const hasErrors = Object.keys(validationErrors).length > 0;
-  const selectedModel = settings.modelVariant
-    ? MODEL_VARIANTS[settings.modelVariant]
-    : null;
+  const selectedModel = settings.modelVariant ? MODEL_VARIANTS[settings.modelVariant] : null;
   const modelReady = isModelDownloaded(settings, settings.modelVariant);
   const canSubmit = currentRequest !== null && !hasErrors && modelReady;
-  const selectedModelState = modelDownloadStateForVariant(
-    modelStatuses,
-    settings.modelVariant,
-  );
+  const selectedModelState = modelDownloadStateForVariant(modelStatuses, settings.modelVariant);
 
   // Elapsed timer for generating state
   useEffect(() => {
     if (generationState.status === "running") {
       setElapsedTime(0);
-      timerRef.current = setInterval(
-        () => setElapsedTime((prev) => prev + 1),
-        1000,
-      );
+      timerRef.current = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       setElapsedTime(0);
@@ -213,15 +199,8 @@ export function GenerationPanel() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const formatElapsed = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
-
   const submitLabel = useMemo(() => {
-    if (generationState.status === "validating")
-      return t("generation.validating");
+    if (generationState.status === "validating") return t("generation.validating");
     if (generationState.status === "running")
       return t("generation.generatingElapsed", {
         time: formatElapsed(elapsedTime),
@@ -230,8 +209,7 @@ export function GenerationPanel() {
   }, [generationState.status, elapsedTime, t]);
 
   const handleTextFieldChange =
-    (field: TextField) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    (field: TextField) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setField(field, event.target.value);
     };
 
@@ -244,8 +222,7 @@ export function GenerationPanel() {
       const end = textarea.selectionEnd;
       const before = form.lyrics.slice(0, start);
       const after = form.lyrics.slice(end);
-      const insertion =
-        (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
+      const insertion = (before.endsWith("\n") || before === "" ? "" : "\n") + tag + "\n";
       setField("lyrics", before + insertion + after);
       requestAnimationFrame(() => {
         const newPos = start + insertion.length;
@@ -397,10 +374,7 @@ export function GenerationPanel() {
               className="select-input"
               value={form.taskType}
               onChange={(event) =>
-                setField(
-                  "taskType",
-                  event.target.value as GenerationFormValues["taskType"],
-                )
+                setField("taskType", event.target.value as GenerationFormValues["taskType"])
               }
               disabled={isBusy}
             >
@@ -550,10 +524,7 @@ export function GenerationPanel() {
                   className="select-input"
                   value={form.bpmMode}
                   onChange={(event) =>
-                    setField(
-                      "bpmMode",
-                      event.target.value as GenerationFormValues["bpmMode"],
-                    )
+                    setField("bpmMode", event.target.value as GenerationFormValues["bpmMode"])
                   }
                   disabled={isBusy}
                 >
@@ -614,9 +585,7 @@ export function GenerationPanel() {
               <select
                 className="select-input"
                 value={form.vocalLanguage}
-                onChange={(event) =>
-                  setField("vocalLanguage", event.target.value)
-                }
+                onChange={(event) => setField("vocalLanguage", event.target.value)}
                 disabled={isBusy || form.instrumental}
               >
                 {SELECT_OPTIONS.vocalLanguage.map((option) => (
@@ -632,10 +601,7 @@ export function GenerationPanel() {
                 className="select-input"
                 value={form.audioFormat}
                 onChange={(event) =>
-                  setField(
-                    "audioFormat",
-                    event.target.value as GenerationFormValues["audioFormat"],
-                  )
+                  setField("audioFormat", event.target.value as GenerationFormValues["audioFormat"])
                 }
                 disabled={isBusy}
               >
@@ -688,9 +654,7 @@ export function GenerationPanel() {
                 <select
                   className="select-input"
                   value={form.lmModelPath}
-                  onChange={(event) =>
-                    setField("lmModelPath", event.target.value)
-                  }
+                  onChange={(event) => setField("lmModelPath", event.target.value)}
                   disabled={isBusy || !form.thinking}
                 >
                   {SELECT_OPTIONS.lmModelPath.map((option) => (
@@ -706,10 +670,7 @@ export function GenerationPanel() {
                   className="select-input"
                   value={form.lmBackend}
                   onChange={(event) =>
-                    setField(
-                      "lmBackend",
-                      event.target.value as GenerationFormValues["lmBackend"],
-                    )
+                    setField("lmBackend", event.target.value as GenerationFormValues["lmBackend"])
                   }
                   disabled={isBusy || !form.thinking}
                 >
@@ -761,9 +722,7 @@ export function GenerationPanel() {
                     disabled={isBusy}
                   />
                   <div>
-                    <p className="text-[13px] font-medium text-white">
-                      {t(titleKey)}
-                    </p>
+                    <p className="text-[13px] font-medium text-white">{t(titleKey)}</p>
                     {descriptionKey ? (
                       <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
                         {t(descriptionKey)}
@@ -901,20 +860,11 @@ export function GenerationPanel() {
               {t("common.cancel")}
             </button>
           ) : null}
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={resetForm}
-            disabled={isBusy}
-          >
+          <button className="secondary-button" type="button" onClick={resetForm} disabled={isBusy}>
             {t("generation.reset")}
           </button>
           {isFailed && !isBusy && (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={handleRetry}
-            >
+            <button className="secondary-button" type="button" onClick={handleRetry}>
               <Play size={13} />
               {t("generation.retry")}
             </button>
@@ -930,11 +880,7 @@ export function GenerationPanel() {
           type="submit"
           disabled={isBusy || !canSubmit}
         >
-          {isBusy ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <WandSparkles size={16} />
-          )}
+          {isBusy ? <Loader2 size={16} className="animate-spin" /> : <WandSparkles size={16} />}
           {submitLabel}
         </button>
       </form>

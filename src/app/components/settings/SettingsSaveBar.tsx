@@ -27,9 +27,7 @@ export function SettingsSaveBar({
               {t("settings.unsavedChanges")}
             </span>
           ) : saveNotice ? (
-            <span className="text-[12px] text-[var(--color-text-dim)]">
-              {saveNotice}
-            </span>
+            <span className="text-[12px] text-[var(--color-text-dim)]">{saveNotice}</span>
           ) : null}
         </div>
         <div className="flex items-center gap-2">

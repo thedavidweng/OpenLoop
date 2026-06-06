@@ -61,14 +61,11 @@ export function createModelSlice(
       variant: variant.id as ModelVariant,
       label: variant.label,
       modelName: variant.modelName,
-      lmModel:
-        variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
+      lmModel: variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
       lmBackend: "mlx" as const,
-      estimatedSizeBytes:
-        variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : 8 * 1024 * 1024 * 1024,
+      estimatedSizeBytes: variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : 8 * 1024 * 1024 * 1024,
       description: variant.description,
-      recommendedMemoryGb:
-        variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
+      recommendedMemoryGb: variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
     })),
     modelStatuses: [],
     backendProvisionStatus: {
@@ -86,8 +83,7 @@ export function createModelSlice(
             model: MODEL_PACKS[packId].label,
           }),
           downloadedBytes: packAggregate.downloadedBytes,
-          totalBytes:
-            packAggregate.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes,
+          totalBytes: packAggregate.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes,
         },
       });
 
@@ -103,10 +99,7 @@ export function createModelSlice(
           ),
         ]);
         const profile = profileForVariant(variant);
-        const nextForm = applyModelVariantToForm(
-          applyProfilePreset(get().form, profile),
-          variant,
-        );
+        const nextForm = applyModelVariantToForm(applyProfilePreset(get().form, profile), variant);
         set((state) => ({
           settings: {
             ...state.settings,
@@ -121,10 +114,7 @@ export function createModelSlice(
       }
 
       const nextDownloadedModels = Array.from(
-        new Set([
-          ...get().settings.downloadedModels,
-          ...MODEL_PACKS[packId].variants,
-        ]),
+        new Set([...get().settings.downloadedModels, ...MODEL_PACKS[packId].variants]),
       );
       const nextSettings = {
         ...get().settings,
@@ -162,8 +152,7 @@ export function createModelSlice(
       );
       const currentSelected = get().settings.modelVariant;
       const nextSelected =
-        currentSelected &&
-        MODEL_PACKS[packId].variants.includes(currentSelected)
+        currentSelected && MODEL_PACKS[packId].variants.includes(currentSelected)
           ? null
           : currentSelected;
       set((state) => ({
@@ -196,8 +185,7 @@ export function createModelSlice(
       const state = get();
       const rawModelStatuses = await api.deleteAllModels();
       const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels =
-        expandDownloadedVariantsFromStatuses(modelStatuses);
+      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
       const nextModelVariant = (
         downloadedModels.length === 0 ? "" : state.settings.modelVariant
       ) as AppSettings["modelVariant"];
@@ -225,19 +213,15 @@ export function createModelSlice(
 
     refreshModelStatuses: async () => {
       if (!api.isTauriRuntime()) return;
-      const [modelCatalog, rawModelStatuses, backendProvision] =
-        await Promise.all([
-          api.listModelCatalog(),
-          api.getModelStatus(),
-          api
-            .getBackendProvisionStatus()
-            .catch(
-              () => ({ state: "not_installed" }) as BackendProvisionStatus,
-            ),
-        ]);
+      const [modelCatalog, rawModelStatuses, backendProvision] = await Promise.all([
+        api.listModelCatalog(),
+        api.getModelStatus(),
+        api
+          .getBackendProvisionStatus()
+          .catch(() => ({ state: "not_installed" }) as BackendProvisionStatus),
+      ]);
       const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels =
-        expandDownloadedVariantsFromStatuses(modelStatuses);
+      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
       set((state) => ({
         modelCatalog,
         modelStatuses,
@@ -246,8 +230,7 @@ export function createModelSlice(
           ...state.settings,
           downloadedModels,
           modelVariant:
-            state.settings.modelVariant &&
-            downloadedModels.includes(state.settings.modelVariant)
+            state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
               ? state.settings.modelVariant
               : state.settings.modelVariant,
         },
@@ -267,13 +250,10 @@ export function createModelSlice(
     applyModelStatus: (status: ModelStatusSnapshot) => {
       set((state) => {
         const modelStatuses = [
-          ...state.modelStatuses.filter(
-            (current) => current.variant !== status.variant,
-          ),
+          ...state.modelStatuses.filter((current) => current.variant !== status.variant),
           status,
         ];
-        const downloadedModels =
-          expandDownloadedVariantsFromStatuses(modelStatuses);
+        const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
         const selectedPack = state.settings.modelVariant
           ? packIdForVariant(state.settings.modelVariant)
           : null;
@@ -317,9 +297,7 @@ export function createModelSlice(
                 : packAggregate.state === "failed"
                   ? {
                       state: "failed",
-                      message:
-                        packAggregate.error?.message ??
-                        tr("status.stackReportedError"),
+                      message: packAggregate.error?.message ?? tr("status.stackReportedError"),
                       error: packAggregate.error ?? null,
                     }
                   : packAggregate.state === "ready"
@@ -351,10 +329,7 @@ export function createModelSlice(
         await Promise.all([
           api.setSetting("modelVariant", variant),
           api.setSetting("profile", profile),
-          api.setSetting(
-            "defaultThinking",
-            PROFILE_FORM_PRESETS[profile].thinking,
-          ),
+          api.setSetting("defaultThinking", PROFILE_FORM_PRESETS[profile].thinking),
         ]);
         await get().hydrateFromPersistence();
         await get().refreshBootstrapStatus();
@@ -366,10 +341,7 @@ export function createModelSlice(
         defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
         modelVariant: variant,
       };
-      const nextForm = applyModelVariantToForm(
-        applyProfilePreset(get().form, profile),
-        variant,
-      );
+      const nextForm = applyModelVariantToForm(applyProfilePreset(get().form, profile), variant);
       set({
         settings: nextSettings,
         form: nextForm,

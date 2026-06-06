@@ -6,9 +6,9 @@ import * as api from "@/app/lib/api";
 
 export function CliPathSection() {
   const { t } = useTranslation();
-  const [cliPathStatus, setCliPathStatus] = useState<
-    "loading" | "added" | "not_added" | "error"
-  >("loading");
+  const [cliPathStatus, setCliPathStatus] = useState<"loading" | "added" | "not_added" | "error">(
+    "loading",
+  );
   const [cliPathError, setCliPathError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,9 +46,7 @@ export function CliPathSection() {
           link: "/usr/local/bin/openloop",
         })}
       </p>
-      {cliPathError && (
-        <p className="text-[11px] text-red-400">{cliPathError}</p>
-      )}
+      {cliPathError && <p className="text-[11px] text-red-400">{cliPathError}</p>}
       <button
         type="button"
         onClick={handleCliPathToggle}
@@ -69,9 +67,7 @@ export function CliPathSection() {
           <>
             <Terminal className="h-3 w-3" />
             <span>
-              {cliPathStatus === "error"
-                ? t("settings.cliPathRetry")
-                : t("settings.cliPathAdd")}
+              {cliPathStatus === "error" ? t("settings.cliPathRetry") : t("settings.cliPathAdd")}
             </span>
           </>
         )}

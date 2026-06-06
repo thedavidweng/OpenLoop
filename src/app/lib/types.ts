@@ -3,20 +3,10 @@ export type TimeSignature = "2" | "3" | "4" | "6";
 export type AudioFormat = "wav" | "mp3" | "flac" | "ogg";
 export type BpmMode = "auto" | "manual";
 
-export type RecommendedProfile =
-  | "low-memory"
-  | "standard"
-  | "quality"
-  | "unsupported";
+export type RecommendedProfile = "low-memory" | "standard" | "quality" | "unsupported";
 
 export type ModelVariant = "lite" | "turbo" | "pro";
-export type TaskType =
-  | "text2music"
-  | "cover"
-  | "repaint"
-  | "lego"
-  | "extract"
-  | "complete";
+export type TaskType = "text2music" | "cover" | "repaint" | "lego" | "extract" | "complete";
 export type LmBackend = "pt" | "vllm" | "mlx";
 
 export type GenerationRequest = {
@@ -294,11 +284,7 @@ export type ModelBootstrapStatus =
   | { state: "experimental"; message: string }
   | { state: "failed"; message: string; error?: AppError | null };
 
-export type ModelDownloadState =
-  | "not_installed"
-  | "downloading"
-  | "ready"
-  | "failed";
+export type ModelDownloadState = "not_installed" | "downloading" | "ready" | "failed";
 
 export type BackendProvisionState =
   | "not_installed"

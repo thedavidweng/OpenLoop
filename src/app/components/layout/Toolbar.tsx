@@ -1,18 +1,9 @@
-import {
-  FolderOutput,
-  PanelLeft,
-  Settings,
-  Sparkles,
-  Wand2,
-} from "lucide-react";
+import { FolderOutput, PanelLeft, Settings, Sparkles, Wand2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
 import { APP_SHORTCUTS, getShortcutDisplay } from "@/app/lib/app-shortcuts";
 import * as api from "@/app/lib/api";
-import {
-  createWindowShellStyle,
-  type WindowShellState,
-} from "@/app/lib/window-shell";
+import { createWindowShellStyle, type WindowShellState } from "@/app/lib/window-shell";
 import { useGenerationStore } from "@/app/lib/store";
 
 interface ToolbarProps {
@@ -31,9 +22,7 @@ export function Toolbar({
   sidebarVisible,
 }: ToolbarProps) {
   const { t } = useTranslation();
-  const outputDirectory = useGenerationStore(
-    (state) => state.settings.outputDirectory,
-  );
+  const outputDirectory = useGenerationStore((state) => state.settings.outputDirectory);
   const reopenSetup = useGenerationStore((state) => state.reopenSetup);
   const resetForm = useGenerationStore((state) => state.resetForm);
 
@@ -84,10 +73,7 @@ export function Toolbar({
         </Tooltip>
       </div>
 
-      <div
-        className="min-w-0 flex-1 self-stretch px-4"
-        data-tauri-drag-region
-      />
+      <div className="min-w-0 flex-1 self-stretch px-4" data-tauri-drag-region />
 
       <div className="flex items-center gap-4">
         <Tooltip label={t("toolbar.revealOutput")}>

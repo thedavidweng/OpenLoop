@@ -28,9 +28,7 @@ export function SettingsDialogHost({
       <div className="w-full max-w-md rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-[var(--chrome-panel-shadow)]">
         <div className="space-y-2">
           <h3 className="text-[16px] font-semibold text-white">{title}</h3>
-          <p className="text-[13px] leading-6 text-[var(--color-text-dim)]">
-            {message}
-          </p>
+          <p className="text-[13px] leading-6 text-[var(--color-text-dim)]">{message}</p>
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button

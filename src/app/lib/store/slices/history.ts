@@ -26,8 +26,7 @@ export function createHistorySlice(
     selectGenerationRecord: (id: string) => {
       set((state) => ({
         currentGeneration:
-          state.history.find((record) => record.id === id) ??
-          state.currentGeneration,
+          state.history.find((record) => record.id === id) ?? state.currentGeneration,
       }));
     },
 
@@ -88,9 +87,7 @@ export function createHistorySlice(
               ? state.favoriteRecordIds
               : [...state.favoriteRecordIds, id]
             : state.favoriteRecordIds.filter((fid) => fid !== id),
-          history: state.history.map((r) =>
-            r.id === id ? { ...r, isFavorite: newState } : r,
-          ),
+          history: state.history.map((r) => (r.id === id ? { ...r, isFavorite: newState } : r)),
         }));
       } else {
         set((state) => {
@@ -99,9 +96,7 @@ export function createHistorySlice(
             favoriteRecordIds: isFav
               ? state.favoriteRecordIds.filter((fid) => fid !== id)
               : [...state.favoriteRecordIds, id],
-            history: state.history.map((r) =>
-              r.id === id ? { ...r, isFavorite: !isFav } : r,
-            ),
+            history: state.history.map((r) => (r.id === id ? { ...r, isFavorite: !isFav } : r)),
           };
         });
       }
@@ -125,9 +120,7 @@ export function createHistorySlice(
           const selected = state.selectedHistoryIds.includes(id);
           if (selected) {
             return {
-              selectedHistoryIds: state.selectedHistoryIds.filter(
-                (sid) => sid !== id,
-              ),
+              selectedHistoryIds: state.selectedHistoryIds.filter((sid) => sid !== id),
             };
           }
           // Cap at 2 selections for A/B compare
@@ -148,10 +141,8 @@ export function createHistorySlice(
     batchDeleteSelected: async () => {
       const ids = get().selectedHistoryIds;
       if (ids.length === 0) return;
-      for (const id of ids) {
-        if (api.isTauriRuntime()) {
-          await api.deleteGenerationFileAndRecord(id);
-        }
+      if (api.isTauriRuntime()) {
+        await Promise.all(ids.map((id) => api.deleteGenerationFileAndRecord(id)));
       }
       set((state) => {
         const remaining = state.history.filter((r) => !ids.includes(r.id));
@@ -162,9 +153,7 @@ export function createHistorySlice(
           selectedHistoryIds: [],
           currentGeneration: currentDeleted ? null : state.currentGeneration,
           compareModeActive: compareDeleted ? false : state.compareModeActive,
-          compareGenerationId: compareDeleted
-            ? null
-            : state.compareGenerationId,
+          compareGenerationId: compareDeleted ? null : state.compareGenerationId,
         };
       });
     },
@@ -175,8 +164,10 @@ export function createHistorySlice(
       const newFavorites: string[] = [];
       const removedFavorites: string[] = [];
       if (api.isTauriRuntime()) {
-        for (const id of ids) {
-          const newState = await api.toggleGenerationFavorite(id);
+        const results = await Promise.all(
+          ids.map(async (id) => ({ id, newState: await api.toggleGenerationFavorite(id) })),
+        );
+        for (const { id, newState } of results) {
           if (newState) newFavorites.push(id);
           else removedFavorites.push(id);
         }
@@ -184,16 +175,12 @@ export function createHistorySlice(
       set((state) => ({
         favoriteRecordIds: Array.from(
           new Set([
-            ...state.favoriteRecordIds.filter(
-              (fid) => !removedFavorites.includes(fid),
-            ),
+            ...state.favoriteRecordIds.filter((fid) => !removedFavorites.includes(fid)),
             ...newFavorites,
           ]),
         ),
         history: state.history.map((r) =>
-          ids.includes(r.id)
-            ? { ...r, isFavorite: newFavorites.includes(r.id) }
-            : r,
+          ids.includes(r.id) ? { ...r, isFavorite: newFavorites.includes(r.id) } : r,
         ),
         selectedHistoryIds: [],
       }));
@@ -218,12 +205,9 @@ export function createHistorySlice(
 
     toggleCompareTarget: () => {
       set((state) => {
-        if (!state.compareModeActive || !state.compareGenerationId)
-          return state;
+        if (!state.compareModeActive || !state.compareGenerationId) return state;
         const currentId = state.currentGeneration?.id;
-        const nextCurrent = state.history.find(
-          (r) => r.id === state.compareGenerationId,
-        );
+        const nextCurrent = state.history.find((r) => r.id === state.compareGenerationId);
         if (!nextCurrent) return state;
         return {
           currentGeneration: nextCurrent,

@@ -56,10 +56,7 @@ function coerceAppError(error: unknown, fallbackCode: string): AppError {
   };
 }
 
-export function localizeAppError(
-  error: unknown,
-  fallbackCode = "GENERATION_FAILED",
-): AppError {
+export function localizeAppError(error: unknown, fallbackCode = "GENERATION_FAILED"): AppError {
   const coerced = coerceAppError(error, fallbackCode);
   const message = tr(`errors.codes.${coerced.code}.message`, {
     defaultValue: coerced.message,
@@ -78,9 +75,7 @@ export function localizeAppError(
   };
 }
 
-export function localizeModelStatuses(
-  statuses: ModelStatusSnapshot[],
-): ModelStatusSnapshot[] {
+export function localizeModelStatuses(statuses: ModelStatusSnapshot[]): ModelStatusSnapshot[] {
   return statuses.map((status) => ({
     ...status,
     error: status.error ? localizeAppError(status.error) : status.error,

@@ -84,9 +84,7 @@ function validationMessage(key: string) {
   return i18next.t(`validation.${key}`);
 }
 
-export function validateGenerationForm(
-  form: GenerationFormValues,
-): ValidationResult {
+export function validateGenerationForm(form: GenerationFormValues): ValidationResult {
   const errors: ValidationErrors = {};
 
   const prompt = form.prompt.trim();
@@ -131,26 +129,19 @@ export function validateGenerationForm(
   }
 
   const repaintingStart = parseOptionalNumber(form.repaintingStart);
-  if (
-    Number.isNaN(repaintingStart) ||
-    (repaintingStart !== null && repaintingStart < 0)
-  ) {
+  if (Number.isNaN(repaintingStart) || (repaintingStart !== null && repaintingStart < 0)) {
     errors.repaintingStart = validationMessage("repaintingStart");
   }
 
   const repaintingEnd = parseOptionalNumber(form.repaintingEnd);
-  if (
-    Number.isNaN(repaintingEnd) ||
-    (repaintingEnd !== null && repaintingEnd < -1)
-  ) {
+  if (Number.isNaN(repaintingEnd) || (repaintingEnd !== null && repaintingEnd < -1)) {
     errors.repaintingEnd = validationMessage("repaintingEnd");
   }
 
   const audioCoverStrength = parseOptionalNumber(form.audioCoverStrength);
   if (
     Number.isNaN(audioCoverStrength) ||
-    (audioCoverStrength !== null &&
-      (audioCoverStrength < 0 || audioCoverStrength > 1))
+    (audioCoverStrength !== null && (audioCoverStrength < 0 || audioCoverStrength > 1))
   ) {
     errors.audioCoverStrength = validationMessage("audioCoverStrength");
   }
@@ -160,9 +151,7 @@ export function validateGenerationForm(
     const parsedSeed = parseOptionalInteger(form.seed);
     if (
       parsedSeed !== null &&
-      (!Number.isFinite(parsedSeed) ||
-        parsedSeed < INT32_MIN ||
-        parsedSeed > INT32_MAX)
+      (!Number.isFinite(parsedSeed) || parsedSeed < INT32_MIN || parsedSeed > INT32_MAX)
     ) {
       errors.seed = validationMessage("seed");
     } else if (parsedSeed !== null) {
@@ -195,8 +184,7 @@ export function validateGenerationForm(
     vocalLanguage: form.vocalLanguage.trim() || "en",
     durationSeconds,
     bpm: bpm ?? undefined,
-    keyScale:
-      form.keyScale === "auto" ? undefined : trimOptional(form.keyScale),
+    keyScale: form.keyScale === "auto" ? undefined : trimOptional(form.keyScale),
     timeSignature: form.timeSignature,
     audioFormat: form.audioFormat,
     model: trimOptional(form.model),

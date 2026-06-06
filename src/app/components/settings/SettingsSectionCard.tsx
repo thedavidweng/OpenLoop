@@ -38,9 +38,7 @@ export function SettingsSectionCard({
             {title}
           </label>
           {description ? (
-            <p className="text-[12px] text-[var(--color-text-dim)]">
-              {description}
-            </p>
+            <p className="text-[12px] text-[var(--color-text-dim)]">{description}</p>
           ) : null}
         </div>
         {headerAction ? <div className="shrink-0">{headerAction}</div> : null}

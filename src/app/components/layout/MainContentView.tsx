@@ -18,9 +18,7 @@ export function MainContentView() {
   return (
     <div
       className={`flex min-w-0 flex-1 flex-col ${
-        settingsOpen
-          ? "bg-[var(--color-surface-muted)]"
-          : "bg-[var(--color-surface)]"
+        settingsOpen ? "bg-[var(--color-surface-muted)]" : "bg-[var(--color-surface)]"
       }`}
       data-main-content-visual-variant="unified"
     >

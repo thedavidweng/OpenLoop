@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  GenerationRecord,
-  GenerationRequest,
-  GenerationRunResult,
-} from "@/app/lib/types";
+import type { GenerationRecord, GenerationRequest, GenerationRunResult } from "@/app/lib/types";
 
-const generateMusic =
-  vi.fn<(request: GenerationRequest) => Promise<GenerationRunResult>>();
+const generateMusic = vi.fn<(request: GenerationRequest) => Promise<GenerationRunResult>>();
 const isTauriRuntime = vi.fn(() => true);
 const deleteGenerationFileAndRecord = vi.fn<(id: string) => Promise<void>>();
 const clearGenerationHistory = vi.fn<() => Promise<void>>();
@@ -23,8 +18,7 @@ vi.mock("@/app/lib/api", () => ({
   listActiveGenerationTasks: vi.fn(),
   listenToGenerationEvents: vi.fn(),
   listenToModelDownloadEvents: vi.fn(),
-  deleteGenerationFileAndRecord: (id: string) =>
-    deleteGenerationFileAndRecord(id),
+  deleteGenerationFileAndRecord: (id: string) => deleteGenerationFileAndRecord(id),
   clearGenerationHistory: () => clearGenerationHistory(),
 }));
 
@@ -104,10 +98,7 @@ describe("generation store", () => {
     await run;
 
     const state = useGenerationStore.getState();
-    expect(state.history.map((item) => item.id)).toEqual([
-      "variant-1",
-      "variant-2",
-    ]);
+    expect(state.history.map((item) => item.id)).toEqual(["variant-1", "variant-2"]);
     expect(state.currentGeneration?.id).toBe("variant-2");
     expect(state.generationState.phase).toBe("completed");
   });
@@ -121,9 +112,7 @@ describe("generation store", () => {
     await useGenerationStore.getState().deleteGenerationRecord("deleted");
 
     expect(deleteGenerationFileAndRecord).toHaveBeenCalledWith("deleted");
-    expect(
-      useGenerationStore.getState().history.map((item) => item.id),
-    ).toEqual(["kept"]);
+    expect(useGenerationStore.getState().history.map((item) => item.id)).toEqual(["kept"]);
     expect(useGenerationStore.getState().currentGeneration?.id).toBe("kept");
   });
 

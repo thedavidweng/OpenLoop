@@ -14,16 +14,10 @@ import {
   createValidationError,
   localizeAppError,
 } from "@/app/lib/errors";
-import {
-  createGenerationRecord,
-  shouldPreviewFail,
-} from "@/app/lib/preview-record";
+import { createGenerationRecord, shouldPreviewFail } from "@/app/lib/preview-record";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { shouldMarkBootstrapFailed } from "@/app/lib/model-bootstrap";
-import {
-  mergeGenerationRecords,
-  recordToGenerationForm,
-} from "@/app/lib/history-workflow";
+import { mergeGenerationRecords, recordToGenerationForm } from "@/app/lib/history-workflow";
 import { validateGenerationForm } from "@/app/lib/validation";
 import i18next from "@/app/lib/i18n";
 import { isModelDownloaded } from "@/app/lib/model-packs";
@@ -198,25 +192,22 @@ export function createGenerationSlice(
         try {
           const result = await api.generateMusic(validation.request);
           const persistedRecords = result.records;
-          const latestRecord =
-            persistedRecords[persistedRecords.length - 1] ?? null;
+          const latestRecord = persistedRecords[persistedRecords.length - 1] ?? null;
           const requestPrompt = validation.request?.prompt ?? "";
           set((state) => ({
             currentGeneration: latestRecord ?? state.currentGeneration,
             history: mergeGenerationRecords(persistedRecords, state.history),
             recentPrompts: requestPrompt
-              ? [
-                  requestPrompt,
-                  ...state.recentPrompts.filter((p) => p !== requestPrompt),
-                ].slice(0, 20)
+              ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(
+                  0,
+                  20,
+                )
               : state.recentPrompts,
             generationState: {
               status: persistedRecords.length === 0 ? "cancelled" : "completed",
               phase: persistedRecords.length === 0 ? "cancelled" : "completed",
               statusMessage:
-                persistedRecords.length === 0
-                  ? tr("status.cancelled")
-                  : tr("status.completed"),
+                persistedRecords.length === 0 ? tr("status.cancelled") : tr("status.completed"),
               error: null,
             },
           }));
@@ -269,10 +260,7 @@ export function createGenerationSlice(
         currentGeneration: persistedRecord,
         history: [persistedRecord, ...state.history],
         recentPrompts: requestPrompt
-          ? [
-              requestPrompt,
-              ...state.recentPrompts.filter((p) => p !== requestPrompt),
-            ].slice(0, 20)
+          ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
           : state.recentPrompts,
         generationState: {
           status: "completed",
@@ -356,10 +344,7 @@ export function createGenerationSlice(
         set((state) => ({
           activeTasks: state.activeTasks.filter((task) => task.id !== id),
           currentGeneration: record,
-          history: [
-            record,
-            ...state.history.filter((item) => item.id !== record.id),
-          ],
+          history: [record, ...state.history.filter((item) => item.id !== record.id)],
           generationState: {
             status: "completed",
             phase: "completed",

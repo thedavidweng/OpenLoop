@@ -72,10 +72,7 @@ export function resolveModelBootstrapStatus(
 
   // Check backend provisioning before model status
   if (isRuntime && backendProvision && backendProvision.state !== "ready") {
-    if (
-      backendProvision.state === "downloading" ||
-      backendProvision.state === "extracting"
-    ) {
+    if (backendProvision.state === "downloading" || backendProvision.state === "extracting") {
       return {
         state: "provisioning_backend",
         message: tr("status.downloadingBackend"),
@@ -86,9 +83,7 @@ export function resolveModelBootstrapStatus(
     if (backendProvision.state === "failed") {
       return {
         state: "failed",
-        message:
-          backendProvision.error?.message ??
-          tr("status.backendProvisionFailed"),
+        message: backendProvision.error?.message ?? tr("status.backendProvisionFailed"),
         error: backendProvision.error,
       };
     }
@@ -116,8 +111,7 @@ export function resolveModelBootstrapStatus(
       return {
         state: "failed",
         message:
-          selectedPackStatus.error?.message ??
-          tr("errors.codes.MODEL_DOWNLOAD_FAILED.message"),
+          selectedPackStatus.error?.message ?? tr("errors.codes.MODEL_DOWNLOAD_FAILED.message"),
         error: selectedPackStatus.error,
       };
     }
@@ -142,10 +136,7 @@ export function resolveModelBootstrapStatus(
     };
   }
 
-  if (
-    deviceInfo?.recommendedProfile === "unsupported" ||
-    settings.profile === "unsupported"
-  ) {
+  if (deviceInfo?.recommendedProfile === "unsupported" || settings.profile === "unsupported") {
     return {
       state: "experimental",
       message: tr("status.experimentalMac"),

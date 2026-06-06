@@ -2,9 +2,9 @@
 
 @theme {
   --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
-    "PingFang SC", "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans CJK SC",
-    "Microsoft YaHei", "WenQuanYi Micro Hei", Ubuntu, sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC",
+    "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans CJK SC", "Microsoft YaHei",
+    "WenQuanYi Micro Hei", Ubuntu, sans-serif;
   --color-surface: #121212;
   --color-surface-muted: #171719;
   --color-sidebar: #1c1c1e;
@@ -109,8 +109,8 @@
 
   [data-window-chrome-platform="desktop"] {
     --font-sans:
-      "Segoe UI Variable Text", "Segoe UI", "Noto Sans", "Liberation Sans",
-      "PingFang SC", "Microsoft YaHei", Ubuntu, sans-serif;
+      "Segoe UI Variable Text", "Segoe UI", "Noto Sans", "Liberation Sans", "PingFang SC",
+      "Microsoft YaHei", Ubuntu, sans-serif;
     --color-surface: #151618;
     --color-surface-muted: #1a1c20;
     --color-sidebar: #1b1d20;
@@ -186,51 +186,40 @@
   }
 
   .animate-fade-in {
-    animation: fade-in var(--motion-duration-standard)
-      var(--motion-ease-soft-out) both;
+    animation: fade-in var(--motion-duration-standard) var(--motion-ease-soft-out) both;
   }
   .animate-fade-out {
-    animation: fade-out var(--motion-duration-quick)
-      var(--motion-ease-soft-in-out) both;
+    animation: fade-out var(--motion-duration-quick) var(--motion-ease-soft-in-out) both;
   }
   .animate-slide-up {
-    animation: slide-up var(--motion-duration-slow)
-      var(--motion-ease-emphasized-out) both;
+    animation: slide-up var(--motion-duration-slow) var(--motion-ease-emphasized-out) both;
   }
   .animate-slide-in-right {
-    animation: slide-in-right var(--motion-duration-standard)
-      var(--motion-ease-emphasized-out) both;
+    animation: slide-in-right var(--motion-duration-standard) var(--motion-ease-emphasized-out) both;
   }
   .animate-slide-out-right {
-    animation: slide-out-right var(--motion-duration-standard)
-      var(--motion-ease-soft-in-out) both;
+    animation: slide-out-right var(--motion-duration-standard) var(--motion-ease-soft-in-out) both;
   }
   .animate-slide-in-left {
-    animation: slide-in-left var(--motion-duration-standard)
-      var(--motion-ease-emphasized-out) both;
+    animation: slide-in-left var(--motion-duration-standard) var(--motion-ease-emphasized-out) both;
   }
   .animate-slide-out-left {
-    animation: slide-out-left var(--motion-duration-standard)
-      var(--motion-ease-soft-in-out) both;
+    animation: slide-out-left var(--motion-duration-standard) var(--motion-ease-soft-in-out) both;
   }
   .animate-collapse {
-    animation: collapse var(--motion-duration-standard)
-      var(--motion-ease-soft-in-out) both;
+    animation: collapse var(--motion-duration-standard) var(--motion-ease-soft-in-out) both;
   }
   .animate-expand {
-    animation: expand var(--motion-duration-slow)
-      var(--motion-ease-emphasized-out) both;
+    animation: expand var(--motion-duration-slow) var(--motion-ease-emphasized-out) both;
   }
 
   .motion-surface {
     transition:
-      background-color var(--motion-duration-standard)
-        var(--motion-ease-soft-out),
+      background-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       border-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       box-shadow var(--motion-duration-standard) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-in-out),
-      transform var(--motion-duration-standard)
-        var(--motion-ease-emphasized-out),
+      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out),
       color var(--motion-duration-quick) var(--motion-ease-soft-out);
   }
 
@@ -239,12 +228,10 @@
     align-items: center;
     justify-content: center;
     transition:
-      background-color var(--motion-duration-standard)
-        var(--motion-ease-soft-out),
+      background-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       color var(--motion-duration-quick) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
-      transform var(--motion-duration-standard)
-        var(--motion-ease-emphasized-out),
+      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out),
       box-shadow var(--motion-duration-standard) var(--motion-ease-soft-out);
   }
 
@@ -270,8 +257,7 @@
       background-color var(--motion-duration-quick) var(--motion-ease-soft-out),
       box-shadow var(--motion-duration-standard) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
-      transform var(--motion-duration-standard)
-        var(--motion-ease-emphasized-out);
+      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out);
   }
 
   .select-input {
@@ -304,8 +290,7 @@
   .select-input:focus {
     border-color: var(--color-accent);
     background: color-mix(in srgb, var(--color-surface-muted) 96%, white 4%);
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--color-accent) 14%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
   }
 
   .text-input:disabled,
@@ -327,18 +312,15 @@
     font-weight: 650;
     line-height: 1;
     transition:
-      background-color var(--motion-duration-standard)
-        var(--motion-ease-soft-out),
+      background-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       border-color var(--motion-duration-standard) var(--motion-ease-soft-out),
       color var(--motion-duration-quick) var(--motion-ease-soft-out),
       opacity var(--motion-duration-quick) var(--motion-ease-soft-out),
-      transform var(--motion-duration-standard)
-        var(--motion-ease-emphasized-out);
+      transform var(--motion-duration-standard) var(--motion-ease-emphasized-out);
   }
 
   .primary-button {
-    border: 1px solid
-      color-mix(in srgb, var(--color-control-primary) 24%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-control-primary) 24%, transparent);
     background: var(--color-control-primary);
     color: var(--color-control-primary-foreground);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
@@ -371,11 +353,7 @@
 
   .secondary-button:hover:not(:disabled),
   .secondary-button:focus-visible:not(:disabled) {
-    border-color: color-mix(
-      in srgb,
-      var(--color-accent) 42%,
-      var(--color-border-light)
-    );
+    border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border-light));
     background: var(--color-ghost-hover);
     color: white;
   }

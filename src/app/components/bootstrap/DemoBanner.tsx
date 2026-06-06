@@ -24,8 +24,7 @@ export function DemoBanner() {
           <Download size={14} className="shrink-0 text-amber-300" />
           <p className="min-w-0 truncate text-[12px] leading-5 text-amber-100">
             {t("demo.banner", {
-              defaultValue:
-                "Demo mode — download a model to generate your own music",
+              defaultValue: "Demo mode — download a model to generate your own music",
             })}
           </p>
         </div>

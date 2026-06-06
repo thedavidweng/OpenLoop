@@ -5,10 +5,7 @@ import { useToast } from "@/app/components/overlay/Toast";
 import * as api from "@/app/lib/api";
 import { DEFAULT_APP_SETTINGS } from "@/app/lib/model-bootstrap";
 import type { AppSettings } from "@/app/lib/types";
-import type {
-  SettingsDraft,
-  DirectorySettingKey,
-} from "../hooks/useSettingsDraft";
+import type { SettingsDraft, DirectorySettingKey } from "../hooks/useSettingsDraft";
 
 interface DefaultsSectionProps {
   draft: SettingsDraft;
@@ -42,9 +39,7 @@ export function DefaultsSection({
             setDraft((current) => ({
               ...current,
               outputDirectory: "",
-              defaultDurationSeconds: String(
-                DEFAULT_APP_SETTINGS.defaultDurationSeconds,
-              ),
+              defaultDurationSeconds: String(DEFAULT_APP_SETTINGS.defaultDurationSeconds),
               defaultAudioFormat: DEFAULT_APP_SETTINGS.defaultAudioFormat,
               defaultThinking: DEFAULT_APP_SETTINGS.defaultThinking,
             }));
@@ -82,8 +77,7 @@ export function DefaultsSection({
             onChange={(event) =>
               setDraft((current) => ({
                 ...current,
-                defaultAudioFormat: event.target
-                  .value as AppSettings["defaultAudioFormat"],
+                defaultAudioFormat: event.target.value as AppSettings["defaultAudioFormat"],
               }))
             }
           >
@@ -102,9 +96,7 @@ export function DefaultsSection({
         onPick={() => {
           void onPickDirectory("outputDirectory");
         }}
-        onReset={() =>
-          setDraft((current) => ({ ...current, outputDirectory: "" }))
-        }
+        onReset={() => setDraft((current) => ({ ...current, outputDirectory: "" }))}
       />
 
       <DirectoryPickerRow
@@ -115,9 +107,7 @@ export function DefaultsSection({
         onPick={() => {
           void onPickDirectory("modelDirectory");
         }}
-        onReset={() =>
-          setDraft((current) => ({ ...current, modelDirectory: "" }))
-        }
+        onReset={() => setDraft((current) => ({ ...current, modelDirectory: "" }))}
       />
 
       {showModelDirRestartHint ? (
@@ -150,9 +140,7 @@ export function DefaultsSection({
           }
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-white">
-            {t("settings.defaultThinking")}
-          </p>
+          <p className="text-[13px] font-medium text-white">{t("settings.defaultThinking")}</p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
             {t("settings.defaultThinkingDescription")}
           </p>

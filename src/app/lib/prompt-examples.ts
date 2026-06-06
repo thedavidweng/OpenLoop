@@ -41,10 +41,7 @@ export function getPromptsByCategory(category: string): PromptExample[] {
   return examples.filter((e) => e.category === category);
 }
 
-export function getRandomPromptByCategory(
-  category: string,
-  random = Math.random,
-): string {
+export function getRandomPromptByCategory(category: string, random = Math.random): string {
   const catExamples = getPromptsByCategory(category);
   if (catExamples.length === 0) {
     return getRandomPromptExample(random);

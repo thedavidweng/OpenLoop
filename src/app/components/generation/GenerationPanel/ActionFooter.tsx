@@ -15,6 +15,12 @@ interface ActionFooterProps {
   onRetry: () => void;
 }
 
+function formatElapsed(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function ActionFooter({
   isBusy,
   isFailed,
@@ -28,15 +34,8 @@ export function ActionFooter({
 }: ActionFooterProps) {
   const { t } = useTranslation();
 
-  const formatElapsed = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
-
   const submitLabel = useMemo(() => {
-    if (generationState.status === "validating")
-      return t("generation.validating");
+    if (generationState.status === "validating") return t("generation.validating");
     if (generationState.status === "running")
       return t("generation.generatingElapsed", {
         time: formatElapsed(elapsedTime),
@@ -59,12 +58,7 @@ export function ActionFooter({
             {t("common.cancel")}
           </button>
         ) : null}
-        <button
-          className="secondary-button"
-          type="button"
-          onClick={onResetForm}
-          disabled={isBusy}
-        >
+        <button className="secondary-button" type="button" onClick={onResetForm} disabled={isBusy}>
           {t("generation.reset")}
         </button>
         {isFailed && !isBusy && (
@@ -84,11 +78,7 @@ export function ActionFooter({
         type="submit"
         disabled={isBusy || !canSubmit}
       >
-        {isBusy ? (
-          <Loader2 size={16} className="animate-spin" />
-        ) : (
-          <WandSparkles size={16} />
-        )}
+        {isBusy ? <Loader2 size={16} className="animate-spin" /> : <WandSparkles size={16} />}
         {submitLabel}
       </button>
     </>

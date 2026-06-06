@@ -12,24 +12,16 @@ import { ActionFooter } from "./ActionFooter";
 export function GenerationPanel() {
   const form = useGenerationStore((state) => state.form);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
-  const validationErrors = useGenerationStore(
-    (state) => state.validationErrors,
-  );
+  const validationErrors = useGenerationStore((state) => state.validationErrors);
   const generationState = useGenerationStore((state) => state.generationState);
   const currentRequest = useGenerationStore((state) => state.currentRequest);
   const settings = useGenerationStore((state) => state.settings);
   const runGeneration = useGenerationStore((state) => state.runGeneration);
-  const cancelGeneration = useGenerationStore(
-    (state) => state.cancelGeneration,
-  );
+  const cancelGeneration = useGenerationStore((state) => state.cancelGeneration);
   const enhancePrompt = useGenerationStore((state) => state.enhancePrompt);
   const activeTasks = useGenerationStore((state) => state.activeTasks);
-  const resumeActiveTask = useGenerationStore(
-    (state) => state.resumeActiveTask,
-  );
-  const discardActiveTask = useGenerationStore(
-    (state) => state.discardActiveTask,
-  );
+  const resumeActiveTask = useGenerationStore((state) => state.resumeActiveTask);
+  const discardActiveTask = useGenerationStore((state) => state.discardActiveTask);
   const resetForm = useGenerationStore((state) => state.resetForm);
   const setField = useGenerationStore((state) => state.setField);
   const openSettings = useGenerationStore((state) => state.openSettings);
@@ -40,29 +32,19 @@ export function GenerationPanel() {
   const lyricsRef = useRef<HTMLTextAreaElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const isBusy =
-    generationState.status === "validating" ||
-    generationState.status === "running";
+  const isBusy = generationState.status === "validating" || generationState.status === "running";
   const isFailed = generationState.status === "failed";
   const hasErrors = Object.keys(validationErrors).length > 0;
-  const selectedModel = settings.modelVariant
-    ? MODEL_VARIANTS[settings.modelVariant]
-    : null;
+  const selectedModel = settings.modelVariant ? MODEL_VARIANTS[settings.modelVariant] : null;
   const modelReady = isModelDownloaded(settings, settings.modelVariant);
   const canSubmit = currentRequest !== null && !hasErrors && modelReady;
-  const selectedModelState = modelDownloadStateForVariant(
-    modelStatuses,
-    settings.modelVariant,
-  );
+  const selectedModelState = modelDownloadStateForVariant(modelStatuses, settings.modelVariant);
 
   // Elapsed timer for generating state
   useEffect(() => {
     if (generationState.status === "running") {
       setElapsedTime(0);
-      timerRef.current = setInterval(
-        () => setElapsedTime((prev) => prev + 1),
-        1000,
-      );
+      timerRef.current = setInterval(() => setElapsedTime((prev) => prev + 1), 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
       setElapsedTime(0);
@@ -126,9 +108,7 @@ export function GenerationPanel() {
             form={form}
             isBusy={isBusy}
             validationErrors={validationErrors}
-            selectedModel={
-              selectedModel as import("@/app/lib/types").ModelCatalogItem | null
-            }
+            selectedModel={selectedModel as import("@/app/lib/types").ModelCatalogItem | null}
             modelReady={modelReady}
             selectedModelState={selectedModelState}
             tweakOpen={tweakOpen}

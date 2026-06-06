@@ -22,64 +22,30 @@ import { Tooltip } from "@/app/components/overlay/Tooltip";
 import { useToast } from "@/app/components/overlay/Toast";
 import { SettingsDialogHost } from "@/app/components/settings/SettingsDialogHost";
 import * as api from "@/app/lib/api";
-import type {
-  FailedRun,
-  GenerationFormValues,
-  GenerationRequest,
-} from "@/app/lib/types";
+import type { FailedRun, GenerationFormValues, GenerationRequest } from "@/app/lib/types";
 import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 
 export function HistorySidebar() {
   const { t } = useTranslation();
   const history = useGenerationStore((state) => state.history);
   const historyQuery = useGenerationStore((state) => state.historyQuery);
-  const deleteGenerationRecord = useGenerationStore(
-    (state) => state.deleteGenerationRecord,
-  );
-  const toggleFavoriteRecord = useGenerationStore(
-    (state) => state.toggleFavoriteRecord,
-  );
-  const restoreLastDeletedRecord = useGenerationStore(
-    (state) => state.restoreLastDeletedRecord,
-  );
-  const favoriteRecordIds = useGenerationStore(
-    (state) => state.favoriteRecordIds,
-  );
-  const selectGenerationRecord = useGenerationStore(
-    (state) => state.selectGenerationRecord,
-  );
-  const loadGenerationSettings = useGenerationStore(
-    (state) => state.loadGenerationSettings,
-  );
-  const clearGenerationHistory = useGenerationStore(
-    (state) => state.clearGenerationHistory,
-  );
-  const currentGeneration = useGenerationStore(
-    (state) => state.currentGeneration,
-  );
-  const selectedHistoryIds = useGenerationStore(
-    (state) => state.selectedHistoryIds,
-  );
-  const toggleSelectHistory = useGenerationStore(
-    (state) => state.toggleSelectHistory,
-  );
+  const deleteGenerationRecord = useGenerationStore((state) => state.deleteGenerationRecord);
+  const toggleFavoriteRecord = useGenerationStore((state) => state.toggleFavoriteRecord);
+  const restoreLastDeletedRecord = useGenerationStore((state) => state.restoreLastDeletedRecord);
+  const favoriteRecordIds = useGenerationStore((state) => state.favoriteRecordIds);
+  const selectGenerationRecord = useGenerationStore((state) => state.selectGenerationRecord);
+  const loadGenerationSettings = useGenerationStore((state) => state.loadGenerationSettings);
+  const clearGenerationHistory = useGenerationStore((state) => state.clearGenerationHistory);
+  const currentGeneration = useGenerationStore((state) => state.currentGeneration);
+  const selectedHistoryIds = useGenerationStore((state) => state.selectedHistoryIds);
+  const toggleSelectHistory = useGenerationStore((state) => state.toggleSelectHistory);
   const clearSelection = useGenerationStore((state) => state.clearSelection);
-  const batchDeleteSelected = useGenerationStore(
-    (state) => state.batchDeleteSelected,
-  );
-  const batchFavoriteSelected = useGenerationStore(
-    (state) => state.batchFavoriteSelected,
-  );
-  const enterCompareMode = useGenerationStore(
-    (state) => state.enterCompareMode,
-  );
+  const batchDeleteSelected = useGenerationStore((state) => state.batchDeleteSelected);
+  const batchFavoriteSelected = useGenerationStore((state) => state.batchFavoriteSelected);
+  const enterCompareMode = useGenerationStore((state) => state.enterCompareMode);
   const exitCompareMode = useGenerationStore((state) => state.exitCompareMode);
-  const compareModeActive = useGenerationStore(
-    (state) => state.compareModeActive,
-  );
-  const compareGenerationId = useGenerationStore(
-    (state) => state.compareGenerationId,
-  );
+  const compareModeActive = useGenerationStore((state) => state.compareModeActive);
+  const compareGenerationId = useGenerationStore((state) => state.compareGenerationId);
   const { addToast } = useToast();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -170,14 +136,7 @@ export function HistorySidebar() {
                   onClick={() => {
                     const [a, b] = selectedHistoryIds;
                     const currentId = currentGeneration?.id;
-                    const otherId =
-                      a === currentId
-                        ? b
-                        : a === b
-                          ? a
-                          : currentId === b
-                            ? a
-                            : b;
+                    const otherId = a === currentId ? b : a === b ? a : currentId === b ? a : b;
                     if (otherId) {
                       enterCompareMode(otherId);
                     }
@@ -227,9 +186,7 @@ export function HistorySidebar() {
       {compareModeActive && (
         <div className="shrink-0 px-3 py-2">
           <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/8 px-3 py-2">
-            <span className="text-[11px] font-medium text-[var(--color-accent)]">
-              A/B Compare
-            </span>
+            <span className="text-[11px] font-medium text-[var(--color-accent)]">A/B Compare</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -266,11 +223,7 @@ export function HistorySidebar() {
             {t("history.empty")}
           </div>
         ) : (
-          <div
-            ref={parentRef}
-            role="list"
-            className="custom-scrollbar overflow-auto px-1 pb-3"
-          >
+          <div ref={parentRef} role="list" className="custom-scrollbar overflow-auto px-1 pb-3">
             <div
               style={{
                 height: `${virtualizer.getTotalSize()}px`,
@@ -297,19 +250,12 @@ export function HistorySidebar() {
                   >
                     <div className="pb-2">
                       <div
-                        draggable={
-                          item.outputPath !== null && api.isTauriRuntime()
-                        }
+                        draggable={item.outputPath !== null && api.isTauriRuntime()}
                         onDragStart={async (e) => {
                           if (!item.outputPath || !api.isTauriRuntime()) return;
                           try {
-                            const tempPath = await api.prepareDragPayload(
-                              item.id,
-                            );
-                            e.dataTransfer.setData(
-                              "text/uri-list",
-                              `file://${tempPath}`,
-                            );
+                            const tempPath = await api.prepareDragPayload(item.id);
+                            e.dataTransfer.setData("text/uri-list", `file://${tempPath}`);
                             e.dataTransfer.setData("text/plain", tempPath);
                             e.dataTransfer.effectAllowed = "copy";
                           } catch {
@@ -331,9 +277,7 @@ export function HistorySidebar() {
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-[13px] font-medium text-white">
-                              {item.prompt ||
-                                item.lyrics.slice(0, 48) ||
-                                t("history.untitled")}
+                              {item.prompt || item.lyrics.slice(0, 48) || t("history.untitled")}
                             </p>
                             {/* Key parameters row */}
                             <p className="mt-1 truncate text-[11px] text-[var(--color-text-dim)]">
@@ -341,8 +285,7 @@ export function HistorySidebar() {
                               {item.bpm && item.keyScale ? " · " : null}
                               {item.keyScale || null}
                               {(item.bpm || item.keyScale) && " · "}
-                              {item.audioFormat.toUpperCase()} ·{" "}
-                              {Math.round(item.durationSeconds)}s
+                              {item.audioFormat.toUpperCase()} · {Math.round(item.durationSeconds)}s
                             </p>
                           </div>
                         </button>
@@ -374,9 +317,7 @@ export function HistorySidebar() {
                                 <Star
                                   size={11}
                                   fill={
-                                    favoriteRecordIds.includes(item.id)
-                                      ? "currentColor"
-                                      : "none"
+                                    favoriteRecordIds.includes(item.id) ? "currentColor" : "none"
                                   }
                                 />
                               </button>
@@ -452,10 +393,7 @@ export function HistorySidebar() {
         open={deleteTarget !== null}
         title={t("history.deleteTitle")}
         message={t("history.deleteMessage", {
-          title:
-            deleteTarget?.prompt ||
-            deleteTarget?.lyrics.slice(0, 48) ||
-            t("history.untitled"),
+          title: deleteTarget?.prompt || deleteTarget?.lyrics.slice(0, 48) || t("history.untitled"),
         })}
         confirmLabel={t("history.deleteConfirm")}
         onCancel={() => setDeleteTargetId(null)}
@@ -514,10 +452,7 @@ export function HistorySidebar() {
           const destination = await api.selectDirectory();
           if (!destination) return;
           try {
-            const copied = await api.exportGenerationsToFolder(
-              selectedHistoryIds,
-              destination,
-            );
+            const copied = await api.exportGenerationsToFolder(selectedHistoryIds, destination);
             addToast("success", `Exported ${copied.length} files.`);
           } catch {
             addToast("error", "Export failed.");
@@ -557,16 +492,10 @@ function requestToFormValues(request: GenerationRequest): GenerationFormValues {
     referenceAudioPath: request.referenceAudioPath ?? "",
     srcAudioPath: request.srcAudioPath ?? "",
     instruction: request.instruction ?? "",
-    repaintingStart:
-      request.repaintingStart === undefined
-        ? ""
-        : String(request.repaintingStart),
-    repaintingEnd:
-      request.repaintingEnd === undefined ? "" : String(request.repaintingEnd),
+    repaintingStart: request.repaintingStart === undefined ? "" : String(request.repaintingStart),
+    repaintingEnd: request.repaintingEnd === undefined ? "" : String(request.repaintingEnd),
     audioCoverStrength:
-      request.audioCoverStrength === undefined
-        ? "1.0"
-        : String(request.audioCoverStrength),
+      request.audioCoverStrength === undefined ? "1.0" : String(request.audioCoverStrength),
     useRandomSeed: request.useRandomSeed,
     seed: request.seed === undefined ? "" : String(request.seed),
   };
@@ -578,9 +507,7 @@ function FailedRunsDrawer() {
   const [failedRuns, setFailedRuns] = useState<FailedRun[]>([]);
   const [expanded, setExpanded] = useState(false);
   const setField = useGenerationStore((state) => state.setField);
-  const selectGenerationRecord = useGenerationStore(
-    (state) => state.selectGenerationRecord,
-  );
+  const selectGenerationRecord = useGenerationStore((state) => state.selectGenerationRecord);
 
   const fetchFailedRuns = useCallback(async () => {
     if (!api.isTauriRuntime()) return;

@@ -35,10 +35,7 @@ export function StateBadge({ state }: { state: ModelDownloadState }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${classes}`}
     >
-      <Icon
-        size={10}
-        className={state === "downloading" ? "animate-spin" : ""}
-      />
+      <Icon size={10} className={state === "downloading" ? "animate-spin" : ""} />
       {label}
     </span>
   );

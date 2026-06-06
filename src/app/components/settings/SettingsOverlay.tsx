@@ -20,32 +20,23 @@ export function SettingsOverlay() {
   const settings = useGenerationStore((s) => s.settings);
   const modelStatuses = useGenerationStore((s) => s.modelStatuses);
   const closeSettings = useGenerationStore((s) => s.closeSettings);
-  const refreshModelStatuses = useGenerationStore(
-    (s) => s.refreshModelStatuses,
-  );
-  const hydrateFromPersistence = useGenerationStore(
-    (s) => s.hydrateFromPersistence,
-  );
+  const refreshModelStatuses = useGenerationStore((s) => s.refreshModelStatuses);
+  const hydrateFromPersistence = useGenerationStore((s) => s.hydrateFromPersistence);
   const history = useGenerationStore((s) => s.history);
-  const clearGenerationHistory = useGenerationStore(
-    (s) => s.clearGenerationHistory,
-  );
+  const clearGenerationHistory = useGenerationStore((s) => s.clearGenerationHistory);
   const deleteAllModels = useGenerationStore((s) => s.deleteAllModels);
 
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const [clearHistoryOpen, setClearHistoryOpen] = useState(false);
   const [clearCacheOpen, setClearCacheOpen] = useState(false);
   const [deleteModelsOpen, setDeleteModelsOpen] = useState(false);
-  const [defaultPaths, setDefaultPaths] = useState<api.DefaultAppPaths | null>(
-    null,
-  );
+  const [defaultPaths, setDefaultPaths] = useState<api.DefaultAppPaths | null>(null);
 
   useEffect(() => {
     if (!api.isTauriRuntime()) {
       setDefaultPaths({
         outputDirectory: "~/Music/OpenLoop",
-        modelDirectory:
-          "~/Library/Application Support/OpenLoop/models/checkpoints",
+        modelDirectory: "~/Library/Application Support/OpenLoop/models/checkpoints",
         logDirectory: "~/Library/Application Support/OpenLoop/logs/backend",
       });
       return;
@@ -103,9 +94,7 @@ export function SettingsOverlay() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-semibold text-white">
-              {t("settings.title")}
-            </h2>
+            <h2 className="text-xl font-semibold text-white">{t("settings.title")}</h2>
             <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
               {t("settings.description")}
             </p>
@@ -198,9 +187,7 @@ export function SettingsOverlay() {
           onDismissDeleteAllModels={() => setDeleteModelsOpen(false)}
           onConfirmClearHistory={() => {
             setClearHistoryOpen(false);
-            void clearGenerationHistory().then(() =>
-              setSaveNotice(t("settings.historyCleared")),
-            );
+            void clearGenerationHistory().then(() => setSaveNotice(t("settings.historyCleared")));
           }}
           onConfirmClearCache={() => {
             setClearCacheOpen(false);
@@ -210,9 +197,7 @@ export function SettingsOverlay() {
           }}
           onConfirmDeleteAllModels={() => {
             setDeleteModelsOpen(false);
-            void deleteAllModels().then(() =>
-              setSaveNotice(t("settings.modelsDeleted")),
-            );
+            void deleteAllModels().then(() => setSaveNotice(t("settings.modelsDeleted")));
           }}
         />
       </div>

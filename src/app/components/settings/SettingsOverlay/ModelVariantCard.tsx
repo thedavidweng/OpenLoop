@@ -1,10 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2 } from "lucide-react";
-import {
-  MODEL_PACKS,
-  MODEL_VARIANTS,
-  packIdForVariant,
-} from "@/app/lib/model-packs";
+import { MODEL_PACKS, MODEL_VARIANTS, packIdForVariant } from "@/app/lib/model-packs";
 import type { ModelDownloadState, ModelVariant } from "@/app/lib/types";
 
 interface ModelVariantCardProps {

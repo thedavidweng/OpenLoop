@@ -4,10 +4,7 @@ import { DirectoryPickerRow } from "@/app/components/settings/SettingsOverlay/Di
 import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
 import { DEFAULT_APP_SETTINGS } from "@/app/lib/model-bootstrap";
-import type {
-  SettingsDraft,
-  DirectorySettingKey,
-} from "../hooks/useSettingsDraft";
+import type { SettingsDraft, DirectorySettingKey } from "../hooks/useSettingsDraft";
 import { Loader2 } from "lucide-react";
 
 interface BackendSectionProps {
@@ -28,12 +25,8 @@ export function BackendSection({
   onShowNotice,
 }: BackendSectionProps) {
   const { t } = useTranslation();
-  const hydrateFromPersistence = useGenerationStore(
-    (state) => state.hydrateFromPersistence,
-  );
-  const backendProvisionStatus = useGenerationStore(
-    (state) => state.backendProvisionStatus,
-  );
+  const hydrateFromPersistence = useGenerationStore((state) => state.hydrateFromPersistence);
+  const backendProvisionStatus = useGenerationStore((state) => state.backendProvisionStatus);
   const updateBackend = useGenerationStore((state) => state.updateBackend);
   const refreshBackendProvisionStatus = useGenerationStore(
     (state) => state.refreshBackendProvisionStatus,
@@ -88,9 +81,7 @@ export function BackendSection({
         onPick={() => {
           void onPickDirectory("logDirectory");
         }}
-        onReset={() =>
-          setDraft((current) => ({ ...current, logDirectory: "" }))
-        }
+        onReset={() => setDraft((current) => ({ ...current, logDirectory: "" }))}
       />
 
       {!backendPortValid ? (
@@ -105,9 +96,7 @@ export function BackendSection({
         <button
           type="button"
           onClick={() => {
-            void api
-              .restartBackend()
-              .then(() => onShowNotice(t("settings.backendRestarted")));
+            void api.restartBackend().then(() => onShowNotice(t("settings.backendRestarted")));
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
         >

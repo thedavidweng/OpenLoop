@@ -16,8 +16,7 @@ export const MODEL_VARIANTS = {
   turbo: {
     id: "turbo",
     label: "Turbo",
-    description:
-      "Recommended profile for 16 GB Apple Silicon Macs: turbo DiT + 0.6B LM.",
+    description: "Recommended profile for 16 GB Apple Silicon Macs: turbo DiT + 0.6B LM.",
     modelName: "acestep-v15-turbo",
     lmModelPath: "acestep-5Hz-lm-0.6B",
   },
@@ -43,8 +42,7 @@ export const MODEL_PACKS = {
   standard: {
     id: "standard",
     label: "Standard",
-    description:
-      "Shared ACE-Step turbo DiT + 0.6B LM pack used by Lite and Turbo profiles.",
+    description: "Shared ACE-Step turbo DiT + 0.6B LM pack used by Lite and Turbo profiles.",
     variants: ["lite", "turbo"] as ModelVariant[],
     primaryVariant: "turbo" as ModelVariant,
     estimatedSizeBytes: 8 * 1024 * 1024 * 1024,
@@ -86,18 +84,13 @@ export function primaryVariantForPack(packId: ModelPackId): ModelVariant {
   return MODEL_PACKS[packId].primaryVariant;
 }
 
-export function profileForVariant(
-  variant: ModelVariant,
-): AppSettings["profile"] {
+export function profileForVariant(variant: ModelVariant): AppSettings["profile"] {
   if (variant === "lite") return "low-memory";
   if (variant === "pro") return "quality";
   return "standard";
 }
 
-export function isModelDownloaded(
-  settings: AppSettings,
-  variant: ModelVariant | null,
-): boolean {
+export function isModelDownloaded(settings: AppSettings, variant: ModelVariant | null): boolean {
   if (!variant) {
     return false;
   }
@@ -146,15 +139,10 @@ export function aggregatePackStatus(
     ready: 2,
     not_installed: 1,
   };
-  const winner = entries.reduce((acc, cur) =>
-    rank[cur.state] > rank[acc.state] ? cur : acc,
-  );
-  const downloadedBytes = Math.max(
-    ...entries.map((entry) => entry.downloadedBytes),
-  );
+  const winner = entries.reduce((acc, cur) => (rank[cur.state] > rank[acc.state] ? cur : acc));
+  const downloadedBytes = Math.max(...entries.map((entry) => entry.downloadedBytes));
   const totalBytes =
-    entries.find((entry) => entry.totalBytes)?.totalBytes ??
-    MODEL_PACKS[packId].estimatedSizeBytes;
+    entries.find((entry) => entry.totalBytes)?.totalBytes ?? MODEL_PACKS[packId].estimatedSizeBytes;
 
   return {
     state: winner.state,

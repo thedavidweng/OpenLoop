@@ -26,11 +26,7 @@ import {
 } from "@/app/lib/model-packs";
 import { useGenerationStore } from "@/app/lib/store";
 import type { ModelDownloadState, ModelVariant } from "@/app/lib/types";
-import {
-  APP_SHORTCUTS,
-  getShortcutDisplay,
-  getShortcutPlatform,
-} from "@/app/lib/app-shortcuts";
+import { APP_SHORTCUTS, getShortcutDisplay, getShortcutPlatform } from "@/app/lib/app-shortcuts";
 
 interface SetupScreenProps {
   onClose?: () => void;
@@ -38,13 +34,7 @@ interface SetupScreenProps {
 
 type SetupStep = "welcome" | "device" | "model" | "output" | "done";
 
-const STEP_ORDER: SetupStep[] = [
-  "welcome",
-  "device",
-  "model",
-  "output",
-  "done",
-];
+const STEP_ORDER: SetupStep[] = ["welcome", "device", "model", "output", "done"];
 
 function StepIndicator({ current }: { current: SetupStep }) {
   const currentIndex = STEP_ORDER.indexOf(current);
@@ -77,11 +67,7 @@ interface SetupActionCardProps {
   description: string;
 }
 
-function SetupActionCard({
-  icon: Icon,
-  title,
-  description,
-}: SetupActionCardProps) {
+function SetupActionCard({ icon: Icon, title, description }: SetupActionCardProps) {
   return (
     <div className="flex w-full items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-sidebar)] p-4 text-left">
       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--color-accent)]/12 text-[var(--color-accent)]">
@@ -89,9 +75,7 @@ function SetupActionCard({
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-medium text-white">{title}</div>
-        <div className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
-          {description}
-        </div>
+        <div className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">{description}</div>
       </div>
     </div>
   );
@@ -104,10 +88,7 @@ function bytesToLabel(bytes: number) {
 
 function progressPercent(downloadedBytes: number, totalBytes?: number | null) {
   if (!totalBytes) return 0;
-  return Math.min(
-    100,
-    Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)),
-  );
+  return Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)));
 }
 
 function etaFromBytes(totalBytes: number, speedBps = 10 * 1024 * 1024) {
@@ -310,28 +291,16 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
   const settings = useGenerationStore((state) => state.settings);
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
   const completeSetup = useGenerationStore((state) => state.completeSetup);
-  const downloadModelVariant = useGenerationStore(
-    (state) => state.downloadModelVariant,
-  );
-  const selectModelVariant = useGenerationStore(
-    (state) => state.selectModelVariant,
-  );
+  const downloadModelVariant = useGenerationStore((state) => state.downloadModelVariant);
+  const selectModelVariant = useGenerationStore((state) => state.selectModelVariant);
   const enterDemoMode = useGenerationStore((state) => state.enterDemoMode);
-  const backendProvisionStatus = useGenerationStore(
-    (state) => state.backendProvisionStatus,
-  );
-  const provisionBackend = useGenerationStore(
-    (state) => state.provisionBackend,
-  );
+  const backendProvisionStatus = useGenerationStore((state) => state.backendProvisionStatus);
+  const provisionBackend = useGenerationStore((state) => state.provisionBackend);
   const [step, setStep] = useState<SetupStep>("welcome");
   const [busyVariant, setBusyVariant] = useState<ModelVariant | null>(null);
-  const [outputDirectory, setOutputDirectory] = useState(
-    settings.outputDirectory ?? "",
-  );
+  const [outputDirectory, setOutputDirectory] = useState(settings.outputDirectory ?? "");
   const [skipLoading, setSkipLoading] = useState(false);
-  const [defaultPaths, setDefaultPaths] = useState<api.DefaultAppPaths | null>(
-    null,
-  );
+  const [defaultPaths, setDefaultPaths] = useState<api.DefaultAppPaths | null>(null);
 
   const currentIndex = STEP_ORDER.indexOf(step);
   const recommendedProfile = deviceInfo?.recommendedProfile ?? settings.profile;
@@ -373,8 +342,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
     if (!api.isTauriRuntime()) {
       setDefaultPaths({
         outputDirectory: "~/Music/OpenLoop",
-        modelDirectory:
-          "~/Library/Application Support/OpenLoop/models/checkpoints",
+        modelDirectory: "~/Library/Application Support/OpenLoop/models/checkpoints",
         logDirectory: "~/Library/Application Support/OpenLoop/logs/backend",
       });
       return;
@@ -476,9 +444,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               {
                 key: "memory",
                 label: t("setup.memory"),
-                value: deviceInfo
-                  ? `${deviceInfo.totalMemoryGb} GB`
-                  : t("common.unknown"),
+                value: deviceInfo ? `${deviceInfo.totalMemoryGb} GB` : t("common.unknown"),
               },
               {
                 key: "profile",
@@ -493,9 +459,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
                   {info.label}
                 </p>
-                <p className="mt-1.5 truncate text-[14px] font-semibold text-white">
-                  {info.value}
-                </p>
+                <p className="mt-1.5 truncate text-[14px] font-semibold text-white">{info.value}</p>
               </div>
             ))}
           </div>
@@ -514,9 +478,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[13px] font-semibold text-white">
-                        ACE-Step Engine
-                      </p>
+                      <p className="text-[13px] font-semibold text-white">ACE-Step Engine</p>
                       {backendProvisionStatus.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                           <CheckCircle2 size={10} />
@@ -533,8 +495,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                     </div>
                     <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
                       {t("settings.backendEngineDescription", {
-                        defaultValue:
-                          "The ACE-Step Python engine runs locally to generate music.",
+                        defaultValue: "The ACE-Step Python engine runs locally to generate music.",
                       })}
                     </p>
                     {backendProvisionStatus.state === "ready" &&
@@ -602,8 +563,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 const pack = MODEL_PACKS[packId];
                 const status = aggregatePackStatus(modelStatuses, packId);
                 const primary = pack.primaryVariant;
-                const busy =
-                  busyVariant !== null && pack.variants.includes(busyVariant);
+                const busy = busyVariant !== null && pack.variants.includes(busyVariant);
                 return (
                   <PackDownloadCard
                     key={packId}
@@ -615,9 +575,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                     busy={busy}
                     onDownload={() => {
                       setBusyVariant(primary);
-                      void downloadModelVariant(primary).finally(() =>
-                        setBusyVariant(null),
-                      );
+                      void downloadModelVariant(primary).finally(() => setBusyVariant(null));
                     }}
                   />
                 );
@@ -632,10 +590,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               </p>
               <div className="grid gap-3 md:grid-cols-3">
                 {(["lite", "turbo", "pro"] as const).map((variant) => {
-                  const status = aggregatePackStatus(
-                    modelStatuses,
-                    packIdForVariant(variant),
-                  );
+                  const status = aggregatePackStatus(modelStatuses, packIdForVariant(variant));
                   return (
                     <VariantPickerCard
                       key={variant}
@@ -645,9 +600,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       busy={busyVariant === variant}
                       onSelect={() => {
                         setBusyVariant(variant);
-                        void selectModelVariant(variant).finally(() =>
-                          setBusyVariant(null),
-                        );
+                        void selectModelVariant(variant).finally(() => setBusyVariant(null));
                       }}
                     />
                   );
@@ -668,9 +621,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 disabled={skipLoading}
                 className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60 disabled:opacity-50"
               >
-                {skipLoading ? (
-                  <Loader2 size={10} className="animate-spin" />
-                ) : null}
+                {skipLoading ? <Loader2 size={10} className="animate-spin" /> : null}
                 {t("setup.skipDemo", {
                   defaultValue: "Skip and try a demo prompt",
                 })}
@@ -688,9 +639,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               <div className="mt-2 flex flex-wrap items-stretch gap-2 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] p-1.5">
                 <code
                   className="min-w-0 flex-1 break-all rounded-md bg-[var(--color-surface-muted)]/60 px-3 py-2 font-mono text-[12px] leading-5 text-[var(--color-text)]"
-                  title={
-                    outputDirectory || defaultPaths?.outputDirectory || "—"
-                  }
+                  title={outputDirectory || defaultPaths?.outputDirectory || "—"}
                 >
                   {outputDirectory || defaultPaths?.outputDirectory || "—"}
                 </code>
@@ -705,9 +654,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                     className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
                     onClick={() => {
                       void api
-                        .selectDirectory(
-                          outputDirectory || defaultPaths?.outputDirectory,
-                        )
+                        .selectDirectory(outputDirectory || defaultPaths?.outputDirectory)
                         .then((selected) => {
                           if (selected) setOutputDirectory(selected);
                         });

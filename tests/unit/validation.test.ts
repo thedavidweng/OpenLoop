@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_GENERATION_FORM_VALUES,
-  validateGenerationForm,
-} from "@/app/lib/validation";
+import { DEFAULT_GENERATION_FORM_VALUES, validateGenerationForm } from "@/app/lib/validation";
 
 describe("generation validation defaults", () => {
   it("treats BPM and key as explicit Auto values in a fresh request", () => {

@@ -9,10 +9,7 @@ import {
   applyProfilePreset,
 } from "@/app/lib/profile-presets";
 import { computeValidationState } from "@/app/lib/validation-helpers";
-import {
-  DEFAULT_APP_SETTINGS,
-  resolveModelBootstrapStatus,
-} from "@/app/lib/model-bootstrap";
+import { DEFAULT_APP_SETTINGS, resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 import { expandDownloadedVariantsFromStatuses } from "@/app/lib/model-packs";
 
 import i18next, { detectSystemLanguage } from "@/app/lib/i18n";
@@ -52,18 +49,13 @@ export function createSettingsSlice(
                   error: null,
                 }
               : state.generationState,
-          bootstrapStatus: resolveModelBootstrapStatus(
-            settings,
-            state.deviceInfo,
-            modelStatuses,
-          ),
+          bootstrapStatus: resolveModelBootstrapStatus(settings, state.deviceInfo, modelStatuses),
         };
       });
     },
 
     completeSetup: async () => {
-      const profile =
-        get().deviceInfo?.recommendedProfile ?? get().settings.profile;
+      const profile = get().deviceInfo?.recommendedProfile ?? get().settings.profile;
       const nextSettings = {
         ...get().settings,
         profile,
@@ -100,10 +92,7 @@ export function createSettingsSlice(
       set((state) => {
         const trimmed = prompt.trim();
         if (!trimmed) return state;
-        const deduped = [
-          trimmed,
-          ...state.recentPrompts.filter((p) => p !== trimmed),
-        ];
+        const deduped = [trimmed, ...state.recentPrompts.filter((p) => p !== trimmed)];
         return { recentPrompts: deduped.slice(0, 20) };
       });
     },
@@ -164,8 +153,7 @@ export function createSettingsSlice(
           ...persistedSettings,
           profile,
           defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
-          downloadedModels:
-            expandDownloadedVariantsFromStatuses(rawModelStatuses),
+          downloadedModels: expandDownloadedVariantsFromStatuses(rawModelStatuses),
         };
         const language = mergedSettings.language ?? detectSystemLanguage();
         await i18next.changeLanguage(language);
@@ -175,9 +163,7 @@ export function createSettingsSlice(
           mergedSettings.modelVariant,
         );
 
-        const favoriteRecordIds = persistedHistory
-          .filter((r) => r.isFavorite)
-          .map((r) => r.id);
+        const favoriteRecordIds = persistedHistory.filter((r) => r.isFavorite).map((r) => r.id);
 
         set({
           hydrated: true,

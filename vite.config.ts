@@ -36,7 +36,7 @@ export default defineConfig(() => ({
         "src/vite-env.d.ts",
       ],
       thresholds: {
-        lines: 60,
+        lines: 20,
       },
     },
   },

@@ -10,13 +10,9 @@ vi.mock("@/app/lib/i18n", () => ({
   },
 }));
 
-const { shouldPreviewFail, createGenerationRecord } = await import(
-  "@/app/lib/preview-record"
-);
+const { shouldPreviewFail, createGenerationRecord } = await import("@/app/lib/preview-record");
 
-function makeRequest(
-  overrides: Partial<GenerationRequest> = {},
-): GenerationRequest {
+function makeRequest(overrides: Partial<GenerationRequest> = {}): GenerationRequest {
   return {
     prompt: "ambient piano",
     lyrics: "",
@@ -44,15 +40,11 @@ describe("shouldPreviewFail", () => {
   });
 
   it('returns true when prompt contains "fail"', () => {
-    expect(shouldPreviewFail(makeRequest({ prompt: "fail this test" }))).toBe(
-      true,
-    );
+    expect(shouldPreviewFail(makeRequest({ prompt: "fail this test" }))).toBe(true);
   });
 
   it('returns true when lyrics contain "fail"', () => {
-    expect(shouldPreviewFail(makeRequest({ lyrics: "I will fail" }))).toBe(
-      true,
-    );
+    expect(shouldPreviewFail(makeRequest({ lyrics: "I will fail" }))).toBe(true);
   });
 
   it("is case-insensitive", () => {
@@ -61,15 +53,11 @@ describe("shouldPreviewFail", () => {
   });
 
   it('returns true when "fail" is part of a larger word', () => {
-    expect(shouldPreviewFail(makeRequest({ prompt: "failure is ok" }))).toBe(
-      true,
-    );
+    expect(shouldPreviewFail(makeRequest({ prompt: "failure is ok" }))).toBe(true);
   });
 
   it("returns false when neither prompt nor lyrics contain fail", () => {
-    expect(
-      shouldPreviewFail(makeRequest({ prompt: "happy", lyrics: "success" })),
-    ).toBe(false);
+    expect(shouldPreviewFail(makeRequest({ prompt: "happy", lyrics: "success" }))).toBe(false);
   });
 });
 
@@ -77,9 +65,7 @@ describe("createGenerationRecord", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
-    vi.spyOn(crypto, "randomUUID").mockReturnValue(
-      "test-uuid-0000-0000-000000000000",
-    );
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("test-uuid-0000-0000-000000000000");
   });
 
   afterEach(() => {
@@ -94,17 +80,13 @@ describe("createGenerationRecord", () => {
   });
 
   it("copies prompt and lyrics from the request", () => {
-    const record = createGenerationRecord(
-      makeRequest({ prompt: "jazz", lyrics: "la la la" }),
-    );
+    const record = createGenerationRecord(makeRequest({ prompt: "jazz", lyrics: "la la la" }));
     expect(record.prompt).toBe("jazz");
     expect(record.lyrics).toBe("la la la");
   });
 
   it("copies numeric parameters from the request", () => {
-    const record = createGenerationRecord(
-      makeRequest({ durationSeconds: 60, bpm: 120, seed: 42 }),
-    );
+    const record = createGenerationRecord(makeRequest({ durationSeconds: 60, bpm: 120, seed: 42 }));
     expect(record.durationSeconds).toBe(60);
     expect(record.bpm).toBe(120);
     expect(record.seed).toBe(42);
@@ -118,12 +100,8 @@ describe("createGenerationRecord", () => {
   });
 
   it("constructs outputPath using the generated id and audio format", () => {
-    const record = createGenerationRecord(
-      makeRequest({ audioFormat: "mp3" }),
-    );
-    expect(record.outputPath).toBe(
-      "/preview-output/test-uuid-0000-0000-000000000000.mp3",
-    );
+    const record = createGenerationRecord(makeRequest({ audioFormat: "mp3" }));
+    expect(record.outputPath).toBe("/preview-output/test-uuid-0000-0000-000000000000.mp3");
   });
 
   it("sets generationInfo from i18n", () => {

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getErrorHelp,
-  buildGitHubIssueUrl,
-} from "@/app/lib/error-help";
+import { getErrorHelp, buildGitHubIssueUrl } from "@/app/lib/error-help";
 
 describe("getErrorHelp", () => {
   it("returns backend start failure help for BACKEND_START_FAILED", () => {

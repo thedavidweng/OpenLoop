@@ -145,10 +145,7 @@ describe("expandDownloadedVariantsFromStatuses", () => {
   });
 
   it("returns empty array when no statuses are ready", () => {
-    const statuses = [
-      makeSnapshot("turbo", "downloading"),
-      makeSnapshot("pro", "not_installed"),
-    ];
+    const statuses = [makeSnapshot("turbo", "downloading"), makeSnapshot("pro", "not_installed")];
     expect(expandDownloadedVariantsFromStatuses(statuses)).toEqual([]);
   });
 
@@ -165,10 +162,7 @@ describe("expandDownloadedVariantsFromStatuses", () => {
   });
 
   it("deduplicates packs even if multiple variants report ready", () => {
-    const statuses = [
-      makeSnapshot("lite", "ready"),
-      makeSnapshot("turbo", "ready"),
-    ];
+    const statuses = [makeSnapshot("lite", "ready"), makeSnapshot("turbo", "ready")];
     const result = expandDownloadedVariantsFromStatuses(statuses);
     expect(result).toHaveLength(2);
     expect(result).toContain("lite");
@@ -228,17 +222,13 @@ describe("aggregatePackStatus", () => {
   });
 
   it("falls back to estimatedSizeBytes when no entry has totalBytes", () => {
-    const statuses = [
-      makeSnapshot("turbo", "ready", { totalBytes: undefined }),
-    ];
+    const statuses = [makeSnapshot("turbo", "ready", { totalBytes: undefined })];
     const result = aggregatePackStatus(statuses, "standard");
     expect(result.totalBytes).toBe(MODEL_PACKS.standard.estimatedSizeBytes);
   });
 
   it("uses the first found totalBytes when present", () => {
-    const statuses = [
-      makeSnapshot("turbo", "ready", { totalBytes: 999 }),
-    ];
+    const statuses = [makeSnapshot("turbo", "ready", { totalBytes: 999 })];
     const result = aggregatePackStatus(statuses, "standard");
     expect(result.totalBytes).toBe(999);
   });

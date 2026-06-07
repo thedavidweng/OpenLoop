@@ -45,9 +45,7 @@ describe("variationLabel", () => {
   });
 
   it("returns empty string when variationCurrent is 0", () => {
-    expect(variationLabel({ variationCurrent: 0, variationTotal: 3 })).toBe(
-      "",
-    );
+    expect(variationLabel({ variationCurrent: 0, variationTotal: 3 })).toBe("");
   });
 });
 

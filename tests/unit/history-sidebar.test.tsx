@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { GenerationRecord } from "@/app/lib/types";
 
 // Mock @tanstack/react-virtual before anything imports it
 vi.mock("@tanstack/react-virtual", () => ({
-  useVirtualizer: ({ count, getScrollElement }: { count: number; getScrollElement: () => HTMLElement | null }) => {
+  useVirtualizer: ({
+    count,
+    getScrollElement: _getScrollElement,
+  }: {
+    count: number;
+    getScrollElement: () => HTMLElement | null;
+  }) => {
     const items = Array.from({ length: count }, (_, i) => ({
       key: `virtual-${i}`,
       index: i,
@@ -52,7 +58,7 @@ vi.mock("@/app/components/overlay/Tooltip", () => ({
     ) {
       const child = children as React.ReactElement;
       // Only add aria-label if the child doesn't already have one
-      if (!child.props["aria-label"]) {
+      if (!(child.props as Record<string, unknown>)["aria-label"]) {
         return <span data-tooltip-label={label}>{child}</span>;
       }
     }
@@ -111,7 +117,7 @@ function makeRecord(overrides: Partial<GenerationRecord> = {}): GenerationRecord
     bpm: 120,
     keyScale: "C major",
     timeSignature: "4",
-    taskType: "text-to-audio",
+    taskType: "text2music",
     thinking: false,
     inferenceSteps: 30,
     guidanceScale: 7.5,
@@ -250,7 +256,7 @@ describe("HistorySidebar", () => {
       currentGeneration: records[0],
     });
 
-    const { container } = render(<HistorySidebar />);
+    render(<HistorySidebar />);
 
     // The selected record's wrapper div has the sidebar-row-selected border/bg classes
     const listItems = screen.getAllByRole("listitem");
@@ -262,9 +268,7 @@ describe("HistorySidebar", () => {
 
   it("toggles favorite on star button click", async () => {
     const user = userEvent.setup();
-    const records = [
-      makeRecord({ id: "rec-1", prompt: "ambient piano", isFavorite: false }),
-    ];
+    const records = [makeRecord({ id: "rec-1", prompt: "ambient piano", isFavorite: false })];
     currentStoreState = makeStoreOverrides({
       history: records,
       favoriteRecordIds: [],
@@ -303,9 +307,7 @@ describe("HistorySidebar", () => {
 
   it("handles delete action by opening confirm dialog", async () => {
     const user = userEvent.setup();
-    const records = [
-      makeRecord({ id: "rec-1", prompt: "ambient piano" }),
-    ];
+    const records = [makeRecord({ id: "rec-1", prompt: "ambient piano" })];
     currentStoreState = makeStoreOverrides({
       history: records,
       currentGeneration: records[0],
@@ -357,9 +359,7 @@ describe("HistorySidebar", () => {
 
   it("calls selectGenerationRecord when a record is clicked", async () => {
     const user = userEvent.setup();
-    const records = [
-      makeRecord({ id: "rec-1", prompt: "ambient piano" }),
-    ];
+    const records = [makeRecord({ id: "rec-1", prompt: "ambient piano" })];
     currentStoreState = makeStoreOverrides({ history: records });
 
     render(<HistorySidebar />);

@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  AppError,
-  GenerationEvent,
-  GenerationRecord,
-} from "@/app/lib/types";
+import type { AppError, GenerationEvent, GenerationRecord } from "@/app/lib/types";
 
 vi.mock("@/app/lib/api", () => ({
   isTauriRuntime: false,
@@ -44,15 +40,6 @@ function record(overrides: Partial<GenerationRecord> = {}): GenerationRecord {
     errorMessage: null,
     isFavorite: false,
     ...overrides,
-  };
-}
-
-function idleGenerationState() {
-  return {
-    status: "idle",
-    phase: "idle",
-    statusMessage: expect.any(String),
-    error: null,
   };
 }
 
@@ -199,9 +186,7 @@ describe("UI slice", () => {
 
       useGenerationStore.getState().setField("prompt", "new prompt");
 
-      expect(useGenerationStore.getState().generationState.status).toBe(
-        "running",
-      );
+      expect(useGenerationStore.getState().generationState.status).toBe("running");
     });
 
     it("preserves generationState when status is validating", () => {
@@ -216,9 +201,7 @@ describe("UI slice", () => {
 
       useGenerationStore.getState().setField("prompt", "new prompt");
 
-      expect(useGenerationStore.getState().generationState.status).toBe(
-        "validating",
-      );
+      expect(useGenerationStore.getState().generationState.status).toBe("validating");
     });
   });
 
@@ -389,9 +372,7 @@ describe("UI slice", () => {
       expect(useGenerationStore.getState().form.prompt).toBe("");
       expect(useGenerationStore.getState().form.lyrics).toBe("");
       expect(useGenerationStore.getState().form.durationSeconds).toBe("30");
-      expect(useGenerationStore.getState().form).toEqual(
-        DEFAULT_GENERATION_FORM_VALUES,
-      );
+      expect(useGenerationStore.getState().form).toEqual(DEFAULT_GENERATION_FORM_VALUES);
     });
 
     it("clears validation errors", () => {
@@ -448,9 +429,7 @@ describe("History slice (pure actions)", () => {
 
       useGenerationStore.getState().selectGenerationRecord("target");
 
-      expect(useGenerationStore.getState().currentGeneration?.id).toBe(
-        "target",
-      );
+      expect(useGenerationStore.getState().currentGeneration?.id).toBe("target");
     });
 
     it("keeps currentGeneration unchanged when id is not found", () => {
@@ -462,9 +441,7 @@ describe("History slice (pure actions)", () => {
 
       useGenerationStore.getState().selectGenerationRecord("nonexistent");
 
-      expect(useGenerationStore.getState().currentGeneration?.id).toBe(
-        "current",
-      );
+      expect(useGenerationStore.getState().currentGeneration?.id).toBe("current");
     });
   });
 
@@ -497,11 +474,10 @@ describe("History slice (pure actions)", () => {
 
       useGenerationStore.getState().restoreLastDeletedRecord();
 
-      expect(
-        useGenerationStore
-          .getState()
-          .history.map((r: GenerationRecord) => r.id),
-      ).toEqual(["restored", "existing"]);
+      expect(useGenerationStore.getState().history.map((r: GenerationRecord) => r.id)).toEqual([
+        "restored",
+        "existing",
+      ]);
     });
 
     it("is a no-op when lastDeletedRecord is null", () => {
@@ -541,10 +517,7 @@ describe("History slice (pure actions)", () => {
     it("adds to selection in multi mode", () => {
       useGenerationStore.setState({ selectedHistoryIds: ["a"] });
       useGenerationStore.getState().toggleSelectHistory("b", true);
-      expect(useGenerationStore.getState().selectedHistoryIds).toEqual([
-        "a",
-        "b",
-      ]);
+      expect(useGenerationStore.getState().selectedHistoryIds).toEqual(["a", "b"]);
     });
 
     it("removes from selection in multi mode", () => {
@@ -557,10 +530,7 @@ describe("History slice (pure actions)", () => {
       useGenerationStore.setState({ selectedHistoryIds: ["a", "b"] });
       useGenerationStore.getState().toggleSelectHistory("c", true);
       // Oldest ("a") is shifted out, ["b", "c"] remain
-      expect(useGenerationStore.getState().selectedHistoryIds).toEqual([
-        "b",
-        "c",
-      ]);
+      expect(useGenerationStore.getState().selectedHistoryIds).toEqual(["b", "c"]);
     });
   });
 

@@ -1,8 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-const { getWindowChromeVariant } = await import(
-  "@/app/lib/window-chrome"
-);
+const { getWindowChromeVariant } = await import("@/app/lib/window-chrome");
 
 describe("getWindowChromeVariant", () => {
   const originalPlatform = navigator.platform;

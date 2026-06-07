@@ -21,6 +21,24 @@ export default defineConfig(() => ({
     exclude: ["node_modules/**", "src-tauri/**", "reference/**"],
     setupFiles: ["./vitest.setup.ts"],
     globals: true,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov", "json-summary"],
+      reportsDirectory: "./coverage",
+      include: ["src/app/lib/**/*.ts", "src/app/components/**/*.tsx"],
+      exclude: [
+        "src/app/lib/types.ts",
+        "src/app/lib/store.ts",
+        "src/app/lib/store/types.ts",
+        "src/app/lib/store/index.ts",
+        "src/app/lib/i18n.ts",
+        "src/main.tsx",
+        "src/vite-env.d.ts",
+      ],
+      thresholds: {
+        lines: 60,
+      },
+    },
   },
   build: {
     sourcemap: false,

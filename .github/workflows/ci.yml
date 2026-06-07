@@ -48,9 +48,17 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm lint
 
-      - name: Frontend tests
+      - name: Frontend tests with coverage
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm test:run
+        run: pnpm test:coverage
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
 
       - name: Frontend build
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

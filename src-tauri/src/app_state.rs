@@ -66,11 +66,10 @@ pub fn default_app_data_dir() -> AppResult<PathBuf> {
         let home = std::env::var_os("HOME")
             .map(PathBuf::from)
             .ok_or_else(|| AppError::internal("HOME is not set"))?;
-        return Ok(
-            home.join("Library")
-                .join("Application Support")
-                .join("com.openmusic.openloop"),
-        );
+        return Ok(home
+            .join("Library")
+            .join("Application Support")
+            .join("com.openmusic.openloop"));
     }
 
     #[cfg(all(unix, not(target_os = "macos")))]

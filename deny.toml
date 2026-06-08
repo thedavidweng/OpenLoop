@@ -1,6 +1,3 @@
-[advisories]
-vulnerability = "deny"
-
 [licenses]
 allow = [
     "MIT",

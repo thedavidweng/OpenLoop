@@ -1,6 +1,6 @@
 [advisories]
-version = 2
-unmaintained = "warn"
+unmaintained = "workspace"
+yanked = "warn"
 
 [licenses]
 allow = [

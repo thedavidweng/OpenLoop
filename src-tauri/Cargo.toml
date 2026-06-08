@@ -3,7 +3,7 @@ name = "openloop"
 version = "0.2.0"
 description = "OpenLoop desktop shell"
 authors = ["OpenLoop contributors"]
-license = "MIT"
+license = "Apache-2.0"
 edition = "2021"
 default-run = "openloop"
 

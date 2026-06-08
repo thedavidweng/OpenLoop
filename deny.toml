@@ -1,3 +1,6 @@
+[advisories]
+vulnerability = "deny"
+
 [licenses]
 allow = [
     "MIT",
@@ -10,6 +13,10 @@ allow = [
     "Zlib",
     "BSL-1.0",
     "0BSD",
+    "MPL-2.0",
+    "bzip2-1.0.6",
+    "CC0-1.0",
+    "MIT-0",
 ]
 
 [bans]

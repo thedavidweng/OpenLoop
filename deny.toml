@@ -1,9 +1,3 @@
-[advisories]
-vulnerability = "deny"
-unmaintained = "none"
-yanked = "none"
-notice = "none"
-
 [licenses]
 allow = [
     "MIT",

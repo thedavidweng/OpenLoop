@@ -1,3 +1,7 @@
+[advisories]
+version = 2
+unmaintained = "warn"
+
 [licenses]
 allow = [
     "MIT",

@@ -196,7 +196,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     // Handle output path renaming if --output specified
     for (i, record) in result.records.iter().enumerate() {
-        let final_path = resolve_output_path(&output, &record, i + 1, result.records.len());
+        let final_path = resolve_output_path(&output, record, i + 1, result.records.len());
         if let (Some(src), Some(dst)) = (&record.output_path, final_path) {
             if *src != dst {
                 std::fs::rename(src, &dst)

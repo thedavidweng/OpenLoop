@@ -70,7 +70,7 @@ pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult
     // Remove existing temp file if present
     let _ = fs::remove_file(&temp_path);
     // Try hard link first, fall back to copy
-    if let Err(_) = fs::hard_link(&source, &temp_path) {
+    if fs::hard_link(&source, &temp_path).is_err() {
         fs::copy(&source, &temp_path)
             .map_err(|error| AppError::output_write_failed(error.to_string()))?;
     }

@@ -65,6 +65,7 @@ pub const ACE_MODEL_DESCRIPTORS: &[AceModelDescriptor] = &[
 pub struct ModelManager {
     app_data_dir: PathBuf,
     status: Arc<Mutex<Vec<ModelStatusSnapshot>>>,
+    #[allow(clippy::type_complexity)]
     in_flight: Arc<Mutex<Vec<(ModelVariant, Arc<AtomicBool>)>>>,
 }
 
@@ -258,7 +259,7 @@ impl ModelManager {
                 }
             }
 
-            download_single_file_blocking(&client, spec, &target, &mirror)?;
+            download_single_file_blocking(&client, spec, &target, mirror)?;
         }
 
         record_install(&self.app_data_dir, descriptor)?;
@@ -631,6 +632,7 @@ fn record_install(app_data_dir: &Path, descriptor: &AceModelDescriptor) -> AppRe
     write_manifest(app_data_dir, &manifest)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn download_pack(
     app: &AppHandle,
     app_data_dir: &Path,
@@ -701,7 +703,7 @@ async fn download_pack(
         }
 
         let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
-        download_single_file(&client, spec, &target, &mirror, |bytes_in_file| {
+        download_single_file(&client, spec, &target, mirror, |bytes_in_file| {
             emit_progress(bytes_in_file, false)
         })
         .await?;

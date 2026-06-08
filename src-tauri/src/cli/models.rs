@@ -89,8 +89,8 @@ fn execute_list(state: &AppState, _args: &[String], json: bool) -> AppResult<()>
         super::json_output(&output);
     } else {
         println!(
-            "{:<10} {:<8} {:<12} {}",
-            "Variant", "Size", "Status", "Description"
+            "{:<10} {:<8} {:<12} Description",
+            r#"Variant"#, r#"Size"#, r#"Status"#
         );
         let separator = "-".repeat(70);
         println!("{separator}");
@@ -310,7 +310,7 @@ fn execute_delete_all(state: &AppState, args: &[String], json: bool) -> AppResul
 
     if count == 0 {
         if json {
-            super::json_output(&r#"{"event":"deleted_all","count":0}"#.to_owned());
+            super::json_output(r#"{"event":"deleted_all","count":0}"#);
         } else {
             human_output("No models to delete.");
         }

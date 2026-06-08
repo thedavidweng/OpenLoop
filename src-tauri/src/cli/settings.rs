@@ -40,7 +40,7 @@ fn execute_get(state: &AppState, json: bool) -> AppResult<()> {
             serde_json::to_string_pretty(&settings).map_err(|e| cli_error(e.to_string()))?;
         super::json_output(&output);
     } else {
-        println!("{:<32} {}", "Setting", "Value");
+        println!("{:<32} Value", r#"Setting"#);
         println!("{}", "-".repeat(72));
         println!("{:<32} {}", "Backend Port", settings.backend_port);
         println!(
@@ -257,7 +257,7 @@ fn execute_paths(state: &AppState, json: bool) -> AppResult<()> {
             &serde_json::to_string_pretty(&paths).map_err(|e| cli_error(e.to_string()))?,
         );
     } else {
-        println!("{:<32} {}", "Path", "Location");
+        println!("{:<32} Location", r#"Path"#);
         println!("{}", "-".repeat(72));
         println!("{:<32} {}", "Output Directory", output_directory.display());
         println!("{:<32} {}", "Model Directory", model_directory.display());

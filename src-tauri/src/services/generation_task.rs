@@ -225,6 +225,7 @@ impl GenerationTaskRunner {
         .ok_or_else(|| AppError::task_failed("active generation task was cancelled"))
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn run_released_task(
         &self,
         adapter: &impl GenerationTaskAdapter,

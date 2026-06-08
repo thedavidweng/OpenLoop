@@ -28,8 +28,8 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
         // Table header
         println!(
-            "{:<12} {:<24} {:<10} {:<8} {}",
-            "ID", "Prompt", "Duration", "Format", "Created"
+            "{:<12} {:<24} {:<10} {:<8} Created",
+            r#"ID"#, r#"Prompt"#, r#"Duration"#, r#"Format"#
         );
         let separator = "-".repeat(80);
         println!("{separator}");

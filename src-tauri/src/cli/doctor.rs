@@ -104,7 +104,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     let model_dir = settings
         .model_directory
         .as_ref()
-        .map(|s| PathBuf::from(s))
+        .map(PathBuf::from)
         .unwrap_or_else(|| state.app_data_dir.join("models"));
 
     if model_dir.exists() {
@@ -195,7 +195,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     let log_dir = settings
         .log_directory
         .as_ref()
-        .map(|s| PathBuf::from(s))
+        .map(PathBuf::from)
         .unwrap_or_else(|| state.app_data_dir.join("logs/backend"));
 
     if log_dir.exists() {

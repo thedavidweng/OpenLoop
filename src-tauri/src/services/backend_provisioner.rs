@@ -999,12 +999,8 @@ async fn fetch_latest_release_async() -> AppResult<(String, String)> {
         .get("object")
         .and_then(|obj| {
             let sha = obj.get("sha")?.as_str()?.to_owned();
-            let obj_type = obj.get("type")?.as_str()?;
-            if obj_type == "commit" {
-                Some(sha)
-            } else {
-                Some(sha)
-            }
+            let _obj_type = obj.get("type")?.as_str()?;
+            Some(sha)
         })
         .unwrap_or_else(|| PINNED_COMMIT.to_owned());
 

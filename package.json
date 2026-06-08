@@ -17,7 +17,7 @@
     "test:coverage": "vitest run --coverage --no-file-parallelism --maxWorkers=1",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
-    "release:check": "pnpm typecheck && pnpm test:run && pnpm build && cargo fmt --manifest-path src-tauri/Cargo.toml --check && pnpm rust:check && cargo test -q --manifest-path src-tauri/Cargo.toml",
+    "release:check": "pnpm typecheck && pnpm test:run && pnpm build && cargo fmt --manifest-path src-tauri/Cargo.toml --check && pnpm rust:check && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test -q --manifest-path src-tauri/Cargo.toml",
     "release:build": "pnpm prepare:sidecars && pnpm tauri build",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",
@@ -47,12 +47,13 @@
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.8",
     "jsdom": "^29.1.1",
-    "oxlint": "^1.68.0",
     "oxfmt": "^0.53.0",
+    "oxlint": "^1.68.0",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
   },
-  "packageManager": "pnpm@11.5.0"
+  "packageManager": "pnpm@11.5.2"
 }

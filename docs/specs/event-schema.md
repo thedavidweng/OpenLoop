@@ -161,3 +161,4 @@ During `openloop run`, the generation task runner emits intermediate events as b
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
 - The envelope format (`v`, `ts`, `kind`) is defined in `cli::events` and used by lifecycle/progress/result/error events. Generation task events currently use a bare format without the envelope.
+

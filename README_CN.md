@@ -11,7 +11,8 @@
 一个基于本地推理的开源桌面 AI 音乐生成器，属于 OpenMusic 系列。
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
 ![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
@@ -127,7 +128,7 @@ done
 - macOS 14+ 推荐
 - 推荐 Apple Silicon Mac
 - Node.js 20+
-- pnpm 10+
+- pnpm 11+
 - Rust stable toolchain
 - Tauri 2 平台依赖
 
@@ -185,7 +186,7 @@ OpenLoop 使用 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 作为�
 | Turbo | 16 GB+ Apple Silicon | v0.1 推荐默认               |
 | Pro   | 24 GB+ Apple Silicon | 最高质量，XL 模型 + 更大 LM |
 
-模型文件会在首次启动时下载或选择，并保存在本地。应用代码采用 MIT 许可；模型权重和第三方组件遵循各自上游许可。
+模型文件会在首次启动时下载或选择，并保存在本地。应用代码采用 Apache 2.0 许可；模型权重和第三方组件遵循各自上游许可。
 
 ---
 
@@ -294,6 +295,6 @@ OpenLoop 不提供生成音乐的法律许可。
 
 ## 许可证
 
-OpenLoop 应用代码采用 [MIT License](LICENSE)。
+OpenLoop 应用代码采用 [Apache License 2.0](LICENSE)。
 
 第三方模型、库和工具保留各自的许可证。尤其是 ACE-Step、MLX、FFmpeg、Tauri 和其他依赖，在再分发前应按上游许可条款进行审查。

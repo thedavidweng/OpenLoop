@@ -37,7 +37,7 @@ tauri = { version = "2.11.2", features = ["unstable"] }
 tauri-plugin-dialog = "2.7.1"
 tauri-plugin-updater = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
-zip = "4"
+zip = "8"
 
 [profile.release]
 strip = true

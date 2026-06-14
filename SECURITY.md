@@ -30,7 +30,7 @@ OpenLoop is a local-first desktop application. The attack surface is limited:
 - **Local backend**: The ACE-Step backend listens on `127.0.0.1` only — not exposed to the network.
 - **No cloud services**: No user data is sent to external servers (see [Privacy Policy](docs/privacy.md)).
 - **No authentication**: There is no login system or user accounts.
-- **Model downloads**: Model weights are downloaded from Hugging Face over HTTPS. SHA256 verification is planned.
+- **Model downloads**: Model weights are downloaded from Hugging Face over HTTPS. SHA256 verification is tracked in [#50](https://github.com/thedavidweng/OpenLoop/issues/50).
 
 ## What to Look For
 

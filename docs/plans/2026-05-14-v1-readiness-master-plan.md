@@ -616,9 +616,9 @@ src-tauri/src/services/model_manager/
 
 - [ ] 15.1 撰写 `LEGAL/PRIVACY.md`（中英）、`LEGAL/TERMS.md`、`LEGAL/EULA.md`。
 - [ ] 15.2 About 页列出所有第三方组件 license（ACE-Step Apache 2.0、MLX MIT、Tauri MIT/Apache、FFmpeg LGPL 注意事项、Symphonia 等）。
-- [ ] 15.3 在 README 增加 `RESPONSIBLE_USE.md`，扩展现有"Responsible Use"段落。
+- [x] 15.3 在 README 增加 `RESPONSIBLE_USE.md`，扩展现有"Responsible Use"段落。——已创建 RESPONSIBLE_USE.md 并在 README 中添加链接（PR #79）。
 - [ ] 15.4 评估是否申请 App Store 上架（需要 sandbox + 不能 require external download → 需要做"在线模型不下载到本地"模式或不在 App Store 发）。
-- [ ] 15.5 准备 support 渠道：GitHub Discussions 开启、Discord 频道、`SECURITY.md`。
+- [~] 15.5 准备 support 渠道：GitHub Discussions 开启、Discord 频道、`SECURITY.md`。——SECURITY.md 已创建（PR #79），GitHub Discussions 和 Discord 待开启。
 
 **Phase 15 验收：** `LEGAL/` 目录下存在 PRIVACY.md、TERMS.md、EULA.md；About 页列出所有第三方 license；`SECURITY.md` 存在且 GitHub Discussions 已开启。
 

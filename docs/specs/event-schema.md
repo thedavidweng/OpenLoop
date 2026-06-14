@@ -127,25 +127,25 @@ Emitted on failure (to stderr).
 
 ## Generation Task Events
 
-During `openloop run`, the generation task runner emits intermediate events through the NDJSON stream. These use a `type` field inside the result payload.
+During `openloop run`, the generation task runner emits intermediate events as bare JSON lines (no envelope). These use an `event` field.
 
-| `type`        | Description                           | Additional fields                     |
+| `event`       | Description                           | Additional fields                     |
 | ------------- | ------------------------------------- | ------------------------------------- |
-| `submitted`   | Task submitted to backend             | `taskId`                              |
-| `queued`      | Waiting in backend queue              | `variationCurrent`, `variationTotal`  |
-| `running`     | Generation in progress                | `variationCurrent`, `variationTotal`  |
-| `downloading` | Model weights downloading             | `variationCurrent`, `variationTotal`  |
-| `completed`   | Generation finished                   | `path`, `duration_ms`, `seed`         |
+| `submitted`   | Task submitted to backend             | `task_id`                             |
+| `queued`      | Waiting in backend queue              | `variation`, `total`                  |
+| `running`     | Generation in progress                | `variation`, `total`                  |
+| `downloading` | Model weights downloading             | `variation`, `total`                  |
+| `completed`   | Generation finished                   | `output_path`, `duration`, `format`   |
 | `cancelled`   | User cancelled the generation         | —                                     |
 | `failed`      | Generation failed                     | `error`                               |
 
 ### Example stream
 
 ```
-{"v":1,"ts":"2026-06-14T12:00:00Z","kind":"result","event":"submitted","taskId":"abc123"}
-{"v":1,"ts":"2026-06-14T12:00:01Z","kind":"result","event":"queued","variation":1,"total":1}
-{"v":1,"ts":"2026-06-14T12:00:02Z","kind":"result","event":"running","variation":1,"total":1}
-{"v":1,"ts":"2026-06-14T12:01:30Z","kind":"result","event":"completed","path":"~/Music/openloop/output.wav","duration_ms":88000,"seed":42}
+{"event":"submitted","task_id":"abc123"}
+{"event":"queued","variation":1,"total":1}
+{"event":"running","variation":1,"total":1}
+{"event":"completed","output_path":"~/Music/openloop/output.wav","duration":88.0,"format":"wav"}
 ```
 
 ---
@@ -160,3 +160,4 @@ During `openloop run`, the generation task runner emits intermediate events thro
 - Events are emitted one per line (no pretty-printing) for stream parsing.
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
+- The envelope format (`v`, `ts`, `kind`) is defined in `cli::events` and used by lifecycle/progress/result/error events. Generation task events currently use a bare format without the envelope.

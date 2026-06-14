@@ -135,7 +135,7 @@ impl BackendManager {
                 return self.wait_until_healthy(
                     &client,
                     settings.backend_port,
-                    Duration::from_secs(60),
+                    Duration::from_secs(120),
                 )
             }
             BackendStatus::Stopped | BackendStatus::Failed { .. } => {}
@@ -232,7 +232,8 @@ impl BackendManager {
         self.child = Some(child);
         self.status = BackendStatus::Starting;
 
-        self.wait_until_healthy(&client, settings.backend_port, Duration::from_secs(60))
+        // ponytail: 120s covers cold-start model loading on 16GB machines; make configurable if users hit this
+        self.wait_until_healthy(&client, settings.backend_port, Duration::from_secs(120))
     }
 
     pub fn stop(&mut self) -> AppResult<BackendStatus> {

@@ -4,47 +4,19 @@ use crate::{
     services::ace_client::AceClient,
 };
 
-use super::AppState;
+use super::{cli::EnhanceArgs, output::Output, AppState};
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let help = flag(args, "--help") || flag(args, "-h");
-    if help {
-        print_help();
-        return Ok(());
-    }
+pub fn execute_parsed(state: &AppState, out: &Output, args: EnhanceArgs) -> AppResult<()> {
+    execute_inner(state, out.is_json(), args.lyrics, args.duration, args.prompt)
+}
 
-    let json = flag(args, "--json");
-
-    let lyrics = value(args, "--lyrics").or_else(|| value(args, "-l"));
-    let duration: Option<f64> = value(args, "--duration")
-        .or_else(|| value(args, "-d"))
-        .and_then(|s| s.parse().ok());
-
-    // Parse prompt — join remaining positional args that aren't flag values
-    let prompt = {
-        let mut skip_next = false;
-        let mut parts: Vec<String> = Vec::new();
-        for arg in args.iter().skip(1) {
-            if skip_next {
-                skip_next = false;
-                continue;
-            }
-            if flag_like(arg) {
-                if needs_value(arg) {
-                    skip_next = true;
-                }
-                continue;
-            }
-            parts.push(arg.clone());
-        }
-        parts.join(" ")
-    };
-
-    if prompt.is_empty() {
-        return Err(cli_error(
-            "prompt is required. Usage: openloop enhance <prompt>",
-        ));
-    }
+fn execute_inner(
+    state: &AppState,
+    json: bool,
+    lyrics: Option<String>,
+    duration: Option<f64>,
+    prompt: String,
+) -> AppResult<()> {
 
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
@@ -130,59 +102,30 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     // Detach the backend so it keeps running after this CLI command exits
-    if let Ok(mut backend) = state.backend.lock() {
+    let was_owned = if let Ok(mut backend) = state.backend.lock() {
+        let owned = backend.is_owned();
         backend.detach();
-    }
+        owned
+    } else {
+        false
+    };
 
-    if !json {
+    if !json && was_owned {
         human_output("Backend left running for subsequent commands.");
     }
 
     Ok(())
 }
 
-fn flag(args: &[String], name: &str) -> bool {
-    args.iter().any(|a| a == name)
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::output::OutputMode;
 
-fn value(args: &[String], name: &str) -> Option<String> {
-    for i in 0..args.len() {
-        if args[i] == name {
-            return args.get(i + 1).filter(|v| !v.starts_with('-')).cloned();
-        }
+    #[test]
+    fn execute_parsed_accepts_output_ref_and_enhance_args() {
+        let out = Output::new(OutputMode::Human);
+        let _: fn(&AppState, &Output, EnhanceArgs) -> AppResult<()> = execute_parsed;
+        let _ = &out;
     }
-    None
-}
-
-fn flag_like(arg: &str) -> bool {
-    arg.starts_with('-')
-}
-
-fn needs_value(arg: &str) -> bool {
-    matches!(arg, "--lyrics" | "-l" | "--duration" | "-d")
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop enhance — Enhance a prompt via ACE-Step format_input
-
-Sends a prompt to the ACE-Step backend for enhancement. Returns the
-enhanced caption together with any extracted structured fields such
-as BPM, key, time signature, duration, language, and lyrics.
-
-Usage:
-  openloop enhance [flags] <prompt>
-
-Flags:
-  -d, --duration    Duration in seconds (10-600)
-  -l, --lyrics      Include lyrics in the request
-  --json            JSON output of enhancement result
-  -h, --help        Show help
-
-Examples:
-  openloop enhance \"warm piano\"
-  openloop enhance \"upbeat pop\" --duration 120 --json
-  openloop enhance \"ballad\" --lyrics \"[Verse]\\nHello\"",
-    );
 }

@@ -12,7 +12,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
 ![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
@@ -27,7 +27,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 | Project                                              | Purpose                                                                                  | Status       |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
 | [OpenKara](https://github.com/thedavidweng/OpenKara) | Turn local songs into karaoke tracks with on-device AI stem separation and synced lyrics | Active       |
-| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha v0.2.0 |
+| OpenLoop                                             | Generate new music locally from prompts, lyrics, and musical parameters                  | Alpha v0.2.1 |
 
 The shared philosophy is simple: music tools should be local-first, ownership-friendly, transparent, and useful with the media and hardware you already have.
 
@@ -100,7 +100,7 @@ done
 
 ## Features
 
-### v0.2 Alpha
+### v0.2.1 Alpha
 
 - **Text-to-Music Generation** — Generate music from prompts such as `lo-fi warm piano, 90 BPM, no vocal`.
 - **Lyrics Input** — Add lyrics with optional structure tags like `[verse]`, `[chorus]`, and `[bridge]`.
@@ -189,7 +189,7 @@ The app targets a profile-based model setup:
 | Turbo   | 16 GB+ Apple Silicon | Recommended default for v0.1                 |
 | Pro     | 24 GB+ Apple Silicon | Highest quality with XL model and larger LM  |
 
-Model files are downloaded or selected during first setup and stored locally. The application code is MIT licensed; model weights and third-party components follow their upstream licenses.
+Model files are downloaded or selected during first setup and stored locally. The application code is Apache 2.0 licensed; model weights and third-party components follow their upstream licenses.
 
 ---
 
@@ -298,7 +298,7 @@ Before opening a large PR, please open an issue describing the proposed change.
 
 ## License
 
-OpenLoop application code is released under the [MIT License](LICENSE).
+OpenLoop application code is released under the [Apache License 2.0](LICENSE).
 
 Third-party models, libraries, and tools retain their own licenses. In particular, ACE-Step, MLX, FFmpeg, Tauri, and other dependencies should be reviewed according to their upstream license terms before redistribution.
 

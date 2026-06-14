@@ -137,7 +137,8 @@ During `openloop run`, the generation task runner emits intermediate events as b
 | `downloading` | Model weights downloading             | `variation`, `total`                  |
 | `completed`   | Generation finished                   | `output_path`, `duration`, `format`   |
 | `cancelled`   | User cancelled the generation         | —                                     |
-| `failed`      | Generation failed                     | `error`                               |
+
+> **Note:** The `failed` event is emitted by the generation task runner but currently only handled in human mode. In JSON mode it falls through to the catch-all and is not emitted. This will be addressed in a future update.
 
 ### Example stream
 

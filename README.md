@@ -264,6 +264,8 @@ OpenLoop does not provide legal clearance for generated music.
 
 Users are responsible for checking whether generated output is appropriate for publication, monetization, or commercial use. Avoid entering protected lyrics, melodies, voices, or prompts that explicitly imitate protected artists or copyrighted works. When publishing generated music, follow applicable laws and platform rules around AI-generated content disclosure.
 
+See [RESPONSIBLE_USE.md](./RESPONSIBLE_USE.md) for detailed guidelines.
+
 ---
 
 ## Known Limitations

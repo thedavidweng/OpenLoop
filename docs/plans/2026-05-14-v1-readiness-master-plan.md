@@ -510,7 +510,7 @@ src-tauri/src/services/model_manager/
 
 > CLI 侧的 v1 schema（`cli::events` 模块）已在 vnext 中实现。本任务是将其正式化为跨 GUI/CLI 的共享契约。
 
-- [ ] 11.2.1 基于现有 `cli::events` v1 schema，写 `docs/specs/event-schema.md` + JSON schema 文件，覆盖 `lifecycle` / `progress` / `error` 三类事件。
+- [x] 11.2.1 基于现有 `cli::events` v1 schema，写 `docs/specs/event-schema.md` + JSON schema 文件，覆盖 `lifecycle` / `progress` / `error` 三类事件。——已创建 docs/specs/event-schema.md，覆盖 envelope、lifecycle、progress、result、error 及 generation task 事件。
 - [ ] 11.2.2 CLI 与 GUI 共用同一 emitter（`services::events`）。
 
 ### 11.3 in-app 日志查看器

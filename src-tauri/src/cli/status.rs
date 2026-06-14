@@ -1,15 +1,19 @@
-use super::{output::Output, AppState};
+use super::AppState;
 use crate::{
     cli::{cli_error, human_output},
     models::{backend::BackendStatus, errors::AppResult},
     services::device,
 };
 
-pub fn execute_parsed(state: &AppState, out: &Output) -> AppResult<()> {
-    execute_inner(state, out.is_json())
-}
+pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
+    let json = args.contains(&"--json".to_owned());
+    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
 
-fn execute_inner(state: &AppState, json: bool) -> AppResult<()> {
+    if help {
+        print_help();
+        return Ok(());
+    }
+
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = backend.status_with_port(Some(settings.backend_port));
@@ -130,15 +134,16 @@ fn execute_inner(state: &AppState, json: bool) -> AppResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use super::super::output::OutputMode;
+fn print_help() {
+    human_output(
+        "\
+openloop status — Show unified system status
 
-    #[test]
-    fn execute_parsed_accepts_output_ref() {
-        let out = Output::new(OutputMode::Human);
-        let _: fn(&AppState, &Output) -> AppResult<()> = execute_parsed;
-        let _ = &out;
-    }
+Usage:
+  openloop status [flags]
+
+Flags:
+  --json    JSON object output
+  --help    Show help",
+    );
 }

@@ -4,25 +4,35 @@ use crate::{
     services::model_manager::{read_manifest, ModelManager, ACE_MODEL_DESCRIPTORS},
 };
 
-use super::cli::PullArgs;
-use super::output::Output;
 use super::AppState;
 
-pub fn execute_parsed(state: &AppState, out: &Output, args: PullArgs) -> AppResult<()> {
-    let variant = ModelVariant::from(args.model);
-    execute_inner(state, out.is_json(), variant, args.mirror.as_deref())
-}
+pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
+    let json = args.contains(&"--json".to_owned());
+    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
 
-fn execute_inner(
-    state: &AppState,
-    json: bool,
-    variant: ModelVariant,
-    mirror: Option<&str>,
-) -> AppResult<()> {
+    if help {
+        print_help();
+        return Ok(());
+    }
+
+    let model_arg = args
+        .iter()
+        .find(|arg| !arg.starts_with('-'))
+        .ok_or_else(|| {
+            cli_error("model variant is required. Usage: openloop pull <lite|turbo|pro>")
+        })?;
+
+    let variant = parse_variant(model_arg)?;
+
     let mut settings = state.db.get_settings()?;
 
-    if let Some(m) = mirror {
-        settings.model_mirror = Some(m.to_owned());
+    // CLI --mirror overrides saved setting for this run
+    if let Some(mirror_idx) = args.iter().position(|a| a == "--mirror") {
+        let mirror = args
+            .get(mirror_idx + 1)
+            .filter(|v| !v.starts_with('-'))
+            .cloned();
+        settings.model_mirror = mirror;
     }
 
     // Sync downloaded_models from manifest (may have been set by GUI or manual copy)
@@ -95,6 +105,18 @@ fn execute_inner(
     Ok(())
 }
 
+fn parse_variant(arg: &str) -> AppResult<ModelVariant> {
+    match arg.to_lowercase().as_str() {
+        "lite" => Ok(ModelVariant::Lite),
+        "turbo" => Ok(ModelVariant::Turbo),
+        "pro" => Ok(ModelVariant::Pro),
+        _ => Err(cli_error(format!(
+            "unknown model '{}'. Available: lite, turbo, pro",
+            arg
+        ))),
+    }
+}
+
 fn variant_label(variant: ModelVariant) -> &'static str {
     match variant {
         ModelVariant::Lite => "Lite",
@@ -103,15 +125,17 @@ fn variant_label(variant: ModelVariant) -> &'static str {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use super::super::output::OutputMode;
+fn print_help() {
+    human_output(
+        "\
+openloop pull — Download a model variant
 
-    #[test]
-    fn execute_parsed_accepts_output_ref_and_pull_args() {
-        let out = Output::new(OutputMode::Human);
-        let _: fn(&AppState, &Output, PullArgs) -> AppResult<()> = execute_parsed;
-        let _ = &out;
-    }
+Usage:
+  openloop pull <lite|turbo|pro> [flags]
+
+Flags:
+  --mirror <URL>  Use a mirror source (e.g. https://www.modelscope.cn)
+  --json          NDJSON progress output
+  --help          Show help",
+    );
 }

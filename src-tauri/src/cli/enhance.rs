@@ -4,19 +4,47 @@ use crate::{
     services::ace_client::AceClient,
 };
 
-use super::{cli::EnhanceArgs, output::Output, AppState};
+use super::AppState;
 
-pub fn execute_parsed(state: &AppState, out: &Output, args: EnhanceArgs) -> AppResult<()> {
-    execute_inner(state, out.is_json(), args.lyrics, args.duration, args.prompt)
-}
+pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
+    let help = flag(args, "--help") || flag(args, "-h");
+    if help {
+        print_help();
+        return Ok(());
+    }
 
-fn execute_inner(
-    state: &AppState,
-    json: bool,
-    lyrics: Option<String>,
-    duration: Option<f64>,
-    prompt: String,
-) -> AppResult<()> {
+    let json = flag(args, "--json");
+
+    let lyrics = value(args, "--lyrics").or_else(|| value(args, "-l"));
+    let duration: Option<f64> = value(args, "--duration")
+        .or_else(|| value(args, "-d"))
+        .and_then(|s| s.parse().ok());
+
+    // Parse prompt — join remaining positional args that aren't flag values
+    let prompt = {
+        let mut skip_next = false;
+        let mut parts: Vec<String> = Vec::new();
+        for arg in args.iter().skip(1) {
+            if skip_next {
+                skip_next = false;
+                continue;
+            }
+            if flag_like(arg) {
+                if needs_value(arg) {
+                    skip_next = true;
+                }
+                continue;
+            }
+            parts.push(arg.clone());
+        }
+        parts.join(" ")
+    };
+
+    if prompt.is_empty() {
+        return Err(cli_error(
+            "prompt is required. Usage: openloop enhance <prompt>",
+        ));
+    }
 
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
@@ -117,15 +145,48 @@ fn execute_inner(
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use super::super::output::OutputMode;
+fn flag(args: &[String], name: &str) -> bool {
+    args.iter().any(|a| a == name)
+}
 
-    #[test]
-    fn execute_parsed_accepts_output_ref_and_enhance_args() {
-        let out = Output::new(OutputMode::Human);
-        let _: fn(&AppState, &Output, EnhanceArgs) -> AppResult<()> = execute_parsed;
-        let _ = &out;
+fn value(args: &[String], name: &str) -> Option<String> {
+    for i in 0..args.len() {
+        if args[i] == name {
+            return args.get(i + 1).filter(|v| !v.starts_with('-')).cloned();
+        }
     }
+    None
+}
+
+fn flag_like(arg: &str) -> bool {
+    arg.starts_with('-')
+}
+
+fn needs_value(arg: &str) -> bool {
+    matches!(arg, "--lyrics" | "-l" | "--duration" | "-d")
+}
+
+fn print_help() {
+    human_output(
+        "\
+openloop enhance — Enhance a prompt via ACE-Step format_input
+
+Sends a prompt to the ACE-Step backend for enhancement. Returns the
+enhanced caption together with any extracted structured fields such
+as BPM, key, time signature, duration, language, and lyrics.
+
+Usage:
+  openloop enhance [flags] <prompt>
+
+Flags:
+  -d, --duration    Duration in seconds (10-600)
+  -l, --lyrics      Include lyrics in the request
+  --json            JSON output of enhancement result
+  -h, --help        Show help
+
+Examples:
+  openloop enhance \"warm piano\"
+  openloop enhance \"upbeat pop\" --duration 120 --json
+  openloop enhance \"ballad\" --lyrics \"[Verse]\\nHello\"",
+    );
 }

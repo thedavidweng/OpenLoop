@@ -14,7 +14,7 @@ If you discover a security vulnerability in OpenLoop, please report it responsib
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please email [security@openloop.dev](mailto:security@openloop.dev) with:
+Instead, please [open a private security advisory](https://github.com/thedavidweng/OpenLoop/security/advisories/new) on GitHub with:
 
 - A description of the vulnerability
 - Steps to reproduce

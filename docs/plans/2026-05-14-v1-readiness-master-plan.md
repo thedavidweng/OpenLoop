@@ -77,7 +77,7 @@ P1 ──┬──────────────────────�
   - `com.apple.security.cs.disable-library-validation`（避免依赖的第三方 dylib 加载受阻）
 - [x] 1.1.3 修改 `src-tauri/tauri.conf.json` 引用该 entitlements 文件。
 - [x] 1.1.4 在 `.github/workflows/release.yml` 中配置标准的 Tauri build 打包流程，产出 DMG 文件。
-- [ ] 1.1.5 在 `README.md` 与 Release Notes 模板中增加「macOS 安装与打开指南」段落，明确指导用户使用 `右键 -> 打开` 或终端运行 `xattr -cr /Applications/OpenLoop.app` 绕过 Gatekeeper 提示。
+- [x] 1.1.5 在 `README.md` 与 Release Notes 模板中增加「macOS 安装与打开指南」段落，明确指导用户使用 `右键 -> 打开` 或终端运行 `xattr -cr /Applications/OpenLoop.app` 绕过 Gatekeeper 提示。——已实现于 README.md DMG 安装段落。
 
 **涉及文件：**
 
@@ -111,7 +111,7 @@ P1 ──┬──────────────────────�
 - [x] 1.2.1 替换 `csp: null`。（已实现于 `tauri.conf.json:27`）
 - [x] 1.2.2 跑 `pnpm tauri dev`，逐个 console error 加白名单。
 - [x] 1.2.3 若 Tailwind 4 注入需要更宽松 `style-src`，确认是否能去掉 `'unsafe-inline'`（理想是用 nonce）。——保留 `'unsafe-inline'`，Tauri 2 + Tailwind 4 现阶段必需。
-- [ ] 1.2.4 文档化最终 CSP 到 `docs/adr/0003-content-security-policy.md`。
+- [x] 1.2.4 文档化最终 CSP 到 `docs/adr/0003-content-security-policy.md`。——ADR 已存在，Status: Accepted，CSP 与 tauri.conf.json 一致。
 
 **风险：** Tauri 内部 IPC 协议 `tauri://` 与 `ipc:` 在不同版本可能要求不同 connect-src；锁紧后必须完整跑通 happy path 才能合入。
 
@@ -186,8 +186,8 @@ P1 ──┬──────────────────────�
 **任务：**
 
 - [x] 1.5.1 `README.md` 第 16 行 badge 改为 `platform-macOS%20%28Apple%20Silicon%29-lightgrey`。——已匹配。
-- [ ] 1.5.2 在 README 顶部加一行 `> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.`
-- [ ] 1.5.3 同步 `README_CN.md`。
+- [x] 1.5.2 在 README 顶部加一行 `> **Status:** v0.1 Alpha — macOS Apple Silicon only. Windows / Linux on the roadmap.`——已通过 Status badge 实现（v0.2.1 Alpha）。
+- [x] 1.5.3 同步 `README_CN.md`。——已同步：Release badge、License badge、pnpm 版本、版本号（PR #77）。
 
 ---
 
@@ -209,22 +209,22 @@ P1 ──┬──────────────────────�
 
 ### 2.1 网络白名单与"本地优先"承诺一致化
 
-- [ ] 2.1.1 在 `tauri.conf.json` 的 `app.security` 内增加 `dangerousDisableAssetCspModification: false`。
-- [ ] 2.1.2 审计所有 `reqwest` 调用，确认 URL 来自 manifest / settings，不存在硬编码任意外网。
-- [ ] 2.1.3 在 About 页面新增 "Network activity log"：本会话的所有出站请求摘要（host + 用途 + 字节数）。
-- [ ] 2.1.4 文档：`docs/adr/0004-network-trust-boundary.md`。
+- [x] 2.1.1 在 `tauri.conf.json` 的 `app.security` 内增加 `dangerousDisableAssetCspModification: false`。——已实现。
+- [x] 2.1.2 审计所有 `reqwest` 调用，确认 URL 来自 manifest / settings，不存在硬编码任意外网。——所有外部 URL 集中在 `services/urls.rs`。
+- [x] 2.1.3 在 About 页面新增 "Network activity log"：本会话的所有出站请求摘要（host + 用途 + 字节数）。——已实现于 `commands/network.rs` + `services/network_log.rs`。
+- [x] 2.1.4 文档：`docs/adr/0004-network-trust-boundary.md`。——ADR 已存在，Status: Accepted。
 
 ### 2.2 npm / cargo 依赖审计常态化
 
-- [ ] 2.2.1 CI 内已存在 `pnpm audit --audit-level=high`；增加 `cargo install cargo-audit` 后跑 `cargo audit --deny warnings`。
-- [ ] 2.2.2 配置 Dependabot：`.github/dependabot.yml` 覆盖 `cargo`、`npm`、`github-actions`、`docker`（若后续引入）。
+- [x] 2.2.1 CI 内已存在 `pnpm audit --audit-level=high`；增加 `cargo install cargo-audit` 后跑 `cargo audit --deny warnings`。——已实现于 CI workflow（v0.2.1）。
+- [x] 2.2.2 配置 Dependabot：`.github/dependabot.yml` 覆盖 `cargo`、`npm`、`github-actions`、`docker`（若后续引入）。——已配置，覆盖 cargo、npm、github-actions。
 - [ ] 2.2.3 每月一次 manual review，记录到 `docs/security-log.md`。
 
 ### 2.3 隐私页与遥测开关
 
-- [ ] 2.3.1 新建 `docs/privacy.md`（中英双语）：列出"本地只存什么、什么时候联网、第三方组件"。
-- [ ] 2.3.2 SetupScreen 第 1 步加链接到 privacy。
-- [ ] 2.3.3 即使 v0.1 不引入 telemetry，settings 也预留 "Anonymous error reports（off）" 开关位（默认 off + 灰），为未来 P9 做铺垫。
+- [x] 2.3.1 新建 `docs/privacy.md`（中英双语）：列出"本地只存什么、什么时候联网、第三方组件"。——已存在，中英双语。
+- [x] 2.3.2 SetupScreen 第 1 步加链接到 privacy。——已实现于 SetupScreen.tsx:420。
+- [x] 2.3.3 即使 v0.1 不引入 telemetry，settings 也预留 "Anonymous error reports（off）" 开关位（默认 off + 灰），为未来 P9 做铺垫。——已实现于 GeneralSection.tsx。
 
 **Phase 2 验收：** `cargo audit` 与 `pnpm audit` 在 CI 中绿通；`docs/privacy.md` 中英双语存在且 SetupScreen 链接可点击。
 

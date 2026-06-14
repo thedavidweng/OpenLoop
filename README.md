@@ -114,7 +114,7 @@ done
 - **Local Generation History** — Store prompt, lyrics, model settings, seed, and output path in a local SQLite database.
 - **Export** — Save generated audio to a local output folder.
 
-### Planned after v0.1
+### Planned
 
 - Repaint / local audio region regeneration
 - Multi-model profile management
@@ -165,7 +165,7 @@ For the current implementation status and more development details, see [Impleme
 
 ## System Requirements
 
-| Requirement      | v0.1 Target                                                                                 |
+| Requirement      | Target                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------- |
 | Operating system | macOS 14+ recommended; macOS 12–13 best effort                                              |
 | CPU/GPU          | Apple Silicon recommended                                                                   |
@@ -173,7 +173,7 @@ For the current implementation status and more development details, see [Impleme
 | Storage          | Several GB for models and generated audio                                                   |
 | Network          | Required for first model/backend setup; offline afterward unless the user chooses otherwise |
 
-Intel Mac support is experimental and outside the v0.1 acceptance target.
+Intel Mac support is experimental.
 
 ---
 
@@ -186,7 +186,7 @@ The app targets a profile-based model setup:
 | Profile | Target Device        | Default Strategy                             |
 | ------- | -------------------- | -------------------------------------------- |
 | Lite    | 8 GB Apple Silicon   | Conservative settings, lower memory pressure |
-| Turbo   | 16 GB+ Apple Silicon | Recommended default for v0.1                 |
+| Turbo   | 16 GB+ Apple Silicon | Recommended default                          |
 | Pro     | 24 GB+ Apple Silicon | Highest quality with XL model and larger LM  |
 
 Model files are downloaded or selected during first setup and stored locally. The application code is Apache 2.0 licensed; model weights and third-party components follow their upstream licenses.
@@ -250,8 +250,8 @@ OpenLoop is local-first by design.
 - Lyrics stay on your Mac.
 - Generated audio stays on your Mac.
 - History is stored in a local SQLite database.
-- No account system is planned for v0.1.
-- No telemetry is planned for v0.1.
+- No account system is planned.
+- No telemetry is planned.
 - The app should only use the network for model/backend setup or user-initiated external links.
 
 Logs should avoid storing full lyrics or complete sensitive prompts. Backend errors should be summarized into user-readable messages.
@@ -264,12 +264,13 @@ OpenLoop does not provide legal clearance for generated music.
 
 Users are responsible for checking whether generated output is appropriate for publication, monetization, or commercial use. Avoid entering protected lyrics, melodies, voices, or prompts that explicitly imitate protected artists or copyrighted works. When publishing generated music, follow applicable laws and platform rules around AI-generated content disclosure.
 
+See [RESPONSIBLE_USE.md](./RESPONSIBLE_USE.md) for detailed guidelines.
+
 ---
 
 ## Known Limitations
 
-- v0.1 targets Apple Silicon first.
-- Intel Mac support is experimental.
+- Apple Silicon is the primary target. Intel Mac support is experimental.
 - First setup may require a large model download.
 - Generation speed depends heavily on memory, model profile, duration, and inference settings.
 - Repaint is planned after the first Alpha.

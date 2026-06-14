@@ -16,7 +16,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let status = backend.status();
+    let status = backend.status_with_port(Some(settings.backend_port));
     let active_tasks = state.db.list_active_generation_tasks()?;
     let device_info = device::detect_device_info()?;
 

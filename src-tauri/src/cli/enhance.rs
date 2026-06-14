@@ -130,11 +130,15 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     // Detach the backend so it keeps running after this CLI command exits
-    if let Ok(mut backend) = state.backend.lock() {
+    let was_owned = if let Ok(mut backend) = state.backend.lock() {
+        let owned = backend.is_owned();
         backend.detach();
-    }
+        owned
+    } else {
+        false
+    };
 
-    if !json {
+    if !json && was_owned {
         human_output("Backend left running for subsequent commands.");
     }
 

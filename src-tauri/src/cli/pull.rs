@@ -1,7 +1,7 @@
 use crate::{
     cli::{cli_error, human_output},
     models::{errors::AppResult, settings::ModelVariant},
-    services::model_manager::{ModelManager, ACE_MODEL_DESCRIPTORS},
+    services::model_manager::{read_manifest, ModelManager, ACE_MODEL_DESCRIPTORS},
 };
 
 use super::AppState;
@@ -33,6 +33,31 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
             .filter(|v| !v.starts_with('-'))
             .cloned();
         settings.model_mirror = mirror;
+    }
+
+    // Sync downloaded_models from manifest (may have been set by GUI or manual copy)
+    if let Ok(manifest) = read_manifest(&state.app_data_dir) {
+        let mut changed = false;
+        for key in manifest.installed.keys() {
+            let v = match key.as_str() {
+                "lite" => Some(ModelVariant::Lite),
+                "turbo" => Some(ModelVariant::Turbo),
+                "pro" => Some(ModelVariant::Pro),
+                _ => None,
+            };
+            if let Some(v) = v {
+                if !settings.downloaded_models.contains(&v) {
+                    settings.downloaded_models.push(v);
+                    changed = true;
+                }
+            }
+        }
+        if changed {
+            let _ = state.db.set_setting(
+                "downloadedModels",
+                serde_json::to_value(&settings.downloaded_models).unwrap_or_default(),
+            );
+        }
     }
 
     // Check if already downloaded

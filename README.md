@@ -270,8 +270,7 @@ See [RESPONSIBLE_USE.md](./RESPONSIBLE_USE.md) for detailed guidelines.
 
 ## Known Limitations
 
-- v0.1 targets Apple Silicon first.
-- Intel Mac support is experimental.
+- Apple Silicon is the primary target. Intel Mac support is experimental.
 - First setup may require a large model download.
 - Generation speed depends heavily on memory, model profile, duration, and inference settings.
 - Repaint is planned after the first Alpha.

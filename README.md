@@ -165,7 +165,7 @@ For the current implementation status and more development details, see [Impleme
 
 ## System Requirements
 
-| Requirement      | v0.1 Target                                                                                 |
+| Requirement      | Target                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------- |
 | Operating system | macOS 14+ recommended; macOS 12–13 best effort                                              |
 | CPU/GPU          | Apple Silicon recommended                                                                   |
@@ -173,7 +173,7 @@ For the current implementation status and more development details, see [Impleme
 | Storage          | Several GB for models and generated audio                                                   |
 | Network          | Required for first model/backend setup; offline afterward unless the user chooses otherwise |
 
-Intel Mac support is experimental and outside the v0.1 acceptance target.
+Intel Mac support is experimental.
 
 ---
 

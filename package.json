@@ -21,7 +21,9 @@
     "release:build": "pnpm prepare:sidecars && pnpm tauri build",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",
-    "i18n:audit": "node scripts/i18n-audit.mjs"
+    "i18n:audit": "node scripts/i18n-audit.mjs",
+    "changelog": "git cliff -o CHANGELOG.md",
+    "changelog:preview": "git cliff --latest"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.2",

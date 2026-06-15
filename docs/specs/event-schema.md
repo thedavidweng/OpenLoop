@@ -117,7 +117,7 @@ Emitted on successful completion. The `result` envelope format is defined in `ev
 | `duration_ms`| integer | Generation duration in milliseconds |
 | `seed`       | integer | Seed used for generation            |
 
-> **Note:** This envelope format is not yet emitted by any CLI command. Current completion events use bare JSON lines (see [Generation Task Events](#generation-task-events)).
+> **Note:** This envelope format is not yet emitted by any CLI command. Current completion events use bare JSON lines (see [Generation Task Events](#generation-task-events)). Wiring this envelope is a planned breaking shape change from the current bare payload: `output_path` becomes `path`, `duration` changes from float seconds to integer `duration_ms`, `format` is omitted, and `seed` is added.
 
 ---
 

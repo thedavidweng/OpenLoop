@@ -71,11 +71,9 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     };
 
     if prompt.is_empty() {
-        let err = cli_error("prompt is required. Usage: openloop run <prompt>");
-        if json {
-            super::events::emit_error(&err, false, Some("Provide a prompt: openloop run <prompt>"));
-        }
-        return Err(err);
+        return Err(cli_error(
+            "prompt is required. Usage: openloop run <prompt>",
+        ));
     }
 
     let settings = state.db.get_settings()?;
@@ -86,13 +84,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         let backend_status = backend.start(&settings)?;
         match &backend_status {
             crate::models::backend::BackendStatus::Healthy { port } => *port,
-            _ => {
-                let err = cli_error("backend is not healthy");
-                if json {
-                    super::events::emit_error(&err, true, Some("Run openloop doctor to diagnose"));
-                }
-                return Err(err);
-            }
+            _ => return Err(cli_error("backend is not healthy")),
         }
     };
 
@@ -101,17 +93,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         Some("lite") => Some(ModelVariant::Lite),
         Some("turbo") => Some(ModelVariant::Turbo),
         Some("pro") => Some(ModelVariant::Pro),
-        Some(other) => {
-            let err = cli_error(format!("unknown model variant: {other}"));
-            if json {
-                super::events::emit_error(
-                    &err,
-                    false,
-                    Some("Available variants: lite, turbo, pro"),
-                );
-            }
-            return Err(err);
-        }
+        Some(other) => return Err(cli_error(format!("unknown model variant: {other}"))),
         None => settings.model_variant,
     };
 

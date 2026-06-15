@@ -116,11 +116,7 @@ done
 
 ### Planned
 
-- Repaint / local audio region regeneration
-- Multi-model profile management
-- More robust model downloader
-- macOS signing and notarization
-- Advanced export and audio conversion options
+See [GitHub issues](https://github.com/thedavidweng/OpenLoop/issues) for the roadmap.
 
 ---
 
@@ -273,7 +269,7 @@ See [RESPONSIBLE_USE.md](./RESPONSIBLE_USE.md) for detailed guidelines.
 - Apple Silicon is the primary target. Intel Mac support is experimental.
 - First setup may require a large model download.
 - Generation speed depends heavily on memory, model profile, duration, and inference settings.
-- Repaint is planned after the first Alpha.
+- Repaint is not yet implemented (tracked in [#70](https://github.com/thedavidweng/OpenLoop/issues/70)).
 - The app does not guarantee copyright-free output.
 - The current UI favors local workflow coverage and technical completeness over final visual polish.
 

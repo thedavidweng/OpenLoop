@@ -35,10 +35,4 @@
 - Strict Content Security Policy (ADR-0003) and documented network trust boundary (ADR-0004).
 - CodeQL security scanning and dependency auditing in CI.
 
-**Planned after v0.2:**
-
-- Repaint / local audio region regeneration.
-- Multi-model profile management.
-- macOS signing and notarization.
-- Advanced export and audio conversion options.
-- Cross-platform support (Windows, Linux).
+**Roadmap:** Tracked as [GitHub issues](https://github.com/thedavidweng/OpenLoop/issues).

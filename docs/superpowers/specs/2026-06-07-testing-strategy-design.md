@@ -1,11 +1,10 @@
 # Testing Strategy Design
 
 **Date:** 2026-06-07
-**Status:** Draft
 
 ## Problem
 
-OpenLoop has a thin test layer: 7 frontend test files (42 tests) covering validation, one component, store actions, and a few utilities. Many pure utility modules are untested. There are no component integration tests, no coverage metrics, no test reporting in CI, and no structured E2E strategy. The existing CI runs tests but doesn't measure or enforce quality gates.
+OpenLoop's test coverage has gaps in component integration tests, coverage metrics, and structured E2E strategy.
 
 ## Approach
 

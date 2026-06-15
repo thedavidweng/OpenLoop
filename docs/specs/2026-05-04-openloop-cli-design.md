@@ -847,9 +847,6 @@ Add `--json` flag handling to all commands.
 
 ### Phase 6: Documentation and Cleanup
 
-- Update CONTEXT.md
-- Update PRD if needed
-- Update implementation-status.md
 - Remove `output_directory` from Settings GUI if CLI uses CWD by default (or keep for GUI — it's still useful there)
 
 ## Dependencies

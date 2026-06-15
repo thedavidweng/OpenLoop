@@ -165,6 +165,7 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let ownership = backend.ownership().to_owned();
     let status = backend.start(&settings)?;
 
     if json {
@@ -190,7 +191,7 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!(phase));
             obj.insert("message".to_owned(), serde_json::json!(msg));
-            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+            obj.insert("ownership".to_owned(), serde_json::json!(ownership));
             if let Some(p) = port {
                 obj.insert("port".to_owned(), serde_json::json!(p));
             }
@@ -226,6 +227,7 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
 fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let ownership = backend.ownership().to_owned();
     let status = backend.stop()?;
 
     if json {
@@ -239,7 +241,7 @@ fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!("stopped"));
             obj.insert("message".to_owned(), serde_json::json!("Backend stopped"));
-            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+            obj.insert("ownership".to_owned(), serde_json::json!(ownership));
         }
         super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
@@ -257,6 +259,7 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let ownership = backend.ownership().to_owned();
     let status = backend.restart(&settings)?;
 
     if json {
@@ -284,7 +287,7 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!(phase));
             obj.insert("message".to_owned(), serde_json::json!(msg));
-            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+            obj.insert("ownership".to_owned(), serde_json::json!(ownership));
             if let Some(p) = port {
                 obj.insert("port".to_owned(), serde_json::json!(p));
             }

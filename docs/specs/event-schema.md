@@ -45,8 +45,9 @@ Emitted by `backend status/start/stop/restart --json`. The lifecycle envelope fi
 | ----------- | -------------- | --------------------------------------------------------------- |
 | `phase`     | string         | `starting`, `healthy`, `stopped`, `failed`                      |
 | `port`      | integer \| null | Backend port (null if not yet known)                           |
-| `ownership` | string         | `owned` (started by this session) or `attached` (already running) |
+| `ownership` | string         | `owned` (started by this session), `attached` (already running), or `stopped` (not running) |
 | `message`   | string         | Human-readable status message                                   |
+| `error`     | string         | Present when `phase` is `failed`; structured backend failure detail |
 
 ---
 
@@ -166,4 +167,3 @@ During `openloop run`, the generation task runner emits intermediate events as b
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
 - Lifecycle events are emitted by `backend status/start/stop/restart --json` as a single NDJSON line with envelope fields merged into the status object. Progress, result, and error envelope formats are defined in `events::*` but not yet wired to CLI commands.
-

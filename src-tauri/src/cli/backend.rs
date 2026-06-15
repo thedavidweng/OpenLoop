@@ -78,27 +78,11 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
     let provision_info = read_backend_manifest(&state.app_data_dir);
 
     if json {
-        let (phase, port) = match &status {
-            BackendStatus::Healthy { port } => ("healthy", Some(*port)),
-            BackendStatus::Starting => ("starting", None),
-            BackendStatus::Stopped => ("stopped", None),
-            BackendStatus::Failed { error } => {
-                // Include error details for failed status
-                let output = serde_json::json!({
-                    "v": 1,
-                    "ts": chrono::Utc::now().to_rfc3339(),
-                    "kind": "lifecycle",
-                    "phase": "failed",
-                    "port": null,
-                    "ownership": ownership,
-                    "message": format!("Backend failed: {}", error.message),
-                    "error": error.message,
-                });
-                super::json_output(
-                    &serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?,
-                );
-                return Ok(());
-            }
+        let (phase, port, error_msg) = match &status {
+            BackendStatus::Healthy { port } => ("healthy", Some(*port), None),
+            BackendStatus::Starting => ("starting", None, None),
+            BackendStatus::Stopped => ("stopped", None, None),
+            BackendStatus::Failed { error } => ("failed", None, Some(error.message.clone())),
         };
         let mut output = serde_json::json!({
             "v": 1,
@@ -107,9 +91,15 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
             "phase": phase,
             "port": port,
             "ownership": ownership,
-            "message": format!("Backend status: {phase}"),
+            "message": match &error_msg {
+                Some(e) => format!("Backend failed: {e}"),
+                None => format!("Backend status: {phase}"),
+            },
         });
         if let Some(obj) = output.as_object_mut() {
+            if let Some(e) = error_msg {
+                obj.insert("error".to_owned(), serde_json::json!(e));
+            }
             match &provision_info {
                 Some(manifest) => {
                     obj.insert(

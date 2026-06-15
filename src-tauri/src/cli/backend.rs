@@ -134,6 +134,17 @@ fn restart_lifecycle_message(status: &BackendStatus) -> String {
     }
 }
 
+fn stop_lifecycle_message(status: &BackendStatus) -> String {
+    match status {
+        BackendStatus::Healthy { port } => format!("Backend still healthy (port {port})"),
+        BackendStatus::Starting => "Backend stop pending".to_owned(),
+        BackendStatus::Stopped => "Backend stopped".to_owned(),
+        BackendStatus::Failed { error } => {
+            format!("Backend failed to stop: {}", backend_error_text(error))
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
@@ -265,11 +276,27 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
 fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let status = backend.stop()?;
+    let status = match backend.stop() {
+        Ok(status) => status,
+        Err(error) => {
+            if json {
+                let failed_status = BackendStatus::Failed {
+                    error: error.clone(),
+                };
+                let output = lifecycle_event(
+                    &failed_status,
+                    backend.ownership(),
+                    stop_lifecycle_message(&failed_status),
+                );
+                print_json_value(&output)?;
+            }
+            return Err(error);
+        }
+    };
     let ownership = backend.ownership().to_owned();
 
     if json {
-        let output = lifecycle_event(&status, &ownership, "Backend stopped".to_owned());
+        let output = lifecycle_event(&status, &ownership, stop_lifecycle_message(&status));
         print_json_value(&output)?;
     } else {
         events::human_success("Backend stopped");
@@ -675,6 +702,24 @@ mod tests {
         assert_eq!(
             event["message"],
             "Backend failed to start: port is already in use"
+        );
+    }
+
+    #[test]
+    fn failed_stop_lifecycle_event_includes_structured_error() {
+        let status = BackendStatus::Failed {
+            error: AppError::backend_start_failed("failed to terminate backend process"),
+        };
+
+        let event = lifecycle_event(&status, "owned", stop_lifecycle_message(&status));
+
+        assert_eq!(event["kind"], "lifecycle");
+        assert_eq!(event["phase"], "failed");
+        assert_eq!(event["ownership"], "owned");
+        assert_eq!(event["error"], "failed to terminate backend process");
+        assert_eq!(
+            event["message"],
+            "Backend failed to stop: failed to terminate backend process"
         );
     }
 }

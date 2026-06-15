@@ -48,6 +48,24 @@ Emitted by `backend status/start/stop/restart --json`. The lifecycle envelope fi
 | `ownership` | string         | `owned` (started by this session), `attached` (already running), or `stopped` (not running) |
 | `message`   | string         | Human-readable status message                                   |
 | `error`     | string         | Present when `phase` is `failed`; structured backend failure detail |
+| `backendCode` | object       | Present on `backend status --json`; backend code installation status |
+
+`backendCode` is one of:
+
+```json
+{ "installed": false }
+```
+
+or:
+
+```json
+{
+  "installed": true,
+  "commit": "d5d958e",
+  "tag": null,
+  "installedAt": "2026-06-14T12:00:00Z"
+}
+```
 
 ---
 

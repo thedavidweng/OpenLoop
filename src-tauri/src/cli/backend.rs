@@ -325,9 +325,7 @@ fn execute_logs(state: &AppState, args: &[String]) -> AppResult<()> {
 
     if json {
         let output = serde_json::json!({ "logs_path": path });
-        super::json_output(
-            &serde_json::to_string_pretty(&output).map_err(|e| cli_error(e.to_string()))?,
-        );
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         match &path {
             Some(p) => {

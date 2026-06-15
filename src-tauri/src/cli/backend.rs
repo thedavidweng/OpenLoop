@@ -87,7 +87,7 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
         events::emit_lifecycle(
             phase,
             port.copied(),
-            &ownership,
+            ownership,
             &format!("Backend status: {phase}"),
         );
         let mut output: serde_json::Value =

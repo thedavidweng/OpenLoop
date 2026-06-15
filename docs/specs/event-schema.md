@@ -71,11 +71,13 @@ Emitted during long-running operations (model download, generation).
 | `label`  | string         | Operation label                    |
 | `detail` | string \| null  | Optional detail text               |
 
+> **Note:** The `progress` envelope format is defined in `events::emit_progress` but not yet wired to CLI commands. Current progress events during `openloop run` use bare JSON lines (see [Generation Task Events](#generation-task-events)).
+
 ---
 
 ## Result Events
 
-Emitted on successful completion.
+Emitted on successful completion. The `result` envelope format is defined in `events::emit_result` but not yet wired to CLI commands.
 
 ```json
 {
@@ -89,14 +91,14 @@ Emitted on successful completion.
 }
 ```
 
-The `result` envelope merges the `data` object directly. Common fields for `openloop run`:
-
 | Field        | Type    | Description                         |
 | ------------ | ------- | ----------------------------------- |
 | `event`      | string  | Always `"completed"`                |
 | `path`       | string  | Output file path                    |
 | `duration_ms`| integer | Generation duration in milliseconds |
 | `seed`       | integer | Seed used for generation            |
+
+> **Note:** This envelope format is not yet emitted by any CLI command. Current completion events use bare JSON lines (see [Generation Task Events](#generation-task-events)).
 
 ---
 
@@ -123,6 +125,8 @@ Emitted on failure (to stderr).
 | `recoverable`| boolean | Whether retrying may succeed             |
 | `suggestion` | string \| null | Suggested remediation action        |
 
+> **Note:** The `error` envelope format is defined in `events::emit_error` but not yet wired to CLI commands. Errors are currently reported via the CLI error handler as human-readable stderr output.
+
 ---
 
 ## Generation Task Events
@@ -138,7 +142,7 @@ During `openloop run`, the generation task runner emits intermediate events as b
 | `completed`   | Generation finished                   | `output_path`, `duration`, `format`   |
 | `cancelled`   | User cancelled the generation         | —                                     |
 
-> **Note:** The `failed` event is emitted by the generation task runner but currently only handled in human mode. In JSON mode it falls through to the catch-all and is not emitted. This will be addressed in a future update.
+> **Note:** The `failed` event is emitted internally by the generation task runner but not currently surfaced in JSON mode. Errors propagate as `AppResult::Err` and are reported via the CLI error handler. This will be addressed in a future update.
 
 ### Example stream
 
@@ -161,5 +165,5 @@ During `openloop run`, the generation task runner emits intermediate events as b
 - Events are emitted one per line (no pretty-printing) for stream parsing.
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
-- Lifecycle events are emitted by `backend status/start/stop/restart --json` as a single NDJSON line with envelope fields merged into the status object. Error events are emitted by `run --json` for validation failures. Progress and result events are defined but not yet wired to CLI commands.
+- Lifecycle events are emitted by `backend status/start/stop/restart --json` as a single NDJSON line with envelope fields merged into the status object. Progress, result, and error envelope formats are defined in `events::*` but not yet wired to CLI commands.
 

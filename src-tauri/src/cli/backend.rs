@@ -171,8 +171,8 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let ownership = backend.ownership().to_owned();
     let status = backend.start(&settings)?;
+    let ownership = backend.ownership().to_owned();
 
     if json {
         let (phase, port, msg) = match &status {
@@ -256,8 +256,8 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let ownership = backend.ownership().to_owned();
     let status = backend.restart(&settings)?;
+    let ownership = backend.ownership().to_owned();
 
     if json {
         let (phase, port, msg) = match &status {

@@ -27,17 +27,17 @@ Additional fields depend on `kind`.
 
 ## Lifecycle Events
 
-Emitted during backend startup/shutdown.
+Emitted by `backend status/start/stop/restart --json`. The lifecycle envelope fields are merged into the backend status JSON object (single NDJSON line).
 
 ```json
 {
   "v": 1,
   "ts": "2026-06-14T12:00:00Z",
   "kind": "lifecycle",
-  "phase": "starting",
+  "phase": "healthy",
   "port": 8001,
   "ownership": "owned",
-  "message": "Backend starting..."
+  "message": "Backend started (port 8001)"
 }
 ```
 
@@ -161,5 +161,5 @@ During `openloop run`, the generation task runner emits intermediate events as b
 - Events are emitted one per line (no pretty-printing) for stream parsing.
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
-- Lifecycle events are emitted by `backend status/start/stop/restart` in JSON mode. Error events are emitted by `run` for validation failures. Progress and result events are defined but not yet wired to CLI commands.
+- Lifecycle events are emitted by `backend status/start/stop/restart --json` as a single NDJSON line with envelope fields merged into the status object. Error events are emitted by `run --json` for validation failures. Progress and result events are defined but not yet wired to CLI commands.
 

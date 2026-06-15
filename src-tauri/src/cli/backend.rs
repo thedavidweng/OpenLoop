@@ -79,21 +79,26 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
 
     if json {
         let (phase, port) = match &status {
-            BackendStatus::Healthy { port } => ("healthy", Some(port)),
+            BackendStatus::Healthy { port } => ("healthy", Some(*port)),
             BackendStatus::Starting => ("starting", None),
             BackendStatus::Stopped => ("stopped", None),
             BackendStatus::Failed { .. } => ("failed", None),
         };
-        events::emit_lifecycle(
-            phase,
-            port.copied(),
-            ownership,
-            &format!("Backend status: {phase}"),
-        );
         let mut output: serde_json::Value =
             serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
         if let Some(obj) = output.as_object_mut() {
+            obj.insert("v".to_owned(), serde_json::json!(1));
+            obj.insert(
+                "ts".to_owned(),
+                serde_json::json!(chrono::Utc::now().to_rfc3339()),
+            );
+            obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
+            obj.insert("phase".to_owned(), serde_json::json!(phase));
+            obj.insert("message".to_owned(), serde_json::json!(format!("Backend status: {phase}")));
             obj.insert("ownership".to_owned(), serde_json::json!(ownership));
+            if let Some(p) = port {
+                obj.insert("port".to_owned(), serde_json::json!(p));
+            }
             match &provision_info {
                 Some(manifest) => {
                     obj.insert(
@@ -116,9 +121,7 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
                 }
             }
         }
-        super::json_output(
-            &serde_json::to_string_pretty(&output).map_err(|e| cli_error(e.to_string()))?,
-        );
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         match &status {
             BackendStatus::Healthy { port } => {
@@ -174,9 +177,20 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
                 ("failed", None, format!("Backend failed: {}", error.message))
             }
         };
-        events::emit_lifecycle(phase, port, "owned", &msg);
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let mut output =
+            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        if let Some(obj) = output.as_object_mut() {
+            obj.insert("v".to_owned(), serde_json::json!(1));
+            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
+            obj.insert("phase".to_owned(), serde_json::json!(phase));
+            obj.insert("message".to_owned(), serde_json::json!(msg));
+            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+            if let Some(p) = port {
+                obj.insert("port".to_owned(), serde_json::json!(p));
+            }
+        }
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         match &status {
             BackendStatus::Healthy { port } => {
@@ -210,9 +224,17 @@ fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let status = backend.stop()?;
 
     if json {
-        events::emit_lifecycle("stopped", None, "owned", "Backend stopped");
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let mut output =
+            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        if let Some(obj) = output.as_object_mut() {
+            obj.insert("v".to_owned(), serde_json::json!(1));
+            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
+            obj.insert("phase".to_owned(), serde_json::json!("stopped"));
+            obj.insert("message".to_owned(), serde_json::json!("Backend stopped"));
+            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+        }
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         events::human_success("Backend stopped");
     }
@@ -245,9 +267,20 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
             ),
             _ => ("stopped", None, "Backend restarted".to_owned()),
         };
-        events::emit_lifecycle(phase, port, "owned", &msg);
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let mut output =
+            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        if let Some(obj) = output.as_object_mut() {
+            obj.insert("v".to_owned(), serde_json::json!(1));
+            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
+            obj.insert("phase".to_owned(), serde_json::json!(phase));
+            obj.insert("message".to_owned(), serde_json::json!(msg));
+            obj.insert("ownership".to_owned(), serde_json::json!("owned"));
+            if let Some(p) = port {
+                obj.insert("port".to_owned(), serde_json::json!(p));
+            }
+        }
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         match &status {
             BackendStatus::Healthy { port } => {

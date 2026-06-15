@@ -161,5 +161,5 @@ During `openloop run`, the generation task runner emits intermediate events as b
 - Events are emitted one per line (no pretty-printing) for stream parsing.
 - The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
 - Timestamps are always UTC in RFC 3339 format.
-- The envelope format (`v`, `ts`, `kind`) is defined in `cli::events` and used by lifecycle/progress/result/error events. Generation task events currently use a bare format without the envelope.
+- Lifecycle events are emitted by `backend status/start/stop/restart` in JSON mode. Error events are emitted by `run` for validation failures. Progress and result events are defined but not yet wired to CLI commands.
 

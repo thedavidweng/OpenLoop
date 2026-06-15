@@ -1,5 +1,5 @@
-use std::fs;
 use std::sync::{atomic::AtomicBool, Arc};
+use std::{fs, process::Command};
 
 use openloop_lib::{
     app_state::AppState,
@@ -246,6 +246,109 @@ fn backend_manager_starts_unowned() {
         temp.path().join("sidecars"),
     );
     assert!(!manager.is_owned());
+}
+
+#[test]
+fn backend_start_json_failure_emits_structured_lifecycle_error() {
+    let home = tempfile::tempdir().expect("home dir");
+    let app_data_dir = isolated_app_data_dir(home.path());
+    let db = Database::new(&app_data_dir).expect("database should initialize");
+    db.set_setting("modelVariant", serde_json::json!("turbo"))
+        .expect("model variant should persist");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_openloop"))
+        .env("HOME", home.path())
+        .env_remove("XDG_DATA_HOME")
+        .env("APPDATA", home.path().join("AppData").join("Roaming"))
+        .args(["backend", "start", "--json"])
+        .output()
+        .expect("backend start command should run");
+
+    assert_eq!(output.status.code(), Some(3));
+
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let line = stdout
+        .lines()
+        .next()
+        .expect("json failure should emit one lifecycle event");
+    assert_eq!(stdout.lines().count(), 1);
+
+    let event: serde_json::Value = serde_json::from_str(line).expect("stdout should be json");
+    assert_eq!(event["kind"], "lifecycle");
+    assert_eq!(event["phase"], "failed");
+    assert_eq!(event["ownership"], "stopped");
+    assert_eq!(event["port"], serde_json::Value::Null);
+    assert_eq!(
+        event["error"],
+        "ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings."
+    );
+    assert_eq!(
+        event["message"],
+        "Backend failed to start: ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings."
+    );
+}
+
+#[test]
+fn backend_restart_json_failure_emits_structured_lifecycle_error() {
+    let home = tempfile::tempdir().expect("home dir");
+    let app_data_dir = isolated_app_data_dir(home.path());
+    let db = Database::new(&app_data_dir).expect("database should initialize");
+    db.set_setting("modelVariant", serde_json::json!("turbo"))
+        .expect("model variant should persist");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_openloop"))
+        .env("HOME", home.path())
+        .env_remove("XDG_DATA_HOME")
+        .env("APPDATA", home.path().join("AppData").join("Roaming"))
+        .args(["backend", "restart", "--json"])
+        .output()
+        .expect("backend restart command should run");
+
+    assert_eq!(output.status.code(), Some(3));
+
+    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf8");
+    let line = stdout
+        .lines()
+        .next()
+        .expect("json failure should emit one lifecycle event");
+    assert_eq!(stdout.lines().count(), 1);
+
+    let event: serde_json::Value = serde_json::from_str(line).expect("stdout should be json");
+    assert_eq!(event["kind"], "lifecycle");
+    assert_eq!(event["phase"], "failed");
+    assert_eq!(event["ownership"], "stopped");
+    assert_eq!(event["port"], serde_json::Value::Null);
+    assert_eq!(
+        event["error"],
+        "ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings."
+    );
+    assert_eq!(
+        event["message"],
+        "Backend failed to restart: ACE-Step backend code is not installed. Run 'openloop backend provision' or download from app settings."
+    );
+}
+
+fn isolated_app_data_dir(home: &std::path::Path) -> std::path::PathBuf {
+    #[cfg(target_os = "macos")]
+    {
+        home.join("Library")
+            .join("Application Support")
+            .join("com.openmusic.openloop")
+    }
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        home.join(".local")
+            .join("share")
+            .join("com.openmusic.openloop")
+    }
+
+    #[cfg(windows)]
+    {
+        home.join("AppData")
+            .join("Roaming")
+            .join("com.openmusic.openloop")
+    }
 }
 
 // ---------------------------------------------------------------------------

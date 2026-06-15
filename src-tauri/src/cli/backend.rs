@@ -2,7 +2,10 @@ use std::process::Command;
 
 use crate::{
     cli::{cli_error, events, human_output},
-    models::{backend::BackendStatus, errors::AppResult},
+    models::{
+        backend::BackendStatus,
+        errors::{AppError, AppResult},
+    },
     services::{
         backend_provisioner::{read_backend_manifest, BackendProvisioner},
         model_bootstrap::runtime_dir_for,
@@ -62,6 +65,86 @@ fn json_flag(args: &[String]) -> bool {
     args.contains(&"--json".to_owned())
 }
 
+fn backend_error_text(error: &AppError) -> String {
+    error
+        .details
+        .as_deref()
+        .unwrap_or(&error.message)
+        .to_owned()
+}
+
+fn lifecycle_event(status: &BackendStatus, ownership: &str, message: String) -> serde_json::Value {
+    let (phase, port, error_msg) = match status {
+        BackendStatus::Healthy { port } => ("healthy", Some(*port), None),
+        BackendStatus::Starting => ("starting", None, None),
+        BackendStatus::Stopped => ("stopped", None, None),
+        BackendStatus::Failed { error } => ("failed", None, Some(backend_error_text(error))),
+    };
+
+    let mut output = serde_json::json!({
+        "v": 1,
+        "ts": chrono::Utc::now().to_rfc3339(),
+        "kind": "lifecycle",
+        "phase": phase,
+        "port": port,
+        "ownership": ownership,
+        "message": message,
+    });
+
+    if let (Some(obj), Some(error_msg)) = (output.as_object_mut(), error_msg) {
+        obj.insert("error".to_owned(), serde_json::json!(error_msg));
+    }
+
+    output
+}
+
+fn print_json_value(output: &serde_json::Value) -> AppResult<()> {
+    super::json_output(&serde_json::to_string(output).map_err(|e| cli_error(e.to_string()))?);
+    Ok(())
+}
+
+fn status_lifecycle_message(status: &BackendStatus) -> String {
+    match status {
+        BackendStatus::Healthy { .. } => "Backend status: healthy".to_owned(),
+        BackendStatus::Starting => "Backend status: starting".to_owned(),
+        BackendStatus::Stopped => "Backend status: stopped".to_owned(),
+        BackendStatus::Failed { error } => format!("Backend failed: {}", backend_error_text(error)),
+    }
+}
+
+fn start_lifecycle_message(status: &BackendStatus) -> String {
+    match status {
+        BackendStatus::Healthy { port } => format!("Backend started (port {port})"),
+        BackendStatus::Starting => "Backend starting…".to_owned(),
+        BackendStatus::Stopped => "Backend: stopped".to_owned(),
+        BackendStatus::Failed { error } => {
+            format!("Backend failed to start: {}", backend_error_text(error))
+        }
+    }
+}
+
+fn restart_lifecycle_message(status: &BackendStatus) -> String {
+    match status {
+        BackendStatus::Healthy { port } => format!("Backend restarted (port {port})"),
+        BackendStatus::Starting => "Backend restarting…".to_owned(),
+        BackendStatus::Stopped => "Backend restarted".to_owned(),
+        BackendStatus::Failed { error } => {
+            format!("Backend failed to restart: {}", backend_error_text(error))
+        }
+    }
+}
+
+fn stop_lifecycle_message(status: &BackendStatus) -> String {
+    match status {
+        BackendStatus::Healthy { port } => format!("Backend still healthy (port {port})"),
+        BackendStatus::Starting => "Backend stop pending".to_owned(),
+        BackendStatus::Stopped => "Backend stopped".to_owned(),
+        BackendStatus::Failed { error } => {
+            format!("Backend failed to stop: {}", backend_error_text(error))
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Status
 // ---------------------------------------------------------------------------
@@ -78,10 +161,8 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
     let provision_info = read_backend_manifest(&state.app_data_dir);
 
     if json {
-        let mut output: serde_json::Value =
-            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        let mut output = lifecycle_event(&status, ownership, status_lifecycle_message(&status));
         if let Some(obj) = output.as_object_mut() {
-            obj.insert("ownership".to_owned(), serde_json::json!(ownership));
             match &provision_info {
                 Some(manifest) => {
                     obj.insert(
@@ -97,16 +178,12 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
                 None => {
                     obj.insert(
                         "backendCode".to_owned(),
-                        serde_json::json!({
-                            "installed": false,
-                        }),
+                        serde_json::json!({ "installed": false }),
                     );
                 }
             }
         }
-        super::json_output(
-            &serde_json::to_string_pretty(&output).map_err(|e| cli_error(e.to_string()))?,
-        );
+        print_json_value(&output)?;
     } else {
         match &status {
             BackendStatus::Healthy { port } => {
@@ -147,11 +224,28 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let status = backend.start(&settings)?;
+    let status = match backend.start(&settings) {
+        Ok(status) => status,
+        Err(error) => {
+            if json {
+                let failed_status = BackendStatus::Failed {
+                    error: error.clone(),
+                };
+                let output = lifecycle_event(
+                    &failed_status,
+                    backend.ownership(),
+                    start_lifecycle_message(&failed_status),
+                );
+                print_json_value(&output)?;
+            }
+            return Err(error);
+        }
+    };
+    let ownership = backend.ownership().to_owned();
 
     if json {
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let output = lifecycle_event(&status, &ownership, start_lifecycle_message(&status));
+        print_json_value(&output)?;
     } else {
         match &status {
             BackendStatus::Healthy { port } => {
@@ -182,11 +276,28 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
 fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let status = backend.stop()?;
+    let status = match backend.stop() {
+        Ok(status) => status,
+        Err(error) => {
+            if json {
+                let failed_status = BackendStatus::Failed {
+                    error: error.clone(),
+                };
+                let output = lifecycle_event(
+                    &failed_status,
+                    backend.ownership(),
+                    stop_lifecycle_message(&failed_status),
+                );
+                print_json_value(&output)?;
+            }
+            return Err(error);
+        }
+    };
+    let ownership = backend.ownership().to_owned();
 
     if json {
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let output = lifecycle_event(&status, &ownership, stop_lifecycle_message(&status));
+        print_json_value(&output)?;
     } else {
         events::human_success("Backend stopped");
     }
@@ -202,11 +313,28 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
-    let status = backend.restart(&settings)?;
+    let status = match backend.restart(&settings) {
+        Ok(status) => status,
+        Err(error) => {
+            if json {
+                let failed_status = BackendStatus::Failed {
+                    error: error.clone(),
+                };
+                let output = lifecycle_event(
+                    &failed_status,
+                    backend.ownership(),
+                    restart_lifecycle_message(&failed_status),
+                );
+                print_json_value(&output)?;
+            }
+            return Err(error);
+        }
+    };
+    let ownership = backend.ownership().to_owned();
 
     if json {
-        let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
-        super::json_output(&output);
+        let output = lifecycle_event(&status, &ownership, restart_lifecycle_message(&status));
+        print_json_value(&output)?;
     } else {
         match &status {
             BackendStatus::Healthy { port } => {
@@ -239,9 +367,7 @@ fn execute_logs(state: &AppState, args: &[String]) -> AppResult<()> {
 
     if json {
         let output = serde_json::json!({ "logs_path": path });
-        super::json_output(
-            &serde_json::to_string_pretty(&output).map_err(|e| cli_error(e.to_string()))?,
-        );
+        super::json_output(&serde_json::to_string(&output).map_err(|e| cli_error(e.to_string()))?);
     } else {
         match &path {
             Some(p) => {
@@ -553,4 +679,47 @@ Flags:
   --json    JSON output
   --help    Show help",
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::errors::AppError;
+
+    #[test]
+    fn failed_lifecycle_event_includes_structured_error() {
+        let status = BackendStatus::Failed {
+            error: AppError::backend_start_failed("port is already in use"),
+        };
+
+        let event = lifecycle_event(&status, "stopped", start_lifecycle_message(&status));
+
+        assert_eq!(event["kind"], "lifecycle");
+        assert_eq!(event["phase"], "failed");
+        assert_eq!(event["port"], serde_json::Value::Null);
+        assert_eq!(event["ownership"], "stopped");
+        assert_eq!(event["error"], "port is already in use");
+        assert_eq!(
+            event["message"],
+            "Backend failed to start: port is already in use"
+        );
+    }
+
+    #[test]
+    fn failed_stop_lifecycle_event_includes_structured_error() {
+        let status = BackendStatus::Failed {
+            error: AppError::backend_start_failed("failed to terminate backend process"),
+        };
+
+        let event = lifecycle_event(&status, "owned", stop_lifecycle_message(&status));
+
+        assert_eq!(event["kind"], "lifecycle");
+        assert_eq!(event["phase"], "failed");
+        assert_eq!(event["ownership"], "owned");
+        assert_eq!(event["error"], "failed to terminate backend process");
+        assert_eq!(
+            event["message"],
+            "Backend failed to stop: failed to terminate backend process"
+        );
+    }
 }

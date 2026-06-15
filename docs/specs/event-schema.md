@@ -1,30 +1,144 @@
 # CLI NDJSON Event Schema
 
-OpenLoop's CLI emits newline-delimited JSON (NDJSON) when invoked with `--json`. Each line is a self-contained JSON object. This document defines the schema for all event types currently emitted.
+OpenLoop's CLI emits newline-delimited JSON (NDJSON) when invoked with `--json`. Each line is a self-contained JSON object. This document defines the schema for all event types.
 
-## `openloop run` Events
+## Envelope
 
-The `run` command streams generation progress as NDJSON to stdout. Each line uses a bare JSON format with an `event` field (no envelope).
+Every event shares a common envelope:
 
-| `event`       | Description                           | Fields                                    |
-| ------------- | ------------------------------------- | ----------------------------------------- |
-| `submitted`   | Task submitted to backend             | `task_id`                                 |
-| `queued`      | Waiting in backend queue              | `variation`, `total`                      |
-| `running`     | Generation in progress                | `variation`, `total`                      |
-| `downloading` | Model weights downloading             | `variation`, `total`                      |
-| `completed`   | Generation finished                   | `output_path`, `duration`, `format`       |
-| `cancelled`   | User cancelled the generation         | —                                         |
+```json
+{
+  "v": 1,
+  "ts": "2026-06-14T12:00:00Z",
+  "kind": "<event-kind>",
+  ...
+}
+```
 
-### Field descriptions
+| Field  | Type    | Description                                      |
+| ------ | ------- | ------------------------------------------------ |
+| `v`    | integer | Schema version (currently `1`)                   |
+| `ts`   | string  | ISO 8601 UTC timestamp                           |
+| `kind` | string  | Event kind: `lifecycle`, `progress`, `result`, `error` |
 
-| Field         | Type    | Description                              |
-| ------------- | ------- | ---------------------------------------- |
-| `task_id`     | string  | Backend task identifier                  |
-| `variation`   | integer | Current variation index (1-based)        |
-| `total`       | integer | Total number of variations               |
-| `output_path` | string  | Path to the generated audio file         |
-| `duration`    | number  | Generation duration in seconds           |
-| `format`      | string  | Audio format (`wav`, `mp3`, `flac`, `ogg`) |
+Additional fields depend on `kind`.
+
+---
+
+## Lifecycle Events
+
+Emitted during backend startup/shutdown.
+
+```json
+{
+  "v": 1,
+  "ts": "2026-06-14T12:00:00Z",
+  "kind": "lifecycle",
+  "phase": "starting",
+  "port": 8001,
+  "ownership": "owned",
+  "message": "Backend starting..."
+}
+```
+
+| Field       | Type           | Description                                                     |
+| ----------- | -------------- | --------------------------------------------------------------- |
+| `phase`     | string         | `starting`, `healthy`, `stopped`, `failed`                      |
+| `port`      | integer \| null | Backend port (null if not yet known)                           |
+| `ownership` | string         | `owned` (started by this session) or `attached` (already running) |
+| `message`   | string         | Human-readable status message                                   |
+
+---
+
+## Progress Events
+
+Emitted during long-running operations (model download, generation).
+
+```json
+{
+  "v": 1,
+  "ts": "2026-06-14T12:00:05Z",
+  "kind": "progress",
+  "pct": 42,
+  "label": "downloading",
+  "detail": "1.2 GB / 2.8 GB"
+}
+```
+
+| Field    | Type           | Description                        |
+| -------- | -------------- | ---------------------------------- |
+| `pct`    | integer \| null | Percentage 0–100 (null if unknown) |
+| `label`  | string         | Operation label                    |
+| `detail` | string \| null  | Optional detail text               |
+
+---
+
+## Result Events
+
+Emitted on successful completion.
+
+```json
+{
+  "v": 1,
+  "ts": "2026-06-14T12:01:30Z",
+  "kind": "result",
+  "event": "completed",
+  "path": "~/Music/openloop/generation-abc123.wav",
+  "duration_ms": 45200,
+  "seed": 12345
+}
+```
+
+The `result` envelope merges the `data` object directly. Common fields for `openloop run`:
+
+| Field        | Type    | Description                         |
+| ------------ | ------- | ----------------------------------- |
+| `event`      | string  | Always `"completed"`                |
+| `path`       | string  | Output file path                    |
+| `duration_ms`| integer | Generation duration in milliseconds |
+| `seed`       | integer | Seed used for generation            |
+
+---
+
+## Error Events
+
+Emitted on failure (to stderr).
+
+```json
+{
+  "v": 1,
+  "ts": "2026-06-14T12:00:10Z",
+  "kind": "error",
+  "code": "BACKEND_NOT_HEALTHY",
+  "message": "Backend failed to start within 120s",
+  "recoverable": true,
+  "suggestion": "Run openloop doctor to diagnose"
+}
+```
+
+| Field        | Type    | Description                              |
+| ------------ | ------- | ---------------------------------------- |
+| `code`       | string  | Machine-readable error code              |
+| `message`    | string  | Human-readable error description         |
+| `recoverable`| boolean | Whether retrying may succeed             |
+| `suggestion` | string \| null | Suggested remediation action        |
+
+---
+
+## Generation Task Events
+
+During `openloop run`, the generation task runner emits intermediate events as bare JSON lines (no envelope). These use an `event` field.
+
+| `event`       | Description                           | Additional fields                     |
+| ------------- | ------------------------------------- | ------------------------------------- |
+| `submitted`   | Task submitted to backend             | `task_id`                             |
+| `queued`      | Waiting in backend queue              | `variation`, `total`                  |
+| `running`     | Generation in progress                | `variation`, `total`                  |
+| `downloading` | Model weights downloading             | `variation`, `total`                  |
+| `completed`   | Generation finished                   | `output_path`, `duration`, `format`   |
+| `cancelled`   | User cancelled the generation         | —                                     |
+
+> **Note:** The `failed` event is emitted by the generation task runner but currently only handled in human mode. In JSON mode it falls through to the catch-all and is not emitted. This will be addressed in a future update.
 
 ### Example stream
 
@@ -35,71 +149,17 @@ The `run` command streams generation progress as NDJSON to stdout. Each line use
 {"event":"completed","output_path":"~/Music/openloop/output.wav","duration":88.0,"format":"wav"}
 ```
 
-### Notes on `failed` and `completed`
-
-- **`failed`**: The generation task runner emits a `failed` event internally, but `CliGenerationSink` does not handle it in JSON mode — it falls through to the catch-all `_ => {}` branch. Failures surface as a Rust `Err` and produce a non-JSON error message to stderr. This will be addressed in a future update.
-- **`completed`**: During multi-step generation, the intermediate `completed` event from the task runner is suppressed. The final `completed` event with the correct (possibly renamed) output path is emitted by the post-generation loop.
-
 ---
 
-## `openloop pull` Events
+## CLI Output Modes
 
-```
-{"event":"completed","model":"Lite"}
-{"event":"completed","model":"Turbo","total_bytes":4294967296}
-```
+- **Human mode** (default): Progress and lifecycle messages go to stderr as formatted text. Only the final result is printed to stdout.
+- **JSON mode** (`--json`): All events are emitted as NDJSON to stdout. Errors go to stderr.
 
----
+## Notes
 
-## `openloop status` Output
+- Events are emitted one per line (no pretty-printing) for stream parsing.
+- The `v` field enables forward-compatible parsing; consumers should ignore unknown fields.
+- Timestamps are always UTC in RFC 3339 format.
+- The envelope format (`v`, `ts`, `kind`) is defined in `cli::events` and used by lifecycle/progress/result/error events. Generation task events currently use a bare format without the envelope.
 
-Returns a single JSON object (not streaming):
-
-```json
-{
-  "backend": { "state": "healthy", "port": 8001, "ownership": "owned" },
-  "model": { "variant": "turbo", "downloaded": true },
-  "activeTasks": [],
-  "device": { "os": "macos", "arch": "aarch64", "isAppleSilicon": true, "totalMemoryGb": 16 }
-}
-```
-
----
-
-## `openloop enhance` Output
-
-Returns the enhancement result as a single JSON object:
-
-```json
-{
-  "prompt": "warm piano, 90 BPM",
-  "lyrics": null,
-  "bpm": 90,
-  "key_scale": "C major",
-  "time_signature": "4/4",
-  "duration_seconds": 30.0,
-  "vocal_language": "en"
-}
-```
-
----
-
-## Other Commands
-
-Commands like `list`, `delete`, `clear`, `ps`, `stop`, `doctor`, `files`, `setup`, `settings`, `models`, and `backend` subcommands emit their own JSON structures when invoked with `--json`. These are documented per-command via `openloop <cmd> --help`.
-
----
-
-## Defined but Unused Event Infrastructure
-
-`cli::events` defines envelope-based functions (`emit_lifecycle`, `emit_progress`, `emit_result`, `emit_error`) with a shared `{v, ts, kind, ...}` envelope format. These functions have **no call sites** in the current CLI code and are not emitted. They exist as infrastructure for future use.
-
-If adopted, the envelope would look like:
-
-```json
-{"v": 1, "ts": "2026-06-14T12:00:00Z", "kind": "lifecycle", "phase": "starting", "port": 8001, "ownership": "owned", "message": "Backend starting..."}
-{"v": 1, "ts": "2026-06-14T12:00:05Z", "kind": "progress", "pct": 42, "label": "downloading", "detail": "1.2 GB / 2.8 GB"}
-{"v": 1, "ts": "2026-06-14T12:00:10Z", "kind": "error", "code": "BACKEND_NOT_HEALTHY", "message": "...", "recoverable": true, "suggestion": "..."}
-```
-
-This section is informational only — consumers should not expect these events until they are wired up.

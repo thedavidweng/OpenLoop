@@ -78,6 +78,13 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
     let provision_info = read_backend_manifest(&state.app_data_dir);
 
     if json {
+        let (phase, port) = match &status {
+            BackendStatus::Healthy { port } => ("healthy", Some(port)),
+            BackendStatus::Starting => ("starting", None),
+            BackendStatus::Stopped => ("stopped", None),
+            BackendStatus::Failed { .. } => ("failed", None),
+        };
+        events::emit_lifecycle(phase, port.copied(), &ownership, &format!("Backend status: {phase}"));
         let mut output: serde_json::Value =
             serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
         if let Some(obj) = output.as_object_mut() {
@@ -150,6 +157,13 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
     let status = backend.start(&settings)?;
 
     if json {
+        let (phase, port, msg) = match &status {
+            BackendStatus::Healthy { port } => ("healthy", Some(*port), format!("Backend started (port {port})")),
+            BackendStatus::Starting => ("starting", None, "Backend starting…".to_owned()),
+            BackendStatus::Stopped => ("stopped", None, "Backend: stopped".to_owned()),
+            BackendStatus::Failed { error } => ("failed", None, format!("Backend failed: {}", error.message)),
+        };
+        events::emit_lifecycle(phase, port, "owned", &msg);
         let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
         super::json_output(&output);
     } else {
@@ -185,6 +199,7 @@ fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let status = backend.stop()?;
 
     if json {
+        events::emit_lifecycle("stopped", None, "owned", "Backend stopped");
         let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
         super::json_output(&output);
     } else {
@@ -205,6 +220,13 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
     let status = backend.restart(&settings)?;
 
     if json {
+        let (phase, port, msg) = match &status {
+            BackendStatus::Healthy { port } => ("healthy", Some(*port), format!("Backend restarted (port {port})")),
+            BackendStatus::Starting => ("starting", None, "Backend restarting…".to_owned()),
+            BackendStatus::Failed { error } => ("failed", None, format!("Backend failed to restart: {}", error.message)),
+            _ => ("stopped", None, "Backend restarted".to_owned()),
+        };
+        events::emit_lifecycle(phase, port, "owned", &msg);
         let output = serde_json::to_string_pretty(&status).map_err(|e| cli_error(e.to_string()))?;
         super::json_output(&output);
     } else {

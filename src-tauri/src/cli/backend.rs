@@ -94,7 +94,10 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
             );
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!(phase));
-            obj.insert("message".to_owned(), serde_json::json!(format!("Backend status: {phase}")));
+            obj.insert(
+                "message".to_owned(),
+                serde_json::json!(format!("Backend status: {phase}")),
+            );
             obj.insert("ownership".to_owned(), serde_json::json!(ownership));
             if let Some(p) = port {
                 obj.insert("port".to_owned(), serde_json::json!(p));
@@ -177,11 +180,13 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
                 ("failed", None, format!("Backend failed: {}", error.message))
             }
         };
-        let mut output =
-            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        let mut output = serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
         if let Some(obj) = output.as_object_mut() {
             obj.insert("v".to_owned(), serde_json::json!(1));
-            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert(
+                "ts".to_owned(),
+                serde_json::json!(chrono::Utc::now().to_rfc3339()),
+            );
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!(phase));
             obj.insert("message".to_owned(), serde_json::json!(msg));
@@ -224,11 +229,13 @@ fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
     let status = backend.stop()?;
 
     if json {
-        let mut output =
-            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        let mut output = serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
         if let Some(obj) = output.as_object_mut() {
             obj.insert("v".to_owned(), serde_json::json!(1));
-            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert(
+                "ts".to_owned(),
+                serde_json::json!(chrono::Utc::now().to_rfc3339()),
+            );
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!("stopped"));
             obj.insert("message".to_owned(), serde_json::json!("Backend stopped"));
@@ -267,11 +274,13 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
             ),
             _ => ("stopped", None, "Backend restarted".to_owned()),
         };
-        let mut output =
-            serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
+        let mut output = serde_json::to_value(&status).map_err(|e| cli_error(e.to_string()))?;
         if let Some(obj) = output.as_object_mut() {
             obj.insert("v".to_owned(), serde_json::json!(1));
-            obj.insert("ts".to_owned(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
+            obj.insert(
+                "ts".to_owned(),
+                serde_json::json!(chrono::Utc::now().to_rfc3339()),
+            );
             obj.insert("kind".to_owned(), serde_json::json!("lifecycle"));
             obj.insert("phase".to_owned(), serde_json::json!(phase));
             obj.insert("message".to_owned(), serde_json::json!(msg));

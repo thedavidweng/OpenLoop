@@ -104,7 +104,11 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         Some(other) => {
             let err = cli_error(format!("unknown model variant: {other}"));
             if json {
-                super::events::emit_error(&err, false, Some("Available variants: lite, turbo, pro"));
+                super::events::emit_error(
+                    &err,
+                    false,
+                    Some("Available variants: lite, turbo, pro"),
+                );
             }
             return Err(err);
         }

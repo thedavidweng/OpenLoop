@@ -50,7 +50,14 @@ jobs:
 
       - name: Frontend tests with coverage
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm test:coverage
+        run: pnpm vitest run --coverage --reporter=junit --outputFile=test-results.junit.xml
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: codecov/test-results-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
       - name: Upload coverage report
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

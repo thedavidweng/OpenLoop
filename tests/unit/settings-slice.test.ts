@@ -34,13 +34,16 @@ vi.mock("@/app/lib/errors", () => ({
   localizeModelStatuses: vi.fn((s: unknown) => s),
 }));
 
-vi.mock("@/app/lib/model-packs", async (importOriginal: () => Promise<typeof import("@/app/lib/model-packs")>) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    expandDownloadedVariantsFromStatuses: vi.fn(() => []),
-  };
-});
+vi.mock(
+  "@/app/lib/model-packs",
+  async (importOriginal: () => Promise<typeof import("@/app/lib/model-packs")>) => {
+    const actual = await importOriginal();
+    return {
+      ...actual,
+      expandDownloadedVariantsFromStatuses: vi.fn(() => []),
+    };
+  },
+);
 
 vi.mock("@/app/lib/validation-helpers", () => ({
   computeValidationState: vi.fn(() => ({
@@ -107,21 +110,24 @@ const mockForm = {
 };
 
 function createTestStore(overrides: Partial<GenerationStore> = {}) {
-  return create<GenerationStore>((set, get) => ({
-    ...createSettingsSlice(set, get),
-    form: { ...mockForm },
-    modelStatuses: [],
-    generationState: {
-      status: "idle",
-      phase: "idle",
-      statusMessage: "Ready",
-      error: null,
-    },
-    bootstrapStatus: { state: "ready", message: "ok" },
-    setupOverride: false,
-    refreshBootstrapStatus: vi.fn(() => Promise.resolve()),
-    ...overrides,
-  } as GenerationStore));
+  return create<GenerationStore>(
+    (set, get) =>
+      ({
+        ...createSettingsSlice(set, get),
+        form: { ...mockForm },
+        modelStatuses: [],
+        generationState: {
+          status: "idle",
+          phase: "idle",
+          statusMessage: "Ready",
+          error: null,
+        },
+        bootstrapStatus: { state: "ready", message: "ok" },
+        setupOverride: false,
+        refreshBootstrapStatus: vi.fn(() => Promise.resolve()),
+        ...overrides,
+      }) as GenerationStore,
+  );
 }
 
 /* ================================================================== */
@@ -393,10 +399,9 @@ describe("Settings slice", () => {
         vi.mocked(api.isTauriRuntime).mockReturnValue(false);
         const store = createTestStore();
         await store.getState().completeSetup();
-        expect(computeValidationState).toHaveBeenCalledWith(
-          expect.anything(),
-          { showErrors: false },
-        );
+        expect(computeValidationState).toHaveBeenCalledWith(expect.anything(), {
+          showErrors: false,
+        });
       });
     });
 

@@ -216,7 +216,11 @@ describe("ModelBootstrapBanner", () => {
     storeState.bootstrapStatus = {
       state: "failed",
       message: "Model not found",
-      error: { code: "MODEL_NOT_FOUND", message: "Model not found", details: "The model file could not be located on disk." },
+      error: {
+        code: "MODEL_NOT_FOUND",
+        message: "Model not found",
+        details: "The model file could not be located on disk.",
+      },
     };
     render(<ModelBootstrapBanner />);
 

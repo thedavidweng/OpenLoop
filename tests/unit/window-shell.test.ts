@@ -22,14 +22,16 @@ function mockPlatform(platform: "mac" | "windows" | "linux") {
   (getShortcutPlatform as Mock).mockReturnValue(platform);
 }
 
-function makeSnapshot(overrides?: Partial<{
-  chrome_variant: "desktop" | "mac";
-  tier: "desktop" | "mac";
-  toolbar_height: number;
-  traffic_light_inset_leading: number;
-  sidebar_header_height: number;
-  sidebar_width: number;
-}>) {
+function makeSnapshot(
+  overrides?: Partial<{
+    chrome_variant: "desktop" | "mac";
+    tier: "desktop" | "mac";
+    toolbar_height: number;
+    traffic_light_inset_leading: number;
+    sidebar_header_height: number;
+    sidebar_width: number;
+  }>,
+) {
   return {
     chrome_variant: "mac" as const,
     tier: "mac" as const,
@@ -291,9 +293,7 @@ describe("useWindowShellState", () => {
 
   it("uses sidebarWidth argument to override snapshot sidebar_width", async () => {
     mockPlatform("mac");
-    (getWindowShellState as Mock).mockResolvedValue(
-      makeSnapshot({ sidebar_width: 999 }),
-    );
+    (getWindowShellState as Mock).mockResolvedValue(makeSnapshot({ sidebar_width: 999 }));
 
     const { result } = renderHook(() => useWindowShellState(400));
 

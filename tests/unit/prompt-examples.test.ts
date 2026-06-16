@@ -52,9 +52,7 @@ describe("getPromptExampleAt", () => {
   it("treats negative indices as positive via Math.abs", () => {
     expect(getPromptExampleAt(-0)).toBe(getPromptExampleAt(0));
     expect(getPromptExampleAt(-1)).toBe(getPromptExampleAt(1));
-    expect(getPromptExampleAt(-(TOTAL_EXAMPLES + 5))).toBe(
-      getPromptExampleAt(5),
-    );
+    expect(getPromptExampleAt(-(TOTAL_EXAMPLES + 5))).toBe(getPromptExampleAt(5));
   });
 
   it("truncates fractional indices", () => {

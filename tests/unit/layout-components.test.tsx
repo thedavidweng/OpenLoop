@@ -676,7 +676,11 @@ describe("OpenLoopStage", () => {
         status: "failed",
         phase: "failed",
         statusMessage: "Failed",
-        error: { code: "TASK_FAILED", message: "Generation task failed", details: "model not found" },
+        error: {
+          code: "TASK_FAILED",
+          message: "Generation task failed",
+          details: "model not found",
+        },
       },
     });
     render(<OpenLoopStage />);
@@ -738,9 +742,7 @@ describe("OpenLoopStage", () => {
     });
     render(<OpenLoopStage />);
     await user.click(screen.getByText("Copy details"));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      JSON.stringify(error, null, 2),
-    );
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify(error, null, 2));
   });
 
   it("opens GitHub issue URL when get help is clicked", async () => {

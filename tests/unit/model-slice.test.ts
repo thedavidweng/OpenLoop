@@ -257,10 +257,7 @@ describe("applyModelStatus", () => {
         modelVariant: "turbo",
         downloadedModels: ["lite", "turbo", "pro"],
       }),
-      modelStatuses: [
-        modelStatus("turbo", "ready"),
-        modelStatus("pro", "ready"),
-      ],
+      modelStatuses: [modelStatus("turbo", "ready"), modelStatus("pro", "ready")],
     });
 
     store.getState().applyModelStatus(modelStatus("pro", "failed"));
@@ -349,10 +346,7 @@ describe("downloadModelVariant", () => {
 
       expect(mockApi.setSetting).toHaveBeenCalledWith("modelVariant", "turbo");
       expect(mockApi.setSetting).toHaveBeenCalledWith("profile", "standard");
-      expect(mockApi.setSetting).toHaveBeenCalledWith(
-        "defaultThinking",
-        expect.any(Boolean),
-      );
+      expect(mockApi.setSetting).toHaveBeenCalledWith("defaultThinking", expect.any(Boolean));
     });
 
     it("applies the status returned by downloadModel", async () => {
@@ -511,10 +505,7 @@ describe("deleteAllModels", () => {
         downloadedModels: ["lite", "turbo", "pro"],
         modelVariant: "turbo",
       }),
-      modelStatuses: [
-        modelStatus("turbo", "ready"),
-        modelStatus("pro", "ready"),
-      ],
+      modelStatuses: [modelStatus("turbo", "ready"), modelStatus("pro", "ready")],
     });
 
     mockApi.deleteAllModels.mockResolvedValue([
@@ -579,9 +570,7 @@ describe("refreshModelStatuses", () => {
     ];
     mockApi.listModelCatalog.mockResolvedValue(catalog);
     mockApi.getModelStatus.mockResolvedValue([modelStatus("turbo", "ready")]);
-    mockApi.getBackendProvisionStatus.mockResolvedValue(
-      defaultProvisionStatus({ state: "ready" }),
-    );
+    mockApi.getBackendProvisionStatus.mockResolvedValue(defaultProvisionStatus({ state: "ready" }));
 
     await store.getState().refreshModelStatuses();
 
@@ -608,9 +597,7 @@ describe("refreshModelStatuses", () => {
       modelStatus("turbo", "ready"),
       modelStatus("pro", "ready"),
     ]);
-    mockApi.getBackendProvisionStatus.mockResolvedValue(
-      defaultProvisionStatus({ state: "ready" }),
-    );
+    mockApi.getBackendProvisionStatus.mockResolvedValue(defaultProvisionStatus({ state: "ready" }));
 
     await store.getState().refreshModelStatuses();
 
@@ -668,10 +655,7 @@ describe("selectModelVariant", () => {
 
       expect(mockApi.setSetting).toHaveBeenCalledWith("modelVariant", "pro");
       expect(mockApi.setSetting).toHaveBeenCalledWith("profile", "quality");
-      expect(mockApi.setSetting).toHaveBeenCalledWith(
-        "defaultThinking",
-        expect.any(Boolean),
-      );
+      expect(mockApi.setSetting).toHaveBeenCalledWith("defaultThinking", expect.any(Boolean));
     });
   });
 });
@@ -760,9 +744,7 @@ describe("provisionBackend", () => {
 
   it("sets status to ready on success", async () => {
     mockApi.isTauriRuntime.mockReturnValue(true);
-    mockApi.provisionBackend.mockResolvedValue(
-      defaultProvisionStatus({ state: "ready" }),
-    );
+    mockApi.provisionBackend.mockResolvedValue(defaultProvisionStatus({ state: "ready" }));
 
     await store.getState().provisionBackend();
 

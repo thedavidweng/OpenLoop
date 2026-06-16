@@ -72,22 +72,18 @@ let storeState: {
 };
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (selector: (state: typeof storeState) => unknown) =>
-    selector(storeState),
+  useGenerationStore: (selector: (state: typeof storeState) => unknown) => selector(storeState),
 }));
 
 // ---------------------------------------------------------------------------
 // Imports after mocks
 // ---------------------------------------------------------------------------
 
-const { FieldError, FieldLabel, FilePickerField, handleTextFieldChange } = await import(
-  "@/app/components/generation/GenerationPanel/shared"
-);
+const { FieldError, FieldLabel, FilePickerField, handleTextFieldChange } =
+  await import("@/app/components/generation/GenerationPanel/shared");
 const { Header } = await import("@/app/components/generation/GenerationPanel/Header");
 const { FormBody } = await import("@/app/components/generation/GenerationPanel/FormBody");
-const { ActionFooter } = await import(
-  "@/app/components/generation/GenerationPanel/ActionFooter"
-);
+const { ActionFooter } = await import("@/app/components/generation/GenerationPanel/ActionFooter");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -143,9 +139,7 @@ function makeFormBodyProps(overrides: Partial<Parameters<typeof FormBody>[0]> = 
   };
 }
 
-function makeGenerationState(
-  status: GenerationState["status"] = "idle",
-): GenerationState {
+function makeGenerationState(status: GenerationState["status"] = "idle"): GenerationState {
   return {
     status,
     phase: status === "idle" ? "idle" : "running",
@@ -288,12 +282,8 @@ describe("Header", () => {
     expect(
       screen.getByRole("button", { name: "generation.randomInspiration" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "generation.enhancePrompt" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "generation.addFavorite" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "generation.enhancePrompt" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "generation.addFavorite" })).toBeInTheDocument();
   });
 
   it("calls onSetField with a random prompt when dice button is clicked", async () => {
@@ -565,9 +555,7 @@ describe("FormBody", () => {
   it("hides structure tags when instrumental is on", () => {
     render(<FormBody {...makeFormBodyProps({ form: makeForm({ instrumental: true }) })} />);
     // Structure tag buttons should not be rendered
-    const tagButtons = STRUCTURE_TAGS.map((tag) =>
-      screen.queryByText(`generation.${tag}`),
-    );
+    const tagButtons = STRUCTURE_TAGS.map((tag) => screen.queryByText(`generation.${tag}`));
     tagButtons.forEach((btn) => expect(btn).not.toBeInTheDocument());
   });
 
@@ -628,9 +616,7 @@ describe("FormBody", () => {
     // Find the language select by its options
     const selects = screen.getAllByRole("combobox");
     // The language select is one of the comboboxes
-    const langSelect = selects.find((s) =>
-      within(s).queryByText("EN"),
-    );
+    const langSelect = selects.find((s) => within(s).queryByText("EN"));
     expect(langSelect).toBeDefined();
     expect(langSelect).toBeDisabled();
   });
@@ -675,18 +661,14 @@ describe("FormBody", () => {
 
   it("renders validation error for prompt field", () => {
     render(
-      <FormBody
-        {...makeFormBodyProps({ validationErrors: { prompt: "Prompt is required" } })}
-      />,
+      <FormBody {...makeFormBodyProps({ validationErrors: { prompt: "Prompt is required" } })} />,
     );
     expect(screen.getByText("Prompt is required")).toBeInTheDocument();
   });
 
   it("renders validation error for lyrics field", () => {
     render(
-      <FormBody
-        {...makeFormBodyProps({ validationErrors: { lyrics: "Lyrics too long" } })}
-      />,
+      <FormBody {...makeFormBodyProps({ validationErrors: { lyrics: "Lyrics too long" } })} />,
     );
     expect(screen.getByText("Lyrics too long")).toBeInTheDocument();
   });
@@ -735,9 +717,7 @@ describe("FormBody", () => {
 
   it("renders negative prompt textarea inside tweak section when open", () => {
     render(<FormBody {...makeFormBodyProps({ tweakOpen: true })} />);
-    expect(
-      screen.getByPlaceholderText("generation.negativePromptPlaceholder"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("generation.negativePromptPlaceholder")).toBeInTheDocument();
   });
 
   it("renders inference steps and guidance scale inputs when tweak is open", () => {
@@ -769,9 +749,7 @@ describe("FormBody", () => {
     );
     const selects = screen.getAllByRole("combobox");
     // LM selects should be disabled when thinking is false
-    const lmModelSelect = selects.find((s) =>
-      within(s).queryByText("None"),
-    );
+    const lmModelSelect = selects.find((s) => within(s).queryByText("None"));
     expect(lmModelSelect).toBeDefined();
     expect(lmModelSelect).toBeDisabled();
   });
@@ -887,9 +865,7 @@ describe("ActionFooter", () => {
 
   it("shows 'validating' label when validating", () => {
     render(
-      <ActionFooter
-        {...makeFooterProps({ generationState: makeGenerationState("validating") })}
-      />,
+      <ActionFooter {...makeFooterProps({ generationState: makeGenerationState("validating") })} />,
     );
     expect(screen.getByText("generation.validating")).toBeInTheDocument();
   });

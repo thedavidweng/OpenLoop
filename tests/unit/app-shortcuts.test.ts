@@ -227,20 +227,14 @@ describe("matchesShortcut", () => {
       displayKey: "Z",
     };
     expect(
-      matchesShortcut(
-        keyboardEvent({ code: "Unidentified", key: "z", metaKey: true }),
-        def,
-      ),
+      matchesShortcut(keyboardEvent({ code: "Unidentified", key: "z", metaKey: true }), def),
     ).toBe(true);
   });
 
   it("matches requiresPrimaryModifier === false without any modifier", () => {
     vi.stubGlobal("navigator", { platform: "MacIntel" });
     expect(
-      matchesShortcut(
-        keyboardEvent({ code: "Space", key: " " }),
-        APP_SHORTCUTS.togglePlayback,
-      ),
+      matchesShortcut(keyboardEvent({ code: "Space", key: " " }), APP_SHORTCUTS.togglePlayback),
     ).toBe(true);
   });
 
@@ -257,10 +251,7 @@ describe("matchesShortcut", () => {
   it("returns false for requiresPrimaryModifier === false when neither code nor key matches", () => {
     vi.stubGlobal("navigator", { platform: "MacIntel" });
     expect(
-      matchesShortcut(
-        keyboardEvent({ code: "KeyX", key: "x" }),
-        APP_SHORTCUTS.togglePlayback,
-      ),
+      matchesShortcut(keyboardEvent({ code: "KeyX", key: "x" }), APP_SHORTCUTS.togglePlayback),
     ).toBe(false);
   });
 
@@ -277,12 +268,9 @@ describe("matchesShortcut", () => {
   it("returns false when shortcut has neither code nor key defined", () => {
     vi.stubGlobal("navigator", { platform: "MacIntel" });
     const def: ShortcutDefinition = { id: "empty", displayKey: "?" };
-    expect(
-      matchesShortcut(
-        keyboardEvent({ code: "KeyA", key: "a", metaKey: true }),
-        def,
-      ),
-    ).toBe(false);
+    expect(matchesShortcut(keyboardEvent({ code: "KeyA", key: "a", metaKey: true }), def)).toBe(
+      false,
+    );
   });
 });
 

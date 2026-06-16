@@ -1506,9 +1506,7 @@ describe("resumeActiveTask", () => {
   });
 
   it("sets failed state on error", async () => {
-    vi.mocked(api.resumeGenerationTask).mockRejectedValue(
-      new Error("backend unreachable"),
-    );
+    vi.mocked(api.resumeGenerationTask).mockRejectedValue(new Error("backend unreachable"));
 
     useGenerationStore.setState({ activeTasks: [task("t1")] as any });
 

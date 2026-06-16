@@ -42,8 +42,7 @@ vi.mock("@/app/lib/api", () => ({
   readGenerationWaveform: (...args: unknown[]) => mockReadGenerationWaveform(...args),
   copyAudioTo: vi.fn(),
   revealInFinder: vi.fn(),
-  deleteGenerationFileAndRecord: (...args: unknown[]) =>
-    mockDeleteGenerationFileAndRecord(...args),
+  deleteGenerationFileAndRecord: (...args: unknown[]) => mockDeleteGenerationFileAndRecord(...args),
 }));
 
 // IMPORTANT: `t` must be a stable reference — the PlaybackBar component has
@@ -89,8 +88,7 @@ interface MockStoreState {
 let currentStoreState: MockStoreState;
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (selector: (state: MockStoreState) => unknown) =>
-    selector(currentStoreState),
+  useGenerationStore: (selector: (state: MockStoreState) => unknown) => selector(currentStoreState),
 }));
 
 // --- Helpers -----------------------------------------------------------------
@@ -212,7 +210,8 @@ describe("PlaybackBar", () => {
 
       // Wait for the async audio fetch to resolve and set audioSrc
       await vi.waitFor(() => {
-        const playPauseBtn = getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause")!;
+        const playPauseBtn =
+          getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause")!;
         expect(playPauseBtn).not.toBeDisabled();
       });
     });

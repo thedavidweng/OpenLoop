@@ -649,10 +649,7 @@ describe("deleteGenerationFileAndRecord", () => {
 
     await api.deleteGenerationFileAndRecord("abc");
 
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "delete_generation_file_and_record",
-      { id: "abc" },
-    );
+    expect(mockInvoke).toHaveBeenCalledWith("delete_generation_file_and_record", { id: "abc" });
   });
 });
 
@@ -701,10 +698,7 @@ describe("exportGenerationsToFolder", () => {
     const exported = ["/dest/a.wav", "/dest/b.wav"];
     mockInvoke.mockResolvedValue(exported);
 
-    const result = await api.exportGenerationsToFolder(
-      ["a", "b"],
-      "/dest",
-    );
+    const result = await api.exportGenerationsToFolder(["a", "b"], "/dest");
 
     expect(mockInvoke).toHaveBeenCalledWith("export_generations_to_folder", {
       ids: ["a", "b"],
@@ -750,9 +744,7 @@ describe("error propagation", () => {
     const error = new Error("permission denied");
     mockInvoke.mockRejectedValue(error);
 
-    await expect(api.deleteGeneration("abc")).rejects.toThrow(
-      "permission denied",
-    );
+    await expect(api.deleteGeneration("abc")).rejects.toThrow("permission denied");
   });
 });
 

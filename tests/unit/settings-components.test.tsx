@@ -256,10 +256,7 @@ function setupMockStore(overrides?: Record<string, unknown>) {
 }
 
 /** Click the Next button and wait for the step title to appear. */
-async function goToStep(
-  user: ReturnType<typeof userEvent.setup>,
-  stepTitle: string,
-) {
+async function goToStep(user: ReturnType<typeof userEvent.setup>, stepTitle: string) {
   await user.click(screen.getByText("setup.next"));
   await screen.findByText(stepTitle);
 }

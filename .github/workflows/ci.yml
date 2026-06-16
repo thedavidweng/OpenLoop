@@ -60,6 +60,15 @@ jobs:
           path: coverage/
           retention-days: 14
 
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage
+          flags: frontend
+          fail_ci_if_error: false
+
       - name: Frontend build
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm exec vite build

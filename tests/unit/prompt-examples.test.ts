@@ -8,7 +8,8 @@ import {
   getRandomPromptByCategory,
 } from "@/app/lib/prompt-examples";
 
-const TOTAL_EXAMPLES = 110; // 11 categories x 10 each
+const EXAMPLES_PER_CATEGORY = 10;
+const TOTAL_EXAMPLES = PROMPT_CATEGORIES.length * EXAMPLES_PER_CATEGORY;
 
 describe("PROMPT_CATEGORIES", () => {
   it("covers the required music categories without network access", () => {

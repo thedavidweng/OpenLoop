@@ -107,7 +107,7 @@ const SAMPLE_GENERATION: GenerationRecord = {
   keyScale: "C major",
   timeSignature: "4/4",
   model: "turbo",
-  taskType: "text-to-audio",
+  taskType: "text2music",
   thinking: false,
   inferenceSteps: 30,
   guidanceScale: 7,

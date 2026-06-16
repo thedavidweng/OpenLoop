@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from "vitest";
-import { renderHook, act, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 
 vi.mock("@/app/lib/app-shortcuts", () => ({
   getShortcutPlatform: vi.fn(() => "mac"),
@@ -219,8 +219,8 @@ describe("createWindowShellStyle", () => {
       sidebarHeaderHeight: 0,
       sidebarWidth: 320,
     });
-    expect(style["--window-shell-toolbar-height"]).toBe("64px");
-    expect(style["--window-shell-sidebar-width"]).toBe("320px");
+    expect((style as any)["--window-shell-toolbar-height"]).toBe("64px");
+    expect((style as any)["--window-shell-sidebar-width"]).toBe("320px");
   });
 });
 

@@ -7,7 +7,7 @@ import type { GenerationRecord } from "@/app/lib/types";
 vi.hoisted(() => {
   HTMLMediaElement.prototype.load = function () {};
   HTMLMediaElement.prototype.pause = function () {};
-  HTMLMediaElement.prototype.play = function () {};
+  HTMLMediaElement.prototype.play = async function () {};
   // jsdom has no URL.createObjectURL — provide one for blob audio loading
   if (typeof URL.createObjectURL === "undefined") {
     (URL as any).createObjectURL = () => "blob:mock-audio-url";
@@ -105,7 +105,7 @@ const SAMPLE_GENERATION: GenerationRecord = {
   durationSeconds: 120,
   bpm: 90,
   keyScale: "C major",
-  timeSignature: "4/4",
+  timeSignature: "4",
   model: "turbo",
   taskType: "text2music",
   thinking: false,
@@ -142,7 +142,7 @@ function getButtonByTooltip(label: string): HTMLButtonElement | undefined {
   return screen.getAllByRole("button").find((btn) => {
     const tooltip = btn.closest("[data-tooltip-label]");
     return tooltip?.getAttribute("data-tooltip-label") === label;
-  });
+  }) as HTMLButtonElement | undefined;
 }
 
 // --- Tests -------------------------------------------------------------------

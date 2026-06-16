@@ -222,6 +222,7 @@ function makeGenerationRecord(): GenerationRecord {
     status: "completed",
     errorMessage: null,
     isFavorite: false,
+    useRandomSeed: false,
   };
 }
 
@@ -249,7 +250,7 @@ function defaultStoreValues() {
 
 function setupMockStore(overrides?: Record<string, unknown>) {
   const values = { ...defaultStoreValues(), ...overrides };
-  vi.mocked(useGenerationStore).mockImplementation(
+  (vi.mocked(useGenerationStore) as any).mockImplementation(
     (selector: (state: Record<string, unknown>) => unknown) => selector(values),
   );
 }

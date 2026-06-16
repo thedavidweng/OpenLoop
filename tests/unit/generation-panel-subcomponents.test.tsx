@@ -25,8 +25,8 @@ const getRandomPromptByCategory = vi.fn((cat: string) => `a ${cat} track`);
 const PROMPT_CATEGORIES = ["pop", "cinematic", "edm"];
 
 vi.mock("@/app/lib/prompt-examples", () => ({
-  getRandomPromptExample: (...args: unknown[]) => getRandomPromptExample(...args),
-  getRandomPromptByCategory: (...args: unknown[]) => getRandomPromptByCategory(...args),
+  getRandomPromptExample,
+  getRandomPromptByCategory,
   PROMPT_CATEGORIES,
 }));
 

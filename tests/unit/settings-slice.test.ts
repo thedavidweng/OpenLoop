@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { create } from "zustand";
 import type { GenerationStore } from "@/app/lib/store/types";
 
@@ -33,8 +34,8 @@ vi.mock("@/app/lib/errors", () => ({
   localizeModelStatuses: vi.fn((s: unknown) => s),
 }));
 
-vi.mock("@/app/lib/model-packs", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/app/lib/model-packs")>();
+vi.mock("@/app/lib/model-packs", async (importOriginal: () => Promise<typeof import("@/app/lib/model-packs")>) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     expandDownloadedVariantsFromStatuses: vi.fn(() => []),
@@ -73,12 +74,14 @@ const i18nModule = await import("@/app/lib/i18n");
 
 const mockForm = {
   prompt: "",
+  negativePrompt: "",
   lyrics: "",
   vocalLanguage: "en",
   durationSeconds: "30",
+  bpmMode: "auto" as const,
   bpm: "",
   keyScale: "",
-  timeSignature: "4",
+  timeSignature: "4" as const,
   model: "acestep-v15-turbo",
   taskType: "text2music" as const,
   thinking: true,
@@ -90,9 +93,17 @@ const mockForm = {
   constrainedDecoding: true,
   useRandomSeed: false,
   seed: "",
-  audioFormat: "wav",
-  lmBackend: "mlx",
+  audioFormat: "wav" as const,
+  lmBackend: "mlx" as const,
   lmModelPath: "acestep-5Hz-lm-0.6B",
+  referenceAudioPath: "",
+  srcAudioPath: "",
+  instruction: "",
+  repaintingStart: "",
+  repaintingEnd: "",
+  audioCoverStrength: "",
+  instrumental: false,
+  variations: 1,
 };
 
 function createTestStore(overrides: Partial<GenerationStore> = {}) {
@@ -110,7 +121,7 @@ function createTestStore(overrides: Partial<GenerationStore> = {}) {
     setupOverride: false,
     refreshBootstrapStatus: vi.fn(() => Promise.resolve()),
     ...overrides,
-  }));
+  } as GenerationStore));
 }
 
 /* ================================================================== */
@@ -565,7 +576,7 @@ describe("Settings slice", () => {
         vi.mocked(api.isTauriRuntime).mockReturnValue(true);
         vi.mocked(api.getSettings).mockRejectedValue(new Error("db error"));
         vi.mocked(api.listGenerations).mockResolvedValue([]);
-        vi.mocked(api.getDeviceInfo).mockResolvedValue(null);
+        vi.mocked(api.getDeviceInfo).mockResolvedValue(null as any);
         vi.mocked(api.listModelCatalog).mockResolvedValue([]);
         vi.mocked(api.getModelStatus).mockResolvedValue([]);
         vi.mocked(api.listActiveGenerationTasks).mockResolvedValue([]);
@@ -597,7 +608,7 @@ describe("Settings slice", () => {
         vi.mocked(api.isTauriRuntime).mockReturnValue(true);
         vi.mocked(api.getSettings).mockRejectedValue("connection lost");
         vi.mocked(api.listGenerations).mockResolvedValue([]);
-        vi.mocked(api.getDeviceInfo).mockResolvedValue(null);
+        vi.mocked(api.getDeviceInfo).mockResolvedValue(null as any);
         vi.mocked(api.listModelCatalog).mockResolvedValue([]);
         vi.mocked(api.getModelStatus).mockResolvedValue([]);
         vi.mocked(api.listActiveGenerationTasks).mockResolvedValue([]);

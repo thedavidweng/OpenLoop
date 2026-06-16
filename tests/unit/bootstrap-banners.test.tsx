@@ -4,10 +4,10 @@ import userEvent from "@testing-library/user-event";
 
 // -- Store mock state (mutable per test) ----------------------------------
 
-let storeState: Record<string, unknown> = {};
+let storeState: Record<string, any> = {};
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (selector: (state: Record<string, unknown>) => unknown) => selector(storeState),
+  useGenerationStore: (selector: (state: Record<string, any>) => unknown) => selector(storeState),
 }));
 
 // -- Tauri updater mock ---------------------------------------------------

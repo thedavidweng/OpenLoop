@@ -2,6 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+// jsdom lacks setPointerCapture — stub it for drag tests
+vi.hoisted(() => {
+  if (!HTMLElement.prototype.setPointerCapture) {
+    HTMLElement.prototype.setPointerCapture = () => {};
+  }
+  if (!HTMLElement.prototype.releasePointerCapture) {
+    HTMLElement.prototype.releasePointerCapture = () => {};
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Shared mocks
 // ---------------------------------------------------------------------------

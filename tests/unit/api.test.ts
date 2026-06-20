@@ -759,7 +759,7 @@ describe("isTauriRuntime", () => {
     originalInternals = (window as any).__TAURI_INTERNALS__;
   });
 
-  afterEach(() => {
+  afterEach(() => { // ensure clean state for subsequent tests
     if (originalInternals !== undefined) {
       (window as any).__TAURI_INTERNALS__ = originalInternals;
     } else {

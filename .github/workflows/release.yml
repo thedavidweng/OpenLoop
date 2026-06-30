@@ -74,7 +74,7 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Build and draft GitHub release
-        uses: tauri-apps/tauri-action@action-v0.6.2
+        uses: tauri-apps/tauri-action@action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

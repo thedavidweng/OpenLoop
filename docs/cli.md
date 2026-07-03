@@ -254,6 +254,23 @@ On error:
 
 All commands return exit code `0` on success, `1` on error.
 
+## Shell Completions
+
+Generate completion scripts for bash, zsh, fish, powershell, or elvish:
+
+```bash
+openloop completions zsh   # print zsh completion script to stdout
+openloop completions bash  # print bash completion script to stdout
+```
+
+Source the output (or write it to the directory your shell loads completions from), e.g. for zsh:
+
+```bash
+openloop completions zsh > ~/.zsh/completions/_openloop
+```
+
+The `completions` command is hidden from top-level help.
+
 ## PATH Setup
 
 If you installed via DMG, open OpenLoop → Settings → "Add to PATH" to enable the `openloop` CLI command from any terminal. Homebrew cask installs handle this automatically.

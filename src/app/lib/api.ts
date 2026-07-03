@@ -271,3 +271,14 @@ export function exportGenerationsToFolder(ids: string[], destination: string): P
 export function prepareDragPayload(id: string): Promise<string> {
   return invoke<string>("prepare_drag_payload", { id });
 }
+
+export type NetworkEntry = {
+  timestamp: string;
+  url: string;
+  method: string;
+  status: number;
+};
+
+export function getNetworkLog(limit = 100): Promise<NetworkEntry[]> {
+  return invoke<NetworkEntry[]>("get_network_log", { limit });
+}

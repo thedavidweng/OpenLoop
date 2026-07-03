@@ -11,6 +11,7 @@ import { DefaultsSection } from "./sections/DefaultsSection";
 import { GeneralSection } from "./sections/GeneralSection";
 import { BackendSection } from "./sections/BackendSection";
 import { DangerZoneSection } from "./sections/DangerZoneSection";
+import { NetworkActivitySection } from "./sections/NetworkActivitySection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 import { SettingsDialogs } from "./SettingsDialogs";
 
@@ -85,6 +86,7 @@ export function SettingsOverlay() {
     { id: "defaults", label: t("settings.defaults") },
     { id: "general", label: t("settings.general") },
     { id: "backend", label: t("settings.backend") },
+    { id: "network", label: t("settings.networkActivity", { defaultValue: "Network" }) },
     { id: "danger", label: t("settings.danger") },
   ] as const;
 
@@ -156,6 +158,7 @@ export function SettingsOverlay() {
               onPickDirectory={pickDirectory}
               onShowNotice={setSaveNotice}
             />
+            <NetworkActivitySection />
             <DangerZoneSection
               historyCount={history.length}
               downloadedModelsCount={settings.downloadedModels.length}

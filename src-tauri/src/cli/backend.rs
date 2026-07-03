@@ -444,7 +444,10 @@ fn format_manifest_version(
 fn execute_provision(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
 
-    let provisioner = BackendProvisioner::new(state.app_data_dir.clone());
+    let provisioner = BackendProvisioner::new(
+        state.app_data_dir.clone(),
+        std::sync::Arc::clone(&state.network_log),
+    );
     if provisioner.is_provisioned() {
         let manifest = read_backend_manifest(&state.app_data_dir);
         let version = format_manifest_version(&manifest);
@@ -483,7 +486,10 @@ fn execute_provision(state: &AppState, args: &[String]) -> AppResult<()> {
 fn execute_update(state: &AppState, args: &[String]) -> AppResult<()> {
     let json = json_flag(args);
 
-    let provisioner = BackendProvisioner::new(state.app_data_dir.clone());
+    let provisioner = BackendProvisioner::new(
+        state.app_data_dir.clone(),
+        std::sync::Arc::clone(&state.network_log),
+    );
 
     if !provisioner.is_provisioned() {
         return Err(cli_error(

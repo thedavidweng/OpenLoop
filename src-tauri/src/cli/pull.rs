@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     cli::{cli_error, human_output},
     models::{errors::AppResult, settings::ModelVariant},
@@ -71,7 +73,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         return Ok(());
     }
 
-    let models = ModelManager::new(state.app_data_dir.clone());
+    let models = ModelManager::new(state.app_data_dir.clone(), Arc::clone(&state.network_log));
     let descriptor = ACE_MODEL_DESCRIPTORS
         .iter()
         .find(|d| d.variant == variant)

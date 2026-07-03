@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::Write;
+use std::sync::Arc;
 
 use chrono::Utc;
 
@@ -145,7 +146,7 @@ fn execute_download(state: &AppState, args: &[String], json: bool) -> AppResult<
         human_output(&format!("↓ Downloading {} ...", variant_label(variant)));
     }
 
-    let models = ModelManager::new(state.app_data_dir.clone());
+    let models = ModelManager::new(state.app_data_dir.clone(), Arc::clone(&state.network_log));
     models.download_blocking(&settings, variant)?;
 
     // Persist the downloaded model in settings so the list reflects it

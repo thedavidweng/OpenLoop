@@ -27,6 +27,7 @@ use crate::models::{
     settings::{AppSettings, ModelVariant},
 };
 use crate::services::model_bootstrap::{checkpoints_dir_for, descriptor_for};
+use crate::services::network_log::NetworkActivityLog;
 
 pub const ACE_MODEL_DESCRIPTORS: &[AceModelDescriptor] = &[
     AceModelDescriptor {
@@ -67,12 +68,14 @@ pub struct ModelManager {
     status: Arc<Mutex<Vec<ModelStatusSnapshot>>>,
     #[allow(clippy::type_complexity)]
     in_flight: Arc<Mutex<Vec<(ModelVariant, Arc<AtomicBool>)>>>,
+    network_log: Arc<NetworkActivityLog>,
 }
 
 impl ModelManager {
-    pub fn new(app_data_dir: PathBuf) -> Self {
+    pub fn new(app_data_dir: PathBuf, network_log: Arc<NetworkActivityLog>) -> Self {
         let manager = Self {
             app_data_dir,
+            network_log,
             status: Arc::new(Mutex::new(Vec::new())),
             in_flight: Arc::new(Mutex::new(Vec::new())),
         };
@@ -142,6 +145,7 @@ impl ModelManager {
         let status = Arc::clone(&self.status);
         let in_flight = Arc::clone(&self.in_flight);
         let download_settings = settings.clone();
+        let network_log = Arc::clone(&self.network_log);
 
         if let Ok(guard) = self.in_flight.lock() {
             if let Some((_, cancel)) = guard.iter().find(|(v, _)| *v == variant) {
@@ -158,6 +162,7 @@ impl ModelManager {
                         total_bytes,
                         &status,
                         &cancel,
+                        &network_log,
                     )
                     .await;
 
@@ -259,7 +264,7 @@ impl ModelManager {
                 }
             }
 
-            download_single_file_blocking(&client, spec, &target, mirror)?;
+            download_single_file_blocking(&client, spec, &target, mirror, &self.network_log)?;
         }
 
         record_install(&self.app_data_dir, descriptor)?;
@@ -642,6 +647,7 @@ async fn download_pack(
     total_bytes: u64,
     status: &Arc<Mutex<Vec<ModelStatusSnapshot>>>,
     cancel: &Arc<AtomicBool>,
+    network_log: &NetworkActivityLog,
 ) -> AppResult<()> {
     let checkpoints_dir = checkpoints_dir_for(app_data_dir, settings);
     fs::create_dir_all(&checkpoints_dir).map_err(|error| {
@@ -703,9 +709,14 @@ async fn download_pack(
         }
 
         let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
-        download_single_file(&client, spec, &target, mirror, |bytes_in_file| {
-            emit_progress(bytes_in_file, false)
-        })
+        download_single_file(
+            &client,
+            spec,
+            &target,
+            mirror,
+            network_log,
+            |bytes_in_file| emit_progress(bytes_in_file, false),
+        )
         .await?;
 
         baseline.fetch_add(spec.size, Ordering::Relaxed);
@@ -720,6 +731,7 @@ async fn download_single_file<F>(
     spec: &ModelFileSpec,
     target: &Path,
     mirror: &str,
+    network_log: &NetworkActivityLog,
     mut on_progress: F,
 ) -> AppResult<()>
 where
@@ -753,7 +765,10 @@ where
         }
 
         let response = match request.send().await {
-            Ok(response) => response,
+            Ok(response) => {
+                network_log.record(&url, "GET", response.status().as_u16());
+                response
+            }
             Err(error) => {
                 let message = format!(
                     "failed to request {repo}/{path}: {error}",
@@ -887,6 +902,7 @@ fn download_single_file_blocking(
     spec: &ModelFileSpec,
     target: &Path,
     mirror: &str,
+    network_log: &NetworkActivityLog,
 ) -> AppResult<()> {
     use std::io::Read;
 
@@ -916,7 +932,10 @@ fn download_single_file_blocking(
         }
 
         let mut response = match request.send() {
-            Ok(response) => response,
+            Ok(response) => {
+                network_log.record(&url, "GET", response.status().as_u16());
+                response
+            }
             Err(error) => {
                 let message = format!(
                     "failed to request {repo}/{path}: {error}",
@@ -1202,7 +1221,6 @@ fn resume_pending_deletions(app_data_dir: &Path, settings: &AppSettings) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::model_bootstrap::{checkpoints_dir_for, descriptor_for};
 
     #[test]
     fn standard_pack_includes_required_layers() {

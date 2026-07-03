@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockInvoke = vi.fn();
 
@@ -753,27 +753,28 @@ describe("error propagation", () => {
 // ---------------------------------------------------------------------------
 
 describe("isTauriRuntime", () => {
-  it("returns false when __TAURI_INTERNALS__ is absent", () => {
-    const original = (window as any).__TAURI_INTERNALS__;
-    delete (window as any).__TAURI_INTERNALS__;
+  let originalInternals: unknown;
 
-    expect(api.isTauriRuntime()).toBe(false);
-
-    if (original !== undefined) {
-      (window as any).__TAURI_INTERNALS__ = original;
-    }
+  beforeEach(() => {
+    originalInternals = (window as any).__TAURI_INTERNALS__;
   });
 
-  it("returns true when __TAURI_INTERNALS__ is present", () => {
-    const original = (window as any).__TAURI_INTERNALS__;
-    (window as any).__TAURI_INTERNALS__ = {};
-
-    expect(api.isTauriRuntime()).toBe(true);
-
-    if (original !== undefined) {
-      (window as any).__TAURI_INTERNALS__ = original;
+  afterEach(() => {
+    // ensure clean state for subsequent tests
+    if (originalInternals !== undefined) {
+      (window as any).__TAURI_INTERNALS__ = originalInternals;
     } else {
       delete (window as any).__TAURI_INTERNALS__;
     }
+  });
+
+  it("returns false when __TAURI_INTERNALS__ is absent", () => {
+    delete (window as any).__TAURI_INTERNALS__;
+    expect(api.isTauriRuntime()).toBe(false);
+  });
+
+  it("returns true when __TAURI_INTERNALS__ is present", () => {
+    (window as any).__TAURI_INTERNALS__ = {};
+    expect(api.isTauriRuntime()).toBe(true);
   });
 });

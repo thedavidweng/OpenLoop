@@ -27,8 +27,7 @@ const CHECKS = [
   {
     id: "right-click-open",
     desc: "Right-click Open bypass method present",
-    test: (content) =>
-      /[Rr]ight-?[Cc]lick.*[Oo]pen|[Rr]ight-?[Cc]lick.*[Oo]pen/.test(content),
+    test: (content) => /[Rr]ight-?[Cc]lick.*[Oo]pen/.test(content),
   },
   {
     id: "xattr-cr",
@@ -82,3 +81,4 @@ function main() {
 }
 
 main();
+

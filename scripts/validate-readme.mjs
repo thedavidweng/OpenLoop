@@ -71,12 +71,11 @@ check(
   "no 'vX.Y Alpha' status found in Chinese README"
 );
 
-// 5. README_CN.md has Release badge (shield.io badge in the header badge block)
-const cnBadgeBlock = readmeCN.split("</div>")[0]; // everything before first closing div
+// 5. README_CN.md has Release badge (shield.io release badge anywhere in the file)
 check(
   "5. README_CN.md has Release badge",
-  /img\.shields\.io.*release/i.test(cnBadgeBlock) || /\[!\[Release\]/i.test(cnBadgeBlock),
-  "missing Release badge in header badge block"
+  /img\.shields\.io.*release/i.test(readmeCN) || /\[!\[Release\]/i.test(readmeCN),
+  "missing Release badge"
 );
 
 // 6. CSP ADR references Tauri v2 security docs

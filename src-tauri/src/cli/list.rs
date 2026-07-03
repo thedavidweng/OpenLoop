@@ -13,8 +13,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let limit = parse_limit(args);
 
-    let records = state.db.list_generations(None)?;
-    let records: Vec<_> = records.into_iter().take(limit).collect();
+    let records = state.db.list_generations(None, Some(limit as u32))?;
 
     if json {
         let json_output = serde_json::to_string_pretty(&records)

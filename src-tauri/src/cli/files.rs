@@ -9,48 +9,20 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::FilesCommand;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    // Find the subcommand: first non-flag argument after "files" (args[0])
-    let sub_pos = args.iter().skip(1).position(|a| !a.starts_with('-'));
-    let subcommand = sub_pos.map_or("help", |i| args[i + 1].as_str());
-    let sub_args = if let Some(i) = sub_pos {
-        &args[i + 2..]
-    } else {
-        &[]
-    };
-
-    match subcommand {
-        "reveal" => cmd_reveal(state, sub_args, json),
-        "copy" => cmd_copy(state, sub_args, json),
-        "exists" => cmd_exists(state, sub_args, json),
-        "read-audio" => cmd_read_audio(state, sub_args, json),
-        "waveform" => cmd_waveform(state, sub_args, json),
-        "unlink" => cmd_unlink(state, sub_args, json),
-        "help" | "--help" | "-h" => {
-            print_help();
-            Ok(())
-        }
-        _ => Err(cli_error(format!(
-            "unknown files subcommand '{subcommand}'. Use 'openloop files --help' to see available subcommands.",
-        ))),
+pub fn execute(state: &AppState, json: bool, command: FilesCommand) -> AppResult<()> {
+    match command {
+        FilesCommand::Reveal { path } => cmd_reveal(state, json, &path),
+        FilesCommand::Copy { src, dst } => cmd_copy(state, json, &src, &dst),
+        FilesCommand::Exists { path } => cmd_exists(state, json, &path),
+        FilesCommand::ReadAudio { id, output } => cmd_read_audio(state, json, &id, output),
+        FilesCommand::Waveform { id } => cmd_waveform(state, &id),
+        FilesCommand::Unlink { id, keep_record } => cmd_unlink(state, json, &id, keep_record),
     }
 }
 
-fn cmd_reveal(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let path = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("path is required. Usage: openloop files reveal <path>"))?;
-
+fn cmd_reveal(_state: &AppState, json: bool, path: &str) -> AppResult<()> {
     #[cfg(target_os = "macos")]
     {
         let status = Command::new("open")
@@ -76,19 +48,7 @@ fn cmd_reveal(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
     Ok(())
 }
 
-fn cmd_copy(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let positional: Vec<&str> = args
-        .iter()
-        .filter(|a| !a.starts_with('-'))
-        .map(String::as_str)
-        .collect();
-    let src = positional
-        .first()
-        .ok_or_else(|| cli_error("src is required. Usage: openloop files copy <src> <dst>"))?;
-    let dst = positional
-        .get(1)
-        .ok_or_else(|| cli_error("dst is required. Usage: openloop files copy <src> <dst>"))?;
-
+fn cmd_copy(_state: &AppState, json: bool, src: &str, dst: &str) -> AppResult<()> {
     let src_path = PathBuf::from(src);
     let dst_path = PathBuf::from(dst);
     let target_path = if dst_path.is_dir() {
@@ -112,12 +72,7 @@ fn cmd_copy(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
     Ok(())
 }
 
-fn cmd_exists(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let path = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("path is required. Usage: openloop files exists <path>"))?;
-
+fn cmd_exists(_state: &AppState, json: bool, path: &str) -> AppResult<()> {
     let exists = PathBuf::from(path).exists();
 
     if json {
@@ -139,12 +94,7 @@ fn cmd_exists(_state: &AppState, args: &[String], json: bool) -> AppResult<()> {
     }
 }
 
-fn cmd_read_audio(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let id = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop files read-audio <id>"))?;
-
+fn cmd_read_audio(state: &AppState, json: bool, id: &str, output: Option<String>) -> AppResult<()> {
     let record = history::resolve_by_prefix(&state.db, id)?;
     let path = record
         .output_path
@@ -164,48 +114,40 @@ fn cmd_read_audio(state: &AppState, args: &[String], json: bool) -> AppResult<()
     }
     let bytes = fs::read(&path).map_err(|error| AppError::output_read_failed(error.to_string()))?;
 
-    // Parse --output flag
-    let output_to_stdout = args.windows(2).any(|w| w[0] == "--output" && w[1] == "-");
-    let custom_path = args
-        .windows(2)
-        .find(|w| w[0] == "--output" && w[1] != "-")
-        .map(|w| w[1].as_str());
-
-    if output_to_stdout {
-        let stdout = std::io::stdout();
-        let mut handle = stdout.lock();
-        handle
-            .write_all(&bytes)
-            .map_err(|e| cli_error(e.to_string()))?;
-        Ok(())
-    } else if let Some(path) = custom_path {
-        fs::write(path, &bytes).map_err(|e| cli_error(e.to_string()))?;
-        if json {
-            super::json_output(&format!(r#"{{"path":"{path}"}}"#));
-        } else {
-            human_output(&format!("✓ Wrote audio to: {path}"));
+    match output.as_deref() {
+        Some("-") => {
+            let stdout = std::io::stdout();
+            let mut handle = stdout.lock();
+            handle
+                .write_all(&bytes)
+                .map_err(|e| cli_error(e.to_string()))?;
+            Ok(())
         }
-        Ok(())
-    } else {
-        let filename = format!("openloop_audio_{}.wav", Uuid::new_v4());
-        let tmp_path = std::env::temp_dir().join(filename);
-        fs::write(&tmp_path, &bytes).map_err(|e| cli_error(e.to_string()))?;
-        let display = tmp_path.display().to_string();
-        if json {
-            super::json_output(&format!(r#"{{"path":"{display}"}}"#));
-        } else {
-            human_output(&format!("✓ Wrote audio to: {display}"));
+        Some(custom_path) => {
+            fs::write(custom_path, &bytes).map_err(|e| cli_error(e.to_string()))?;
+            if json {
+                super::json_output(&format!(r#"{{"path":"{custom_path}"}}"#));
+            } else {
+                human_output(&format!("✓ Wrote audio to: {custom_path}"));
+            }
+            Ok(())
         }
-        Ok(())
+        None => {
+            let filename = format!("openloop_audio_{}.wav", Uuid::new_v4());
+            let tmp_path = std::env::temp_dir().join(filename);
+            fs::write(&tmp_path, &bytes).map_err(|e| cli_error(e.to_string()))?;
+            let display = tmp_path.display().to_string();
+            if json {
+                super::json_output(&format!(r#"{{"path":"{display}"}}"#));
+            } else {
+                human_output(&format!("✓ Wrote audio to: {display}"));
+            }
+            Ok(())
+        }
     }
 }
 
-fn cmd_waveform(state: &AppState, args: &[String], _json: bool) -> AppResult<()> {
-    let id = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop files waveform <id>"))?;
-
+fn cmd_waveform(state: &AppState, id: &str) -> AppResult<()> {
     let history = HistoryService::new(state.db.clone());
     let waveform = history.read_generation_waveform(id)?;
 
@@ -215,13 +157,7 @@ fn cmd_waveform(state: &AppState, args: &[String], _json: bool) -> AppResult<()>
     Ok(())
 }
 
-fn cmd_unlink(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let id_arg = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop files unlink <id>"))?;
-
-    let keep_record = args.contains(&"--keep-record".to_owned());
+fn cmd_unlink(state: &AppState, json: bool, id_arg: &str, keep_record: bool) -> AppResult<()> {
     let records = state.db.list_generations(None)?;
 
     let record = records
@@ -269,28 +205,4 @@ fn cmd_unlink(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop files — File and output management
-
-Usage:
-  openloop files <subcommand> [args] [flags]
-
-Subcommands:
-  reveal <path>       Open Finder/Explorer at the file location
-  copy <src> <dst>    Copy a file
-  exists <path>       Check if a file exists
-  read-audio <id>     Read audio bytes for a generation record
-  waveform <id>       Read waveform peaks for a generation record
-  unlink <id>         Delete a generation record and its file
-
-Flags:
-  --json              JSON output (supported by most subcommands)
-  --help              Show help
-
-Use 'openloop files <subcommand> --help' for subcommand-specific help.",
-    );
 }

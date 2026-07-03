@@ -6,29 +6,17 @@ use crate::{
 
 use super::AppState;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    let id_arg = args
-        .iter()
-        .skip(1)
-        .find(|arg| !arg.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop delete <id>"))?;
+pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::DeleteArgs) -> AppResult<()> {
+    let id_arg = args.id;
 
     let records = state.db.list_generations(None)?;
 
     let record = records
         .iter()
-        .find(|r| r.id.starts_with(id_arg))
+        .find(|r| r.id.starts_with(&id_arg))
         .ok_or_else(|| cli_error(format!("no generation record matches '{id_arg}'")))?;
 
-    let conflicting = records.iter().filter(|r| r.id.starts_with(id_arg)).count();
+    let conflicting = records.iter().filter(|r| r.id.starts_with(&id_arg)).count();
 
     if conflicting > 1 {
         return Err(cli_error(format!(
@@ -50,18 +38,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop delete — Delete a generation record
-
-Usage:
-  openloop delete <id> [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
 }

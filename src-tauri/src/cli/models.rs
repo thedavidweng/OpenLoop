@@ -14,38 +14,22 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::ModelsCommand;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    // Subcommand is the first non-flag argument (skip args[0] which is "models")
-    let subcommand = args
-        .iter()
-        .skip(1)
-        .find(|a| !a.starts_with('-'))
-        .map(|s| s.as_str());
-
-    match subcommand {
-        None | Some("list") => execute_list(state, args, json),
-        Some("download") => execute_download(state, args, json),
-        Some("delete") => execute_delete(state, args, json),
-        Some("cancel") => execute_cancel(state, args, json),
-        Some("clear-partial") => execute_clear_partial(state, args, json),
-        Some("delete-all") => execute_delete_all(state, args, json),
-        Some(other) => Err(cli_error(format!(
-            "unknown subcommand '{}'.\n{}",
-            other, "Available: list, download, delete, cancel, clear-partial, delete-all"
-        ))),
+pub fn execute(state: &AppState, json: bool, command: Option<ModelsCommand>) -> AppResult<()> {
+    match command.unwrap_or(ModelsCommand::List) {
+        ModelsCommand::List => execute_list(state, json),
+        ModelsCommand::Download { variant } => execute_download(state, json, variant.into()),
+        ModelsCommand::Delete { variant } => execute_delete(state, json, variant.into()),
+        ModelsCommand::Cancel { variant } => execute_cancel(state, json, variant.into()),
+        ModelsCommand::ClearPartial { variant } => {
+            execute_clear_partial(state, json, variant.into())
+        }
+        ModelsCommand::DeleteAll { yes } => execute_delete_all(state, json, yes),
     }
 }
 
-fn execute_list(state: &AppState, _args: &[String], json: bool) -> AppResult<()> {
+fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
     let mut settings = state.db.get_settings()?;
 
     // Sync downloaded_models from manifest if it has entries the DB is missing
@@ -123,13 +107,7 @@ fn execute_list(state: &AppState, _args: &[String], json: bool) -> AppResult<()>
     Ok(())
 }
 
-fn execute_download(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let variant_str = args.get(1).filter(|a| !a.starts_with('-')).ok_or_else(|| {
-        cli_error("model variant is required.\nUsage: openloop models download <lite|turbo|pro>")
-    })?;
-
-    let variant = parse_variant(variant_str)?;
-
+fn execute_download(state: &AppState, json: bool, variant: ModelVariant) -> AppResult<()> {
     let settings = state.db.get_settings()?;
 
     if settings.downloaded_models.contains(&variant) {
@@ -172,13 +150,7 @@ fn execute_download(state: &AppState, args: &[String], json: bool) -> AppResult<
     Ok(())
 }
 
-fn execute_delete(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let variant_str = args.get(1).filter(|a| !a.starts_with('-')).ok_or_else(|| {
-        cli_error("model variant is required.\nUsage: openloop models delete <lite|turbo|pro>")
-    })?;
-
-    let variant = parse_variant(variant_str)?;
-
+fn execute_delete(state: &AppState, json: bool, variant: ModelVariant) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let descriptor = descriptor_for(variant)?;
     let checkpoints_dir = checkpoints_dir_for(&state.app_data_dir, &settings);
@@ -249,13 +221,7 @@ fn execute_delete(state: &AppState, args: &[String], json: bool) -> AppResult<()
     Ok(())
 }
 
-fn execute_cancel(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let variant_str = args.get(1).filter(|a| !a.starts_with('-')).ok_or_else(|| {
-        cli_error("model variant is required.\nUsage: openloop models cancel <lite|turbo|pro>")
-    })?;
-
-    let variant = parse_variant(variant_str)?;
-
+fn execute_cancel(state: &AppState, json: bool, variant: ModelVariant) -> AppResult<()> {
     let manager = state
         .models
         .lock()
@@ -274,15 +240,7 @@ fn execute_cancel(state: &AppState, args: &[String], json: bool) -> AppResult<()
     Ok(())
 }
 
-fn execute_clear_partial(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let variant_str = args.get(1).filter(|a| !a.starts_with('-')).ok_or_else(|| {
-        cli_error(
-            "model variant is required.\nUsage: openloop models clear-partial <lite|turbo|pro>",
-        )
-    })?;
-
-    let variant = parse_variant(variant_str)?;
-
+fn execute_clear_partial(state: &AppState, json: bool, variant: ModelVariant) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let manager = state
         .models
@@ -305,7 +263,7 @@ fn execute_clear_partial(state: &AppState, args: &[String], json: bool) -> AppRe
     Ok(())
 }
 
-fn execute_delete_all(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
+fn execute_delete_all(state: &AppState, json: bool, yes: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let count = settings.downloaded_models.len();
 
@@ -318,7 +276,6 @@ fn execute_delete_all(state: &AppState, args: &[String], json: bool) -> AppResul
         return Ok(());
     }
 
-    let yes = args.contains(&"--yes".to_owned());
     if !yes {
         eprintln!("This will delete {count} downloaded model(s) and their local files.");
         eprint!("Are you sure? [y/N]: ");
@@ -361,18 +318,6 @@ fn execute_delete_all(state: &AppState, args: &[String], json: bool) -> AppResul
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn parse_variant(arg: &str) -> AppResult<ModelVariant> {
-    match arg.to_lowercase().as_str() {
-        "lite" => Ok(ModelVariant::Lite),
-        "turbo" => Ok(ModelVariant::Turbo),
-        "pro" => Ok(ModelVariant::Pro),
-        _ => Err(cli_error(format!(
-            "unknown model '{}'. Available: lite, turbo, pro",
-            arg
-        ))),
-    }
-}
-
 fn variant_str(variant: ModelVariant) -> &'static str {
     match variant {
         ModelVariant::Lite => "lite",
@@ -391,31 +336,4 @@ fn variant_label(variant: ModelVariant) -> &'static str {
 
 fn variant_key_str(variant: ModelVariant) -> &'static str {
     variant_str(variant)
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop models — Manage model variants
-
-Usage:
-  openloop models [subcommand] [flags]
-
-Subcommands:
-  list                    List available and downloaded models (default)
-  download <lite|turbo|pro>
-                          Download a model variant
-  delete <lite|turbo|pro>
-                          Delete a downloaded model variant
-  cancel <lite|turbo|pro>
-                          Cancel an ongoing model download
-  clear-partial <lite|turbo|pro>
-                          Remove partial download artifacts for a variant
-  delete-all              Delete all downloaded models (requires --yes)
-
-Flags:
-  --json    JSON output
-  --yes     Skip confirmation for destructive operations
-  --help    Show help",
-    );
 }

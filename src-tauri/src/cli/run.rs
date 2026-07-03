@@ -21,60 +21,10 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::RunArgs;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    let json = flag(args, "--json");
-    let no_thinking = flag(args, "--no-thinking");
-
-    let model = value(args, "--model").or_else(|| value(args, "-m"));
-    let duration: Option<f64> = value(args, "--duration")
-        .or_else(|| value(args, "-d"))
-        .and_then(|s| s.parse().ok());
-    let format = value(args, "--format").or_else(|| value(args, "-f"));
-    let output = value(args, "--output").or_else(|| value(args, "-o"));
-    let lyrics = value(args, "--lyrics").or_else(|| value(args, "-l"));
-    let bpm: Option<i64> = value(args, "--bpm").and_then(|s| s.parse().ok());
-    let key = value(args, "--key");
-    let steps: Option<i64> = value(args, "--steps").and_then(|s| s.parse().ok());
-    let guidance: Option<f64> = value(args, "--guidance").and_then(|s| s.parse().ok());
-    let seed: Option<i64> = value(args, "--seed").and_then(|s| s.parse().ok());
-    let variations: Option<i64> = value(args, "--variations")
-        .or_else(|| value(args, "-v"))
-        .and_then(|s| s.parse().ok());
-
-    // Find prompt — first positional arg that isn't a flag value
-    let prompt = {
-        let mut skip_next = false;
-        let mut prompt = String::new();
-        for arg in args.iter().skip(1) {
-            if skip_next {
-                skip_next = false;
-                continue;
-            }
-            if flag_like(arg) {
-                if needs_value(arg) {
-                    skip_next = true;
-                }
-                continue;
-            }
-            if prompt.is_empty() {
-                prompt = arg.clone();
-            }
-        }
-        prompt
-    };
-
-    if prompt.is_empty() {
-        return Err(cli_error(
-            "prompt is required. Usage: openloop run <prompt>",
-        ));
-    }
+pub fn execute(state: &AppState, json: bool, args: RunArgs) -> AppResult<()> {
+    let no_thinking = args.no_thinking;
 
     let settings = state.db.get_settings()?;
     let port = {
@@ -89,7 +39,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     };
 
     // Build GenerationRequest
-    let model_variant: Option<ModelVariant> = match model.as_deref() {
+    let model_variant: Option<ModelVariant> = match args.model.as_deref() {
         Some("lite") => Some(ModelVariant::Lite),
         Some("turbo") => Some(ModelVariant::Turbo),
         Some("pro") => Some(ModelVariant::Pro),
@@ -97,7 +47,8 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         None => settings.model_variant,
     };
 
-    let audio_format = format
+    let audio_format = args
+        .format
         .clone()
         .or_else(|| Some(settings.default_audio_format.clone()))
         .unwrap_or_else(|| "wav".to_owned());
@@ -114,13 +65,13 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         .unwrap_or((None, None));
 
     let request = GenerationRequest {
-        prompt: prompt.clone(),
+        prompt: args.prompt.clone(),
         negative_prompt: None,
-        lyrics: lyrics.unwrap_or_default(),
+        lyrics: args.lyrics.unwrap_or_default(),
         vocal_language: "en".to_owned(),
-        duration_seconds: duration.unwrap_or(settings.default_duration_seconds),
-        bpm,
-        key_scale: key,
+        duration_seconds: args.duration.unwrap_or(settings.default_duration_seconds),
+        bpm: args.bpm,
+        key_scale: args.key,
         time_signature: "4".to_owned(),
         audio_format: audio_format.clone(),
         model: model_name,
@@ -128,8 +79,8 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         lm_model_path,
         lm_backend: Some("mlx".to_owned()),
         thinking: !no_thinking && settings.default_thinking,
-        inference_steps: steps.unwrap_or(8),
-        guidance_scale: guidance.unwrap_or(7.0),
+        inference_steps: args.steps.unwrap_or(8),
+        guidance_scale: args.guidance.unwrap_or(7.0),
         use_format: false,
         use_cot_caption: true,
         use_cot_language: true,
@@ -140,9 +91,9 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         repainting_start: None,
         repainting_end: None,
         audio_cover_strength: None,
-        use_random_seed: seed.is_none(),
-        seed,
-        variation_count: variations.unwrap_or(1),
+        use_random_seed: args.seed.is_none(),
+        seed: args.seed,
+        variation_count: args.variations.unwrap_or(1),
     };
 
     request.validate()?;
@@ -170,7 +121,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     // Resolve output directory for --output flag
     let mut gen_settings = settings.clone();
-    if let Some(out) = &output {
+    if let Some(out) = &args.output {
         if let Some(parent) = std::path::Path::new(out).parent() {
             if parent != std::path::Path::new("") {
                 gen_settings.output_directory = Some(parent.display().to_string());
@@ -196,7 +147,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     // Handle output path renaming if --output specified
     for (i, record) in result.records.iter().enumerate() {
-        let final_path = resolve_output_path(&output, record, i + 1, result.records.len());
+        let final_path = resolve_output_path(&args.output, record, i + 1, result.records.len());
         if let (Some(src), Some(dst)) = (&record.output_path, final_path) {
             if *src != dst {
                 std::fs::rename(src, &dst)
@@ -379,77 +330,4 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
         }
         Ok(())
     }
-}
-
-fn flag(args: &[String], name: &str) -> bool {
-    args.iter().any(|a| a == name)
-}
-
-fn value(args: &[String], name: &str) -> Option<String> {
-    for i in 0..args.len() {
-        if args[i] == name {
-            return args.get(i + 1).filter(|v| !v.starts_with('-')).cloned();
-        }
-    }
-    None
-}
-
-fn flag_like(arg: &str) -> bool {
-    arg.starts_with('-')
-}
-
-fn needs_value(arg: &str) -> bool {
-    matches!(
-        arg,
-        "--model"
-            | "-m"
-            | "--duration"
-            | "-d"
-            | "--format"
-            | "-f"
-            | "--output"
-            | "-o"
-            | "--lyrics"
-            | "-l"
-            | "--bpm"
-            | "--key"
-            | "--steps"
-            | "--guidance"
-            | "--seed"
-            | "--variations"
-            | "-v"
-            | "--limit"
-    )
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop run — Generate music
-
-Usage:
-  openloop run [flags] <prompt>
-
-Flags:
-  -m, --model       Model variant (lite/turbo/pro)
-  -d, --duration    Duration in seconds (10-600)
-  -f, --format      Audio format (wav/mp3/flac/ogg)
-  -o, --output      Output file path
-  -l, --lyrics      Lyrics text
-  --bpm             BPM (30-300)
-  --key             Key and scale (e.g., \"C major\")
-  --steps           Inference steps
-  --guidance        Guidance scale
-  --seed            Random seed
-  -v, --variations  Number of variations (1-4)
-  --no-thinking     Disable thinking mode
-  --json            NDJSON streaming output
-  -h, --help        Show help
-
-Examples:
-  openloop run \"upbeat electronic track\"
-  openloop run \"sad piano\" --duration 60 --format mp3 --output ./sad.mp3
-  openloop run \"pop song\" --lyrics \"[verse]\\nHello\\n[chorus]\\nWorld\"
-  openloop run \"epic cinematic\" --json",
-    );
 }

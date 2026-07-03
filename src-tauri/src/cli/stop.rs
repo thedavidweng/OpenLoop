@@ -2,20 +2,11 @@ use crate::{cli::human_output, models::errors::AppResult};
 
 use super::AppState;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-    let kill_backend = args.contains(&"--kill-backend".to_owned());
+pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) -> AppResult<()> {
+    let kill_backend = args.kill_backend;
 
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    let id = args.get(1).cloned();
-
-    match id {
-        Some(ref task_id) if !task_id.starts_with('-') => {
-            // Targeted DB-level cancellation for cross-process visibility
+    match &args.generation_id {
+        Some(task_id) if !task_id.starts_with('-') => {
             let runner = crate::services::generation_task::GenerationTaskRunner::new(
                 state.db.clone(),
                 crate::services::file_store::FileStore::new(state.app_data_dir.clone()),
@@ -25,7 +16,6 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
             human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
         }
         _ => {
-            // Global cancellation via process-level flag and DB-level for all active tasks
             state
                 .generation_cancelled
                 .store(true, std::sync::atomic::Ordering::SeqCst);
@@ -54,23 +44,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop stop — Cancel an ongoing generation
-
-Usage:
-  openloop stop [generation-id] [flags]
-
-Flags:
-  --kill-backend  Also stop the local backend if owned by this process
-  --help          Show help
-
-Examples:
-  openloop stop
-  openloop stop abc12345
-  openloop stop --kill-backend",
-    );
 }

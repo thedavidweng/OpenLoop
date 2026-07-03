@@ -7,7 +7,6 @@ mod enhance;
 pub mod events;
 mod files;
 mod generation;
-mod help;
 mod list;
 mod models;
 mod ps;
@@ -38,74 +37,41 @@ pub fn run(args: Vec<String>) -> i32 {
 }
 
 fn run_inner(args: Vec<String>) -> AppResult<()> {
-    // Handle the hidden completions command via clap derive so it can emit
-    // shell completion scripts for bash/zsh/fish/powershell/elvish.
-    if args.get(1).is_some_and(|s| s == "completions") {
-        let parsed = spec::Cli::try_parse_from(&args)
-            .map_err(|e| AppError::validation_failed(first_line(&e.to_string())))?;
-        let spec::Commands::Completions { shell } = parsed.command else {
-            unreachable!("args[1] == \"completions\" guarantees the Completions variant")
-        };
-        let mut cmd = spec::Cli::command();
-        completions::print_completions(shell.into(), &mut cmd);
-        return Ok(());
-    }
+    // clap expects argv with the program name at index 0; the incoming `args`
+    // already includes it, so we pass the whole vector. clap uses args[0] as
+    // the binary name and parses the rest as subcommands/flags.
+    let cli = spec::Cli::parse_from(args.iter());
+    let json = cli.global.json;
 
     let state = AppState::init_for_cli()?;
 
-    let command = args.get(1).map(String::as_str).unwrap_or("help");
-    let sub_args = &args[1..];
-
-    match command {
-        "backend" => backend::execute(&state, sub_args),
-        "clear" => clear::execute(&state, sub_args),
-        "delete" => delete::execute(&state, sub_args),
-        "doctor" => doctor::execute(&state, sub_args),
-        "enhance" => enhance::execute(&state, sub_args),
-        "files" => files::execute(&state, sub_args),
-        "generation" => generation::execute(&state, sub_args),
-        "list" => list::execute(&state, sub_args),
-        "models" => models::execute(&state, sub_args),
-        "ps" => ps::execute(&state, sub_args),
-        "pull" => pull::execute(&state, sub_args),
-        "run" => run::execute(&state, sub_args),
-        "settings" => settings::execute(&state, sub_args),
-        "setup" => setup::execute(&state, sub_args),
-        "status" => status::execute(&state, sub_args),
-        "stop" => stop::execute(&state, sub_args),
-        "help" | "--help" | "-h" => {
-            help::print_top_level();
+    match cli.command {
+        spec::Commands::Run(args) => run::execute(&state, json, args),
+        spec::Commands::Enhance(args) => enhance::execute(&state, json, args),
+        spec::Commands::Backend { command } => backend::execute(&state, json, command),
+        spec::Commands::Models { command } => models::execute(&state, json, command),
+        spec::Commands::Settings { command } => settings::execute(&state, json, command),
+        spec::Commands::Generation { command } => generation::execute(&state, json, command),
+        spec::Commands::List(args) => list::execute(&state, json, args),
+        spec::Commands::Delete(args) => delete::execute(&state, json, args),
+        spec::Commands::Clear(args) => clear::execute(&state, json, args),
+        spec::Commands::Ps => ps::execute(&state, json),
+        spec::Commands::Stop(args) => stop::execute(&state, json, args),
+        spec::Commands::Pull(args) => pull::execute(&state, json, args),
+        spec::Commands::Status => status::execute(&state, json),
+        spec::Commands::Doctor => doctor::execute(&state, json),
+        spec::Commands::Files { command } => files::execute(&state, json, command),
+        spec::Commands::Setup(args) => setup::execute(&state, json, args),
+        spec::Commands::Completions { shell } => {
+            let mut cmd = spec::Cli::command();
+            completions::print_completions(shell.into(), &mut cmd);
             Ok(())
-        }
-        unknown => {
-            if unknown.starts_with('-') {
-                help::print_top_level();
-                Ok(())
-            } else {
-                Err(AppError::validation_failed(format!(
-                    "unknown command '{}'. Use 'openloop help' to see available commands.",
-                    unknown
-                )))
-            }
         }
     }
 }
 
 pub fn cli_error(message: impl Into<String>) -> AppError {
     AppError::validation_failed(message)
-}
-
-/// Extract the first non-empty line of `s`, trimming surrounding whitespace.
-///
-/// Used to surface clap parse errors without dragging clap's multi-line usage
-/// block (which carries its own ANSI styling and newlines) through the app's
-/// error formatter.
-fn first_line(s: &str) -> String {
-    s.lines()
-        .find(|line| !line.trim().is_empty())
-        .map(str::trim)
-        .map(str::to_owned)
-        .unwrap_or_default()
 }
 
 pub fn json_output(json: &str) {

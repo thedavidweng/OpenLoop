@@ -1,17 +1,9 @@
-use crate::{cli::human_output, models::errors::AppResult};
+use crate::{cli::human_output, cli::spec::ListArgs, models::errors::AppResult};
 
 use super::AppState;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    let limit = parse_limit(args);
+pub fn execute(state: &AppState, json: bool, args: ListArgs) -> AppResult<()> {
+    let limit = args.limit;
 
     let records = state.db.list_generations(None)?;
     let records: Vec<_> = records.into_iter().take(limit).collect();
@@ -57,30 +49,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn parse_limit(args: &[String]) -> usize {
-    for i in 0..args.len() {
-        if args[i] == "--limit" {
-            if let Some(val) = args.get(i + 1) {
-                return val.parse::<usize>().unwrap_or(20);
-            }
-        }
-    }
-    20
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop list — Show generation history
-
-Usage:
-  openloop list [flags]
-
-Flags:
-  --json     JSON array output
-  --limit N  Number of records (default: 20)
-  --help     Show help",
-    );
 }

@@ -51,6 +51,12 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
         return Ok(());
     }
 
+    // Initialize structured tracing before AppState so early failures are
+    // captured. The app log lives under the default app data dir.
+    if let Ok(app_data_dir) = crate::app_state::default_app_data_dir() {
+        crate::services::observability::init(&app_data_dir);
+    }
+
     let state = AppState::init_for_cli()?;
 
     let command = args.get(1).map(String::as_str).unwrap_or("help");

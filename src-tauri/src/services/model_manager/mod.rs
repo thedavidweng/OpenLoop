@@ -191,8 +191,8 @@ impl ModelManager {
                         let final_snapshot = match result {
                             Ok(()) => {
                                 if let Err(error) = record_install(&app_data_dir, descriptor) {
-                                    eprintln!(
-                                        "openloop: failed to persist model install manifest: {}",
+                                    tracing::error!(
+                                        "failed to persist model install manifest: {}",
                                         error.message
                                     );
                                 }
@@ -203,9 +203,10 @@ impl ModelManager {
                                 )
                             }
                             Err(error) => {
-                                eprintln!(
-                                    "openloop: model download for {:?} failed: {}",
-                                    variant, error.message
+                                tracing::error!(
+                                    "model download for {:?} failed: {}",
+                                    variant,
+                                    error.message
                                 );
                                 failed_snapshot_for(
                                     &app_data_dir,
@@ -337,7 +338,7 @@ impl ModelManager {
             clear_delete_marker(&app_data_dir_for_final, variant);
 
             if let Err(error) = result {
-                eprintln!("openloop: model delete for {:?} panicked: {error}", variant);
+                tracing::error!("model delete for {:?} panicked: {error}", variant);
             }
 
             let final_snapshot =
@@ -778,7 +779,7 @@ where
                 if attempt >= MAX_ATTEMPTS {
                     return Err(AppError::model_download_failed(message));
                 }
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
                 last_error = Some(AppError::model_download_failed(message));
                 tokio::time::sleep(retry_delay(attempt)).await;
                 written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
@@ -793,7 +794,7 @@ where
                 spec.repo, spec.remote_path
             );
             if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
                 last_error = Some(AppError::model_download_failed(message));
                 tokio::time::sleep(retry_delay(attempt)).await;
                 continue;
@@ -849,10 +850,7 @@ where
             if attempt >= MAX_ATTEMPTS {
                 return Err(error);
             }
-            eprintln!(
-                "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
-                error.message
-            );
+            tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", error.message);
             last_error = Some(error);
             tokio::time::sleep(retry_delay(attempt)).await;
             written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
@@ -867,7 +865,7 @@ where
             if attempt >= MAX_ATTEMPTS {
                 return Err(AppError::model_download_failed(message));
             }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+            tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
             last_error = Some(AppError::model_download_failed(message));
             tokio::time::sleep(retry_delay(attempt)).await;
             continue;
@@ -945,7 +943,7 @@ fn download_single_file_blocking(
                 if attempt >= MAX_ATTEMPTS {
                     return Err(AppError::model_download_failed(message));
                 }
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
                 std::thread::sleep(retry_delay(attempt));
                 written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
                 continue;
@@ -959,7 +957,7 @@ fn download_single_file_blocking(
                 spec.repo, spec.remote_path
             );
             if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
                 std::thread::sleep(retry_delay(attempt));
                 continue;
             }
@@ -1000,9 +998,10 @@ fn download_single_file_blocking(
                             spec.repo, spec.remote_path
                         )));
                     }
-                    eprintln!(
-                        "openloop: stream error for {}/{}: {error} (retry {attempt}/{MAX_ATTEMPTS})",
-                        spec.repo, spec.remote_path
+                    tracing::warn!(
+                        "stream error for {}/{}: {error} (retry {attempt}/{MAX_ATTEMPTS})",
+                        spec.repo,
+                        spec.remote_path
                     );
                     std::thread::sleep(retry_delay(attempt));
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
@@ -1021,7 +1020,7 @@ fn download_single_file_blocking(
             if attempt >= MAX_ATTEMPTS {
                 return Err(AppError::model_download_failed(message));
             }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+            tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", message);
             std::thread::sleep(retry_delay(attempt));
             continue;
         }

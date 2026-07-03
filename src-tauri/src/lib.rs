@@ -17,6 +17,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir()?;
+            crate::services::observability::init(&app_data_dir);
             let sidecar_dir = app_state::current_executable_dir()
                 .map_err(|error| std::io::Error::other(error.message.clone()))?;
             let state = AppState::init(app_data_dir, sidecar_dir)
@@ -88,6 +89,6 @@ pub fn run() {
         .on_menu_event(app_menu::handle_menu_event);
 
     if let Err(error) = builder.run(tauri::generate_context!()) {
-        eprintln!("openloop: {error}");
+        tracing::error!("openloop: {error}");
     }
 }

@@ -37,6 +37,8 @@ symphonia = { version = "0.6.0", default-features = false, features = ["flac", "
 tauri = { version = "2.11.3", features = ["unstable"] }
 tauri-plugin-dialog = "2.7.1"
 tauri-plugin-updater = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 zip = "8"
 

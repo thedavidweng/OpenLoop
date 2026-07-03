@@ -1,5 +1,6 @@
 mod backend;
 mod clear;
+mod completions;
 mod delete;
 mod doctor;
 mod enhance;
@@ -14,8 +15,11 @@ mod pull;
 mod run;
 mod settings;
 mod setup;
+mod spec;
 mod status;
 mod stop;
+
+use clap::{CommandFactory, Parser};
 
 use crate::{
     app_state::AppState,
@@ -34,6 +38,19 @@ pub fn run(args: Vec<String>) -> i32 {
 }
 
 fn run_inner(args: Vec<String>) -> AppResult<()> {
+    // Handle the hidden completions command via clap derive so it can emit
+    // shell completion scripts for bash/zsh/fish/powershell/elvish.
+    if let Some(rest) = args.get(1).filter(|s| *s == "completions") {
+        let _ = rest; // already matched
+        let parsed = spec::Cli::try_parse_from(&args)
+            .map_err(|e| AppError::validation_failed(e.to_string().trim().to_owned()))?;
+        if let spec::Commands::Completions { shell } = parsed.command {
+            let mut cmd = spec::Cli::command();
+            completions::print_completions(shell.into(), &mut cmd);
+            return Ok(());
+        }
+    }
+
     let state = AppState::init_for_cli()?;
 
     let command = args.get(1).map(String::as_str).unwrap_or("help");

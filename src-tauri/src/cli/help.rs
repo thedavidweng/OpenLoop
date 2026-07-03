@@ -31,6 +31,9 @@ Settings commands:
   setup     Configure defaults (interactive wizard or key=value)
   settings  Manage settings (get, set, reset, paths)
 
+Shell completions:
+  completions  Generate shell completion scripts (hidden; bash/zsh/fish/powershell/elvish)
+
 Global flags:
   --json    Machine-readable JSON output
   --help    Show help for a command

@@ -727,7 +727,7 @@ type AppError = {
 
 ### 10.1 应用授权
 
-OpenLoop 应用代码使用 MIT License。
+OpenLoop 应用代码使用 Apache License 2.0。
 
 ### 10.2 模型授权
 

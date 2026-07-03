@@ -76,6 +76,6 @@ We accept `'unsafe-inline'` as a pragmatic trade-off and will revisit nonce-base
 
 ## Related
 
-- [Tauri Security Best Practices](https://tauri.app/v1/references/security/csp/)
+- [Tauri Security Best Practices](https://v2.tauri.app/security/csp/)
 - [OWASP CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
 - This ADR is referenced in `src-tauri/tauri.conf.json`.

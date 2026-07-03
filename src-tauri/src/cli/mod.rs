@@ -40,15 +40,15 @@ pub fn run(args: Vec<String>) -> i32 {
 fn run_inner(args: Vec<String>) -> AppResult<()> {
     // Handle the hidden completions command via clap derive so it can emit
     // shell completion scripts for bash/zsh/fish/powershell/elvish.
-    if let Some(rest) = args.get(1).filter(|s| *s == "completions") {
-        let _ = rest; // already matched
+    if args.get(1).is_some_and(|s| s == "completions") {
         let parsed = spec::Cli::try_parse_from(&args)
-            .map_err(|e| AppError::validation_failed(e.to_string().trim().to_owned()))?;
-        if let spec::Commands::Completions { shell } = parsed.command {
-            let mut cmd = spec::Cli::command();
-            completions::print_completions(shell.into(), &mut cmd);
-            return Ok(());
-        }
+            .map_err(|e| AppError::validation_failed(first_line(&e.to_string())))?;
+        let spec::Commands::Completions { shell } = parsed.command else {
+            unreachable!("args[1] == \"completions\" guarantees the Completions variant")
+        };
+        let mut cmd = spec::Cli::command();
+        completions::print_completions(shell.into(), &mut cmd);
+        return Ok(());
     }
 
     let state = AppState::init_for_cli()?;
@@ -93,6 +93,19 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
 
 pub fn cli_error(message: impl Into<String>) -> AppError {
     AppError::validation_failed(message)
+}
+
+/// Extract the first non-empty line of `s`, trimming surrounding whitespace.
+///
+/// Used to surface clap parse errors without dragging clap's multi-line usage
+/// block (which carries its own ANSI styling and newlines) through the app's
+/// error formatter.
+fn first_line(s: &str) -> String {
+    s.lines()
+        .find(|line| !line.trim().is_empty())
+        .map(str::trim)
+        .map(str::to_owned)
+        .unwrap_or_default()
 }
 
 pub fn json_output(json: &str) {

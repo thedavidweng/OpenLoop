@@ -1,3 +1,8 @@
+// NOTE: This module is a hand-maintained mirror of the subcommands dispatched
+// in `mod.rs::run_inner`. When adding, removing, or renaming a command, update
+// BOTH this `Cli`/`Commands` definition and the `match` arm in `mod.rs` so the
+// generated shell completions stay in sync with the actual dispatch surface.
+
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
 use crate::models::settings::ModelVariant;

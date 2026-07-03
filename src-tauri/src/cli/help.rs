@@ -32,7 +32,7 @@ Settings commands:
   settings  Manage settings (get, set, reset, paths)
 
 Shell completions:
-  completions  Generate shell completion scripts (hidden; bash/zsh/fish/powershell/elvish)
+  completions  Generate shell completion scripts (bash/zsh/fish/powershell/elvish)
 
 Global flags:
   --json    Machine-readable JSON output

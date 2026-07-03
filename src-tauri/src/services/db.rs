@@ -48,6 +48,7 @@ impl Database {
             include_str!("../../migrations/002_add_cancel_requested_at.sql"),
             include_str!("../../migrations/003_add_favorite.sql"),
             include_str!("../../migrations/004_add_failed_runs.sql"),
+            include_str!("../../migrations/005_history_indexes.sql"),
         ] {
             let _ = connection.execute_batch(sql);
         }

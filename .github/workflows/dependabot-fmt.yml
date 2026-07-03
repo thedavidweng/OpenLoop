@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Run oxfmt
-        run: pnpm format
+        run: node --run format
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable

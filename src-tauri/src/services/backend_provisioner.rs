@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 use crate::models::errors::{AppError, AppResult};
+use crate::services::network_log::NetworkActivityLog;
 
 /// Event channel for frontend progress updates.
 pub const BACKEND_PROVISION_EVENT: &str = "backend-provision-progress";
@@ -87,13 +88,15 @@ impl Default for BackendProvisionStatus {
 pub struct BackendProvisioner {
     app_data_dir: PathBuf,
     status: Arc<Mutex<BackendProvisionStatus>>,
+    network_log: Arc<NetworkActivityLog>,
 }
 
 impl BackendProvisioner {
-    pub fn new(app_data_dir: PathBuf) -> Self {
+    pub fn new(app_data_dir: PathBuf, network_log: Arc<NetworkActivityLog>) -> Self {
         let provisioner = Self {
             app_data_dir,
             status: Arc::new(Mutex::new(BackendProvisionStatus::default())),
+            network_log,
         };
         // Migration: detect existing git-cloned backend
         provisioner.migrate_existing_backend();
@@ -140,7 +143,7 @@ impl BackendProvisioner {
         let archive_path = runtime_dir.join(format!("acestep-{git_ref}.zip"));
 
         // Download
-        download_archive_blocking(&client, git_ref, &archive_path)?;
+        download_archive_blocking(&client, git_ref, &archive_path, &self.network_log)?;
 
         // Extract
         extract_archive(&archive_path, &runtime_dir)?;
@@ -171,6 +174,7 @@ impl BackendProvisioner {
         let runtime_dir = self.runtime_dir();
         let status = Arc::clone(&self.status);
         let app_data_dir = self.app_data_dir.clone();
+        let network_log = Arc::clone(&self.network_log);
 
         fs::create_dir_all(&runtime_dir).map_err(|error| {
             AppError::backend_provision_failed(format!(
@@ -189,8 +193,15 @@ impl BackendProvisioner {
         emit_status(&app, &status);
 
         tauri::async_runtime::spawn(async move {
-            let result =
-                provision_async_inner(&app, &app_data_dir, &runtime_dir, git_ref, &status).await;
+            let result = provision_async_inner(
+                &app,
+                &app_data_dir,
+                &runtime_dir,
+                git_ref,
+                &status,
+                Arc::clone(&network_log),
+            )
+            .await;
 
             match result {
                 Ok(()) => {
@@ -230,7 +241,7 @@ impl BackendProvisioner {
         let local = read_backend_manifest(&self.app_data_dir);
 
         // Try to fetch latest release info
-        let (latest_tag, latest_commit) = match fetch_latest_release_blocking() {
+        let (latest_tag, latest_commit) = match fetch_latest_release_blocking(&self.network_log) {
             Ok(info) => info,
             Err(_) => {
                 // If we can't reach GitHub, return current status without update info
@@ -262,7 +273,7 @@ impl BackendProvisioner {
             ));
         }
 
-        let (latest_tag, latest_commit) = fetch_latest_release_blocking()?;
+        let (latest_tag, latest_commit) = fetch_latest_release_blocking(&self.network_log)?;
         let runtime_dir = self.runtime_dir();
 
         // Download to temp dir (not inside runtime) so backup_runtime_code doesn't move it
@@ -272,7 +283,7 @@ impl BackendProvisioner {
             AppError::backend_provision_failed(format!("failed to create temp directory: {error}"))
         })?;
         let archive_path = temp_dir.join(format!("acestep-{latest_commit}.zip"));
-        download_archive_blocking(&client, &latest_commit, &archive_path)?;
+        download_archive_blocking(&client, &latest_commit, &archive_path, &self.network_log)?;
 
         // Backup old code to a sibling directory (not inside runtime)
         let backup_dir = runtime_dir.parent().unwrap_or(&runtime_dir).join(format!(
@@ -317,6 +328,7 @@ impl BackendProvisioner {
         let status = Arc::clone(&self.status);
         let app_data_dir = self.app_data_dir.clone();
         let runtime_dir = self.runtime_dir();
+        let network_log = Arc::clone(&self.network_log);
 
         if let Ok(mut s) = status.lock() {
             s.state = BackendProvisionState::Downloading;
@@ -327,7 +339,14 @@ impl BackendProvisioner {
         emit_status(&app, &status);
 
         tauri::async_runtime::spawn(async move {
-            let result = update_async_inner(&app, &app_data_dir, &runtime_dir, &status).await;
+            let result = update_async_inner(
+                &app,
+                &app_data_dir,
+                &runtime_dir,
+                &status,
+                Arc::clone(&network_log),
+            )
+            .await;
 
             match result {
                 Ok((tag, commit)) => {
@@ -404,17 +423,24 @@ async fn provision_async_inner(
     runtime_dir: &Path,
     git_ref: &str,
     status: &Arc<Mutex<BackendProvisionStatus>>,
+    network_log: Arc<NetworkActivityLog>,
 ) -> AppResult<()> {
     let client = http_client()?;
     let archive_path = runtime_dir.join(format!("acestep-{git_ref}.zip"));
 
     // Download with progress
-    let total = download_archive_async(&client, git_ref, &archive_path, |downloaded| {
-        if let Ok(mut s) = status.lock() {
-            s.downloaded_bytes = downloaded;
-        }
-        emit_status(app, status);
-    })
+    let total = download_archive_async(
+        &client,
+        git_ref,
+        &archive_path,
+        Arc::clone(&network_log),
+        |downloaded| {
+            if let Ok(mut s) = status.lock() {
+                s.downloaded_bytes = downloaded;
+            }
+            emit_status(app, status);
+        },
+    )
     .await?;
 
     if let Ok(mut s) = status.lock() {
@@ -435,8 +461,9 @@ async fn update_async_inner(
     app_data_dir: &Path,
     runtime_dir: &Path,
     status: &Arc<Mutex<BackendProvisionStatus>>,
+    network_log: Arc<NetworkActivityLog>,
 ) -> AppResult<(String, String)> {
-    let (latest_tag, latest_commit) = fetch_latest_release_async().await?;
+    let (latest_tag, latest_commit) = fetch_latest_release_async(Arc::clone(&network_log)).await?;
 
     // Download to temp dir (not inside runtime) so backup_runtime_code doesn't move it
     let client = http_client()?;
@@ -447,12 +474,18 @@ async fn update_async_inner(
     let archive_path = temp_dir.join(format!("acestep-{latest_commit}.zip"));
 
     // Download with progress
-    let total = download_archive_async(&client, &latest_commit, &archive_path, |downloaded| {
-        if let Ok(mut s) = status.lock() {
-            s.downloaded_bytes = downloaded;
-        }
-        emit_status(app, status);
-    })
+    let total = download_archive_async(
+        &client,
+        &latest_commit,
+        &archive_path,
+        Arc::clone(&network_log),
+        |downloaded| {
+            if let Ok(mut s) = status.lock() {
+                s.downloaded_bytes = downloaded;
+            }
+            emit_status(app, status);
+        },
+    )
     .await?;
 
     if let Ok(mut s) = status.lock() {
@@ -523,6 +556,7 @@ fn download_archive_blocking(
     client: &reqwest::blocking::Client,
     git_ref: &str,
     target: &Path,
+    network_log: &NetworkActivityLog,
 ) -> AppResult<u64> {
     let url = archive_url(git_ref);
     let part = target.with_extension(format!("zip{PART_SUFFIX}"));
@@ -534,7 +568,10 @@ fn download_archive_blocking(
         attempt += 1;
 
         let response = match client.get(&url).send() {
-            Ok(resp) => resp,
+            Ok(resp) => {
+                network_log.record(&url, "GET", resp.status().as_u16());
+                resp
+            }
             Err(error) => {
                 let msg = format!("failed to download backend archive: {error}");
                 if attempt >= MAX_ATTEMPTS {
@@ -606,6 +643,7 @@ async fn download_archive_async<F>(
     client: &Client,
     git_ref: &str,
     target: &Path,
+    network_log: Arc<NetworkActivityLog>,
     mut on_progress: F,
 ) -> AppResult<u64>
 where
@@ -623,7 +661,10 @@ where
         on_progress(written);
 
         let response = match client.get(&url).send().await {
-            Ok(resp) => resp,
+            Ok(resp) => {
+                network_log.record(&url, "GET", resp.status().as_u16());
+                resp
+            }
             Err(error) => {
                 let msg = format!("failed to download backend archive: {error}");
                 if attempt >= MAX_ATTEMPTS {
@@ -914,13 +955,14 @@ struct GitHubRelease {
     tag_name: String,
 }
 
-fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
+fn fetch_latest_release_blocking(network_log: &NetworkActivityLog) -> AppResult<(String, String)> {
     let client = blocking_http_client()?;
     let url = format!("https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest");
 
     let response = client.get(&url).send().map_err(|error| {
         AppError::backend_provision_failed(format!("failed to check for updates: {error}"))
     })?;
+    network_log.record(&url, "GET", response.status().as_u16());
 
     if !response.status().is_success() {
         return Err(AppError::backend_provision_failed(format!(
@@ -941,6 +983,7 @@ fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
     let ref_response = client.get(&ref_url).send().map_err(|error| {
         AppError::backend_provision_failed(format!("failed to resolve tag: {error}"))
     })?;
+    network_log.record(&ref_url, "GET", ref_response.status().as_u16());
 
     let ref_json: serde_json::Value = ref_response.json().map_err(|error| {
         AppError::backend_provision_failed(format!("failed to parse tag ref: {error}"))
@@ -964,13 +1007,16 @@ fn fetch_latest_release_blocking() -> AppResult<(String, String)> {
     Ok((release.tag_name, commit_sha))
 }
 
-async fn fetch_latest_release_async() -> AppResult<(String, String)> {
+async fn fetch_latest_release_async(
+    network_log: Arc<NetworkActivityLog>,
+) -> AppResult<(String, String)> {
     let client = http_client()?;
     let url = format!("https://api.github.com/repos/{ACE_STEP_REPO}/releases/latest");
 
     let response = client.get(&url).send().await.map_err(|error| {
         AppError::backend_provision_failed(format!("failed to check for updates: {error}"))
     })?;
+    network_log.record(&url, "GET", response.status().as_u16());
 
     if !response.status().is_success() {
         return Err(AppError::backend_provision_failed(format!(
@@ -990,6 +1036,7 @@ async fn fetch_latest_release_async() -> AppResult<(String, String)> {
     let ref_response = client.get(&ref_url).send().await.map_err(|error| {
         AppError::backend_provision_failed(format!("failed to resolve tag: {error}"))
     })?;
+    network_log.record(&ref_url, "GET", ref_response.status().as_u16());
 
     let ref_json: serde_json::Value = ref_response.json().await.map_err(|error| {
         AppError::backend_provision_failed(format!("failed to parse tag ref: {error}"))
@@ -1070,7 +1117,10 @@ mod tests {
     #[test]
     fn new_provisioner_with_no_manifest_reports_not_installed() {
         let temp = tempfile::tempdir().expect("temp dir");
-        let provisioner = BackendProvisioner::new(temp.path().to_path_buf());
+        let provisioner = BackendProvisioner::new(
+            temp.path().to_path_buf(),
+            Arc::new(NetworkActivityLog::new()),
+        );
         assert!(!provisioner.is_provisioned());
         let status = provisioner.status();
         assert_eq!(status.state, BackendProvisionState::NotInstalled);
@@ -1091,7 +1141,10 @@ mod tests {
         };
         write_backend_manifest(temp.path(), &manifest).expect("write manifest");
 
-        let provisioner = BackendProvisioner::new(temp.path().to_path_buf());
+        let provisioner = BackendProvisioner::new(
+            temp.path().to_path_buf(),
+            Arc::new(NetworkActivityLog::new()),
+        );
         assert!(provisioner.is_provisioned());
         let status = provisioner.status();
         assert_eq!(status.state, BackendProvisionState::Ready);
@@ -1108,7 +1161,10 @@ mod tests {
         fs::write(git_dir.join("HEAD"), "abc1234567890abcdef\n").expect("write HEAD");
 
         // Manifest should be written on construction
-        let _provisioner = BackendProvisioner::new(temp.path().to_path_buf());
+        let _provisioner = BackendProvisioner::new(
+            temp.path().to_path_buf(),
+            Arc::new(NetworkActivityLog::new()),
+        );
 
         let manifest = read_backend_manifest(temp.path());
         assert!(manifest.is_some());

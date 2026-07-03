@@ -22,6 +22,7 @@ const BACKEND_LOG_RETAIN_COUNT: usize = 20;
 pub struct BackendManager {
     app_data_dir: PathBuf,
     sidecar_dir: PathBuf,
+    network_log: std::sync::Arc<crate::services::network_log::NetworkActivityLog>,
     child: Option<Child>,
     status: BackendStatus,
     logs_path: Option<PathBuf>,
@@ -29,10 +30,15 @@ pub struct BackendManager {
 }
 
 impl BackendManager {
-    pub fn new(app_data_dir: PathBuf, sidecar_dir: PathBuf) -> Self {
+    pub fn new(
+        app_data_dir: PathBuf,
+        sidecar_dir: PathBuf,
+        network_log: std::sync::Arc<crate::services::network_log::NetworkActivityLog>,
+    ) -> Self {
         Self {
             app_data_dir,
             sidecar_dir,
+            network_log,
             child: None,
             status: BackendStatus::Stopped,
             logs_path: None,
@@ -154,6 +160,7 @@ impl BackendManager {
         {
             let provisioner = crate::services::backend_provisioner::BackendProvisioner::new(
                 self.app_data_dir.clone(),
+                std::sync::Arc::clone(&self.network_log),
             );
             if !provisioner.is_provisioned() {
                 return Err(AppError::backend_start_failed(
@@ -471,7 +478,11 @@ mod tests {
         settings.model_variant = Some(ModelVariant::Turbo);
         settings.backend_port = port;
 
-        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let mut manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
         let status = manager
             .start(&settings)
             .expect("healthy configured backend should be reused");
@@ -500,7 +511,11 @@ mod tests {
                 .expect("health response should write");
         });
 
-        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let mut manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
         // Fresh manager — no start(), no configured_port
         let status = manager.status();
         assert!(matches!(status, BackendStatus::Stopped));
@@ -537,7 +552,11 @@ mod tests {
         settings.model_variant = Some(ModelVariant::Turbo);
         settings.backend_port = port;
 
-        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let mut manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
         let status = manager
             .start(&settings)
             .expect("healthy configured backend should be reused");
@@ -623,7 +642,11 @@ PY
             .port();
         drop(listener);
 
-        let mut manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let mut manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
         let status = manager.start(&settings).expect("backend should start");
         assert!(matches!(status, BackendStatus::Healthy { port } if port == settings.backend_port));
         assert!(manager.logs_path().is_some());
@@ -645,7 +668,11 @@ PY
         permissions.set_mode(0o755);
         fs::set_permissions(&uv_path, permissions).expect("permissions should set");
 
-        let manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
         let resolved = manager
             .bundled_uv_command()
             .expect("bundled uv should resolve");
@@ -658,7 +685,11 @@ PY
         let temp_dir = tempfile::tempdir().expect("temp dir should exist");
         let sidecar_dir = temp_dir.path().join("sidecars");
         fs::create_dir_all(&sidecar_dir).expect("sidecar dir should exist");
-        let manager = BackendManager::new(temp_dir.path().to_path_buf(), sidecar_dir);
+        let manager = BackendManager::new(
+            temp_dir.path().to_path_buf(),
+            sidecar_dir,
+            std::sync::Arc::new(crate::services::network_log::NetworkActivityLog::new()),
+        );
 
         let error = manager
             .bundled_uv_command()

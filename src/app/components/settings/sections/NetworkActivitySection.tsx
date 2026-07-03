@@ -92,16 +92,15 @@ export function NetworkActivitySection() {
 }
 
 function formatTimestamp(iso: string): string {
-  try {
-    const date = new Date(iso);
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
     return iso;
   }
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function truncateUrl(url: string): string {

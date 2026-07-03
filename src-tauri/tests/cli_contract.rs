@@ -244,6 +244,7 @@ fn backend_manager_starts_unowned() {
     let manager = openloop_lib::services::backend_manager::BackendManager::new(
         temp.path().to_path_buf(),
         temp.path().join("sidecars"),
+        std::sync::Arc::new(openloop_lib::services::network_log::NetworkActivityLog::new()),
     );
     assert!(!manager.is_owned());
 }
@@ -581,6 +582,7 @@ fn detach_clears_child_handle() {
     let manager = openloop_lib::services::backend_manager::BackendManager::new(
         temp.path().to_path_buf(),
         temp.path().join("sidecars"),
+        std::sync::Arc::new(openloop_lib::services::network_log::NetworkActivityLog::new()),
     );
     assert!(!manager.is_owned());
     // After detach on an unowned manager, should still not be owned

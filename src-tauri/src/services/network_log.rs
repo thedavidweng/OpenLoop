@@ -15,11 +15,15 @@ pub struct NetworkEntry {
 
 /// Session-scoped log of all outbound HTTP activity.
 ///
-/// Stored as Tauri state so the frontend can query it.
+/// Stored as Tauri state so the frontend can query it. Bounded to
+/// [`MAX_ENTRIES`] entries; oldest entries are dropped once the cap is reached.
 #[derive(Debug)]
 pub struct NetworkActivityLog {
     entries: Mutex<Vec<NetworkEntry>>,
 }
+
+/// Maximum number of entries retained in the log.
+const MAX_ENTRIES: usize = 1_000;
 
 impl NetworkActivityLog {
     pub fn new() -> Self {
@@ -32,6 +36,10 @@ impl NetworkActivityLog {
     pub fn push(&self, entry: NetworkEntry) {
         if let Ok(mut guard) = self.entries.lock() {
             guard.push(entry);
+            if guard.len() > MAX_ENTRIES {
+                let overflow = guard.len() - MAX_ENTRIES;
+                guard.drain(..overflow);
+            }
         }
     }
 

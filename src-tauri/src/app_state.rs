@@ -27,14 +27,21 @@ impl AppState {
     pub fn init(app_data_dir: PathBuf, sidecar_dir: PathBuf) -> AppResult<Self> {
         fs::create_dir_all(&app_data_dir).map_err(|error| AppError::internal(error.to_string()))?;
         let db = Database::new(&app_data_dir)?;
+        let network_log = Arc::new(NetworkActivityLog::new());
         let backend = Arc::new(Mutex::new(BackendManager::new(
             app_data_dir.clone(),
             sidecar_dir,
+            Arc::clone(&network_log),
         )));
-        let models = Arc::new(Mutex::new(ModelManager::new(app_data_dir.clone())));
-        let provisioner = Arc::new(Mutex::new(BackendProvisioner::new(app_data_dir.clone())));
+        let models = Arc::new(Mutex::new(ModelManager::new(
+            app_data_dir.clone(),
+            Arc::clone(&network_log),
+        )));
+        let provisioner = Arc::new(Mutex::new(BackendProvisioner::new(
+            app_data_dir.clone(),
+            Arc::clone(&network_log),
+        )));
         let generation_cancelled = Arc::new(AtomicBool::new(false));
-        let network_log = Arc::new(NetworkActivityLog::new());
 
         Ok(Self {
             app_data_dir,

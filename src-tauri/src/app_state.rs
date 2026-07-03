@@ -8,7 +8,7 @@ use crate::{
     models::errors::{AppError, AppResult},
     services::{
         backend_manager::BackendManager, backend_provisioner::BackendProvisioner, db::Database,
-        model_manager::ModelManager,
+        model_manager::ModelManager, network_log::NetworkActivityLog,
     },
 };
 
@@ -20,6 +20,7 @@ pub struct AppState {
     pub models: Arc<Mutex<ModelManager>>,
     pub provisioner: Arc<Mutex<BackendProvisioner>>,
     pub generation_cancelled: Arc<AtomicBool>,
+    pub network_log: Arc<NetworkActivityLog>,
 }
 
 impl AppState {
@@ -33,6 +34,7 @@ impl AppState {
         let models = Arc::new(Mutex::new(ModelManager::new(app_data_dir.clone())));
         let provisioner = Arc::new(Mutex::new(BackendProvisioner::new(app_data_dir.clone())));
         let generation_cancelled = Arc::new(AtomicBool::new(false));
+        let network_log = Arc::new(NetworkActivityLog::new());
 
         Ok(Self {
             app_data_dir,
@@ -41,6 +43,7 @@ impl AppState {
             models,
             provisioner,
             generation_cancelled,
+            network_log,
         })
     }
 

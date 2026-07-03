@@ -4,6 +4,7 @@ pub mod files;
 pub mod generation;
 pub mod history;
 pub mod models;
+pub mod network;
 pub mod provisioner;
 pub mod settings;
 pub mod support;

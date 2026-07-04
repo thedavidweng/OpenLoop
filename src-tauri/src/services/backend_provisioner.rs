@@ -1269,7 +1269,13 @@ mod tests {
 
         let error = resolve_path_within_base(&base, "nested/../../outside.txt")
             .expect_err("reject parent dir");
-        assert!(error.message.contains("unsafe path component"));
+        assert!(
+            error
+                .details
+                .as_deref()
+                .unwrap_or("")
+                .contains("unsafe path component")
+        );
     }
 
     #[test]

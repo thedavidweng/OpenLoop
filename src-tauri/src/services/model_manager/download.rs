@@ -347,6 +347,11 @@ pub async fn download_pack(
 
     emit_progress(0, true);
 
+    let mirrors = if settings.model_mirrors.is_empty() {
+        vec![HF_RESOLVE_BASE.to_owned()]
+    } else {
+        settings.model_mirrors.clone()
+    };
     for spec in &files {
         if cancel.load(Ordering::SeqCst) {
             return Err(AppError::model_download_failed("Download cancelled."));
@@ -370,12 +375,11 @@ pub async fn download_pack(
             }
         }
 
-        let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
         download_single_file(
             &client,
             spec,
             &target,
-            mirror,
+            &mirrors,
             network_log,
             |bytes_in_file| emit_progress(bytes_in_file, false),
         )
@@ -392,15 +396,13 @@ async fn download_single_file<F>(
     client: &Client,
     spec: &ModelFileSpec,
     target: &Path,
-    mirror: &str,
+    mirrors: &[String],
     network_log: &NetworkActivityLog,
     mut on_progress: F,
 ) -> AppResult<()>
 where
     F: FnMut(u64),
 {
-    let url = resolve_download_url(spec, mirror);
-
     let part = part_path(target);
     let existing_size = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
     let resume_from = if existing_size > 0 && existing_size < spec.size {
@@ -413,164 +415,202 @@ where
     }
 
     const MAX_ATTEMPTS: u32 = 4;
-    let mut attempt: u32 = 0;
+    let mut mirror_index = 0;
     let mut last_error: Option<AppError> = None;
     let mut written = resume_from;
 
-    loop {
-        attempt += 1;
-        on_progress(written);
+    'mirrors: while mirror_index < mirrors.len() {
+        let url = resolve_download_url(spec, &mirrors[mirror_index]);
+        let mut attempt: u32 = 0;
 
-        let mut request = client.get(&url);
-        if written > 0 {
-            request = request.header("Range", format!("bytes={written}-"));
-        }
+        loop {
+            attempt += 1;
+            on_progress(written);
 
-        let response = match request.send().await {
-            Ok(response) => {
-                network_log.record(&url, "GET", response.status().as_u16());
-                response
+            let mut request = client.get(&url);
+            if written > 0 {
+                request = request.header("Range", format!("bytes={written}-"));
             }
-            Err(error) => {
+
+            let response = match request.send().await {
+                Ok(response) => {
+                    network_log.record(&url, "GET", response.status().as_u16());
+                    response
+                }
+                Err(error) => {
+                    let message = format!(
+                        "failed to request {repo}/{path}: {error}",
+                        repo = spec.repo,
+                        path = spec.remote_path
+                    );
+                    last_error = Some(AppError::model_download_failed(message.clone()));
+                    if attempt >= MAX_ATTEMPTS {
+                        if mirror_index + 1 < mirrors.len() {
+                            eprintln!("openloop: {} (trying next mirror)", message);
+                            mirror_index += 1;
+                            continue 'mirrors;
+                        }
+                        return Err(AppError::model_download_failed(message));
+                    }
+                    eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                    tokio::time::sleep(retry_delay(attempt)).await;
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    continue;
+                }
+            };
+
+            if !response.status().is_success() {
+                let status_code = response.status();
+                let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
+                last_error = Some(AppError::model_download_failed(message.clone()));
+                if status_code.is_client_error() && mirror_index + 1 < mirrors.len() {
+                    mirror_index += 1;
+                    continue 'mirrors;
+                }
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    return Err(AppError::model_download_failed(message));
+                }
+                if status_code.is_server_error() {
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    tokio::time::sleep(retry_delay(attempt)).await;
+                    continue;
+                }
+                return Err(AppError::model_download_failed(message));
+            }
+
+            let mut writer = OpenOptions::new()
+                .create(true)
+                .append(written > 0)
+                .write(true)
+                .truncate(written == 0)
+                .open(&part)
+                .map_err(|error| {
+                    AppError::model_download_failed(format!(
+                        "failed to open temporary file {}: {error}",
+                        part.display()
+                    ))
+                })?;
+
+            let mut stream = response.bytes_stream();
+            let mut stream_failed: Option<AppError> = None;
+
+            while let Some(chunk) = stream.next().await {
+                match chunk {
+                    Ok(bytes) => {
+                        if bytes.is_empty() {
+                            continue;
+                        }
+                        if let Err(error) = writer.write_all(&bytes) {
+                            return Err(AppError::model_download_failed(format!(
+                                "failed to write to {}: {error}",
+                                part.display()
+                            )));
+                        }
+                        written += bytes.len() as u64;
+                        on_progress(written);
+                    }
+                    Err(error) => {
+                        stream_failed = Some(AppError::model_download_failed(format!(
+                            "stream error for {}/{}: {error}",
+                            spec.repo, spec.remote_path
+                        )));
+                        break;
+                    }
+                }
+            }
+
+            writer.flush().ok();
+            drop(writer);
+
+            if let Some(error) = stream_failed {
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", error.message);
+                        last_error = Some(error);
+                        mirror_index += 1;
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        continue 'mirrors;
+                    }
+                    return Err(error);
+                }
+                eprintln!(
+                    "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
+                    error.message
+                );
+                last_error = Some(error);
+                tokio::time::sleep(retry_delay(attempt)).await;
+                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                continue;
+            }
+
+            if written < spec.size {
                 let message = format!(
-                    "failed to request {repo}/{path}: {error}",
-                    repo = spec.repo,
-                    path = spec.remote_path
+                    "incomplete download for {}/{} ({} / {} bytes)",
+                    spec.repo, spec.remote_path, written, spec.size
                 );
                 if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        last_error = Some(AppError::model_download_failed(message));
+                        mirror_index += 1;
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        continue 'mirrors;
+                    }
                     return Err(AppError::model_download_failed(message));
                 }
                 eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
                 last_error = Some(AppError::model_download_failed(message));
                 tokio::time::sleep(retry_delay(attempt)).await;
-                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
                 continue;
             }
-        };
 
-        if !response.status().is_success() {
-            let status_code = response.status();
-            let message = format!(
-                "Hugging Face returned HTTP {status_code} for {}/{}",
-                spec.repo, spec.remote_path
-            );
-            if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-                last_error = Some(AppError::model_download_failed(message));
-                tokio::time::sleep(retry_delay(attempt)).await;
-                continue;
-            }
-            return Err(AppError::model_download_failed(message));
+            break;
         }
 
-        let mut writer = OpenOptions::new()
-            .create(true)
-            .append(written > 0)
-            .write(true)
-            .truncate(written == 0)
-            .open(&part)
-            .map_err(|error| {
-                AppError::model_download_failed(format!(
-                    "failed to open temporary file {}: {error}",
-                    part.display()
-                ))
-            })?;
+        let _ = last_error;
+        fs::rename(&part, target).map_err(|error| {
+            AppError::model_download_failed(format!(
+                "failed to move temporary download {} to {}: {error}",
+                part.display(),
+                target.display()
+            ))
+        })?;
 
-        let mut stream = response.bytes_stream();
-        let mut stream_failed: Option<AppError> = None;
-
-        while let Some(chunk) = stream.next().await {
-            match chunk {
-                Ok(bytes) => {
-                    if bytes.is_empty() {
-                        continue;
-                    }
-                    if let Err(error) = writer.write_all(&bytes) {
-                        return Err(AppError::model_download_failed(format!(
-                            "failed to write to {}: {error}",
-                            part.display()
-                        )));
-                    }
-                    written += bytes.len() as u64;
-                    on_progress(written);
+        if let Some(expected_sha256) = spec.sha256 {
+            if let Err(error) = verify_sha256(target, expected_sha256) {
+                let _ = fs::remove_file(target);
+                let _ = fs::remove_file(&part);
+                if mirror_index + 1 < mirrors.len() {
+                    eprintln!("openloop: {} (trying next mirror)", error.message);
+                    mirror_index += 1;
+                    written = 0;
+                    continue 'mirrors;
                 }
-                Err(error) => {
-                    stream_failed = Some(AppError::model_download_failed(format!(
-                        "stream error for {}/{}: {error}",
-                        spec.repo, spec.remote_path
-                    )));
-                    break;
-                }
-            }
-        }
-
-        writer.flush().ok();
-        drop(writer);
-
-        if let Some(error) = stream_failed {
-            if attempt >= MAX_ATTEMPTS {
                 return Err(error);
             }
-            eprintln!(
-                "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
-                error.message
-            );
-            last_error = Some(error);
-            tokio::time::sleep(retry_delay(attempt)).await;
-            written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-            continue;
         }
 
-        if written < spec.size {
-            let message = format!(
-                "incomplete download for {}/{} ({} / {} bytes)",
-                spec.repo, spec.remote_path, written, spec.size
-            );
-            if attempt >= MAX_ATTEMPTS {
-                return Err(AppError::model_download_failed(message));
-            }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-            last_error = Some(AppError::model_download_failed(message));
-            tokio::time::sleep(retry_delay(attempt)).await;
-            continue;
-        }
-
-        break;
+        on_progress(spec.size);
+        return Ok(());
     }
 
-    let _ = last_error;
-    fs::rename(&part, target).map_err(|error| {
-        AppError::model_download_failed(format!(
-            "failed to move temporary download {} to {}: {error}",
-            part.display(),
-            target.display()
-        ))
-    })?;
-
-    if let Some(expected_sha256) = spec.sha256 {
-        if let Err(error) = verify_sha256(target, expected_sha256) {
-            let _ = fs::remove_file(target);
-            let _ = fs::remove_file(&part);
-            return Err(error);
-        }
-    }
-
-    on_progress(spec.size);
-    Ok(())
+    Err(last_error
+        .unwrap_or_else(|| AppError::model_download_failed("all mirrors exhausted".to_owned())))
 }
-
-// ---------------------------------------------------------------------------
-// Blocking download path (CLI)
-// ---------------------------------------------------------------------------
 
 pub fn download_single_file_blocking(
     client: &reqwest::blocking::Client,
     spec: &ModelFileSpec,
     target: &Path,
-    mirror: &str,
+    mirrors: &[String],
     network_log: &NetworkActivityLog,
 ) -> AppResult<()> {
-    let url = resolve_download_url(spec, mirror);
+    use std::io::Read;
 
     let part = part_path(target);
     let existing_size = fs::metadata(&part).map(|m| m.len()).unwrap_or(0);
@@ -584,130 +624,167 @@ pub fn download_single_file_blocking(
     }
 
     const MAX_ATTEMPTS: u32 = 4;
-    let mut attempt: u32 = 0;
+    let mut mirror_index = 0;
     let mut written = resume_from;
 
-    loop {
-        attempt += 1;
+    'mirrors: while mirror_index < mirrors.len() {
+        let url = resolve_download_url(spec, &mirrors[mirror_index]);
+        let mut attempt: u32 = 0;
 
-        let mut request = client.get(&url);
-        if written > 0 {
-            request = request.header("Range", format!("bytes={written}-"));
-        }
-
-        let mut response = match request.send() {
-            Ok(response) => {
-                network_log.record(&url, "GET", response.status().as_u16());
-                response
-            }
-            Err(error) => {
-                let message = format!(
-                    "failed to request {repo}/{path}: {error}",
-                    repo = spec.repo,
-                    path = spec.remote_path
-                );
-                if attempt >= MAX_ATTEMPTS {
-                    return Err(AppError::model_download_failed(message));
-                }
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-                std::thread::sleep(retry_delay(attempt));
-                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-                continue;
-            }
-        };
-
-        if !response.status().is_success() {
-            let status_code = response.status();
-            let message = format!(
-                "Hugging Face returned HTTP {status_code} for {}/{}",
-                spec.repo, spec.remote_path
-            );
-            if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-                std::thread::sleep(retry_delay(attempt));
-                continue;
-            }
-            return Err(AppError::model_download_failed(message));
-        }
-
-        let mut writer = OpenOptions::new()
-            .create(true)
-            .append(written > 0)
-            .write(true)
-            .truncate(written == 0)
-            .open(&part)
-            .map_err(|error| {
-                AppError::model_download_failed(format!(
-                    "failed to open temporary file {}: {error}",
-                    part.display()
-                ))
-            })?;
-
-        let mut buffer = [0u8; 8192];
-        let reader = &mut response;
         loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break,
-                Ok(n) => {
-                    writer.write_all(&buffer[..n]).map_err(|error| {
-                        AppError::model_download_failed(format!(
-                            "failed to write to {}: {error}",
-                            part.display()
-                        ))
-                    })?;
-                    written += n as u64;
+            attempt += 1;
+
+            let mut request = client.get(&url);
+            if written > 0 {
+                request = request.header("Range", format!("bytes={written}-"));
+            }
+
+            let mut response = match request.send() {
+                Ok(response) => {
+                    network_log.record(&url, "GET", response.status().as_u16());
+                    response
                 }
                 Err(error) => {
-                    if attempt >= MAX_ATTEMPTS {
-                        return Err(AppError::model_download_failed(format!(
-                            "stream error for {}/{}: {error}",
-                            spec.repo, spec.remote_path
-                        )));
-                    }
-                    eprintln!(
-                        "openloop: stream error for {}/{}: {error} (retry {attempt}/{MAX_ATTEMPTS})",
-                        spec.repo, spec.remote_path
+                    let message = format!(
+                        "failed to request {repo}/{path}: {error}",
+                        repo = spec.repo,
+                        path = spec.remote_path
                     );
+                    if attempt >= MAX_ATTEMPTS {
+                        if mirror_index + 1 < mirrors.len() {
+                            eprintln!("openloop: {} (trying next mirror)", message);
+                            mirror_index += 1;
+                            continue 'mirrors;
+                        }
+                        return Err(AppError::model_download_failed(message));
+                    }
+                    eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
                     std::thread::sleep(retry_delay(attempt));
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-                    break;
+                    continue;
                 }
-            }
-        }
-        writer.flush().ok();
-        drop(writer);
+            };
 
-        if written < spec.size {
-            let message = format!(
-                "incomplete download for {}/{} ({} / {} bytes)",
-                spec.repo, spec.remote_path, written, spec.size
-            );
-            if attempt >= MAX_ATTEMPTS {
+            if !response.status().is_success() {
+                let status_code = response.status();
+                let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
+                if status_code.is_client_error() && mirror_index + 1 < mirrors.len() {
+                    mirror_index += 1;
+                    continue 'mirrors;
+                }
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    return Err(AppError::model_download_failed(message));
+                }
+                if status_code.is_server_error() {
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    std::thread::sleep(retry_delay(attempt));
+                    continue;
+                }
                 return Err(AppError::model_download_failed(message));
             }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-            std::thread::sleep(retry_delay(attempt));
-            continue;
+
+            let mut writer = OpenOptions::new()
+                .create(true)
+                .append(written > 0)
+                .write(true)
+                .truncate(written == 0)
+                .open(&part)
+                .map_err(|error| {
+                    AppError::model_download_failed(format!(
+                        "failed to open temporary file {}: {error}",
+                        part.display()
+                    ))
+                })?;
+
+            let mut buffer = [0u8; 8192];
+            let reader = &mut response;
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        writer.write_all(&buffer[..n]).map_err(|error| {
+                            AppError::model_download_failed(format!(
+                                "failed to write to {}: {error}",
+                                part.display()
+                            ))
+                        })?;
+                        written += n as u64;
+                    }
+                    Err(error) => {
+                        let message = format!(
+                            "stream error for {}/{}: {error}",
+                            spec.repo, spec.remote_path
+                        );
+                        if attempt >= MAX_ATTEMPTS {
+                            if mirror_index + 1 < mirrors.len() {
+                                eprintln!("openloop: {} (trying next mirror)", message);
+                                mirror_index += 1;
+                                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                                continue 'mirrors;
+                            }
+                            return Err(AppError::model_download_failed(message));
+                        }
+                        eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                        std::thread::sleep(retry_delay(attempt));
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        break;
+                    }
+                }
+            }
+            writer.flush().ok();
+            drop(writer);
+
+            if written < spec.size {
+                let message = format!(
+                    "incomplete download for {}/{} ({} / {} bytes)",
+                    spec.repo, spec.remote_path, written, spec.size
+                );
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        mirror_index += 1;
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        continue 'mirrors;
+                    }
+                    return Err(AppError::model_download_failed(message));
+                }
+                std::thread::sleep(retry_delay(attempt));
+                continue;
+            }
+
+            break;
         }
 
-        break;
-    }
+        fs::rename(&part, target).map_err(|error| {
+            AppError::model_download_failed(format!(
+                "failed to move temporary download {} to {}: {error}",
+                part.display(),
+                target.display()
+            ))
+        })?;
 
-    fs::rename(&part, target).map_err(|error| {
-        AppError::model_download_failed(format!(
-            "failed to move temporary download {} to {}: {error}",
-            part.display(),
-            target.display()
-        ))
-    })?;
-
-    if let Some(expected_sha256) = spec.sha256 {
-        if let Err(error) = verify_sha256(target, expected_sha256) {
-            let _ = fs::remove_file(target);
-            let _ = fs::remove_file(&part);
-            return Err(error);
+        if let Some(expected_sha256) = spec.sha256 {
+            if let Err(error) = verify_sha256(target, expected_sha256) {
+                let _ = fs::remove_file(target);
+                let _ = fs::remove_file(&part);
+                if mirror_index + 1 < mirrors.len() {
+                    eprintln!("openloop: {} (trying next mirror)", error.message);
+                    mirror_index += 1;
+                    written = 0;
+                    continue 'mirrors;
+                }
+                return Err(error);
+            }
         }
+
+        return Ok(());
     }
 
-    Ok(())
+    Err(AppError::model_download_failed(
+        "all mirrors exhausted".to_owned(),
+    ))
 }

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{ser::SerializeSeq, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 
 use crate::models::errors::{AppError, AppResult};
@@ -37,7 +37,12 @@ pub struct AppSettings {
     pub model_directory: Option<String>,
     pub backend_working_directory: Option<String>,
     pub log_directory: Option<String>,
-    pub model_mirror: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_mirrors",
+        serialize_with = "serialize_mirrors"
+    )]
+    pub model_mirrors: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,8 +73,62 @@ impl Default for AppSettings {
             model_directory: None,
             backend_working_directory: None,
             log_directory: None,
-            model_mirror: None,
+            model_mirrors: Vec::new(),
         }
+    }
+}
+
+fn mirrors_from_value(value: Value) -> Vec<String> {
+    match value {
+        Value::String(s) => {
+            if s.is_empty() {
+                Vec::new()
+            } else {
+                vec![s]
+            }
+        }
+        Value::Array(arr) => {
+            let mut out = Vec::new();
+            for v in arr {
+                if let Value::String(s) = v {
+                    if !s.is_empty() {
+                        out.push(s);
+                    }
+                }
+            }
+            out
+        }
+        Value::Null => Vec::new(),
+        _ => Vec::new(),
+    }
+}
+
+fn deserialize_mirrors<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(mirrors_from_value(value))
+}
+
+fn serialize_mirrors<S>(mirrors: &[String], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut seq = serializer.serialize_seq(Some(mirrors.len()))?;
+    for m in mirrors {
+        seq.serialize_element(m)?;
+    }
+    seq.end()
+}
+
+/// Legacy settings storage uses a plain string for a single mirror and a JSON
+/// array only when multiple mirrors are configured.
+fn mirrors_to_setting_string(mirrors: &[String]) -> Result<String, serde_json::Error> {
+    match mirrors.len() {
+        0 => serde_json::to_string(""),
+        1 => serde_json::to_string(&mirrors[0]),
+        _ => serde_json::to_string(mirrors),
     }
 }
 
@@ -230,9 +289,7 @@ impl AppSettings {
                 })?;
             }
             SettingKey::ModelMirror => {
-                self.model_mirror = serde_json::from_value(value).map_err(|error| {
-                    AppError::validation_failed(format!("invalid modelMirror value: {error}"))
-                })?;
+                self.model_mirrors = mirrors_from_value(value);
             }
         }
 
@@ -282,7 +339,10 @@ impl AppSettings {
                 serde_json::to_string(&self.backend_working_directory),
             ),
             ("logDirectory", serde_json::to_string(&self.log_directory)),
-            ("modelMirror", serde_json::to_string(&self.model_mirror)),
+            (
+                "modelMirror",
+                mirrors_to_setting_string(&self.model_mirrors),
+            ),
         ];
 
         serialized
@@ -364,6 +424,38 @@ mod tests {
         assert!(!SettingKey::Language.impacts_backend_startup());
         assert!(!SettingKey::OutputDirectory.impacts_backend_startup());
         assert!(!SettingKey::CheckForUpdates.impacts_backend_startup());
+    }
+
+    #[test]
+    fn entries_serializes_single_mirror_as_legacy_string() {
+        let mut settings = AppSettings::default();
+        settings.model_mirrors = vec!["https://hf-mirror.com".to_owned()];
+        let entries = settings.entries().expect("entries should succeed");
+        let mirror = entries
+            .into_iter()
+            .find(|(key, _)| *key == "modelMirror")
+            .map(|(_, value)| value)
+            .expect("modelMirror entry");
+        assert_eq!(mirror, "\"https://hf-mirror.com\"");
+    }
+
+    #[test]
+    fn entries_serializes_multiple_mirrors_as_json_array() {
+        let mut settings = AppSettings::default();
+        settings.model_mirrors = vec![
+            "https://mirror-a.example".to_owned(),
+            "https://mirror-b.example".to_owned(),
+        ];
+        let entries = settings.entries().expect("entries should succeed");
+        let mirror = entries
+            .into_iter()
+            .find(|(key, _)| *key == "modelMirror")
+            .map(|(_, value)| value)
+            .expect("modelMirror entry");
+        assert_eq!(
+            mirror,
+            "[\"https://mirror-a.example\",\"https://mirror-b.example\"]"
+        );
     }
 
     #[test]

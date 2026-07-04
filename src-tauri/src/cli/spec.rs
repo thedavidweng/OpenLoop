@@ -338,9 +338,9 @@ pub struct PullArgs {
     /// Model variant to download
     #[arg(value_enum)]
     pub model: ModelVariantArg,
-    /// Use a mirror source
-    #[arg(long)]
-    pub mirror: Option<String>,
+    /// Use one or more mirror sources (repeat --mirror for each)
+    #[arg(long, action = clap::ArgAction::Append)]
+    pub mirror: Vec<String>,
 }
 
 #[derive(Args)]
@@ -945,7 +945,7 @@ mod tests {
         match cli.command {
             Commands::Pull(args) => {
                 assert!(matches!(args.model, ModelVariantArg::Pro));
-                assert!(args.mirror.is_none());
+                assert!(args.mirror.is_empty());
             }
             _ => panic!("expected Pull"),
         }
@@ -964,7 +964,7 @@ mod tests {
         match cli.command {
             Commands::Pull(args) => {
                 assert!(matches!(args.model, ModelVariantArg::Lite));
-                assert_eq!(args.mirror.as_deref(), Some("https://mirror.example.com"));
+                assert_eq!(args.mirror, vec!["https://mirror.example.com".to_owned()]);
             }
             _ => panic!("expected Pull"),
         }

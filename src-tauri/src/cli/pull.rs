@@ -11,9 +11,9 @@ pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::PullArgs) -
 
     let mut settings = state.db.get_settings()?;
 
-    // CLI --mirror overrides saved setting for this run
-    if let Some(mirror) = args.mirror {
-        settings.model_mirror = Some(mirror);
+    // CLI --mirror overrides saved setting for this run (can be specified multiple times)
+    if !args.mirror.is_empty() {
+        settings.model_mirrors = args.mirror.clone();
     }
 
     // Sync downloaded_models from manifest (may have been set by GUI or manual copy)

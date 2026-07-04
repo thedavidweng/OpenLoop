@@ -261,7 +261,11 @@ impl ModelManager {
 
         let client = blocking_http_client()?;
 
-        let mirror = settings.model_mirror.as_deref().unwrap_or(HF_RESOLVE_BASE);
+        let mirrors = if settings.model_mirrors.is_empty() {
+            vec![HF_RESOLVE_BASE.to_owned()]
+        } else {
+            settings.model_mirrors.clone()
+        };
         for spec in &pack {
             let target = checkpoints_dir.join(spec.local_path);
             if let Some(parent) = target.parent() {
@@ -279,7 +283,7 @@ impl ModelManager {
                 }
             }
 
-            download_single_file_blocking(&client, spec, &target, mirror, &self.network_log)?;
+            download_single_file_blocking(&client, spec, &target, &mirrors, &self.network_log)?;
         }
 
         record_install(&self.app_data_dir, descriptor)?;

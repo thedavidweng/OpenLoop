@@ -144,7 +144,7 @@ jobs:
       - name: Rust audit
         run: |
           cargo install cargo-audit --locked
-          cargo audit --manifest-path src-tauri/Cargo.toml
+          cd src-tauri && cargo audit
 
       - name: Rust tests
         run: cargo test -q --manifest-path src-tauri/Cargo.toml

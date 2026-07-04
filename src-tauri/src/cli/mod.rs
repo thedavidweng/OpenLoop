@@ -17,6 +17,7 @@ mod setup;
 mod spec;
 mod status;
 mod stop;
+mod warning_output;
 
 use clap::{CommandFactory, Parser};
 

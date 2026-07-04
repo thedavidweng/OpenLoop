@@ -40,8 +40,8 @@ pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::PullArgs) -
                     .map_err(|e| cli_error(e.to_string()))?,
             ) {
                 eprintln!(
-                    "warning: failed to persist downloaded models: {}",
-                    e.message
+                    "{}",
+                    crate::cli::warning_output::persist_downloaded_models_warning(&e)
                 );
             }
         }
@@ -73,7 +73,7 @@ pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::PullArgs) -
         let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
         backend.status();
         if let Err(e) = backend.start(&settings) {
-            eprintln!("warning: failed to start backend: {}", e.message);
+            eprintln!("{}", crate::cli::warning_output::backend_start_warning(&e));
         }
     }
 

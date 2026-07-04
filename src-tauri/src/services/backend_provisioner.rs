@@ -409,10 +409,7 @@ impl BackendProvisioner {
                 installed_at: Utc::now().to_rfc3339(),
             };
             if let Err(e) = write_backend_manifest(&self.app_data_dir, &manifest) {
-                tracing::warn!(
-                    "failed to write backend manifest during migration: {}",
-                    e.message
-                );
+                tracing::warn!("{}", manifest_migration_warning(&e));
             }
         }
     }
@@ -1172,9 +1169,20 @@ fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
 fn emit_status(app: &AppHandle, status: &Arc<Mutex<BackendProvisionStatus>>) {
     if let Ok(s) = status.lock() {
         if let Err(error) = app.emit(BACKEND_PROVISION_EVENT, s.clone()) {
-            tracing::warn!("failed to emit backend provision status: {error}");
+            tracing::warn!("{}", provision_status_emit_warning(&error));
         }
     }
+}
+
+fn manifest_migration_warning(error: &AppError) -> String {
+    format!(
+        "failed to write backend manifest during migration: {}",
+        error.message
+    )
+}
+
+fn provision_status_emit_warning(error: &impl std::fmt::Display) -> String {
+    format!("failed to emit backend provision status: {error}")
 }
 
 // ---------------------------------------------------------------------------
@@ -1295,5 +1303,12 @@ mod tests {
         let resolved =
             resolve_path_within_base(&base, "acestep/__init__.py").expect("resolve nested path");
         assert_eq!(resolved, base.join("acestep").join("__init__.py"));
+    }
+
+    #[test]
+    fn provision_warning_messages_include_error_text() {
+        let error = AppError::new("TEST", "emit failed", None, true);
+        assert!(manifest_migration_warning(&error).contains("emit failed"));
+        assert!(provision_status_emit_warning(&"emit failed").contains("emit failed"));
     }
 }

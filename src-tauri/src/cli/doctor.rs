@@ -157,8 +157,8 @@ pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
                 serde_json::to_value(&downloaded).unwrap_or_default(),
             ) {
                 eprintln!(
-                    "warning: failed to persist downloaded models: {}",
-                    e.message
+                    "{}",
+                    crate::cli::warning_output::persist_downloaded_models_warning(&e)
                 );
             }
         }

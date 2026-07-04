@@ -8,8 +8,8 @@ use crate::{
     models::errors::{AppError, AppResult},
     services::{
         backend_manager::BackendManager, backend_provisioner::BackendProvisioner, db::Database,
-        file_store::FileStore, generation_task::GenerationTaskRunner,
-        model_manager::ModelManager, network_log::NetworkActivityLog,
+        file_store::FileStore, generation_task::GenerationTaskRunner, model_manager::ModelManager,
+        network_log::NetworkActivityLog,
     },
 };
 

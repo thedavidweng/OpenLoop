@@ -348,6 +348,5 @@ export function createGenerationSlice(
         playbackToggleRequest: state.playbackToggleRequest + 1,
       }));
     },
-
   };
 }

@@ -186,15 +186,12 @@ export function createSettingsSlice(
               recoverable: true,
             },
           },
-          generationState: createFailedGenerationState(
-            tr("status.persistenceHydrationFailed"),
-            {
-              code: "PERSISTENCE_HYDRATION_FAILED",
-              message: tr("errors.persistenceHydrationFailed"),
-              details: String(error),
-              recoverable: true,
-            },
-          ),
+          generationState: createFailedGenerationState(tr("status.persistenceHydrationFailed"), {
+            code: "PERSISTENCE_HYDRATION_FAILED",
+            message: tr("errors.persistenceHydrationFailed"),
+            details: String(error),
+            recoverable: true,
+          }),
         });
       }
     },

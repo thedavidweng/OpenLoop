@@ -254,10 +254,7 @@ fn execute_clear_partial(state: &AppState, json: bool, variant: ModelVariant) ->
             variant.label()
         ));
     } else {
-        human_output(&format!(
-            "✓ Partial downloads cleared: {}",
-            variant.label()
-        ));
+        human_output(&format!("✓ Partial downloads cleared: {}", variant.label()));
     }
 
     Ok(())
@@ -313,5 +310,3 @@ fn execute_delete_all(state: &AppState, json: bool, yes: bool) -> AppResult<()> 
 
     Ok(())
 }
-
-

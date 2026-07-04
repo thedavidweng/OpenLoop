@@ -53,8 +53,7 @@ pub fn clear_backend_cache(state: State<'_, AppState>) -> AppResult<()> {
 
     let cache_dir = runtime_dir_for(&state.app_data_dir, &settings).join(".cache");
     if cache_dir.exists() {
-        fs::remove_dir_all(&cache_dir)
-            .map_err(|error| AppError::internal(error.to_string()))?;
+        fs::remove_dir_all(&cache_dir).map_err(|error| AppError::internal(error.to_string()))?;
     }
 
     Ok(())

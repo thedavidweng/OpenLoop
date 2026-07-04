@@ -15,7 +15,10 @@ export function createIdleGenerationState(): GenerationState {
   };
 }
 
-export function createFailedGenerationState(statusMessage: string, error: AppError): GenerationState {
+export function createFailedGenerationState(
+  statusMessage: string,
+  error: AppError,
+): GenerationState {
   return {
     status: "failed",
     phase: "failed",

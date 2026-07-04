@@ -226,9 +226,7 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
             };
             serde_json::to_value(variant).map_err(|e| cli_error(e.to_string()))?
         }
-        "thinking" => {
-            serde_json::Value::Bool(parse_bool_flag(value, "thinking")?)
-        }
+        "thinking" => serde_json::Value::Bool(parse_bool_flag(value, "thinking")?),
         "duration" => {
             let d: f64 = value.parse().map_err(|_| {
                 cli_error(format!("invalid duration '{}'. Must be a number.", value))
@@ -247,9 +245,7 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
                 )))
             }
         },
-        "checkForUpdates" => {
-            serde_json::Value::Bool(parse_bool_flag(value, "checkForUpdates")?)
-        }
+        "checkForUpdates" => serde_json::Value::Bool(parse_bool_flag(value, "checkForUpdates")?),
         _ => {
             return Err(cli_error(format!(
             "unknown setting '{}'. Available: model, thinking, duration, format, checkForUpdates",
@@ -290,7 +286,9 @@ fn parse_bool_flag(value: &str, name: &str) -> AppResult<bool> {
     match value.to_lowercase().as_str() {
         "on" | "true" | "1" | "yes" | "enabled" => Ok(true),
         "off" | "false" | "0" | "no" | "disabled" => Ok(false),
-        _ => Err(cli_error(format!("invalid {name} value '{value}'. Use on/off."))),
+        _ => Err(cli_error(format!(
+            "invalid {name} value '{value}'. Use on/off."
+        ))),
     }
 }
 
@@ -306,7 +304,11 @@ fn get_setting_value(settings: &AppSettings, key: &str) -> AppResult<String> {
 }
 
 fn on_off(value: bool) -> &'static str {
-    if value { "on" } else { "off" }
+    if value {
+        "on"
+    } else {
+        "off"
+    }
 }
 
 fn model_str(settings: &AppSettings) -> &str {

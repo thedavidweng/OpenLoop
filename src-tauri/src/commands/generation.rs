@@ -54,7 +54,9 @@ pub fn list_active_generation_tasks(
 
 #[tauri::command]
 pub fn discard_active_generation_task(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    state.generation_runner().discard_active_generation_task(&id)
+    state
+        .generation_runner()
+        .discard_active_generation_task(&id)
 }
 
 #[tauri::command]
@@ -97,7 +99,9 @@ pub async fn resume_generation_task(
     let client = AceClient::new(settings.backend_port)?;
     client.health()?;
     let sink = TauriGenerationEventSink { app: &app };
-    state.generation_runner().resume(&client, &sink, &settings, active)
+    state
+        .generation_runner()
+        .resume(&client, &sink, &settings, active)
 }
 
 #[tauri::command]
@@ -129,7 +133,9 @@ pub async fn generate_music(
     let client = AceClient::new(settings.backend_port)?;
     client.health()?;
     let sink = TauriGenerationEventSink { app: &app };
-    state.generation_runner().generate(&client, &sink, &settings, request)
+    state
+        .generation_runner()
+        .generate(&client, &sink, &settings, request)
 }
 
 #[cfg(test)]

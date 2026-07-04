@@ -99,6 +99,7 @@ export function PlaybackBar() {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [playbackStatus, setPlaybackStatus] = useState<string | null>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const seekRailRef = useRef<HTMLDivElement>(null);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [waveformPeaks, setWaveformPeaks] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -108,6 +109,8 @@ export function PlaybackBar() {
   const [previousVolume, setPreviousVolume] = useState(1);
   const [speed, setSpeed] = useState(loadPersistedSpeed);
   const [loop, setLoop] = useState(false);
+  const [loopA, setLoopA] = useState<number | null>(null);
+  const [loopB, setLoopB] = useState<number | null>(null);
   const [measuredWidth, setMeasuredWidth] = useState(1280);
   const [measuredDensity, setMeasuredDensity] = useState<PlaybackBarDensity>("relaxed");
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -239,6 +242,18 @@ export function PlaybackBar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [exportDropdownOpen]);
 
+  // ESC clears AB-loop points
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && (loopA !== null || loopB !== null)) {
+        setLoopA(null);
+        setLoopB(null);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [loopA, loopB]);
+
   const progressPercent = useMemo(() => {
     if (!duration || !Number.isFinite(duration)) {
       return 0;
@@ -297,9 +312,22 @@ export function PlaybackBar() {
     columnGap: layoutTokens.zoneGap,
   };
 
+  const handleDragStart = useCallback(
+    (event: React.DragEvent) => {
+      const path = currentGeneration?.outputPath;
+      if (!path) return;
+      event.dataTransfer.effectAllowed = "copy";
+      event.dataTransfer.setData("text/uri-list", `file://${path}`);
+      event.dataTransfer.setData("text/plain", path);
+    },
+    [currentGeneration?.outputPath],
+  );
+
   return (
     <div
       ref={containerRef}
+      draggable={currentGeneration?.outputPath !== null}
+      onDragStart={handleDragStart}
       className={`app-panel-surface z-10 mx-3 mb-3 mt-2 flex shrink-0 flex-col justify-center rounded-[24px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] shadow-[var(--chrome-panel-shadow)] ${layoutTokens.barHeightClass}`}
       style={{ paddingInline: layoutTokens.outerPadding }}
     >
@@ -308,7 +336,13 @@ export function PlaybackBar() {
         src={audioSrc ?? undefined}
         preload="metadata"
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
-        onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)}
+        onTimeUpdate={(event) => {
+          const t = event.currentTarget.currentTime;
+          setPosition(t);
+          if (loopA !== null && loopB !== null && t >= loopB) {
+            event.currentTarget.currentTime = loopA;
+          }
+        }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onError={() => {
@@ -404,7 +438,22 @@ export function PlaybackBar() {
               {formatTime(position)}
             </span>
             <div
+              ref={seekRailRef}
               className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)]`}
+              onClick={(event) => {
+                if (!event.shiftKey || !duration || !seekRailRef.current) return;
+                const rect = seekRailRef.current.getBoundingClientRect();
+                const clickRatio = (event.clientX - rect.left) / rect.width;
+                const clickTime = Math.max(0, Math.min(duration, clickRatio * duration));
+                if (loopA === null) {
+                  setLoopA(clickTime);
+                } else if (loopB === null) {
+                  setLoopB(clickTime);
+                } else {
+                  setLoopA(clickTime);
+                  setLoopB(null);
+                }
+              }}
             >
               <input
                 type="range"
@@ -434,6 +483,35 @@ export function PlaybackBar() {
                   ))}
                 </div>
               ) : null}
+              {loopA !== null && (
+                <div
+                  className="pointer-events-none absolute top-1/2 z-20 h-8 -translate-y-1/2 rounded-l-sm border-l-2 border-[var(--color-accent)]"
+                  style={{ left: `${(loopA / duration) * 100}%` }}
+                >
+                  <span className="absolute -top-4 left-0 whitespace-nowrap text-[10px] font-bold text-[var(--color-accent)]">
+                    A
+                  </span>
+                </div>
+              )}
+              {loopB !== null && (
+                <div
+                  className="pointer-events-none absolute top-1/2 z-20 h-8 -translate-y-1/2 rounded-r-sm border-r-2 border-[var(--color-accent)]"
+                  style={{ left: `${(loopB / duration) * 100}%` }}
+                >
+                  <span className="absolute -top-4 right-0 whitespace-nowrap text-[10px] font-bold text-[var(--color-accent)]">
+                    B
+                  </span>
+                </div>
+              )}
+              {loopA !== null && loopB !== null && (
+                <div
+                  className="pointer-events-none absolute top-1/2 z-10 h-8 -translate-y-1/2 rounded-sm bg-[var(--color-accent)]/15"
+                  style={{
+                    left: `${(Math.min(loopA, loopB) / duration) * 100}%`,
+                    width: `${(Math.abs(loopB - loopA) / duration) * 100}%`,
+                  }}
+                />
+              )}
               <div
                 className="relative h-full rounded-full bg-[var(--color-text-dim)] group-hover:bg-white"
                 style={{ width: `${progressPercent}%` }}
@@ -624,29 +702,29 @@ export function PlaybackBar() {
                     <Copy size={16} className="shrink-0 opacity-70" />
                     <span className="flex-1">{t("player.copyPath")}</span>
                   </button>
+                  <div className="mx-3 border-t border-[var(--color-border-light)]" />
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
+                    onClick={() => {
+                      setExportDropdownOpen(false);
+                      if (!currentGeneration?.outputPath) return;
+                      void (async () => {
+                        await api.deleteGenerationFileAndRecord(currentGeneration.id);
+                        await deleteGenerationRecord(currentGeneration.id, {
+                          alreadyDeleted: true,
+                        });
+                        addToast("success", t("toast.fileDeleted"));
+                      })();
+                    }}
+                  >
+                    <Trash2 size={16} className="shrink-0 opacity-70" />
+                    <span className="flex-1 text-[var(--color-error)]">{t("player.deleteFileAndRecord")}</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
-          <Tooltip label={t("player.deleteFileAndRecord")}>
-            <button
-              type="button"
-              className="motion-icon-button relative flex shrink-0 items-center rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
-              disabled={!currentGeneration?.outputPath}
-              onClick={() => {
-                if (!currentGeneration?.outputPath) return;
-                void (async () => {
-                  await api.deleteGenerationFileAndRecord(currentGeneration.id);
-                  await deleteGenerationRecord(currentGeneration.id, {
-                    alreadyDeleted: true,
-                  });
-                  addToast("success", t("toast.fileDeleted"));
-                })();
-              }}
-            >
-              <Trash2 size={16} />
-            </button>
-          </Tooltip>
         </div>
       </div>
 

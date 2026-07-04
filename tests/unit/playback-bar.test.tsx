@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { GenerationRecord } from "@/app/lib/types";
 
@@ -63,8 +63,10 @@ vi.mock("react-i18next", () => ({
   Trans: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+const mockAddToast = vi.fn();
+
 vi.mock("@/app/components/overlay/Toast", () => ({
-  useToast: () => ({ addToast: vi.fn() }),
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 vi.mock("@/app/components/overlay/Tooltip", () => ({
@@ -143,6 +145,46 @@ function getButtonByTooltip(label: string): HTMLButtonElement | undefined {
   }) as HTMLButtonElement | undefined;
 }
 
+function getSeekRail(): HTMLElement {
+  const seekSlider = screen.getByRole("slider", { name: /seek/i });
+  const rail = seekSlider.parentElement;
+  if (!rail) {
+    throw new Error("seek rail not found");
+  }
+  return rail;
+}
+
+function mockSeekRailRect(width = 200) {
+  const rail = getSeekRail();
+  rail.getBoundingClientRect = () =>
+    ({
+      left: 0,
+      top: 0,
+      width,
+      height: 8,
+      right: width,
+      bottom: 8,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect;
+}
+
+async function loadAudioWithDuration(duration = 100) {
+  await vi.waitFor(() => {
+    expect(mockReadGenerationAudio).toHaveBeenCalled();
+  });
+  const audio = document.querySelector("audio");
+  if (!audio) {
+    throw new Error("audio element not found");
+  }
+  Object.defineProperty(audio, "duration", { configurable: true, value: duration });
+  fireEvent.loadedMetadata(audio, { currentTarget: audio });
+  await vi.waitFor(() => {
+    expect(screen.getByRole("slider", { name: /seek/i })).not.toBeDisabled();
+  });
+}
+
 // --- Tests -------------------------------------------------------------------
 
 describe("PlaybackBar", () => {
@@ -150,6 +192,8 @@ describe("PlaybackBar", () => {
     currentStoreState = makeStoreOverrides();
     mockReadGenerationAudio.mockResolvedValue([0xff, 0xd8]);
     mockReadGenerationWaveform.mockResolvedValue({ peaks: [0.5, 0.8] });
+    mockDeleteGenerationFileAndRecord.mockResolvedValue(undefined);
+    mockAddToast.mockClear();
   });
 
   // 1. Renders correctly with no track
@@ -397,6 +441,102 @@ describe("PlaybackBar", () => {
       render(<PlaybackBar />);
       const timeLabels = screen.getAllByText("0:00");
       expect(timeLabels.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe("drag export", () => {
+    it("sets encoded file URI on drag start", async () => {
+      const generationWithSpaces = {
+        ...SAMPLE_GENERATION,
+        outputPath: "/output/my track/file.wav",
+      };
+      currentStoreState = makeStoreOverrides({ currentGeneration: generationWithSpaces });
+      const { container } = render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const bar = container.querySelector(".app-panel-surface");
+      expect(bar).toHaveAttribute("draggable", "true");
+
+      const setData = vi.fn();
+      fireEvent.dragStart(bar!, {
+        dataTransfer: {
+          effectAllowed: "",
+          setData,
+        },
+      });
+
+      expect(setData).toHaveBeenCalledWith(
+        "text/uri-list",
+        "file:///output/my%20track/file.wav",
+      );
+      expect(setData).toHaveBeenCalledWith("text/plain", "/output/my track/file.wav");
+    });
+
+    it("is not draggable without an output path", () => {
+      const generationWithoutPath = { ...SAMPLE_GENERATION, outputPath: null };
+      currentStoreState = makeStoreOverrides({ currentGeneration: generationWithoutPath });
+      const { container } = render(<PlaybackBar />);
+      const bar = container.querySelector(".app-panel-surface");
+      expect(bar).toHaveAttribute("draggable", "false");
+    });
+  });
+
+  describe("AB loop markers", () => {
+    it("renders loop region using min/max when B is set before A", async () => {
+      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 40 });
+
+      expect(screen.getByText("A")).toBeInTheDocument();
+      expect(screen.getByText("B")).toBeInTheDocument();
+
+      const region = rail.querySelector("[class*='bg-[var(--color-accent)]/15']");
+      expect(region).toHaveStyle({ left: "20%", width: "60%" });
+    });
+
+    it("clears loop markers when the generation changes", async () => {
+      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      const { rerender } = render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      expect(screen.getByText("A")).toBeInTheDocument();
+
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: { ...SAMPLE_GENERATION, id: "gen-2", prompt: "second track" },
+      });
+      rerender(<PlaybackBar />);
+      await screen.findByText("second track");
+
+      expect(screen.queryByText("A")).not.toBeInTheDocument();
+      expect(screen.queryByText("B")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("delete from export menu", () => {
+    it("shows error toast when delete fails", async () => {
+      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(new Error("disk busy"));
+      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      const user = userEvent.setup();
+      render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const exportBtn = getButtonByTooltip("player.exportMenu")!;
+      await user.click(exportBtn);
+      await user.click(screen.getByText("player.deleteFileAndRecord"));
+
+      await vi.waitFor(() => {
+        expect(mockAddToast).toHaveBeenCalledWith("error", "toast.deleteFailed");
+      });
+      expect(mockDeleteGenerationRecord).not.toHaveBeenCalled();
     });
   });
 });

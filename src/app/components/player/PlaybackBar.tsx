@@ -152,6 +152,8 @@ export function PlaybackBar() {
     setDuration(0);
     setPlaybackStatus(null);
     setWaveformPeaks([]);
+    setLoopA(null);
+    setLoopB(null);
     setAudioSrc(null);
     if (audioRef.current) {
       audioRef.current.pause();
@@ -326,7 +328,7 @@ export function PlaybackBar() {
   return (
     <div
       ref={containerRef}
-      draggable={currentGeneration?.outputPath !== null}
+      draggable={Boolean(currentGeneration?.outputPath)}
       onDragStart={handleDragStart}
       className={`app-panel-surface z-10 mx-3 mb-3 mt-2 flex shrink-0 flex-col justify-center rounded-[24px] border border-[var(--playback-bar-surface-border)] bg-[var(--playback-bar-surface-bg)] shadow-[var(--chrome-panel-shadow)] ${layoutTokens.barHeightClass}`}
       style={{ paddingInline: layoutTokens.outerPadding }}
@@ -337,10 +339,14 @@ export function PlaybackBar() {
         preload="metadata"
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
         onTimeUpdate={(event) => {
-          const t = event.currentTarget.currentTime;
-          setPosition(t);
-          if (loopA !== null && loopB !== null && t >= loopB) {
-            event.currentTarget.currentTime = loopA;
+          const currentTime = event.currentTarget.currentTime;
+          setPosition(currentTime);
+          if (loopA !== null && loopB !== null) {
+            const loopStart = Math.min(loopA, loopB);
+            const loopEnd = Math.max(loopA, loopB);
+            if (currentTime >= loopEnd) {
+              event.currentTarget.currentTime = loopStart;
+            }
           }
         }}
         onPlay={() => setIsPlaying(true)}
@@ -710,16 +716,22 @@ export function PlaybackBar() {
                       setExportDropdownOpen(false);
                       if (!currentGeneration?.outputPath) return;
                       void (async () => {
-                        await api.deleteGenerationFileAndRecord(currentGeneration.id);
-                        await deleteGenerationRecord(currentGeneration.id, {
-                          alreadyDeleted: true,
-                        });
-                        addToast("success", t("toast.fileDeleted"));
+                        try {
+                          await api.deleteGenerationFileAndRecord(currentGeneration.id);
+                          await deleteGenerationRecord(currentGeneration.id, {
+                            alreadyDeleted: true,
+                          });
+                          addToast("success", t("toast.fileDeleted"));
+                        } catch {
+                          addToast("error", t("toast.deleteFailed"));
+                        }
                       })();
                     }}
                   >
                     <Trash2 size={16} className="shrink-0 opacity-70" />
-                    <span className="flex-1 text-[var(--color-error)]">{t("player.deleteFileAndRecord")}</span>
+                    <span className="flex-1 text-[var(--color-error)]">
+                      {t("player.deleteFileAndRecord")}
+                    </span>
                   </button>
                 </div>
               </div>

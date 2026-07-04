@@ -495,6 +495,7 @@
     "settingsCopied": "参数已复制到剪贴板。",
     "fileExported": "文件已导出。",
     "fileDeleted": "文件已删除。",
+    "deleteFailed": "删除文件失败。",
     "dataUrlCopied": "Data URL 已复制到剪贴板。",
     "pathCopied": "文件路径已复制到剪贴板。",
     "copyFailed": "复制到剪贴板失败。",

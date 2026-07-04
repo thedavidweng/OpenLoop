@@ -31,6 +31,16 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let json = flag(args, "--json");
     let no_thinking = flag(args, "--no-thinking");
+    let from_history = value(args, "--from-history");
+
+    // Load generation from history if --from-history is specified
+    let history_record =
+        match &from_history {
+            Some(history_id) => Some(state.db.get_generation(history_id)?.ok_or_else(|| {
+                cli_error(format!("generation '{history_id}' not found in history"))
+            })?),
+            None => None,
+        };
 
     let model = value(args, "--model").or_else(|| value(args, "-m"));
     let duration: Option<f64> = value(args, "--duration")
@@ -49,7 +59,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         .and_then(|s| s.parse().ok());
 
     // Find prompt — first positional arg that isn't a flag value
-    let prompt = {
+    let mut prompt = {
         let mut skip_next = false;
         let mut prompt = String::new();
         for arg in args.iter().skip(1) {
@@ -70,9 +80,37 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         prompt
     };
 
+    // Apply history record values as fallbacks for unset CLI flags
+    if prompt.is_empty() {
+        if let Some(ref record) = history_record {
+            prompt = record.prompt.clone();
+        }
+    }
+    let model = model.or_else(|| {
+        history_record
+            .as_ref()
+            .and_then(|r| map_model_to_variant(r.model.as_deref()))
+    });
+    let duration = duration.or_else(|| history_record.as_ref().map(|r| r.duration_seconds));
+    let format = format.or_else(|| history_record.as_ref().map(|r| r.audio_format.clone()));
+    let lyrics = lyrics.or_else(|| {
+        history_record.as_ref().and_then(|r| {
+            if r.lyrics.is_empty() {
+                None
+            } else {
+                Some(r.lyrics.clone())
+            }
+        })
+    });
+    let bpm = bpm.or_else(|| history_record.as_ref().and_then(|r| r.bpm));
+    let key = key.or_else(|| history_record.as_ref().and_then(|r| r.key_scale.clone()));
+    let steps = steps.or_else(|| history_record.as_ref().map(|r| r.inference_steps));
+    let guidance = guidance.or_else(|| history_record.as_ref().map(|r| r.guidance_scale));
+    let seed = seed.or_else(|| history_record.as_ref().and_then(|r| r.seed));
+
     if prompt.is_empty() {
         return Err(cli_error(
-            "prompt is required. Usage: openloop run <prompt>",
+            "prompt is required. Usage: openloop run <prompt> [--from-history <id>]",
         ));
     }
 
@@ -381,6 +419,16 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
     }
 }
 
+/// Map a model name (e.g. "ACE-Step-1.5-turbo") to the variant string.
+fn map_model_to_variant(model_name: Option<&str>) -> Option<String> {
+    match model_name? {
+        "ACE-Step-1.5-lite" | "mlx-community/ACE-Step-1.5-lite" => Some("lite".to_owned()),
+        "ACE-Step-1.5-turbo" | "mlx-community/ACE-Step-1.5-turbo" => Some("turbo".to_owned()),
+        "ACE-Step-1.5-pro" | "mlx-community/ACE-Step-1.5-pro" => Some("pro".to_owned()),
+        _ => None,
+    }
+}
+
 fn flag(args: &[String], name: &str) -> bool {
     args.iter().any(|a| a == name)
 }
@@ -419,6 +467,7 @@ fn needs_value(arg: &str) -> bool {
             | "--variations"
             | "-v"
             | "--limit"
+            | "--from-history"
     )
 }
 
@@ -443,6 +492,7 @@ Flags:
   --seed            Random seed
   -v, --variations  Number of variations (1-4)
   --no-thinking     Disable thinking mode
+  --from-history    Replay a previous generation by ID
   --json            NDJSON streaming output
   -h, --help        Show help
 
@@ -450,6 +500,7 @@ Examples:
   openloop run \"upbeat electronic track\"
   openloop run \"sad piano\" --duration 60 --format mp3 --output ./sad.mp3
   openloop run \"pop song\" --lyrics \"[verse]\\nHello\\n[chorus]\\nWorld\"
-  openloop run \"epic cinematic\" --json",
+  openloop run \"epic cinematic\" --json
+  openloop run --from-history <id>",
     );
 }

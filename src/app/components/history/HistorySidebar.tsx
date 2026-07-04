@@ -588,7 +588,10 @@ function FailedRunsDrawer() {
         setFailedRuns((runs) => runs.filter((run) => run.id !== id));
         addToast("info", t("history.failedRunRemoved"));
       } catch {
-        addToast("error", t("history.failedRunRemoveFailed", { defaultValue: "Failed to remove run." }));
+        addToast(
+          "error",
+          t("history.failedRunRemoveFailed", { defaultValue: "Failed to remove run." }),
+        );
       }
     },
     [addToast, t],
@@ -601,7 +604,10 @@ function FailedRunsDrawer() {
       setFailedRuns([]);
       addToast("info", t("history.failedRunCleared"));
     } catch {
-      addToast("error", t("history.failedRunClearFailed", { defaultValue: "Failed to clear runs." }));
+      addToast(
+        "error",
+        t("history.failedRunClearFailed", { defaultValue: "Failed to clear runs." }),
+      );
     }
   }, [addToast, t]);
 

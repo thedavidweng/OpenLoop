@@ -122,9 +122,7 @@ export function UpdateBanner() {
               </div>
             )}
 
-            {installError && (
-              <p className="mb-3 text-[12px] text-red-400">{installError}</p>
-            )}
+            {installError && <p className="mb-3 text-[12px] text-red-400">{installError}</p>}
 
             <div className="flex flex-wrap items-center gap-2">
               <a

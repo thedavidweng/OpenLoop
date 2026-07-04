@@ -803,7 +803,24 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
             continue;
         }
 
+        // Reject entries with path traversal components to prevent zip-slip
+        if relative.contains("..") {
+            return Err(AppError::backend_provision_failed(format!(
+                "zip entry contains path traversal: {relative}"
+            )));
+        }
+
         let outpath = runtime_dir.join(&relative);
+
+        // Verify the resolved path stays within the target directory
+        let canonical_base = runtime_dir
+            .canonicalize()
+            .unwrap_or_else(|_| runtime_dir.to_path_buf());
+        if !outpath.starts_with(&canonical_base) {
+            return Err(AppError::backend_provision_failed(format!(
+                "zip entry escapes target directory: {relative}"
+            )));
+        }
 
         if entry.is_dir() {
             fs::create_dir_all(&outpath).map_err(|error| {

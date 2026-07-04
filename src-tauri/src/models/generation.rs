@@ -154,6 +154,13 @@ impl GenerationRequest {
             ));
         }
 
+        const ALLOWED_AUDIO_FORMATS: &[&str] = &["wav", "mp3", "flac", "ogg"];
+        if !ALLOWED_AUDIO_FORMATS.contains(&self.audio_format.as_str()) {
+            return Err(AppError::validation_failed(
+                "audioFormat must be one of: wav, mp3, flac, ogg",
+            ));
+        }
+
         Ok(())
     }
 }

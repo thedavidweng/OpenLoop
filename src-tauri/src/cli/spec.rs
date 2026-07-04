@@ -575,8 +575,7 @@ mod tests {
 
     #[test]
     fn parse_enhance_unquoted_multi_word_prompt() {
-        let cli =
-            Cli::try_parse_from(["openloop", "enhance", "warm", "piano", "jazz"]).unwrap();
+        let cli = Cli::try_parse_from(["openloop", "enhance", "warm", "piano", "jazz"]).unwrap();
         match cli.command {
             Commands::Enhance(args) => {
                 assert_eq!(args.prompt, vec!["warm", "piano", "jazz"]);

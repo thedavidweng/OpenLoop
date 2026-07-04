@@ -27,15 +27,13 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
     let no_thinking = args.no_thinking;
 
     // Load generation from history if --from-history is specified
-    let history_record = match &args.from_history {
-        Some(history_id) => Some(
-            state
-                .db
-                .get_generation(history_id)?
-                .ok_or_else(|| cli_error(format!("generation '{history_id}' not found in history")))?,
-        ),
-        None => None,
-    };
+    let history_record =
+        match &args.from_history {
+            Some(history_id) => Some(state.db.get_generation(history_id)?.ok_or_else(|| {
+                cli_error(format!("generation '{history_id}' not found in history"))
+            })?),
+            None => None,
+        };
 
     // Apply history record values as fallbacks for unset CLI flags
     if args.prompt.is_empty() {

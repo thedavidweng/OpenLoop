@@ -11,32 +11,18 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::GenerationCommand;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-    if help || args.len() < 2 {
-        print_help();
-        return Ok(());
-    }
-
-    // args[0] is "generation", args[1] is the subcommand
-    let subcommand = args[1].as_str();
-    let sub_args: Vec<String> = args.iter().skip(2).cloned().collect();
-
-    match subcommand {
-        "list" => cmd_list(state, &sub_args),
-        "cancel" => cmd_cancel(state, &sub_args),
-        "resume" => cmd_resume(state, &sub_args),
-        "discard" => cmd_discard(state, &sub_args),
-        _ => {
-            print_help();
-            Ok(())
-        }
+pub fn execute(state: &AppState, json: bool, command: GenerationCommand) -> AppResult<()> {
+    match command {
+        GenerationCommand::List => cmd_list(state, json),
+        GenerationCommand::Cancel { id, kill_backend } => cmd_cancel(state, json, id, kill_backend),
+        GenerationCommand::Resume { id } => cmd_resume(state, json, &id),
+        GenerationCommand::Discard { id, yes } => cmd_discard(state, &id, yes),
     }
 }
 
-fn cmd_list(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
+fn cmd_list(state: &AppState, json: bool) -> AppResult<()> {
     let tasks = state.db.list_active_generation_tasks()?;
 
     if json {
@@ -62,13 +48,12 @@ fn cmd_list(state: &AppState, args: &[String]) -> AppResult<()> {
     Ok(())
 }
 
-fn cmd_cancel(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let kill_backend = args.contains(&"--kill-backend".to_owned());
-
-    // First positional arg that isn't a flag value
-    let id = args.iter().find(|a| !a.starts_with('-')).cloned();
-
+fn cmd_cancel(
+    state: &AppState,
+    json: bool,
+    id: Option<String>,
+    kill_backend: bool,
+) -> AppResult<()> {
     if let Some(task_id) = id {
         // Targeted DB-level cancellation for cross-process visibility
         let runner = GenerationTaskRunner::new(
@@ -119,14 +104,7 @@ fn cmd_cancel(state: &AppState, args: &[String]) -> AppResult<()> {
     Ok(())
 }
 
-fn cmd_resume(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-
-    let id = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop generation resume <id>"))?;
-
+fn cmd_resume(state: &AppState, json: bool, id: &str) -> AppResult<()> {
     let settings = state.db.get_settings()?;
 
     // Ensure backend is healthy
@@ -169,13 +147,7 @@ fn cmd_resume(state: &AppState, args: &[String]) -> AppResult<()> {
     Ok(())
 }
 
-fn cmd_discard(state: &AppState, args: &[String]) -> AppResult<()> {
-    let id = args
-        .iter()
-        .find(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("id is required. Usage: openloop generation discard <id>"))?;
-    let yes = args.contains(&"--yes".to_owned());
-
+fn cmd_discard(state: &AppState, id: &str, yes: bool) -> AppResult<()> {
     if !yes {
         use std::io::Write;
         print!("Discard active generation task {id}? [y/N] ");
@@ -237,36 +209,4 @@ impl GenerationEventSink for GenerationCliSink {
         }
         Ok(())
     }
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop generation — Manage generation lifecycle
-
-Usage:
-  openloop generation <subcommand> [flags]
-
-Subcommands:
-  list              List active generation tasks
-  cancel [id]       Cancel generation (process-level or cross-process)
-  resume <id>       Resume an active generation task
-  discard <id>      Discard an active generation task from the database
-
-Flags:
-  --json            JSON output (list, cancel, resume)
-  --yes             Skip confirmation (discard)
-  --kill-backend    Also stop the local backend if owned by this process
-  --help            Show help
-
-Examples:
-  openloop generation list
-  openloop generation list --json
-  openloop generation cancel
-  openloop generation cancel <task-id>
-  openloop generation cancel --kill-backend
-  openloop generation resume <task-id>
-  openloop generation discard <task-id>
-  openloop generation discard <task-id> --yes",
-    );
 }

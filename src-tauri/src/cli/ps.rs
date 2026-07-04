@@ -5,15 +5,7 @@ use crate::{
 
 use super::AppState;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
+pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = backend.status();
@@ -86,18 +78,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop ps — Show backend status and active generation tasks
-
-Usage:
-  openloop ps [flags]
-
-Flags:
-  --json    JSON object output
-  --help    Show help",
-    );
 }

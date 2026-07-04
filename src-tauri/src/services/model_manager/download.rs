@@ -776,3 +776,15 @@ pub fn download_single_file_blocking(
                     mirror_index += 1;
                     written = 0;
                     continue 'mirrors;
+                }
+                return Err(error);
+            }
+        }
+
+        return Ok(());
+    }
+
+    Err(AppError::model_download_failed(
+        "all mirrors exhausted".to_owned(),
+    ))
+}

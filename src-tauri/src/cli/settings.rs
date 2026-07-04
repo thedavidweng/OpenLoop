@@ -6,29 +6,14 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::SettingsCommand;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    // First non-flag arg after skipping args[0] ("settings")
-    let sub_pos = args.iter().skip(1).position(|a| !a.starts_with('-'));
-    let subcommand = sub_pos.map(|p| args[p + 1].as_str());
-
-    match subcommand {
-        None | Some("get") | Some("show") => execute_get(state, json),
-        Some("set") => execute_set(state, args, json),
-        Some("reset") => execute_reset(state, args, json),
-        Some("paths") => execute_paths(state, json),
-        Some(other) => Err(cli_error(format!(
-            "unknown subcommand '{}'.\n{}",
-            other, "Available: get, show, set, reset, paths"
-        ))),
+pub fn execute(state: &AppState, json: bool, command: Option<SettingsCommand>) -> AppResult<()> {
+    match command.unwrap_or(SettingsCommand::Get) {
+        SettingsCommand::Get => execute_get(state, json),
+        SettingsCommand::Set { key, value } => execute_set(state, json, &key, &value),
+        SettingsCommand::Reset { yes } => execute_reset(state, json, yes),
+        SettingsCommand::Paths => execute_paths(state, json),
     }
 }
 
@@ -92,26 +77,7 @@ fn execute_get(state: &AppState, json: bool) -> AppResult<()> {
     Ok(())
 }
 
-fn execute_set(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    // Find the subcommand position in args
-    let sub_pos = args
-        .iter()
-        .skip(1)
-        .position(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("missing subcommand"))?;
-
-    let key = args
-        .get(sub_pos + 2)
-        .filter(|a| !a.starts_with('-'))
-        .ok_or_else(|| cli_error("key is required.\nUsage: openloop settings set <key> <value>"))?;
-
-    let value = args
-        .get(sub_pos + 3)
-        .filter(|a| !a.starts_with('-'))
-        .ok_or_else(|| {
-            cli_error("value is required.\nUsage: openloop settings set <key> <value>")
-        })?;
-
+fn execute_set(state: &AppState, json: bool, key: &str, value: &str) -> AppResult<()> {
     // Validate key via SettingKey before parsing value
     let setting_key = SettingKey::parse(key)?;
 
@@ -194,9 +160,7 @@ fn parse_setting_value(key: &str, value: &str) -> AppResult<serde_json::Value> {
     }
 }
 
-fn execute_reset(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
-    let yes = args.contains(&"--yes".to_owned());
-
+fn execute_reset(state: &AppState, json: bool, yes: bool) -> AppResult<()> {
     if !yes {
         eprintln!("This will reset runtime settings to their defaults:");
         eprintln!("  backendPort → 8001");
@@ -265,38 +229,4 @@ fn execute_paths(state: &AppState, json: bool) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop settings — View and modify application settings
-
-Usage:
-  openloop settings <subcommand> [flags]
-
-Subcommands:
-  get, show             Show all settings
-  set <key> <value>     Set a setting value
-  reset                 Reset runtime settings to defaults (requires --yes)
-  paths                 Show default application paths
-
-Flags:
-  --json    JSON output
-  --yes     Skip confirmation for destructive operations
-  --help    Show help
-
-Settings keys:
-  backendPort             Backend server port (number)
-  defaultDurationSeconds  Default generation duration (number)
-  defaultAudioFormat      Audio format (wav, mp3, flac, ogg)
-  defaultThinking         Enable thinking mode (on/off, true/false)
-  modelVariant            Model variant (lite, turbo, pro)
-  modelDirectory          Model storage path (string)
-  outputDirectory         Output directory path (string)
-  logDirectory            Log directory path (string)
-  language                Language (string)
-  firstRunCompleted       First run completed (true/false)
-  checkForUpdates         Check for updates on startup (on/off, true/false)",
-    );
 }

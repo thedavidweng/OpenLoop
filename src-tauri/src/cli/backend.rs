@@ -13,56 +13,19 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::BackendCommand;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-    let sub = subcommand(args);
-
-    if help {
-        match sub {
-            Some("status") => print_status_help(),
-            Some("start") => print_start_help(),
-            Some("stop") => print_stop_help(),
-            Some("restart") => print_restart_help(),
-            Some("logs") => print_logs_help(),
-            Some("clear-cache") => print_clear_cache_help(),
-            Some("provision") => print_provision_help(),
-            Some("update") => print_update_help(),
-            _ => print_help(),
-        }
-        return Ok(());
+pub fn execute(state: &AppState, json: bool, command: BackendCommand) -> AppResult<()> {
+    match command {
+        BackendCommand::Status => execute_status(state, json),
+        BackendCommand::Start => execute_start(state, json),
+        BackendCommand::Stop => execute_stop(state, json),
+        BackendCommand::Restart => execute_restart(state, json),
+        BackendCommand::Logs { open } => execute_logs(state, json, open),
+        BackendCommand::ClearCache => execute_clear_cache(state),
+        BackendCommand::Provision => execute_provision(state, json),
+        BackendCommand::Update => execute_update(state, json),
     }
-
-    match sub {
-        Some("status") => execute_status(state, args),
-        Some("start") => execute_start(state, args),
-        Some("stop") => execute_stop(state, args),
-        Some("restart") => execute_restart(state, args),
-        Some("logs") => execute_logs(state, args),
-        Some("clear-cache") => execute_clear_cache(state),
-        Some("provision") => execute_provision(state, args),
-        Some("update") => execute_update(state, args),
-        None => {
-            print_help();
-            Ok(())
-        }
-        Some(unknown) => Err(cli_error(format!(
-            "unknown backend subcommand '{unknown}'. Use 'openloop backend --help' to see available subcommands."
-        ))),
-    }
-}
-
-/// Extract the subcommand from args, skipping the leading "backend" at index 0
-/// and any flag-like arguments.
-fn subcommand(args: &[String]) -> Option<&str> {
-    args.iter()
-        .skip(1)
-        .find(|a| !a.starts_with('-'))
-        .map(|s| s.as_str())
-}
-
-fn json_flag(args: &[String]) -> bool {
-    args.contains(&"--json".to_owned())
 }
 
 fn backend_error_text(error: &AppError) -> String {
@@ -149,8 +112,7 @@ fn stop_lifecycle_message(status: &BackendStatus) -> String {
 // Status
 // ---------------------------------------------------------------------------
 
-fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
+fn execute_status(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = backend.status_with_port(Some(settings.backend_port));
@@ -220,8 +182,7 @@ fn execute_status(state: &AppState, args: &[String]) -> AppResult<()> {
 // Start
 // ---------------------------------------------------------------------------
 
-fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
+fn execute_start(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = match backend.start(&settings) {
@@ -273,8 +234,7 @@ fn execute_start(state: &AppState, args: &[String]) -> AppResult<()> {
 // Stop
 // ---------------------------------------------------------------------------
 
-fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
+fn execute_stop(state: &AppState, json: bool) -> AppResult<()> {
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = match backend.stop() {
         Ok(status) => status,
@@ -309,8 +269,7 @@ fn execute_stop(state: &AppState, args: &[String]) -> AppResult<()> {
 // Restart
 // ---------------------------------------------------------------------------
 
-fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
+fn execute_restart(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let status = match backend.restart(&settings) {
@@ -359,9 +318,7 @@ fn execute_restart(state: &AppState, args: &[String]) -> AppResult<()> {
 // Logs
 // ---------------------------------------------------------------------------
 
-fn execute_logs(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
-    let open = args.contains(&"--open".to_owned());
+fn execute_logs(state: &AppState, json: bool, open: bool) -> AppResult<()> {
     let backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
     let path = backend.logs_path();
 
@@ -441,9 +398,7 @@ fn format_manifest_version(
 // Provision
 // ---------------------------------------------------------------------------
 
-fn execute_provision(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
-
+fn execute_provision(state: &AppState, json: bool) -> AppResult<()> {
     let provisioner = BackendProvisioner::new(
         state.app_data_dir.clone(),
         std::sync::Arc::clone(&state.network_log),
@@ -483,9 +438,7 @@ fn execute_provision(state: &AppState, args: &[String]) -> AppResult<()> {
 // Update
 // ---------------------------------------------------------------------------
 
-fn execute_update(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = json_flag(args);
-
+fn execute_update(state: &AppState, json: bool) -> AppResult<()> {
     let provisioner = BackendProvisioner::new(
         state.app_data_dir.clone(),
         std::sync::Arc::clone(&state.network_log),
@@ -538,154 +491,6 @@ fn execute_update(state: &AppState, args: &[String]) -> AppResult<()> {
 // ---------------------------------------------------------------------------
 // Help printers
 // ---------------------------------------------------------------------------
-
-fn print_help() {
-    human_output(
-        "\
-openloop backend — Manage the local ACE-Step backend
-
-Usage:
-  openloop backend <subcommand> [flags]
-
-Subcommands:
-  status       Show backend health, port, and code version
-  start        Start the backend
-  stop         Stop the backend
-  restart      Restart the backend
-  logs         Print the backend logs path
-  clear-cache  Stop backend and remove runtime cache
-  provision    Download and install the ACE-Step backend code
-  update       Update the backend code to the latest version
-
-Flags:
-  --json       JSON output (supported by most subcommands)
-  --help       Show help
-
-Examples:
-  openloop backend status
-  openloop backend status --json
-  openloop backend start
-  openloop backend stop
-  openloop backend restart
-  openloop backend logs
-  openloop backend logs --open
-  openloop backend clear-cache
-  openloop backend provision
-  openloop backend update",
-    );
-}
-
-fn print_status_help() {
-    human_output(
-        "\
-openloop backend status — Show backend health and port
-
-Usage:
-  openloop backend status [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
-
-fn print_start_help() {
-    human_output(
-        "\
-openloop backend start — Start the backend
-
-Usage:
-  openloop backend start [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
-
-fn print_stop_help() {
-    human_output(
-        "\
-openloop backend stop — Stop the backend
-
-Usage:
-  openloop backend stop [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
-
-fn print_restart_help() {
-    human_output(
-        "\
-openloop backend restart — Restart the backend
-
-Usage:
-  openloop backend restart [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
-
-fn print_logs_help() {
-    human_output(
-        "\
-openloop backend logs — Print the backend logs path
-
-Usage:
-  openloop backend logs [flags]
-
-Flags:
-  --json    JSON output
-  --open    Reveal in Finder (macOS only)
-  --help    Show help",
-    );
-}
-
-fn print_clear_cache_help() {
-    human_output(
-        "\
-openloop backend clear-cache — Stop backend and remove runtime cache
-
-Usage:
-  openloop backend clear-cache
-
-Flags:
-  --help    Show help",
-    );
-}
-
-fn print_provision_help() {
-    human_output(
-        "\
-openloop backend provision — Download and install the ACE-Step backend code
-
-Usage:
-  openloop backend provision [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
-
-fn print_update_help() {
-    human_output(
-        "\
-openloop backend update — Update the backend code to the latest version
-
-Usage:
-  openloop backend update [flags]
-
-Flags:
-  --json    JSON output
-  --help    Show help",
-    );
-}
 
 #[cfg(test)]
 mod tests {

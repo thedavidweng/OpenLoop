@@ -750,7 +750,9 @@ mod tests {
             Database::new(temp_dir.path()).expect("database should initialize with migration");
 
         // Step 3: verify v1 record is still readable
-        let all = database.list_generations(None).expect("list should work");
+        let all = database
+            .list_generations(None, None)
+            .expect("list should work");
         assert!(
             all.iter().any(|r| r.id == "gen_v1"),
             "v1 record should survive migration"

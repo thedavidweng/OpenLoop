@@ -390,8 +390,6 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
         Ok(())
     }
 }
-<<<<<<< HEAD
-=======
 
 /// Map a model name (e.g. "ACE-Step-1.5-turbo") to the variant string.
 fn map_model_to_variant(model_name: Option<&str>) -> Option<String> {
@@ -402,80 +400,3 @@ fn map_model_to_variant(model_name: Option<&str>) -> Option<String> {
         _ => None,
     }
 }
-
-fn flag(args: &[String], name: &str) -> bool {
-    args.iter().any(|a| a == name)
-}
-
-fn value(args: &[String], name: &str) -> Option<String> {
-    for i in 0..args.len() {
-        if args[i] == name {
-            return args.get(i + 1).filter(|v| !v.starts_with('-')).cloned();
-        }
-    }
-    None
-}
-
-fn flag_like(arg: &str) -> bool {
-    arg.starts_with('-')
-}
-
-fn needs_value(arg: &str) -> bool {
-    matches!(
-        arg,
-        "--model"
-            | "-m"
-            | "--duration"
-            | "-d"
-            | "--format"
-            | "-f"
-            | "--output"
-            | "-o"
-            | "--lyrics"
-            | "-l"
-            | "--bpm"
-            | "--key"
-            | "--steps"
-            | "--guidance"
-            | "--seed"
-            | "--variations"
-            | "-v"
-            | "--limit"
-            | "--from-history"
-    )
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop run — Generate music
-
-Usage:
-  openloop run [flags] <prompt>
-
-Flags:
-  -m, --model       Model variant (lite/turbo/pro)
-  -d, --duration    Duration in seconds (10-600)
-  -f, --format      Audio format (wav/mp3/flac/ogg)
-  -o, --output      Output file path
-  -l, --lyrics      Lyrics text
-  --bpm             BPM (30-300)
-  --key             Key and scale (e.g., \"C major\")
-  --steps           Inference steps
-  --guidance        Guidance scale
-  --seed            Random seed
-  -v, --variations  Number of variations (1-4)
-  --no-thinking     Disable thinking mode
-  --from-history    Replay a previous generation by ID
-  --json            NDJSON streaming output
-  -h, --help        Show help
-
-Examples:
-  openloop run \"upbeat electronic track\"
-  openloop run \"sad piano\" --duration 60 --format mp3 --output ./sad.mp3
-  openloop run \"pop song\" --lyrics \"[verse]\\nHello\\n[chorus]\\nWorld\"
-  openloop run \"epic cinematic\" --json
-  openloop run --from-history <id>",
-    );
-}
->>>>>>> origin/main

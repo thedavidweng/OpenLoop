@@ -20,7 +20,7 @@ pub fn run() {
                 Ok(dir) => dir,
                 Err(error) => {
                     crate::services::observability::init_stderr_only();
-                    return Err(error);
+                    return Err(error.into());
                 }
             };
             crate::services::observability::init(&app_data_dir);

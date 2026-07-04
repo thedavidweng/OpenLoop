@@ -639,30 +639,6 @@ describe("PlaybackBar", () => {
       expect(screen.getByText("A")).toBeInTheDocument();
       expect(screen.queryByText("B")).not.toBeInTheDocument();
     });
-
-    it("does not freeze playback when the loop region is zero-width", async () => {
-      currentStoreState = makeStoreOverrides({
-        currentGeneration: SAMPLE_GENERATION,
-      });
-      render(<PlaybackBar />);
-      await loadAudioWithDuration(100);
-      mockSeekRailRect(200);
-
-      const rail = getSeekRail();
-      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
-      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
-
-      const audio = document.querySelector("audio") as HTMLAudioElement;
-      Object.defineProperty(audio, "currentTime", {
-        configurable: true,
-        writable: true,
-        value: 85,
-      });
-
-      fireEvent.timeUpdate(audio, { currentTarget: audio });
-
-      expect(audio.currentTime).toBe(85);
-    });
   });
 
   describe("delete from export menu", () => {

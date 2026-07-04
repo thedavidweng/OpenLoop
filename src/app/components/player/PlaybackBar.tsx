@@ -36,7 +36,10 @@ const SPEED_OPTIONS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 // Minimum gap between AB-loop points; a smaller region would seek back on every
 // timeupdate and freeze playback.
-const AB_LOOP_MIN_GAP_SECONDS = 0.05;
+import {
+  isAbLoopBPlacementValid,
+  resolveAbLoopSeekTarget,
+} from "@/app/components/player/playback-ab-loop";
 
 const VOLUME_STORAGE_KEY = "openloop-volume";
 const SPEED_STORAGE_KEY = "openloop-speed";
@@ -351,10 +354,9 @@ export function PlaybackBar() {
           const currentTime = event.currentTarget.currentTime;
           setPosition(currentTime);
           if (loopA !== null && loopB !== null) {
-            const loopStart = Math.min(loopA, loopB);
-            const loopEnd = Math.max(loopA, loopB);
-            if (loopEnd - loopStart >= AB_LOOP_MIN_GAP_SECONDS && currentTime >= loopEnd) {
-              event.currentTarget.currentTime = loopStart;
+            const seekTarget = resolveAbLoopSeekTarget(loopA, loopB, currentTime);
+            if (seekTarget !== null) {
+              event.currentTarget.currentTime = seekTarget;
             }
           }
         }}
@@ -463,7 +465,7 @@ export function PlaybackBar() {
                 if (loopA === null) {
                   setLoopA(clickTime);
                 } else if (loopB === null) {
-                  if (Math.abs(clickTime - loopA) < AB_LOOP_MIN_GAP_SECONDS) return;
+                  if (!isAbLoopBPlacementValid(loopA, clickTime)) return;
                   setLoopB(clickTime);
                 } else {
                   setLoopA(clickTime);

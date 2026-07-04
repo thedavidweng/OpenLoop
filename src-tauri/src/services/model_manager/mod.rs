@@ -367,7 +367,6 @@ impl ModelManager {
 }
 
 #[cfg(test)]
-#[cfg(test)]
 mod tests {
     use super::*;
     use crate::services::model_bootstrap::checkpoints_dir_for;

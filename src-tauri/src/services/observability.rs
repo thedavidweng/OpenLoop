@@ -137,7 +137,7 @@ impl Write for AppLogSink {
                 file.write_all(buf)?;
                 Ok(buf.len())
             }
-            AppLogSink::File(None) => Ok(buf.len()),
+            AppLogSink::File(None) => std::io::stderr().write(buf),
             AppLogSink::Stderr => std::io::stderr().write(buf),
         }
     }

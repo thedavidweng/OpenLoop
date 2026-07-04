@@ -125,7 +125,9 @@ fn delete_by_prefix_removes_generation_record_and_output_file() {
     ))
     .expect("record should insert");
 
-    let records = db.list_generations(None, None).expect("records should load");
+    let records = db
+        .list_generations(None, None)
+        .expect("records should load");
     let record = records
         .iter()
         .find(|r| r.id.starts_with("a1b2c3d4"))

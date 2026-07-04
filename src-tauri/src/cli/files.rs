@@ -222,7 +222,7 @@ fn cmd_unlink(state: &AppState, args: &[String], json: bool) -> AppResult<()> {
         .ok_or_else(|| cli_error("id is required. Usage: openloop files unlink <id>"))?;
 
     let keep_record = args.contains(&"--keep-record".to_owned());
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
 
     let record = records
         .iter()

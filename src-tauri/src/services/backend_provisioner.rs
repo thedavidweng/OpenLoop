@@ -761,6 +761,42 @@ where
 // Zip extraction
 // ---------------------------------------------------------------------------
 
+fn canonicalize_child_path(base: &Path, path: &Path) -> AppResult<PathBuf> {
+    let canonical = match path.canonicalize() {
+        Ok(resolved) => resolved,
+        Err(_) => {
+            let parent = path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or(base);
+            let file_name = path.file_name().ok_or_else(|| {
+                AppError::backend_provision_failed(format!(
+                    "zip entry has no file name: {}",
+                    path.display()
+                ))
+            })?;
+            parent
+                .canonicalize()
+                .map_err(|error| {
+                    AppError::backend_provision_failed(format!(
+                        "failed to canonicalize parent {}: {error}",
+                        parent.display()
+                    ))
+                })?
+                .join(file_name)
+        }
+    };
+
+    if !canonical.starts_with(base) {
+        return Err(AppError::backend_provision_failed(format!(
+            "zip entry escapes extraction directory: {}",
+            path.display()
+        )));
+    }
+
+    Ok(canonical)
+}
+
 fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
     let file = fs::File::open(archive_path).map_err(|error| {
         AppError::backend_provision_failed(format!(
@@ -776,6 +812,19 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
     // GitHub zips have a single top-level directory like "ACE-Step-1.5-d5d958e/"
     // We need to strip that prefix when extracting.
     let top_level_prefix = find_top_level_prefix(&mut archive)?;
+
+    fs::create_dir_all(runtime_dir).map_err(|error| {
+        AppError::backend_provision_failed(format!(
+            "failed to create runtime directory {}: {error}",
+            runtime_dir.display()
+        ))
+    })?;
+    let canonical_base = fs::canonicalize(runtime_dir).map_err(|error| {
+        AppError::backend_provision_failed(format!(
+            "failed to canonicalize runtime directory {}: {error}",
+            runtime_dir.display()
+        ))
+    })?;
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|error| {
@@ -803,16 +852,26 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
             continue;
         }
 
-        // Reject entries with path traversal components to prevent zip-slip
+        // Reject entries with path traversal or absolute components to prevent zip-slip
         for component in std::path::Path::new(&relative).components() {
-            if matches!(component, std::path::Component::ParentDir) {
+            if matches!(
+                component,
+                std::path::Component::ParentDir | std::path::Component::RootDir
+            ) {
                 return Err(AppError::backend_provision_failed(format!(
-                    "zip entry contains path traversal: {relative}"
+                    "zip entry contains unsafe path component: {relative}"
+                )));
+            }
+            #[cfg(windows)]
+            if matches!(component, std::path::Component::Prefix(_)) {
+                return Err(AppError::backend_provision_failed(format!(
+                    "zip entry contains unsafe path component: {relative}"
                 )));
             }
         }
 
         let outpath = runtime_dir.join(&relative);
+        let _ = canonicalize_child_path(&canonical_base, &outpath)?;
 
         if entry.is_dir() {
             fs::create_dir_all(&outpath).map_err(|error| {
@@ -1206,5 +1265,26 @@ mod tests {
         assert!(runtime_dir.join("acestep/__init__.py").exists());
         // The prefix directory should NOT exist
         assert!(!runtime_dir.join("ACE-Step-1.5-abc123").exists());
+    }
+
+    #[test]
+    fn extract_archive_rejects_parent_dir_entries() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let runtime_dir = temp.path().join("runtime");
+        fs::create_dir_all(&runtime_dir).expect("create runtime");
+
+        let zip_path = temp.path().join("evil.zip");
+        let zip_file = fs::File::create(&zip_path).expect("create zip");
+        let mut zip = zip::ZipWriter::new(zip_file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+
+        zip.start_file("ACE-Step-1.5-abc123/../../evil.txt", options)
+            .expect("start file");
+        zip.write_all(b"pwned").expect("write file");
+        zip.finish().expect("finish zip");
+
+        let error = extract_archive(&zip_path, &runtime_dir).expect_err("reject traversal");
+        assert!(error.to_string().contains("unsafe path component"));
     }
 }

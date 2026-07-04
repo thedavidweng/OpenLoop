@@ -625,9 +625,7 @@ fn download_archive_blocking(
         writer.write_all(&bytes).map_err(|error| {
             AppError::backend_provision_failed(format!("failed to write archive file: {error}"))
         })?;
-        writer.flush().map_err(|error| {
-            AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
-        })?;
+        writer.flush().map_err(flush_archive_error)?;
         drop(writer);
 
         fs::rename(&part, target).map_err(|error| {
@@ -731,9 +729,7 @@ where
             }
         }
 
-        writer.flush().map_err(|error| {
-            AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
-        })?;
+        writer.flush().map_err(flush_archive_error)?;
         drop(writer);
 
         if let Some(error) = stream_failed {
@@ -1164,6 +1160,10 @@ fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
     }
 
     Ok(())
+}
+
+fn flush_archive_error(error: impl std::fmt::Display) -> AppError {
+    AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
 }
 
 fn emit_status(app: &AppHandle, status: &Arc<Mutex<BackendProvisionStatus>>) {

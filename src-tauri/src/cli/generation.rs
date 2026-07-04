@@ -78,10 +78,7 @@ fn cmd_cancel(
             state.generation_cancelled.clone(),
         );
         if let Err(e) = runner.request_cancel_via_db(None) {
-            eprintln!(
-                "warning: failed to write cancellation to database: {}",
-                e.message
-            );
+            eprintln!("{}", crate::cli::warning_output::cancel_via_db_warning(&e));
         }
         if json {
             super::json_output(r#"{"event":"cancelled"}"#);

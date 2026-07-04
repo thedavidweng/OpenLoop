@@ -56,8 +56,8 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
                     .map_err(|e| cli_error(e.to_string()))?,
             ) {
                 eprintln!(
-                    "warning: failed to persist downloaded models: {}",
-                    e.message
+                    "{}",
+                    crate::cli::warning_output::persist_downloaded_models_warning(&e)
                 );
             }
         }

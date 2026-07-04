@@ -18,6 +18,10 @@ pub fn backend_start_warning(error: &AppError) -> String {
     format!("warning: failed to start backend: {}", error.message)
 }
 
+pub fn flush_archive_warning(error: &impl std::fmt::Display) -> String {
+    format!("failed to flush archive file: {error}")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -29,5 +33,6 @@ mod tests {
         assert!(persist_downloaded_models_warning(&error).contains("database is locked"));
         assert!(backend_start_warning(&error).contains("database is locked"));
         assert!(cancel_via_db_warning(&error).contains("database is locked"));
+        assert!(flush_archive_warning(&"disk full").contains("disk full"));
     }
 }

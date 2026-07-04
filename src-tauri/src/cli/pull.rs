@@ -28,13 +28,21 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
 
     let mut settings = state.db.get_settings()?;
 
-    // CLI --mirror overrides saved setting for this run
-    if let Some(mirror_idx) = args.iter().position(|a| a == "--mirror") {
-        let mirror = args
-            .get(mirror_idx + 1)
-            .filter(|v| !v.starts_with('-'))
-            .cloned();
-        settings.model_mirror = mirror;
+    // CLI --mirror overrides saved setting for this run (can be specified multiple times)
+    let mut mirror_args: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < args.len() {
+        if args[i] == "--mirror" {
+            if let Some(val) = args.get(i + 1).filter(|v| !v.starts_with('-')) {
+                mirror_args.push(val.clone());
+                i += 2;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    if !mirror_args.is_empty() {
+        settings.model_mirrors = mirror_args;
     }
 
     // Sync downloaded_models from manifest (may have been set by GUI or manual copy)

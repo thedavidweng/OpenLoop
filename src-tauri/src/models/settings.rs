@@ -1,4 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::{
+    ser::SerializeSeq,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use serde_json::Value;
 
 use crate::models::errors::{AppError, AppResult};
@@ -37,7 +40,12 @@ pub struct AppSettings {
     pub model_directory: Option<String>,
     pub backend_working_directory: Option<String>,
     pub log_directory: Option<String>,
-    pub model_mirror: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "deserialize_mirrors",
+        serialize_with = "serialize_mirrors"
+    )]
+    pub model_mirrors: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,9 +76,49 @@ impl Default for AppSettings {
             model_directory: None,
             backend_working_directory: None,
             log_directory: None,
-            model_mirror: None,
+            model_mirrors: Vec::new(),
         }
     }
+}
+
+fn deserialize_mirrors<'de, D>(deserializer: D) -> Result<Vec<String>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    match value {
+        Value::String(s) => {
+            if s.is_empty() {
+                Ok(Vec::new())
+            } else {
+                Ok(vec![s])
+            }
+        }
+        Value::Array(arr) => {
+            let mut out = Vec::new();
+            for v in arr {
+                if let Value::String(s) = v {
+                    if !s.is_empty() {
+                        out.push(s);
+                    }
+                }
+            }
+            Ok(out)
+        }
+        Value::Null => Ok(Vec::new()),
+        _ => Ok(Vec::new()),
+    }
+}
+
+fn serialize_mirrors<S>(mirrors: &[String], serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut seq = serializer.serialize_seq(Some(mirrors.len()))?;
+    for m in mirrors {
+        seq.serialize_element(m)?;
+    }
+    seq.end()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -230,7 +278,7 @@ impl AppSettings {
                 })?;
             }
             SettingKey::ModelMirror => {
-                self.model_mirror = serde_json::from_value(value).map_err(|error| {
+                self.model_mirrors = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid modelMirror value: {error}"))
                 })?;
             }
@@ -282,7 +330,7 @@ impl AppSettings {
                 serde_json::to_string(&self.backend_working_directory),
             ),
             ("logDirectory", serde_json::to_string(&self.log_directory)),
-            ("modelMirror", serde_json::to_string(&self.model_mirror)),
+            ("modelMirror", serde_json::to_string(&self.model_mirrors)),
         ];
 
         serialized

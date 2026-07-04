@@ -722,4 +722,65 @@ mod tests {
             .expect("active tasks should list")
             .is_empty());
     }
+
+    #[test]
+    fn schema_migrates_from_v1_to_latest() {
+        use rusqlite::Connection;
+
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let db_path = temp_dir.path().join("openloop.sqlite3");
+
+        let conn = Connection::open(&db_path).expect("connection should open");
+        conn.execute_batch(include_str!("../../migrations/001_init.sql"))
+            .expect("v1 init should succeed");
+        conn.execute(
+            "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)",
+            rusqlite::params!["gen_v1", "2026-01-01T00:00:00Z", "legacy prompt", "", "en", 30.0, 92, "C Major", "4", "acestep-v15-turbo", rusqlite::types::Null, 1, 8, 7.0, 1, rusqlite::types::Null, "wav", "/tmp/legacy.wav", "completed", rusqlite::types::Null, "ok"],
+        )
+        .expect("v1 record should insert");
+        conn.execute(
+            "INSERT INTO active_generation_tasks (id, task_id, request_json, variation_index, variation_total, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            rusqlite::params!["task_v1", "ace-123",             r#"{"prompt":"legacy request","lyrics":"","vocalLanguage":"en","durationSeconds":30.0,"timeSignature":"4","audioFormat":"wav","taskType":"text2music","thinking":true,"inferenceSteps":8,"guidanceScale":7.0,"useFormat":false,"useCotCaption":true,"useCotLanguage":true,"constrainedDecoding":true,"useRandomSeed":true,"variationCount":1}"#, 0, 1, "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"],
+        )
+        .expect("v1 task should insert");
+        drop(conn);
+
+        // Step 2: run full migration via Database::new
+        let database =
+            Database::new(temp_dir.path()).expect("database should initialize with migration");
+
+        // Step 3: verify v1 record is still readable
+        let all = database.list_generations(None).expect("list should work");
+        assert!(
+            all.iter().any(|r| r.id == "gen_v1"),
+            "v1 record should survive migration"
+        );
+
+        // Step 4: verify new columns work (is_favorite from 003)
+        let mut record = sample_record();
+        record.is_favorite = true;
+        database
+            .insert_generation(&record)
+            .expect("record with is_favorite should insert");
+        let fetched = database
+            .get_generation(&record.id)
+            .expect("get should work")
+            .expect("record should exist");
+        assert!(fetched.is_favorite, "is_favorite should persist");
+
+        // Step 5: verify failed_runs table (004)
+        let failed = database
+            .list_failed_runs(10)
+            .expect("failed runs should list");
+        assert!(failed.is_empty(), "failed_runs table should exist");
+
+        // Step 6: verify active tasks still work with cancel_requested_at
+        let tasks = database
+            .list_active_generation_tasks()
+            .expect("tasks should list");
+        assert!(
+            tasks.iter().any(|t| t.id == "task_v1"),
+            "v1 task should survive migration"
+        );
+    }
 }

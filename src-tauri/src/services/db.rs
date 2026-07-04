@@ -144,7 +144,7 @@ impl Database {
         const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
         const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";
 
-        let mapped = match (query, limit_i64) {
+        match (query, limit_i64) {
             (Some(value), Some(limit_i64)) => {
                 let like_query = format!("%{value}%");
                 let mut statement = connection
@@ -152,7 +152,13 @@ impl Database {
                         "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER} LIMIT ?2"
                     ))
                     .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-                statement.query_map(params![like_query, limit_i64], Self::map_generation_row)
+                let mapped = statement
+                    .query_map(params![like_query, limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
             }
             (Some(value), None) => {
                 let like_query = format!("%{value}%");
@@ -161,27 +167,39 @@ impl Database {
                         "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER}"
                     ))
                     .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-                statement.query_map(params![like_query], Self::map_generation_row)
+                let mapped = statement
+                    .query_map(params![like_query], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
             }
             (None, Some(limit_i64)) => {
                 let mut statement = connection
                     .prepare(&format!("{SELECT}{ORDER} LIMIT ?1"))
                     .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-                statement.query_map(params![limit_i64], Self::map_generation_row)
+                let mapped = statement
+                    .query_map(params![limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
             }
             (None, None) => {
                 let mut statement = connection
                     .prepare(&format!("{SELECT}{ORDER}"))
                     .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-                statement.query_map([], Self::map_generation_row)
+                let mapped = statement
+                    .query_map([], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
             }
         }
-        .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-
-        mapped
-            .into_iter()
-            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
-            .collect()
     }
 
     pub fn get_generation(&self, id: &str) -> AppResult<Option<GenerationRecord>> {

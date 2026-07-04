@@ -589,11 +589,11 @@ mod tests {
         let cli = Cli::try_parse_from([
             "openloop",
             "enhance",
-            "upbeat pop",
             "--duration",
             "120",
             "--lyrics",
             "[Verse]\\nHello",
+            "upbeat pop",
         ])
         .unwrap();
 
@@ -610,7 +610,7 @@ mod tests {
     #[test]
     fn parse_enhance_with_short_flags() {
         let cli =
-            Cli::try_parse_from(["openloop", "enhance", "ballad", "-d", "60", "-l", "lyrics"])
+            Cli::try_parse_from(["openloop", "enhance", "-d", "60", "-l", "lyrics", "ballad"])
                 .unwrap();
 
         match cli.command {

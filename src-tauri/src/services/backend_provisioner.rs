@@ -1285,6 +1285,6 @@ mod tests {
         zip.finish().expect("finish zip");
 
         let error = extract_archive(&zip_path, &runtime_dir).expect_err("reject traversal");
-        assert!(error.to_string().contains("unsafe path component"));
+        assert!(error.message.contains("unsafe path component"));
     }
 }

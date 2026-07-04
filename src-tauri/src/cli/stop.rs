@@ -2,6 +2,13 @@ use crate::{cli::human_output, models::errors::AppResult};
 
 use super::AppState;
 
+pub(crate) fn cancel_db_warning_message(error: &crate::models::errors::AppError) -> String {
+    format!(
+        "warning: failed to write cancellation to database: {}",
+        error.message
+    )
+}
+
 pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) -> AppResult<()> {
     let kill_backend = args.kill_backend;
     let runner = state.generation_runner();
@@ -12,10 +19,7 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
                 human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
             }
             Err(e) => {
-                eprintln!(
-                    "warning: failed to write cancellation to database: {}",
-                    e.message
-                );
+                eprintln!("{}", cancel_db_warning_message(&e));
             }
         },
         _ => {
@@ -23,10 +27,7 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
                 .generation_cancelled
                 .store(true, std::sync::atomic::Ordering::SeqCst);
             if let Err(e) = runner.request_cancel_via_db(None) {
-                eprintln!(
-                    "warning: failed to write cancellation to database: {}",
-                    e.message
-                );
+                eprintln!("{}", cancel_db_warning_message(&e));
             }
             human_output("✓ Cancellation signal sent.");
         }
@@ -44,4 +45,16 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::errors::AppError;
+
+    #[test]
+    fn cancel_db_warning_message_includes_error_message() {
+        let error = AppError::new("TEST", "database is locked", None, true);
+        assert!(cancel_db_warning_message(&error).contains("database is locked"));
+    }
 }

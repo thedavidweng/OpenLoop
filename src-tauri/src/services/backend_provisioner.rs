@@ -761,40 +761,33 @@ where
 // Zip extraction
 // ---------------------------------------------------------------------------
 
-fn canonicalize_child_path(base: &Path, path: &Path) -> AppResult<PathBuf> {
-    let canonical = match path.canonicalize() {
-        Ok(resolved) => resolved,
-        Err(_) => {
-            let parent = path
-                .parent()
-                .filter(|parent| !parent.as_os_str().is_empty())
-                .unwrap_or(base);
-            let file_name = path.file_name().ok_or_else(|| {
-                AppError::backend_provision_failed(format!(
-                    "zip entry has no file name: {}",
-                    path.display()
-                ))
-            })?;
-            parent
-                .canonicalize()
-                .map_err(|error| {
-                    AppError::backend_provision_failed(format!(
-                        "failed to canonicalize parent {}: {error}",
-                        parent.display()
-                    ))
-                })?
-                .join(file_name)
+fn resolve_path_within_base(canonical_base: &Path, relative: &str) -> AppResult<PathBuf> {
+    let mut resolved = canonical_base.to_path_buf();
+    for component in std::path::Path::new(relative).components() {
+        match component {
+            std::path::Component::Normal(part) => resolved.push(part),
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir | std::path::Component::RootDir => {
+                return Err(AppError::backend_provision_failed(format!(
+                    "zip entry contains unsafe path component: {relative}"
+                )));
+            }
+            #[cfg(windows)]
+            std::path::Component::Prefix(_) => {
+                return Err(AppError::backend_provision_failed(format!(
+                    "zip entry contains unsafe path component: {relative}"
+                )));
+            }
         }
-    };
+    }
 
-    if !canonical.starts_with(base) {
+    if !resolved.starts_with(canonical_base) {
         return Err(AppError::backend_provision_failed(format!(
-            "zip entry escapes extraction directory: {}",
-            path.display()
+            "zip entry escapes extraction directory: {relative}"
         )));
     }
 
-    Ok(canonical)
+    Ok(resolved)
 }
 
 fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
@@ -870,8 +863,7 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
             }
         }
 
-        let outpath = runtime_dir.join(&relative);
-        let _ = canonicalize_child_path(&canonical_base, &outpath)?;
+        let outpath = resolve_path_within_base(&canonical_base, &relative)?;
 
         if entry.is_dir() {
             fs::create_dir_all(&outpath).map_err(|error| {

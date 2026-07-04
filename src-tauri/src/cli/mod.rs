@@ -51,6 +51,13 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
         return Ok(());
     }
 
+    // Initialize structured tracing before AppState so early failures are
+    // captured. Fall back to stderr when the default app data dir is unavailable.
+    match crate::app_state::default_app_data_dir() {
+        Ok(app_data_dir) => crate::services::observability::init(&app_data_dir),
+        Err(_) => crate::services::observability::init_stderr_only(),
+    }
+
     let state = AppState::init_for_cli()?;
 
     let command = args.get(1).map(String::as_str).unwrap_or("help");
@@ -75,6 +82,10 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
         "stop" => stop::execute(&state, sub_args),
         "help" | "--help" | "-h" => {
             help::print_top_level();
+            Ok(())
+        }
+        "--version" | "-V" => {
+            println!("{}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         unknown => {

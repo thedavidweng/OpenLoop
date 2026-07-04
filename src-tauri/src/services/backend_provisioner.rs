@@ -211,7 +211,7 @@ impl BackendProvisioner {
                         installed_at: Utc::now().to_rfc3339(),
                     };
                     if let Err(e) = write_backend_manifest(&app_data_dir, &manifest) {
-                        eprintln!("openloop: failed to write backend manifest: {}", e.message);
+                        tracing::error!("failed to write backend manifest: {}", e.message);
                     }
                     if let Ok(mut s) = status.lock() {
                         *s = BackendProvisionStatus {
@@ -222,7 +222,7 @@ impl BackendProvisioner {
                     }
                 }
                 Err(error) => {
-                    eprintln!("openloop: backend provision failed: {}", error.message);
+                    tracing::error!("backend provision failed: {}", error.message);
                     if let Ok(mut s) = status.lock() {
                         s.state = BackendProvisionState::Failed;
                         s.error = Some(error);
@@ -360,7 +360,7 @@ impl BackendProvisioner {
                     }
                 }
                 Err(error) => {
-                    eprintln!("openloop: backend update failed: {}", error.message);
+                    tracing::error!("backend update failed: {}", error.message);
                     if let Ok(mut s) = status.lock() {
                         s.state = BackendProvisionState::Failed;
                         s.error = Some(error);
@@ -577,7 +577,7 @@ fn download_archive_blocking(
                 if attempt >= MAX_ATTEMPTS {
                     return Err(AppError::backend_provision_failed(msg));
                 }
-                eprintln!("openloop: {msg} (retry {attempt}/{MAX_ATTEMPTS})");
+                tracing::warn!("{msg} (retry {attempt}/{MAX_ATTEMPTS})");
                 last_error = Some(AppError::backend_provision_failed(msg));
                 std::thread::sleep(retry_delay(attempt));
                 continue;
@@ -588,7 +588,7 @@ fn download_archive_blocking(
             let status_code = response.status();
             let msg = format!("GitHub returned HTTP {status_code} for backend archive");
             if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {msg} (retry {attempt}/{MAX_ATTEMPTS})");
+                tracing::warn!("{msg} (retry {attempt}/{MAX_ATTEMPTS})");
                 last_error = Some(AppError::backend_provision_failed(msg));
                 std::thread::sleep(retry_delay(attempt));
                 continue;
@@ -670,7 +670,7 @@ where
                 if attempt >= MAX_ATTEMPTS {
                     return Err(AppError::backend_provision_failed(msg));
                 }
-                eprintln!("openloop: {msg} (retry {attempt}/{MAX_ATTEMPTS})");
+                tracing::warn!("{msg} (retry {attempt}/{MAX_ATTEMPTS})");
                 last_error = Some(AppError::backend_provision_failed(msg));
                 tokio::time::sleep(retry_delay(attempt)).await;
                 continue;
@@ -681,7 +681,7 @@ where
             let status_code = response.status();
             let msg = format!("GitHub returned HTTP {status_code} for backend archive");
             if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                eprintln!("openloop: {msg} (retry {attempt}/{MAX_ATTEMPTS})");
+                tracing::warn!("{msg} (retry {attempt}/{MAX_ATTEMPTS})");
                 last_error = Some(AppError::backend_provision_failed(msg));
                 tokio::time::sleep(retry_delay(attempt)).await;
                 continue;
@@ -734,10 +734,7 @@ where
             if attempt >= MAX_ATTEMPTS {
                 return Err(error);
             }
-            eprintln!(
-                "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
-                error.message
-            );
+            tracing::warn!("{} (retry {attempt}/{MAX_ATTEMPTS})", error.message);
             last_error = Some(error);
             tokio::time::sleep(retry_delay(attempt)).await;
             written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);

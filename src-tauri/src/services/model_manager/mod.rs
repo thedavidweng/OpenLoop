@@ -205,8 +205,8 @@ impl ModelManager {
                         let final_snapshot = match result {
                             Ok(()) => {
                                 if let Err(error) = record_install(&app_data_dir, descriptor) {
-                                    eprintln!(
-                                        "openloop: failed to persist model install manifest: {}",
+                                    tracing::error!(
+                                        "failed to persist model install manifest: {}",
                                         error.message
                                     );
                                 }
@@ -217,9 +217,10 @@ impl ModelManager {
                                 )
                             }
                             Err(error) => {
-                                eprintln!(
-                                    "openloop: model download for {:?} failed: {}",
-                                    variant, error.message
+                                tracing::error!(
+                                    "model download for {:?} failed: {}",
+                                    variant,
+                                    error.message
                                 );
                                 failed_snapshot_for(
                                     &app_data_dir,
@@ -317,7 +318,7 @@ impl ModelManager {
             clear_delete_marker(&app_data_dir_for_final, variant);
 
             if let Err(error) = result {
-                eprintln!("openloop: model delete for {:?} panicked: {error}", variant);
+                tracing::error!("model delete for {:?} panicked: {error}", variant);
             }
 
             let final_snapshot =
@@ -365,6 +366,7 @@ impl ModelManager {
     }
 }
 
+#[cfg(test)]
 #[cfg(test)]
 mod tests {
     use super::*;

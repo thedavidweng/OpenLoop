@@ -7,19 +7,17 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
     let runner = state.generation_runner();
 
     match &args.generation_id {
-        Some(task_id) => {
-            match runner.request_cancel_via_db(Some(task_id)) {
-                Ok(()) => {
-                    human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
-                }
-                Err(e) => {
-                    eprintln!(
-                        "warning: failed to write cancellation to database: {}",
-                        e.message
-                    );
-                }
+        Some(task_id) => match runner.request_cancel_via_db(Some(task_id)) {
+            Ok(()) => {
+                human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
             }
-        }
+            Err(e) => {
+                eprintln!(
+                    "warning: failed to write cancellation to database: {}",
+                    e.message
+                );
+            }
+        },
         _ => {
             state
                 .generation_cancelled

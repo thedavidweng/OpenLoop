@@ -23,7 +23,7 @@ pub fn execute(state: &AppState, json: bool, args: EnhanceArgs) -> AppResult<()>
     client.health()?;
 
     let request = GenerationRequest {
-        prompt: args.prompt.clone(),
+        prompt: args.prompt.join(" "),
         negative_prompt: None,
         lyrics: args.lyrics.unwrap_or_default(),
         vocal_language: "en".to_owned(),

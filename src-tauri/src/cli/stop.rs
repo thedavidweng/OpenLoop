@@ -6,7 +6,7 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
     let kill_backend = args.kill_backend;
 
     match &args.generation_id {
-        Some(task_id) if !task_id.starts_with('-') => {
+        Some(task_id) => {
             let runner = crate::services::generation_task::GenerationTaskRunner::new(
                 state.db.clone(),
                 crate::services::file_store::FileStore::new(state.app_data_dir.clone()),

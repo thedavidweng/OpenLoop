@@ -77,6 +77,10 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
             help::print_top_level();
             Ok(())
         }
+        "--version" | "-V" => {
+            println!("{}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
         unknown => {
             if unknown.starts_with('-') {
                 help::print_top_level();

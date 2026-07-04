@@ -866,6 +866,12 @@ mod tests {
         let cli = Cli::try_parse_from(["openloop", "list"]).unwrap();
         match cli.command {
             Commands::List(args) => assert_eq!(args.limit, 20),
+            _ => panic!("expected List"),
+        }
+    }
+
+    #[test]
+    fn parse_list_custom_limit() {
         let cli = Cli::try_parse_from(["openloop", "list", "--limit", "50"]).unwrap();
         match cli.command {
             Commands::List(args) => assert_eq!(args.limit, 50),

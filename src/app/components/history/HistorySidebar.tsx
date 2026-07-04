@@ -258,8 +258,8 @@ export function HistorySidebar() {
                             e.dataTransfer.setData("text/uri-list", `file://${tempPath}`);
                             e.dataTransfer.setData("text/plain", tempPath);
                             e.dataTransfer.effectAllowed = "copy";
-                          } catch {
-                            // silently ignore drag failures
+                          } catch (error) {
+                            console.warn("Drag payload preparation failed:", error);
                           }
                         }}
                         className={`group rounded-xl border border-l-2 border-l-emerald-500 px-3 py-3 transition-colors ${
@@ -454,8 +454,9 @@ export function HistorySidebar() {
           try {
             const copied = await api.exportGenerationsToFolder(selectedHistoryIds, destination);
             addToast("success", `Exported ${copied.length} files.`);
-          } catch {
-            addToast("error", "Export failed.");
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : "Export failed.";
+            addToast("error", msg);
           }
         }}
       />
@@ -514,8 +515,8 @@ function FailedRunsDrawer() {
     try {
       const runs = await api.listFailedRuns(50);
       setFailedRuns(runs);
-    } catch {
-      // silently ignore
+    } catch (error) {
+      console.warn("Failed to fetch failed runs:", error);
     }
   }, []);
 
@@ -586,8 +587,12 @@ function FailedRunsDrawer() {
         await api.deleteFailedRun(id);
         setFailedRuns((runs) => runs.filter((run) => run.id !== id));
         addToast("info", t("history.failedRunRemoved"));
-      } catch {
-        // silently ignore
+      } catch (error) {
+        console.warn("Failed to remove failed run:", error);
+        addToast(
+          "error",
+          t("history.failedRunRemoveFailed", { defaultValue: "Failed to remove run." }),
+        );
       }
     },
     [addToast, t],
@@ -599,8 +604,12 @@ function FailedRunsDrawer() {
       await api.clearFailedRuns();
       setFailedRuns([]);
       addToast("info", t("history.failedRunCleared"));
-    } catch {
-      // silently ignore
+    } catch (error) {
+      console.warn("Failed to clear failed runs:", error);
+      addToast(
+        "error",
+        t("history.failedRunClearFailed", { defaultValue: "Failed to clear runs." }),
+      );
     }
   }, [addToast, t]);
 

@@ -77,7 +77,9 @@ fn cmd_cancel(
             FileStore::new(state.app_data_dir.clone()),
             state.generation_cancelled.clone(),
         );
-        let _ = runner.request_cancel_via_db(None);
+        if let Err(e) = runner.request_cancel_via_db(None) {
+            eprintln!("{}", crate::cli::warning_output::cancel_via_db_warning(&e));
+        }
         if json {
             super::json_output(r#"{"event":"cancelled"}"#);
         } else {

@@ -152,10 +152,15 @@ pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
             }
         }
         if downloaded != settings.downloaded_models {
-            let _ = state.db.set_setting(
+            if let Err(e) = state.db.set_setting(
                 "downloadedModels",
                 serde_json::to_value(&downloaded).unwrap_or_default(),
-            );
+            ) {
+                eprintln!(
+                    "{}",
+                    crate::cli::warning_output::persist_downloaded_models_warning(&e)
+                );
+            }
         }
     }
 

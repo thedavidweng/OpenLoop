@@ -408,7 +408,9 @@ impl BackendProvisioner {
                 installed_tag: None,
                 installed_at: Utc::now().to_rfc3339(),
             };
-            let _ = write_backend_manifest(&self.app_data_dir, &manifest);
+            if let Err(e) = write_backend_manifest(&self.app_data_dir, &manifest) {
+                tracing::warn!("{}", manifest_migration_warning(&e));
+            }
         }
     }
 }
@@ -623,7 +625,7 @@ fn download_archive_blocking(
         writer.write_all(&bytes).map_err(|error| {
             AppError::backend_provision_failed(format!("failed to write archive file: {error}"))
         })?;
-        writer.flush().ok();
+        writer.flush().map_err(flush_archive_error)?;
         drop(writer);
 
         fs::rename(&part, target).map_err(|error| {
@@ -727,7 +729,7 @@ where
             }
         }
 
-        writer.flush().ok();
+        writer.flush().map_err(flush_archive_error)?;
         drop(writer);
 
         if let Some(error) = stream_failed {
@@ -1160,10 +1162,27 @@ fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
     Ok(())
 }
 
+fn flush_archive_error(error: impl std::fmt::Display) -> AppError {
+    AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
+}
+
 fn emit_status(app: &AppHandle, status: &Arc<Mutex<BackendProvisionStatus>>) {
     if let Ok(s) = status.lock() {
-        let _ = app.emit(BACKEND_PROVISION_EVENT, s.clone());
+        if let Err(error) = app.emit(BACKEND_PROVISION_EVENT, s.clone()) {
+            tracing::warn!("{}", provision_status_emit_warning(&error));
+        }
     }
+}
+
+fn manifest_migration_warning(error: &AppError) -> String {
+    format!(
+        "failed to write backend manifest during migration: {}",
+        error.message
+    )
+}
+
+fn provision_status_emit_warning(error: &impl std::fmt::Display) -> String {
+    format!("failed to emit backend provision status: {error}")
 }
 
 // ---------------------------------------------------------------------------
@@ -1284,5 +1303,18 @@ mod tests {
         let resolved =
             resolve_path_within_base(&base, "acestep/__init__.py").expect("resolve nested path");
         assert_eq!(resolved, base.join("acestep").join("__init__.py"));
+    }
+
+    #[test]
+    fn provision_warning_messages_include_error_text() {
+        let error = AppError::new("TEST", "emit failed", None, true);
+        assert!(manifest_migration_warning(&error).contains("emit failed"));
+        assert!(provision_status_emit_warning(&"emit failed").contains("emit failed"));
+    }
+
+    #[test]
+    fn flush_archive_error_includes_details() {
+        let error = flush_archive_error("disk full");
+        assert!(error.details.as_deref().unwrap_or("").contains("disk full"));
     }
 }

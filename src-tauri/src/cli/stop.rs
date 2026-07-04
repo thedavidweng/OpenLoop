@@ -1,21 +1,27 @@
 use crate::{cli::human_output, models::errors::AppResult};
 
-use super::AppState;
+use super::{warning_output, AppState};
 
 pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) -> AppResult<()> {
     let kill_backend = args.kill_backend;
     let runner = state.generation_runner();
 
     match &args.generation_id {
-        Some(task_id) => {
-            let _ = runner.request_cancel_via_db(Some(task_id));
-            human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
-        }
+        Some(task_id) => match runner.request_cancel_via_db(Some(task_id)) {
+            Ok(()) => {
+                human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
+            }
+            Err(e) => {
+                eprintln!("{}", warning_output::cancel_via_db_warning(&e));
+            }
+        },
         _ => {
             state
                 .generation_cancelled
                 .store(true, std::sync::atomic::Ordering::SeqCst);
-            let _ = runner.request_cancel_via_db(None);
+            if let Err(e) = runner.request_cancel_via_db(None) {
+                eprintln!("{}", warning_output::cancel_via_db_warning(&e));
+            }
             human_output("✓ Cancellation signal sent.");
         }
     }

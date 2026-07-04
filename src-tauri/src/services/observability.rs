@@ -2,6 +2,7 @@ use std::{
     fs::{self, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
+    sync::Once,
 };
 
 use chrono::Utc;
@@ -110,15 +111,27 @@ impl AppLogWriter {
     }
 }
 
+/// Warn once when the log file cannot be opened, then fall back to stderr.
+static LOG_FILE_OPEN_WARN_ONCE: Once = Once::new();
+
 impl<'a> MakeWriter<'a> for AppLogWriter {
     type Writer = AppLogSink;
 
     fn make_writer(&'a self) -> Self::Writer {
         match &self.path {
-            Some(path) => {
-                let file = OpenOptions::new().create(true).append(true).open(path).ok();
-                AppLogSink::File(file)
-            }
+            Some(path) => match OpenOptions::new().create(true).append(true).open(path) {
+                Ok(file) => AppLogSink::File(Some(file)),
+                Err(error) => {
+                    let path = path.clone();
+                    LOG_FILE_OPEN_WARN_ONCE.call_once(|| {
+                        eprintln!(
+                            "warning: failed to open log file {}: {error}; falling back to stderr",
+                            path.display()
+                        );
+                    });
+                    AppLogSink::Stderr
+                }
+            },
             None => AppLogSink::Stderr,
         }
     }
@@ -148,5 +161,40 @@ impl Write for AppLogSink {
             AppLogSink::File(None) => std::io::stderr().flush(),
             AppLogSink::Stderr => std::io::stderr().flush(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn app_log_writer_appends_to_file() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("openloop-test.log");
+        let writer = AppLogWriter::file(path.clone());
+        let mut sink = writer.make_writer();
+        sink.write_all(b"event\n").expect("write log line");
+
+        let content = fs::read_to_string(path).expect("read log file");
+        assert_eq!(content, "event\n");
+    }
+
+    #[test]
+    fn app_log_writer_falls_back_to_stderr_when_open_fails() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let writer = AppLogWriter::file(dir.path().to_path_buf());
+        let sink = writer.make_writer();
+        assert!(matches!(sink, AppLogSink::Stderr));
+    }
+
+    #[test]
+    fn app_log_writer_stderr_fallback_accepts_writes() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let writer = AppLogWriter::file(dir.path().to_path_buf());
+        let mut sink = writer.make_writer();
+        assert!(matches!(sink, AppLogSink::Stderr));
+        sink.write_all(b"fallback\n").expect("stderr write");
+        sink.flush().expect("stderr flush");
     }
 }

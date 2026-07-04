@@ -184,6 +184,22 @@ pub fn handle_menu_event<R: Runtime>(app_handle: &AppHandle<R>, event: MenuEvent
     };
 
     if let Some(action) = action {
-        let _ = app_handle.emit_to("main", MENU_ACTION_EVENT, action);
+        if let Err(error) = app_handle.emit_to("main", MENU_ACTION_EVENT, action) {
+            tracing::warn!("{}", menu_action_emit_warning(&error));
+        }
+    }
+}
+
+fn menu_action_emit_warning(error: &impl std::fmt::Display) -> String {
+    format!("failed to emit menu action event: {error}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn menu_action_emit_warning_includes_error_text() {
+        assert!(menu_action_emit_warning(&"channel closed").contains("channel closed"));
     }
 }

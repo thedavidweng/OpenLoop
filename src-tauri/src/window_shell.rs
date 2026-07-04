@@ -83,7 +83,9 @@ pub fn initialize_main_window<R: Runtime>(app: &tauri::App<R>) -> WindowShellSta
         };
 
         let fallback_to_mac = || {
-            let _ = native::apply_main_window_shell(&window, &WindowShellState::mac());
+            if let Err(error) = native::apply_main_window_shell(&window, &WindowShellState::mac()) {
+                tracing::warn!("{}", fallback_mac_window_shell_warning(&error));
+            }
             WindowShellState::mac()
         };
 
@@ -210,4 +212,18 @@ pub fn set_native_sidebar_visibility<R: Runtime>(
     _visible: bool,
 ) -> anyhow::Result<()> {
     Ok(())
+}
+
+fn fallback_mac_window_shell_warning(error: &impl std::fmt::Display) -> String {
+    format!("failed to apply fallback mac window shell: {error}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fallback_mac_window_shell_warning_includes_error_text() {
+        assert!(fallback_mac_window_shell_warning(&"shell failed").contains("shell failed"));
+    }
 }

@@ -67,6 +67,14 @@ impl Default for GenerationTaskTiming {
     }
 }
 
+pub(crate) fn failed_run_archive_warning(error: &AppError) -> String {
+    format!("failed to archive failed run: {}", error.message)
+}
+
+pub(crate) fn failed_run_prune_warning(error: &AppError) -> String {
+    format!("failed to prune old failed runs: {}", error.message)
+}
+
 pub struct GenerationTaskRunner {
     db: Database,
     file_store: FileStore,
@@ -317,8 +325,12 @@ impl GenerationTaskRunner {
                         error_message: Some(error.message.clone()),
                         error_details: error.details.clone(),
                     };
-                    let _ = self.db.insert_failed_run(&failed_run);
-                    let _ = self.db.clear_failed_runs_older_than(50);
+                    if let Err(e) = self.db.insert_failed_run(&failed_run) {
+                        tracing::warn!("{}", failed_run_archive_warning(&e));
+                    }
+                    if let Err(e) = self.db.clear_failed_runs_older_than(50) {
+                        tracing::warn!("{}", failed_run_prune_warning(&e));
+                    }
                     sink.emit_generation_event(
                         serde_json::json!({ "type": "failed", "error": error.clone() }),
                     )?;
@@ -793,5 +805,12 @@ mod tests {
         assert!(record.error_message.is_none());
         assert_eq!(record.generation_info.as_deref(), Some("generation info"));
         assert!(!record.is_favorite);
+    }
+
+    #[test]
+    fn failed_run_warning_messages_include_error_text() {
+        let error = AppError::new("TEST", "database is locked", None, true);
+        assert!(failed_run_archive_warning(&error).contains("database is locked"));
+        assert!(failed_run_prune_warning(&error).contains("database is locked"));
     }
 }

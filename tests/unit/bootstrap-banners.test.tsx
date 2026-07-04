@@ -436,6 +436,41 @@ describe("UpdateBanner", () => {
     expect(container.innerHTML).toBe("");
   });
 
+  it("shows an install error and clears it on retry", async () => {
+    mockCheck.mockResolvedValue({
+      version: "2.0.0",
+      body: "Notes",
+      downloadAndInstall: mockDownloadAndInstall,
+    });
+    mockDownloadAndInstall
+      .mockRejectedValueOnce(new Error("disk full"))
+      .mockResolvedValueOnce(undefined);
+    mockRelaunch.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<UpdateBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Install on restart")).toBeTruthy();
+    });
+
+    await user.click(screen.getByText("Install on restart"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Update failed. Try downloading from the releases page."),
+      ).toBeTruthy();
+    });
+
+    await user.click(screen.getByText("Install on restart"));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Update failed. Try downloading from the releases page."),
+      ).toBeNull();
+      expect(mockDownloadAndInstall).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("renders the release notes link with correct href", async () => {
     mockCheck.mockResolvedValue({ version: "2.0.0", body: "Notes" });
     render(<UpdateBanner />);

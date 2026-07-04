@@ -319,7 +319,12 @@ export function PlaybackBar() {
       const path = currentGeneration?.outputPath;
       if (!path) return;
       event.dataTransfer.effectAllowed = "copy";
-      event.dataTransfer.setData("text/uri-list", `file://${path}`);
+      const fileUri = `file://${path
+        .replace(/\\/g, "/")
+        .split("/")
+        .map((part, index) => (index === 0 && part === "" ? "" : encodeURIComponent(part)))
+        .join("/")}`;
+      event.dataTransfer.setData("text/uri-list", fileUri);
       event.dataTransfer.setData("text/plain", path);
     },
     [currentGeneration?.outputPath],

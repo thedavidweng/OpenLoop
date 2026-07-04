@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openmusic/openloop/schemas/cli-ndjson-event.schema.json",
+  "title": "OpenLoop CLI NDJSON Event",
+  "description": "Schema for a single NDJSON line emitted by the OpenLoop CLI when run with --json. Each line is one event object. See docs/specs/event-schema.md for the narrative reference.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/lifecycle" },
+    { "$ref": "#/$defs/progress" },
+    { "$ref": "#/$defs/result" },
+    { "$ref": "#/$defs/error" },
+    { "$ref": "#/$defs/generationTaskEvent" }
+  ],
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "properties": {
+        "v": {
+          "type": "integer",
+          "const": 1,
+          "description": "Schema version (currently 1)."
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["lifecycle", "progress", "result", "error"],
+          "description": "Event kind."
+        }
+      },
+      "required": ["v", "ts", "kind"]
+    },
+    "lifecycle": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "lifecycle" },
+            "phase": {
+              "type": "string",
+              "enum": ["starting", "healthy", "stopped", "failed"]
+            },
+            "port": {
+              "type": ["integer", "null"],
+              "description": "Backend port, or null if not yet known."
+            },
+            "ownership": {
+              "type": "string",
+              "enum": ["owned", "attached", "stopped"]
+            },
+            "message": { "type": "string" },
+            "error": {
+              "type": "string",
+              "description": "Present when phase is failed."
+            },
+            "backendCode": {
+              "oneOf": [
+                { "type": "object", "properties": { "installed": { "const": false } }, "required": ["installed"] },
+                {
+                  "type": "object",
+                  "properties": {
+                    "installed": { "const": true },
+                    "commit": { "type": "string" },
+                    "tag": { "type": ["string", "null"] },
+                    "installedAt": { "type": "string", "format": "date-time" }
+                  },
+                  "required": ["installed", "commit", "tag", "installedAt"]
+                }
+              ]
+            }
+          },
+          "required": ["phase", "port", "ownership", "message"]
+        }
+      ]
+    },
+    "progress": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "progress" },
+            "pct": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage 0-100, or null if unknown."
+            },
+            "label": { "type": "string" },
+            "detail": { "type": ["string", "null"] }
+          },
+          "required": ["pct", "label", "detail"]
+        }
+      ]
+    },
+    "result": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "result" },
+            "event": { "const": "completed" },
+            "path": { "type": "string" },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "seed": { "type": "integer" }
+          },
+          "required": ["event", "path", "duration_ms", "seed"]
+        }
+      ]
+    },
+    "error": {
+      "allOf": [
+        { "$ref": "#/$defs/envelope" },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "error" },
+            "code": { "type": "string" },
+            "message": { "type": "string" },
+            "recoverable": { "type": "boolean" },
+            "suggestion": { "type": ["string", "null"] }
+          },
+          "required": ["code", "message", "recoverable", "suggestion"]
+        }
+      ]
+    },
+    "generationTaskEvent": {
+      "type": "object",
+      "description": "Bare generation task events emitted during `openloop run` (no envelope).",
+      "properties": {
+        "event": {
+          "type": "string",
+          "enum": ["submitted", "queued", "running", "downloading", "completed", "cancelled"]
+        }
+      },
+      "required": ["event"],
+      "allOf": [
+        {
+          "if": { "properties": { "event": { "const": "submitted" } }, "required": ["event"] },
+          "then": { "properties": { "task_id": { "type": "string" } }, "required": ["task_id"] }
+        },
+        {
+          "if": { "properties": { "event": { "enum": ["queued", "running", "downloading"] } }, "required": ["event"] },
+          "then": {
+            "properties": {
+              "variation": { "type": "integer", "minimum": 1 },
+              "total": { "type": "integer", "minimum": 1 }
+            },
+            "required": ["variation", "total"]
+          }
+        },
+        {
+          "if": { "properties": { "event": { "const": "completed" } }, "required": ["event"] },
+          "then": {
+            "properties": {
+              "output_path": { "type": "string" },
+              "duration": { "type": "number", "minimum": 0 },
+              "format": { "type": "string" }
+            },
+            "required": ["output_path", "duration", "format"]
+          }
+        }
+      ]
+    }
+  }
+}

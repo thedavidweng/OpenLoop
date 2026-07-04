@@ -23,8 +23,67 @@ use crate::{
 use super::AppState;
 use crate::cli::spec::RunArgs;
 
-pub fn execute(state: &AppState, json: bool, args: RunArgs) -> AppResult<()> {
+pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()> {
     let no_thinking = args.no_thinking;
+
+    // Load generation from history if --from-history is specified
+    let history_record = match &args.from_history {
+        Some(history_id) => Some(
+            state
+                .db
+                .get_generation(history_id)?
+                .ok_or_else(|| cli_error(format!("generation '{history_id}' not found in history")))?,
+        ),
+        None => None,
+    };
+
+    // Apply history record values as fallbacks for unset CLI flags
+    if args.prompt.is_empty() {
+        if let Some(ref record) = history_record {
+            args.prompt = record.prompt.clone();
+        }
+    }
+    if args.model.is_none() {
+        args.model = history_record
+            .as_ref()
+            .and_then(|r| map_model_to_variant(r.model.as_deref()));
+    }
+    if args.duration.is_none() {
+        args.duration = history_record.as_ref().map(|r| r.duration_seconds);
+    }
+    if args.format.is_none() {
+        args.format = history_record.as_ref().map(|r| r.audio_format.clone());
+    }
+    if args.lyrics.is_none() {
+        args.lyrics = history_record.as_ref().and_then(|r| {
+            if r.lyrics.is_empty() {
+                None
+            } else {
+                Some(r.lyrics.clone())
+            }
+        });
+    }
+    if args.bpm.is_none() {
+        args.bpm = history_record.as_ref().and_then(|r| r.bpm);
+    }
+    if args.key.is_none() {
+        args.key = history_record.as_ref().and_then(|r| r.key_scale.clone());
+    }
+    if args.steps.is_none() {
+        args.steps = history_record.as_ref().map(|r| r.inference_steps);
+    }
+    if args.guidance.is_none() {
+        args.guidance = history_record.as_ref().map(|r| r.guidance_scale);
+    }
+    if args.seed.is_none() {
+        args.seed = history_record.as_ref().and_then(|r| r.seed);
+    }
+
+    if args.prompt.is_empty() {
+        return Err(cli_error(
+            "prompt is required. Usage: openloop run <prompt> [--from-history <id>]",
+        ));
+    }
 
     let settings = state.db.get_settings()?;
     let port = {
@@ -331,3 +390,92 @@ impl crate::services::generation_task::GenerationEventSink for CliGenerationSink
         Ok(())
     }
 }
+<<<<<<< HEAD
+=======
+
+/// Map a model name (e.g. "ACE-Step-1.5-turbo") to the variant string.
+fn map_model_to_variant(model_name: Option<&str>) -> Option<String> {
+    match model_name? {
+        "ACE-Step-1.5-lite" | "mlx-community/ACE-Step-1.5-lite" => Some("lite".to_owned()),
+        "ACE-Step-1.5-turbo" | "mlx-community/ACE-Step-1.5-turbo" => Some("turbo".to_owned()),
+        "ACE-Step-1.5-pro" | "mlx-community/ACE-Step-1.5-pro" => Some("pro".to_owned()),
+        _ => None,
+    }
+}
+
+fn flag(args: &[String], name: &str) -> bool {
+    args.iter().any(|a| a == name)
+}
+
+fn value(args: &[String], name: &str) -> Option<String> {
+    for i in 0..args.len() {
+        if args[i] == name {
+            return args.get(i + 1).filter(|v| !v.starts_with('-')).cloned();
+        }
+    }
+    None
+}
+
+fn flag_like(arg: &str) -> bool {
+    arg.starts_with('-')
+}
+
+fn needs_value(arg: &str) -> bool {
+    matches!(
+        arg,
+        "--model"
+            | "-m"
+            | "--duration"
+            | "-d"
+            | "--format"
+            | "-f"
+            | "--output"
+            | "-o"
+            | "--lyrics"
+            | "-l"
+            | "--bpm"
+            | "--key"
+            | "--steps"
+            | "--guidance"
+            | "--seed"
+            | "--variations"
+            | "-v"
+            | "--limit"
+            | "--from-history"
+    )
+}
+
+fn print_help() {
+    human_output(
+        "\
+openloop run — Generate music
+
+Usage:
+  openloop run [flags] <prompt>
+
+Flags:
+  -m, --model       Model variant (lite/turbo/pro)
+  -d, --duration    Duration in seconds (10-600)
+  -f, --format      Audio format (wav/mp3/flac/ogg)
+  -o, --output      Output file path
+  -l, --lyrics      Lyrics text
+  --bpm             BPM (30-300)
+  --key             Key and scale (e.g., \"C major\")
+  --steps           Inference steps
+  --guidance        Guidance scale
+  --seed            Random seed
+  -v, --variations  Number of variations (1-4)
+  --no-thinking     Disable thinking mode
+  --from-history    Replay a previous generation by ID
+  --json            NDJSON streaming output
+  -h, --help        Show help
+
+Examples:
+  openloop run \"upbeat electronic track\"
+  openloop run \"sad piano\" --duration 60 --format mp3 --output ./sad.mp3
+  openloop run \"pop song\" --lyrics \"[verse]\\nHello\\n[chorus]\\nWorld\"
+  openloop run \"epic cinematic\" --json
+  openloop run --from-history <id>",
+    );
+}
+>>>>>>> origin/main

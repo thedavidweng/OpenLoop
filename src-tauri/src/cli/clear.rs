@@ -9,7 +9,7 @@ use super::AppState;
 pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::ClearArgs) -> AppResult<()> {
     let yes = args.yes;
 
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
     let count = records.len();
 
     if count == 0 {

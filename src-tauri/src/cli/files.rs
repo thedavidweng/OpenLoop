@@ -158,7 +158,7 @@ fn cmd_waveform(state: &AppState, id: &str) -> AppResult<()> {
 }
 
 fn cmd_unlink(state: &AppState, json: bool, id_arg: &str, keep_record: bool) -> AppResult<()> {
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
 
     let record = records
         .iter()

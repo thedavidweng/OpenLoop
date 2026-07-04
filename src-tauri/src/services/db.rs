@@ -127,36 +127,74 @@ impl Database {
         Ok(settings)
     }
 
-    pub fn list_generations(&self, query: Option<&str>) -> AppResult<Vec<GenerationRecord>> {
+    pub fn list_generations(
+        &self,
+        query: Option<&str>,
+        limit: Option<u32>,
+    ) -> AppResult<Vec<GenerationRecord>> {
         let connection = self.connection()?;
         let query = query.map(str::trim).filter(|value| !value.is_empty());
+        let limit_i64: Option<i64> = limit.map(i64::from);
 
-        let mut statement = if query.is_some() {
-            connection
-                .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1) ORDER BY is_favorite DESC, created_at DESC",
-                )
-                .map_err(|error| AppError::db_read_failed(error.to_string()))?
-        } else {
-            connection
-                .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' ORDER BY is_favorite DESC, created_at DESC",
-                )
-                .map_err(|error| AppError::db_read_failed(error.to_string()))?
-        };
+        const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
+        const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";
 
-        let mapped = if let Some(value) = query {
-            let like_query = format!("%{value}%");
-            statement.query_map([like_query], Self::map_generation_row)
-        } else {
-            statement.query_map([], Self::map_generation_row)
+        match (query, limit_i64) {
+            (Some(value), Some(limit_i64)) => {
+                let like_query = format!("%{value}%");
+                let mut statement = connection
+                    .prepare(&format!(
+                        "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER} LIMIT ?2"
+                    ))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![like_query, limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (Some(value), None) => {
+                let like_query = format!("%{value}%");
+                let mut statement = connection
+                    .prepare(&format!(
+                        "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER}"
+                    ))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![like_query], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (None, Some(limit_i64)) => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER} LIMIT ?1"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (None, None) => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER}"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map([], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
         }
-        .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-
-        mapped
-            .into_iter()
-            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
-            .collect()
     }
 
     pub fn get_generation(&self, id: &str) -> AppResult<Option<GenerationRecord>> {
@@ -568,7 +606,7 @@ mod tests {
             .expect("generation record should insert");
 
         let listed = database
-            .list_generations(Some("piano"))
+            .list_generations(Some("piano"), None)
             .expect("generation record should list");
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].id, record.id);
@@ -584,7 +622,7 @@ mod tests {
             .expect("generation record should delete");
 
         let remaining = database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should still load");
         assert!(remaining.is_empty());
     }
@@ -616,7 +654,7 @@ mod tests {
             .expect("legacy cancelled generation should insert");
 
         let listed = database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should load");
 
         assert_eq!(
@@ -645,7 +683,7 @@ mod tests {
             .expect("generation records should clear");
 
         assert!(database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should load")
             .is_empty());
         assert!(output.exists());
@@ -683,5 +721,66 @@ mod tests {
             .list_active_generation_tasks()
             .expect("active tasks should list")
             .is_empty());
+    }
+
+    #[test]
+    fn schema_migrates_from_v1_to_latest() {
+        use rusqlite::Connection;
+
+        let temp_dir = tempfile::tempdir().expect("temp dir should exist");
+        let db_path = temp_dir.path().join("openloop.sqlite3");
+
+        let conn = Connection::open(&db_path).expect("connection should open");
+        conn.execute_batch(include_str!("../../migrations/001_init.sql"))
+            .expect("v1 init should succeed");
+        conn.execute(
+            "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)",
+            rusqlite::params!["gen_v1", "2026-01-01T00:00:00Z", "legacy prompt", "", "en", 30.0, 92, "C Major", "4", "acestep-v15-turbo", rusqlite::types::Null, 1, 8, 7.0, 1, rusqlite::types::Null, "wav", "/tmp/legacy.wav", "completed", rusqlite::types::Null, "ok"],
+        )
+        .expect("v1 record should insert");
+        conn.execute(
+            "INSERT INTO active_generation_tasks (id, task_id, request_json, variation_index, variation_total, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            rusqlite::params!["task_v1", "ace-123",             r#"{"prompt":"legacy request","lyrics":"","vocalLanguage":"en","durationSeconds":30.0,"timeSignature":"4","audioFormat":"wav","taskType":"text2music","thinking":true,"inferenceSteps":8,"guidanceScale":7.0,"useFormat":false,"useCotCaption":true,"useCotLanguage":true,"constrainedDecoding":true,"useRandomSeed":true,"variationCount":1}"#, 0, 1, "2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"],
+        )
+        .expect("v1 task should insert");
+        drop(conn);
+
+        // Step 2: run full migration via Database::new
+        let database =
+            Database::new(temp_dir.path()).expect("database should initialize with migration");
+
+        // Step 3: verify v1 record is still readable
+        let all = database.list_generations(None).expect("list should work");
+        assert!(
+            all.iter().any(|r| r.id == "gen_v1"),
+            "v1 record should survive migration"
+        );
+
+        // Step 4: verify new columns work (is_favorite from 003)
+        let mut record = sample_record();
+        record.is_favorite = true;
+        database
+            .insert_generation(&record)
+            .expect("record with is_favorite should insert");
+        let fetched = database
+            .get_generation(&record.id)
+            .expect("get should work")
+            .expect("record should exist");
+        assert!(fetched.is_favorite, "is_favorite should persist");
+
+        // Step 5: verify failed_runs table (004)
+        let failed = database
+            .list_failed_runs(10)
+            .expect("failed runs should list");
+        assert!(failed.is_empty(), "failed_runs table should exist");
+
+        // Step 6: verify active tasks still work with cancel_requested_at
+        let tasks = database
+            .list_active_generation_tasks()
+            .expect("tasks should list");
+        assert!(
+            tasks.iter().any(|t| t.id == "task_v1"),
+            "v1 task should survive migration"
+        );
     }
 }

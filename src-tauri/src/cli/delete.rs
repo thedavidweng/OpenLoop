@@ -9,7 +9,7 @@ use super::AppState;
 pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::DeleteArgs) -> AppResult<()> {
     let id_arg = args.id;
 
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
 
     let record = records
         .iter()

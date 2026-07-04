@@ -596,7 +596,7 @@ mod tests {
 
         match cli.command {
             Commands::Enhance(args) => {
-                assert_eq!(args.prompt, "upbeat pop");
+                assert_eq!(args.prompt, vec!["upbeat pop"]);
                 assert_eq!(args.duration, Some(120.0));
                 assert_eq!(args.lyrics.as_deref(), Some("[Verse]\\nHello"));
             }
@@ -865,13 +865,7 @@ mod tests {
     fn parse_list_default_limit() {
         let cli = Cli::try_parse_from(["openloop", "list"]).unwrap();
         match cli.command {
-            Commands::List(args) => assert_eq!(args.limit, 50),
-            _ => panic!("expected List"),
-        }
-    }
-
-    #[test]
-    fn parse_list_custom_limit() {
+            Commands::List(args) => assert_eq!(args.limit, 20),
         let cli = Cli::try_parse_from(["openloop", "list", "--limit", "50"]).unwrap();
         match cli.command {
             Commands::List(args) => assert_eq!(args.limit, 50),

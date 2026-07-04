@@ -7,50 +7,25 @@ use crate::{
 };
 
 use super::AppState;
+use crate::cli::spec::SetupArgs;
 use std::io::IsTerminal;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
-    // Filter flags to find positional key-value pairs
-    let positional: Vec<&String> = {
-        let mut skip = false;
-        let mut result = Vec::new();
-        for arg in args.iter().skip(1) {
-            if skip {
-                skip = false;
-                continue;
-            }
-            if arg.starts_with('-') {
-                skip = needs_value_flag(arg);
-                continue;
-            }
-            result.push(arg);
-        }
-        result
-    };
-
-    // Flag-based setting
-    let flag_model = flag_value(args, "--model");
-    let flag_thinking = flag_value(args, "--thinking");
-    let flag_duration = flag_value(args, "--duration");
-    let flag_format = flag_value(args, "--format");
+pub fn execute(state: &AppState, json: bool, args: SetupArgs) -> AppResult<()> {
+    let flag_model = args.model;
+    let flag_thinking = args.thinking;
+    let flag_duration = args.duration;
+    let flag_format = args.format;
+    let positional_key = args.key;
+    let positional_value = args.value;
 
     let has_flags = flag_model.is_some()
         || flag_thinking.is_some()
         || flag_duration.is_some()
         || flag_format.is_some();
 
-    if !positional.is_empty() {
+    if let Some(key) = positional_key.as_deref() {
         // KEY VALUE mode
-        let key = positional[0];
-        if positional.len() == 1 {
+        if positional_value.is_none() {
             // Show single value
             let settings = state.db.get_settings()?;
             let value = get_setting_value(&settings, key)?;
@@ -62,7 +37,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
             return Ok(());
         }
 
-        let value = positional[1];
+        let value = positional_value.as_deref().unwrap();
         set_setting(state, key, value)?;
 
         let updated = state.db.get_settings()?;
@@ -74,16 +49,16 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     } else if has_flags {
         // Flag-based setting
         if let Some(v) = flag_model {
-            set_setting(state, "model", v)?;
+            set_setting(state, "model", &v)?;
         }
         if let Some(v) = flag_thinking {
-            set_setting(state, "thinking", v)?;
+            set_setting(state, "thinking", &v)?;
         }
         if let Some(v) = flag_duration {
-            set_setting(state, "duration", v)?;
+            set_setting(state, "duration", &v.to_string())?;
         }
         if let Some(v) = flag_format {
-            set_setting(state, "format", v)?;
+            set_setting(state, "format", &v)?;
         }
 
         let updated = state.db.get_settings()?;
@@ -428,56 +403,4 @@ fn variant_gb(v: ModelVariant) -> &'static str {
         ModelVariant::Turbo => "16GB",
         ModelVariant::Pro => "24GB",
     }
-}
-
-fn flag_value<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
-    for i in 0..args.len() {
-        if args[i] == name {
-            return args
-                .get(i + 1)
-                .filter(|v| !v.starts_with('-'))
-                .map(|s| s.as_str());
-        }
-    }
-    None
-}
-
-fn needs_value_flag(arg: &str) -> bool {
-    matches!(
-        arg,
-        "--model" | "--thinking" | "--duration" | "--format" | "--json"
-    )
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop setup — Configure default settings
-
-Usage:
-  openloop setup                  Interactive wizard
-  openloop setup [key] [value]    Set a setting
-  openloop setup [flags]          Flag-based setting
-
-Keys:
-  model             lite, turbo, pro
-  thinking          on, off
-  duration          10-600
-  format            wav, mp3, flac, ogg
-  checkForUpdates   on, off
-
-Flags:
-  --model VALUE
-  --thinking VALUE
-  --duration VALUE
-  --format VALUE
-  --json     JSON output
-  --help     Show help
-
-Examples:
-  openloop setup
-  openloop setup model turbo
-  openloop setup thinking on
-  openloop setup --model turbo --format mp3",
-    );
 }

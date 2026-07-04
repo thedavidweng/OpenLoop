@@ -6,15 +6,8 @@ use crate::{
 
 use super::AppState;
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let yes = args.contains(&"--yes".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
+pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::ClearArgs) -> AppResult<()> {
+    let yes = args.yes;
 
     let records = state.db.list_generations(None, None)?;
     let count = records.len();
@@ -51,19 +44,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop clear — Clear all generation history
-
-Usage:
-  openloop clear [flags]
-
-Flags:
-  --json    JSON output
-  --yes     Skip confirmation
-  --help    Show help",
-    );
 }

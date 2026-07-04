@@ -1,7 +1,6 @@
-// NOTE: This module is a hand-maintained mirror of the subcommands dispatched
-// in `mod.rs::run_inner`. When adding, removing, or renaming a command, update
-// BOTH this `Cli`/`Commands` definition and the `match` arm in `mod.rs` so the
-// generated shell completions stay in sync with the actual dispatch surface.
+// Single source of truth for CLI parsing: `mod.rs` calls `Cli::parse_from` and
+// routes typed structs to each subcommand. When adding, removing, or renaming a
+// command, update this `Cli`/`Commands` definition and the `match` arm in `mod.rs`.
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
@@ -146,8 +145,9 @@ pub struct RunArgs {
 
 #[derive(Args)]
 pub struct EnhanceArgs {
-    /// The text prompt to enhance
-    pub prompt: String,
+    /// The text prompt to enhance (one or more words)
+    #[arg(required = true, num_args = 1.., trailing_var_arg = true, allow_hyphen_values = true)]
+    pub prompt: Vec<String>,
 
     /// Duration in seconds (10-600)
     #[arg(short = 'd', long)]
@@ -307,7 +307,7 @@ pub enum GenerationCommand {
 #[derive(Args)]
 pub struct ListArgs {
     /// Number of records to show
-    #[arg(long, default_value = "50")]
+    #[arg(long, default_value = "20")]
     pub limit: usize,
 }
 
@@ -562,12 +562,23 @@ mod tests {
 
     #[test]
     fn parse_enhance_with_prompt_only() {
-        let cli = Cli::try_parse_from(["openloop", "enhance", "warm piano"]).unwrap();
+        let cli = Cli::try_parse_from(["openloop", "enhance", "warm", "piano"]).unwrap();
         match cli.command {
             Commands::Enhance(args) => {
-                assert_eq!(args.prompt, "warm piano");
+                assert_eq!(args.prompt, vec!["warm", "piano"]);
                 assert!(args.duration.is_none());
                 assert!(args.lyrics.is_none());
+            }
+            _ => panic!("expected Enhance command"),
+        }
+    }
+
+    #[test]
+    fn parse_enhance_unquoted_multi_word_prompt() {
+        let cli = Cli::try_parse_from(["openloop", "enhance", "warm", "piano", "jazz"]).unwrap();
+        match cli.command {
+            Commands::Enhance(args) => {
+                assert_eq!(args.prompt, vec!["warm", "piano", "jazz"]);
             }
             _ => panic!("expected Enhance command"),
         }
@@ -578,17 +589,17 @@ mod tests {
         let cli = Cli::try_parse_from([
             "openloop",
             "enhance",
-            "upbeat pop",
             "--duration",
             "120",
             "--lyrics",
             "[Verse]\\nHello",
+            "upbeat pop",
         ])
         .unwrap();
 
         match cli.command {
             Commands::Enhance(args) => {
-                assert_eq!(args.prompt, "upbeat pop");
+                assert_eq!(args.prompt, vec!["upbeat pop"]);
                 assert_eq!(args.duration, Some(120.0));
                 assert_eq!(args.lyrics.as_deref(), Some("[Verse]\\nHello"));
             }
@@ -599,12 +610,12 @@ mod tests {
     #[test]
     fn parse_enhance_with_short_flags() {
         let cli =
-            Cli::try_parse_from(["openloop", "enhance", "ballad", "-d", "60", "-l", "lyrics"])
+            Cli::try_parse_from(["openloop", "enhance", "-d", "60", "-l", "lyrics", "ballad"])
                 .unwrap();
 
         match cli.command {
             Commands::Enhance(args) => {
-                assert_eq!(args.prompt, "ballad");
+                assert_eq!(args.prompt, vec!["ballad"]);
                 assert_eq!(args.duration, Some(60.0));
                 assert_eq!(args.lyrics.as_deref(), Some("lyrics"));
             }
@@ -857,7 +868,7 @@ mod tests {
     fn parse_list_default_limit() {
         let cli = Cli::try_parse_from(["openloop", "list"]).unwrap();
         match cli.command {
-            Commands::List(args) => assert_eq!(args.limit, 50),
+            Commands::List(args) => assert_eq!(args.limit, 20),
             _ => panic!("expected List"),
         }
     }

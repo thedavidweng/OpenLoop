@@ -16,15 +16,7 @@ struct CheckResult {
     message: String,
 }
 
-pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
-    let json = args.contains(&"--json".to_owned());
-    let help = args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned());
-
-    if help {
-        print_help();
-        return Ok(());
-    }
-
+pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
     let mut results: Vec<CheckResult> = Vec::new();
 
@@ -357,29 +349,4 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
     }
 
     Ok(())
-}
-
-fn print_help() {
-    human_output(
-        "\
-openloop doctor — Run environment diagnostics
-
-Usage:
-  openloop doctor [flags]
-
-Checks:
-  system            OS, architecture, Apple Silicon, memory
-  port              Backend port availability
-  app-data-dir      Application data directory
-  model-dir         Model storage directory
-  downloaded-models Installed model variants
-  backend-logs      Backend log files
-  backend-code      ACE-Step backend code installation
-  database          SQLite database health
-  settings          Current settings summary
-
-Flags:
-  --json    JSON array output
-  --help    Show help",
-    );
 }

@@ -5,7 +5,7 @@ import {
   isModelDownloaded,
   packIdForVariant,
 } from "@/app/lib/model-packs";
-import i18next from "@/app/lib/i18n";
+import { tr } from "@/app/lib/i18n";
 import type {
   AppError,
   AppSettings,
@@ -27,10 +27,6 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   firstRunCompleted: false,
   language: null,
 };
-
-function tr(key: string, options?: Record<string, unknown>) {
-  return i18next.t(key, options);
-}
 
 export function createDefaultBootstrapStatus(): ModelBootstrapStatus {
   return {

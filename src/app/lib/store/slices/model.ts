@@ -23,11 +23,7 @@ import {
 } from "@/app/lib/profile-presets";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
-import i18next from "@/app/lib/i18n";
-
-function tr(key: string, options?: Record<string, unknown>) {
-  return i18next.t(key, options);
-}
+import { tr } from "@/app/lib/i18n";
 
 export function createModelSlice(
   set: StoreApi<GenerationStore>["setState"],

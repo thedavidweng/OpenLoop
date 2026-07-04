@@ -29,4 +29,9 @@ i18next.use(initReactI18next).init({
   },
 });
 
+/** Shorthand for `i18next.t()` — shared across non-component modules. */
+export function tr(key: string, options?: Record<string, unknown>) {
+  return i18next.t(key, options);
+}
+
 export default i18next;

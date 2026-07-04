@@ -11,8 +11,7 @@ use crate::{
     },
     services::{
         ace_client::AceClient,
-        file_store::FileStore,
-        generation_task::{GenerationEventSink, GenerationTaskRunner, GENERATION_EVENT},
+        generation_task::{GenerationEventSink, GENERATION_EVENT},
     },
     AppState,
 };
@@ -40,17 +39,9 @@ impl GenerationEventSink for TauriGenerationEventSink<'_> {
     }
 }
 
-fn generation_runner(state: &AppState) -> GenerationTaskRunner {
-    GenerationTaskRunner::new(
-        state.db.clone(),
-        FileStore::new(state.app_data_dir.clone()),
-        state.generation_cancelled.clone(),
-    )
-}
-
 #[tauri::command]
 pub fn cancel_generation(state: State<'_, AppState>) -> AppResult<()> {
-    generation_runner(&state).cancel();
+    state.generation_runner().cancel();
     Ok(())
 }
 
@@ -58,12 +49,14 @@ pub fn cancel_generation(state: State<'_, AppState>) -> AppResult<()> {
 pub fn list_active_generation_tasks(
     state: State<'_, AppState>,
 ) -> AppResult<Vec<ActiveGenerationTask>> {
-    generation_runner(&state).list_active_generation_tasks()
+    state.generation_runner().list_active_generation_tasks()
 }
 
 #[tauri::command]
 pub fn discard_active_generation_task(state: State<'_, AppState>, id: String) -> AppResult<()> {
-    generation_runner(&state).discard_active_generation_task(&id)
+    state
+        .generation_runner()
+        .discard_active_generation_task(&id)
 }
 
 #[tauri::command]
@@ -74,10 +67,7 @@ pub async fn enhance_prompt(
     request.validate()?;
     let settings = state.db.get_settings()?;
     {
-        let mut backend = state
-            .backend
-            .lock()
-            .map_err(|_| AppError::internal("backend manager lock poisoned"))?;
+        let mut backend = state.lock_backend()?;
         if !matches!(backend.status(), BackendStatus::Healthy { .. }) {
             backend.start(&settings)?;
         }
@@ -99,10 +89,7 @@ pub async fn resume_generation_task(
         .ok_or_else(|| AppError::not_found("Active generation task", id.clone()))?;
     let settings = state.db.get_settings()?;
     {
-        let mut backend = state
-            .backend
-            .lock()
-            .map_err(|_| AppError::internal("backend manager lock poisoned"))?;
+        let mut backend = state.lock_backend()?;
         if !matches!(backend.status(), BackendStatus::Healthy { .. }) {
             return Err(AppError::task_failed(
                 "active task can only be resumed while the ACE-Step backend is still healthy",
@@ -112,7 +99,9 @@ pub async fn resume_generation_task(
     let client = AceClient::new(settings.backend_port)?;
     client.health()?;
     let sink = TauriGenerationEventSink { app: &app };
-    generation_runner(&state).resume(&client, &sink, &settings, active)
+    state
+        .generation_runner()
+        .resume(&client, &sink, &settings, active)
 }
 
 #[tauri::command]
@@ -127,10 +116,7 @@ pub async fn generate_music(
     let variation_total = request.variation_count;
 
     {
-        let mut backend = state
-            .backend
-            .lock()
-            .map_err(|_| AppError::internal("backend manager lock poisoned"))?;
+        let mut backend = state.lock_backend()?;
         if !matches!(backend.status(), BackendStatus::Healthy { .. }) {
             emit_generation_event(
                 &app,
@@ -147,7 +133,9 @@ pub async fn generate_music(
     let client = AceClient::new(settings.backend_port)?;
     client.health()?;
     let sink = TauriGenerationEventSink { app: &app };
-    generation_runner(&state).generate(&client, &sink, &settings, request)
+    state
+        .generation_runner()
+        .generate(&client, &sink, &settings, request)
 }
 
 #[cfg(test)]

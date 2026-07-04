@@ -114,7 +114,7 @@ fn stop_lifecycle_message(status: &BackendStatus) -> String {
 
 fn execute_status(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let mut backend = state.lock_backend()?;
     let status = backend.status_with_port(Some(settings.backend_port));
 
     let ownership = backend.ownership();
@@ -184,7 +184,7 @@ fn execute_status(state: &AppState, json: bool) -> AppResult<()> {
 
 fn execute_start(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let mut backend = state.lock_backend()?;
     let status = match backend.start(&settings) {
         Ok(status) => status,
         Err(error) => {
@@ -235,7 +235,7 @@ fn execute_start(state: &AppState, json: bool) -> AppResult<()> {
 // ---------------------------------------------------------------------------
 
 fn execute_stop(state: &AppState, json: bool) -> AppResult<()> {
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let mut backend = state.lock_backend()?;
     let status = match backend.stop() {
         Ok(status) => status,
         Err(error) => {
@@ -271,7 +271,7 @@ fn execute_stop(state: &AppState, json: bool) -> AppResult<()> {
 
 fn execute_restart(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let mut backend = state.lock_backend()?;
     let status = match backend.restart(&settings) {
         Ok(status) => status,
         Err(error) => {
@@ -319,7 +319,7 @@ fn execute_restart(state: &AppState, json: bool) -> AppResult<()> {
 // ---------------------------------------------------------------------------
 
 fn execute_logs(state: &AppState, json: bool, open: bool) -> AppResult<()> {
-    let backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let backend = state.lock_backend()?;
     let path = backend.logs_path();
 
     if json {
@@ -362,7 +362,7 @@ fn execute_clear_cache(state: &AppState) -> AppResult<()> {
 
     // Stop backend before clearing cache
     {
-        let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+        let mut backend = state.lock_backend()?;
         backend.stop()?;
     }
 

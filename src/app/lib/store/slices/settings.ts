@@ -12,11 +12,12 @@ import { computeValidationState } from "@/app/lib/validation-helpers";
 import { DEFAULT_APP_SETTINGS, resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 import { expandDownloadedVariantsFromStatuses } from "@/app/lib/model-packs";
 
-import i18next, { detectSystemLanguage } from "@/app/lib/i18n";
-
-function tr(key: string, options?: Record<string, unknown>) {
-  return i18next.t(key, options);
-}
+import i18next, { detectSystemLanguage, tr } from "@/app/lib/i18n";
+import {
+  createFailedGenerationState,
+  createIdleGenerationState,
+  prependRecentPrompt,
+} from "@/app/lib/store-helpers";
 
 export function createSettingsSlice(
   set: StoreApi<GenerationStore>["setState"],
@@ -42,12 +43,7 @@ export function createSettingsSlice(
           modelStatuses,
           generationState:
             state.generationState.status === "idle"
-              ? {
-                  status: "idle",
-                  phase: "idle",
-                  statusMessage: "Ready",
-                  error: null,
-                }
+              ? createIdleGenerationState()
               : state.generationState,
           bootstrapStatus: resolveModelBootstrapStatus(settings, state.deviceInfo, modelStatuses),
         };
@@ -89,12 +85,9 @@ export function createSettingsSlice(
     },
 
     addRecentPrompt: (prompt: string) => {
-      set((state) => {
-        const trimmed = prompt.trim();
-        if (!trimmed) return state;
-        const deduped = [trimmed, ...state.recentPrompts.filter((p) => p !== trimmed)];
-        return { recentPrompts: deduped.slice(0, 20) };
-      });
+      set((state) => ({
+        recentPrompts: prependRecentPrompt(state.recentPrompts, prompt.trim()),
+      }));
     },
 
     toggleFavoritePrompt: (prompt: string) => {
@@ -173,12 +166,7 @@ export function createSettingsSlice(
           settings: mergedSettings,
           form: nextForm,
           ...computeValidationState(nextForm, { showErrors: false }),
-          generationState: {
-            status: "idle",
-            phase: "idle",
-            statusMessage: "Ready",
-            error: null,
-          },
+          generationState: createIdleGenerationState(),
           history: persistedHistory,
           favoriteRecordIds,
           activeTasks,
@@ -198,17 +186,12 @@ export function createSettingsSlice(
               recoverable: true,
             },
           },
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.persistenceHydrationFailed"),
-            error: {
-              code: "PERSISTENCE_HYDRATION_FAILED",
-              message: tr("errors.persistenceHydrationFailed"),
-              details: String(error),
-              recoverable: true,
-            },
-          },
+          generationState: createFailedGenerationState(tr("status.persistenceHydrationFailed"), {
+            code: "PERSISTENCE_HYDRATION_FAILED",
+            message: tr("errors.persistenceHydrationFailed"),
+            details: String(error),
+            recoverable: true,
+          }),
         });
       }
     },

@@ -12,6 +12,7 @@ vi.mock("@/app/lib/i18n", () => ({
     changeLanguage: vi.fn(() => Promise.resolve()),
     language: "en",
   },
+  tr: vi.fn((key: string) => (key === "status.ready" ? "Ready" : key)),
   detectSystemLanguage: vi.fn(() => "en"),
   SUPPORTED_LANGUAGES: [
     { code: "en", name: "English" },

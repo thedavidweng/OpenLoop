@@ -1,9 +1,5 @@
-import i18next from "@/app/lib/i18n";
+import { tr } from "@/app/lib/i18n";
 import type { GenerationRecord, GenerationRequest } from "@/app/lib/types";
-
-function tr(key: string, options?: Record<string, unknown>) {
-  return i18next.t(key, options);
-}
 
 export function shouldPreviewFail(request: GenerationRequest) {
   const haystack = `${request.prompt} ${request.lyrics}`.toLowerCase();

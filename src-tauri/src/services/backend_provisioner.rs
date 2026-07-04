@@ -767,13 +767,9 @@ fn resolve_path_within_base(canonical_base: &Path, relative: &str) -> AppResult<
         match component {
             std::path::Component::Normal(part) => resolved.push(part),
             std::path::Component::CurDir => {}
-            std::path::Component::ParentDir | std::path::Component::RootDir => {
-                return Err(AppError::backend_provision_failed(format!(
-                    "zip entry contains unsafe path component: {relative}"
-                )));
-            }
-            #[cfg(windows)]
-            std::path::Component::Prefix(_) => {
+            std::path::Component::ParentDir
+            | std::path::Component::RootDir
+            | std::path::Component::Prefix(_) => {
                 return Err(AppError::backend_provision_failed(format!(
                     "zip entry contains unsafe path component: {relative}"
                 )));

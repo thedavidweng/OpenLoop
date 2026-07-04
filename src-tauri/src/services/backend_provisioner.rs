@@ -1315,12 +1315,6 @@ mod tests {
     #[test]
     fn flush_archive_error_includes_details() {
         let error = flush_archive_error("disk full");
-        assert!(
-            error
-                .details
-                .as_deref()
-                .unwrap_or("")
-                .contains("disk full")
-        );
+        assert!(error.details.as_deref().unwrap_or("").contains("disk full"));
     }
 }

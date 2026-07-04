@@ -718,14 +718,19 @@ describe("refreshBackendProvisionStatus", () => {
     expect(store.getState().backendProvisionStatus.state).toBe("ready");
   });
 
-  it("silently ignores errors", async () => {
+  it("logs a warning when status refresh fails", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     mockApi.isTauriRuntime.mockReturnValue(true);
     mockApi.getBackendProvisionStatus.mockRejectedValue(new Error("boom"));
 
     await store.getState().refreshBackendProvisionStatus();
 
-    // Should not throw and state unchanged
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Failed to refresh backend provision status:",
+      expect.any(Error),
+    );
     expect(store.getState().backendProvisionStatus.state).toBe("not_installed");
+    warnSpy.mockRestore();
   });
 });
 

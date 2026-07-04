@@ -34,10 +34,16 @@ pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::PullArgs) -
             }
         }
         if changed {
-            let _ = state.db.set_setting(
+            if let Err(e) = state.db.set_setting(
                 "downloadedModels",
-                serde_json::to_value(&settings.downloaded_models).unwrap_or_default(),
-            );
+                serde_json::to_value(&settings.downloaded_models)
+                    .map_err(|e| cli_error(e.to_string()))?,
+            ) {
+                eprintln!(
+                    "warning: failed to persist downloaded models: {}",
+                    e.message
+                );
+            }
         }
     }
 
@@ -66,7 +72,9 @@ pub fn execute(state: &AppState, json: bool, args: crate::cli::spec::PullArgs) -
     {
         let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
         backend.status();
-        let _ = backend.start(&settings);
+        if let Err(e) = backend.start(&settings) {
+            eprintln!("warning: failed to start backend: {}", e.message);
+        }
     }
 
     let snapshot = models.download_blocking(&settings, variant)?;

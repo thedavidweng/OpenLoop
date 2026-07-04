@@ -50,10 +50,16 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
             }
         }
         if changed {
-            let _ = state.db.set_setting(
+            if let Err(e) = state.db.set_setting(
                 "downloadedModels",
-                serde_json::to_value(&settings.downloaded_models).unwrap_or_default(),
-            );
+                serde_json::to_value(&settings.downloaded_models)
+                    .map_err(|e| cli_error(e.to_string()))?,
+            ) {
+                eprintln!(
+                    "warning: failed to persist downloaded models: {}",
+                    e.message
+                );
+            }
         }
     }
 
@@ -281,7 +287,9 @@ fn execute_delete_all(state: &AppState, json: bool, yes: bool) -> AppResult<()> 
         eprint!("Are you sure? [y/N]: ");
         std::io::stdout().flush().ok();
         let mut input = String::new();
-        std::io::stdin().read_line(&mut input).ok();
+        std::io::stdin()
+            .read_line(&mut input)
+            .map_err(|e| cli_error(format!("failed to read confirmation: {e}")))?;
         if !input.trim().eq_ignore_ascii_case("y") {
             human_output("Cancelled.");
             return Ok(());

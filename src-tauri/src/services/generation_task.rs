@@ -317,8 +317,12 @@ impl GenerationTaskRunner {
                         error_message: Some(error.message.clone()),
                         error_details: error.details.clone(),
                     };
-                    let _ = self.db.insert_failed_run(&failed_run);
-                    let _ = self.db.clear_failed_runs_older_than(50);
+                    if let Err(e) = self.db.insert_failed_run(&failed_run) {
+                        tracing::warn!("failed to archive failed run: {}", e.message);
+                    }
+                    if let Err(e) = self.db.clear_failed_runs_older_than(50) {
+                        tracing::warn!("failed to prune old failed runs: {}", e.message);
+                    }
                     sink.emit_generation_event(
                         serde_json::json!({ "type": "failed", "error": error.clone() }),
                     )?;

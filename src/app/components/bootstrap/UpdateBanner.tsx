@@ -12,6 +12,7 @@ export function UpdateBanner() {
   const [version, setVersion] = useState<string | null>(null);
   const [notes, setNotes] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [installError, setInstallError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -45,8 +46,14 @@ export function UpdateBanner() {
         await update.downloadAndInstall();
         await relaunch();
       }
-    } catch {
+    } catch (error) {
+      console.warn("Update install failed:", error);
       setInstalling(false);
+      setInstallError(
+        t("update.installFailed", {
+          defaultValue: "Update failed. Try downloading from the releases page.",
+        }),
+      );
     }
   };
 
@@ -113,6 +120,10 @@ export function UpdateBanner() {
               <div className="mb-4 max-h-40 overflow-auto rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] p-3 text-[12px] leading-relaxed text-[var(--color-text)]">
                 <pre className="whitespace-pre-wrap font-sans">{notes}</pre>
               </div>
+            )}
+
+            {installError && (
+              <p className="mb-3 text-[12px] text-red-400">{installError}</p>
             )}
 
             <div className="flex flex-wrap items-center gap-2">

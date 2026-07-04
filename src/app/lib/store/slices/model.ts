@@ -365,8 +365,8 @@ export function createModelSlice(
       try {
         const status = await api.getBackendProvisionStatus();
         set({ backendProvisionStatus: status });
-      } catch {
-        // Ignore errors — provisioner may not be available
+      } catch (error) {
+        console.warn("Failed to refresh backend provision status:", error);
       }
     },
 

@@ -83,7 +83,9 @@ pub fn initialize_main_window<R: Runtime>(app: &tauri::App<R>) -> WindowShellSta
         };
 
         let fallback_to_mac = || {
-            let _ = native::apply_main_window_shell(&window, &WindowShellState::mac());
+            if let Err(error) = native::apply_main_window_shell(&window, &WindowShellState::mac()) {
+                tracing::warn!("failed to apply fallback mac window shell: {error}");
+            }
             WindowShellState::mac()
         };
 

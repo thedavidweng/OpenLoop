@@ -184,6 +184,8 @@ pub fn handle_menu_event<R: Runtime>(app_handle: &AppHandle<R>, event: MenuEvent
     };
 
     if let Some(action) = action {
-        let _ = app_handle.emit_to("main", MENU_ACTION_EVENT, action);
+        if let Err(error) = app_handle.emit_to("main", MENU_ACTION_EVENT, action) {
+            tracing::warn!("failed to emit menu action event: {error}");
+        }
     }
 }

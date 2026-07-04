@@ -408,7 +408,12 @@ impl BackendProvisioner {
                 installed_tag: None,
                 installed_at: Utc::now().to_rfc3339(),
             };
-            let _ = write_backend_manifest(&self.app_data_dir, &manifest);
+            if let Err(e) = write_backend_manifest(&self.app_data_dir, &manifest) {
+                tracing::warn!(
+                    "failed to write backend manifest during migration: {}",
+                    e.message
+                );
+            }
         }
     }
 }
@@ -623,7 +628,9 @@ fn download_archive_blocking(
         writer.write_all(&bytes).map_err(|error| {
             AppError::backend_provision_failed(format!("failed to write archive file: {error}"))
         })?;
-        writer.flush().ok();
+        writer.flush().map_err(|error| {
+            AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
+        })?;
         drop(writer);
 
         fs::rename(&part, target).map_err(|error| {
@@ -727,7 +734,9 @@ where
             }
         }
 
-        writer.flush().ok();
+        writer.flush().map_err(|error| {
+            AppError::backend_provision_failed(format!("failed to flush archive file: {error}"))
+        })?;
         drop(writer);
 
         if let Some(error) = stream_failed {
@@ -1099,7 +1108,9 @@ fn backup_runtime_code(runtime_dir: &Path, backup_dir: &Path) -> AppResult<()> {
 
 fn emit_status(app: &AppHandle, status: &Arc<Mutex<BackendProvisionStatus>>) {
     if let Ok(s) = status.lock() {
-        let _ = app.emit(BACKEND_PROVISION_EVENT, s.clone());
+        if let Err(error) = app.emit(BACKEND_PROVISION_EVENT, s.clone()) {
+            tracing::warn!("failed to emit backend provision status: {error}");
+        }
     }
 }
 

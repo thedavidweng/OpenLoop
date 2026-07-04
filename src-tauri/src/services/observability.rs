@@ -115,10 +115,16 @@ impl<'a> MakeWriter<'a> for AppLogWriter {
 
     fn make_writer(&'a self) -> Self::Writer {
         match &self.path {
-            Some(path) => {
-                let file = OpenOptions::new().create(true).append(true).open(path).ok();
-                AppLogSink::File(file)
-            }
+            Some(path) => match OpenOptions::new().create(true).append(true).open(path) {
+                Ok(file) => AppLogSink::File(Some(file)),
+                Err(error) => {
+                    eprintln!(
+                        "warning: failed to open log file {}: {error}; falling back to stderr",
+                        path.display()
+                    );
+                    AppLogSink::File(None)
+                }
+            },
             None => AppLogSink::Stderr,
         }
     }

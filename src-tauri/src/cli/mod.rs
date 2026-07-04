@@ -43,29 +43,35 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
     let cli = spec::Cli::parse_from(args.iter());
     let json = cli.global.json;
 
-    let state = AppState::init_for_cli()?;
-
     match cli.command {
-        spec::Commands::Run(args) => run::execute(&state, json, args),
-        spec::Commands::Enhance(args) => enhance::execute(&state, json, args),
-        spec::Commands::Backend { command } => backend::execute(&state, json, command),
-        spec::Commands::Models { command } => models::execute(&state, json, command),
-        spec::Commands::Settings { command } => settings::execute(&state, json, command),
-        spec::Commands::Generation { command } => generation::execute(&state, json, command),
-        spec::Commands::List(args) => list::execute(&state, json, args),
-        spec::Commands::Delete(args) => delete::execute(&state, json, args),
-        spec::Commands::Clear(args) => clear::execute(&state, json, args),
-        spec::Commands::Ps => ps::execute(&state, json),
-        spec::Commands::Stop(args) => stop::execute(&state, json, args),
-        spec::Commands::Pull(args) => pull::execute(&state, json, args),
-        spec::Commands::Status => status::execute(&state, json),
-        spec::Commands::Doctor => doctor::execute(&state, json),
-        spec::Commands::Files { command } => files::execute(&state, json, command),
-        spec::Commands::Setup(args) => setup::execute(&state, json, args),
         spec::Commands::Completions { shell } => {
             let mut cmd = spec::Cli::command();
             completions::print_completions(shell.into(), &mut cmd);
             Ok(())
+        }
+        command => {
+            let state = AppState::init_for_cli()?;
+            match command {
+                spec::Commands::Run(args) => run::execute(&state, json, args),
+                spec::Commands::Enhance(args) => enhance::execute(&state, json, args),
+                spec::Commands::Backend { command } => backend::execute(&state, json, command),
+                spec::Commands::Models { command } => models::execute(&state, json, command),
+                spec::Commands::Settings { command } => settings::execute(&state, json, command),
+                spec::Commands::Generation { command } => {
+                    generation::execute(&state, json, command)
+                }
+                spec::Commands::List(args) => list::execute(&state, json, args),
+                spec::Commands::Delete(args) => delete::execute(&state, json, args),
+                spec::Commands::Clear(args) => clear::execute(&state, json, args),
+                spec::Commands::Ps => ps::execute(&state, json),
+                spec::Commands::Stop(args) => stop::execute(&state, json, args),
+                spec::Commands::Pull(args) => pull::execute(&state, json, args),
+                spec::Commands::Status => status::execute(&state, json),
+                spec::Commands::Doctor => doctor::execute(&state, json),
+                spec::Commands::Files { command } => files::execute(&state, json, command),
+                spec::Commands::Setup(args) => setup::execute(&state, json, args),
+                spec::Commands::Completions { .. } => unreachable!(),
+            }
         }
     }
 }

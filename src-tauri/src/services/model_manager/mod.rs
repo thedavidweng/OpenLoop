@@ -786,11 +786,18 @@ where
                         path = spec.remote_path
                     );
                     last_error = Some(AppError::model_download_failed(message.clone()));
-                    if attempt >= MAX_ATTEMPTS || mirror_index + 1 >= mirrors.len() {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    if attempt >= MAX_ATTEMPTS {
                         return Err(AppError::model_download_failed(message));
                     }
-                    mirror_index += 1;
-                    continue 'mirrors;
+                    eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                    tokio::time::sleep(retry_delay(attempt)).await;
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    continue;
                 }
             };
 
@@ -1061,26 +1068,35 @@ fn download_single_file_blocking(
 
             break;
         }
-        break;
-    }
 
-    fs::rename(&part, target).map_err(|error| {
-        AppError::model_download_failed(format!(
-            "failed to move temporary download {} to {}: {error}",
-            part.display(),
-            target.display()
-        ))
-    })?;
+        fs::rename(&part, target).map_err(|error| {
+            AppError::model_download_failed(format!(
+                "failed to move temporary download {} to {}: {error}",
+                part.display(),
+                target.display()
+            ))
+        })?;
 
-    if let Some(expected_sha256) = spec.sha256 {
-        if let Err(error) = verify_sha256(target, expected_sha256) {
-            let _ = fs::remove_file(target);
-            let _ = fs::remove_file(&part);
-            return Err(error);
+        if let Some(expected_sha256) = spec.sha256 {
+            if let Err(error) = verify_sha256(target, expected_sha256) {
+                let _ = fs::remove_file(target);
+                let _ = fs::remove_file(&part);
+                if mirror_index + 1 < mirrors.len() {
+                    eprintln!("openloop: {} (trying next mirror)", error.message);
+                    mirror_index += 1;
+                    written = 0;
+                    continue 'mirrors;
+                }
+                return Err(error);
+            }
         }
+
+        return Ok(());
     }
 
-    Ok(())
+    Err(AppError::model_download_failed(
+        "all mirrors exhausted".to_owned(),
+    ))
 }
 
 fn verify_sha256(path: &Path, expected: &str) -> AppResult<()> {

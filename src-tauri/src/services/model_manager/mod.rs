@@ -77,11 +77,11 @@ pub const ACE_MODEL_DESCRIPTORS: &[AceModelDescriptor] = &[
 
 #[derive(Debug)]
 pub struct ModelManager {
-    pub app_data_dir: PathBuf,
-    pub network_log: Arc<NetworkActivityLog>,
-    pub status: Arc<Mutex<Vec<ModelStatusSnapshot>>>,
+    app_data_dir: PathBuf,
+    network_log: Arc<NetworkActivityLog>,
+    status: Arc<Mutex<Vec<ModelStatusSnapshot>>>,
     #[allow(clippy::type_complexity)]
-    pub in_flight: Arc<Mutex<Vec<(ModelVariant, Arc<AtomicBool>)>>>,
+    in_flight: Arc<Mutex<Vec<(ModelVariant, Arc<AtomicBool>)>>>,
 }
 
 impl ModelManager {
@@ -112,9 +112,16 @@ impl ModelManager {
     }
 
     pub fn refresh(&self, settings: &AppSettings) -> Vec<ModelStatusSnapshot> {
-        let snapshots = self.inspect_all(settings);
-        if let Ok(mut guard) = self.status.lock() {
-            *guard = snapshots.clone();
+        let mut snapshots = self.inspect_all(settings);
+        if let Ok(status) = self.status.lock() {
+            for current in status.iter() {
+                if matches!(current.state, ModelDownloadState::Downloading) {
+                    download::upsert_snapshot(&mut snapshots, current.clone());
+                }
+            }
+        }
+        if let Ok(mut status) = self.status.lock() {
+            *status = snapshots.clone();
         }
         snapshots
     }
@@ -318,8 +325,7 @@ impl ModelManager {
             publish_snapshot(&app, &status, final_snapshot);
         });
 
-        let _ = app; // keep AppHandle import referenced
-                     // Return the "delete started" snapshot mirroring the prior contract.
+        // Return the "delete started" snapshot mirroring the prior contract.
         Ok(ModelStatusSnapshot {
             variant: descriptor.variant,
             state: ModelDownloadState::NotInstalled,

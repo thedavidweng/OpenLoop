@@ -600,6 +600,30 @@ describe("PlaybackBar", () => {
       expect(screen.queryByText("B")).not.toBeInTheDocument();
     });
 
+    it("does not seek before loop end while inside the AB loop", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 40 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+
+      const audio = document.querySelector("audio") as HTMLAudioElement;
+      Object.defineProperty(audio, "currentTime", {
+        configurable: true,
+        writable: true,
+        value: 50,
+      });
+
+      fireEvent.timeUpdate(audio, { currentTarget: audio });
+
+      expect(audio.currentTime).toBe(50);
+    });
+
     it("wraps playback to loop start when passing loop end", async () => {
       currentStoreState = makeStoreOverrides({
         currentGeneration: SAMPLE_GENERATION,
@@ -622,6 +646,22 @@ describe("PlaybackBar", () => {
       fireEvent.timeUpdate(audio, { currentTarget: audio });
 
       expect(audio.currentTime).toBe(20);
+    });
+
+    it("ignores a B point placed at the same position as A", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+
+      expect(screen.getByText("A")).toBeInTheDocument();
+      expect(screen.queryByText("B")).not.toBeInTheDocument();
     });
   });
 

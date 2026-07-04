@@ -1,20 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/lib/i18n", () => ({
-  default: {
-    t: (key: string, opts?: Record<string, unknown>) => {
-      if (opts && "defaultValue" in opts) return opts.defaultValue as string;
-      if (key === "generation.variationProgress") {
-        return `${opts?.current}/${opts?.total}`;
-      }
-      if (key === "status.ready") return "Ready";
-      return key;
-    },
-  },
-}));
+vi.mock("@/app/lib/i18n", () => {
+  const t = (key: string, opts?: Record<string, unknown>) => {
+    if (opts && "defaultValue" in opts) return opts.defaultValue as string;
+    if (key === "generation.variationProgress") {
+      return `${opts?.current}/${opts?.total}`;
+    }
+    if (key === "status.ready") return "Ready";
+    return key;
+  };
+  return { default: { t }, tr: t };
+});
 
-const { PREVIEW_DELAY_MS, sleep, variationLabel, createIdleGenerationState } =
-  await import("@/app/lib/store-helpers");
+const {
+  PREVIEW_DELAY_MS,
+  sleep,
+  variationLabel,
+  createIdleGenerationState,
+  createFailedGenerationState,
+  prependRecentPrompt,
+} = await import("@/app/lib/store-helpers");
 
 describe("PREVIEW_DELAY_MS", () => {
   it("has expected delay values", () => {
@@ -56,6 +61,40 @@ describe("createIdleGenerationState", () => {
     expect(state.phase).toBe("idle");
     expect(state.error).toBeNull();
     expect(typeof state.statusMessage).toBe("string");
+  });
+});
+
+describe("createFailedGenerationState", () => {
+  it("returns a failed generation state with the given message and error", () => {
+    const error = {
+      code: "generation_failed",
+      message: "Something went wrong",
+      recoverable: true,
+    };
+    const state = createFailedGenerationState("Generation failed", error);
+    expect(state.status).toBe("failed");
+    expect(state.phase).toBe("failed");
+    expect(state.statusMessage).toBe("Generation failed");
+    expect(state.error).toBe(error);
+  });
+});
+
+describe("prependRecentPrompt", () => {
+  it("returns the same list when prompt is empty", () => {
+    const list = ["a", "b"];
+    expect(prependRecentPrompt(list, "")).toBe(list);
+  });
+
+  it("prepends a new prompt and deduplicates", () => {
+    expect(prependRecentPrompt(["b", "c"], "a")).toEqual(["a", "b", "c"]);
+    expect(prependRecentPrompt(["a", "b", "c"], "b")).toEqual(["b", "a", "c"]);
+  });
+
+  it("caps the list at max entries", () => {
+    const list = Array.from({ length: 20 }, (_, i) => `p${i}`);
+    const result = prependRecentPrompt(list, "new");
+    expect(result).toHaveLength(20);
+    expect(result[0]).toBe("new");
   });
 });
 

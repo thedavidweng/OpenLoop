@@ -14,10 +14,7 @@ use crate::{
         generation::{GenerationRecord, GenerationRequest},
         settings::ModelVariant,
     },
-    services::{
-        ace_client::AceClient, file_store::FileStore, generation_task::GenerationTaskRunner,
-        model_bootstrap::descriptor_for,
-    },
+    services::{ace_client::AceClient, model_bootstrap::descriptor_for},
 };
 
 use super::AppState;
@@ -85,7 +82,7 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
 
     let settings = state.db.get_settings()?;
     let port = {
-        let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+        let mut backend = state.lock_backend()?;
 
         // Auto-bootstrap backend
         let backend_status = backend.start(&settings)?;
@@ -164,11 +161,10 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
     }
 
     let client = AceClient::new(port)?;
-    let file_store = FileStore::new(state.app_data_dir.clone());
     let cancelled = state.generation_cancelled.clone();
     cancelled.store(false, Ordering::SeqCst);
 
-    let runner = GenerationTaskRunner::new(state.db.clone(), file_store, cancelled.clone());
+    let runner = state.generation_runner();
 
     let sink = CliGenerationSink {
         json,
@@ -242,7 +238,7 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
     }
 
     // Detach the backend so it keeps running after this CLI command exits
-    if let Ok(mut backend) = state.backend.lock() {
+    if let Ok(mut backend) = state.lock_backend() {
         backend.detach();
     }
 

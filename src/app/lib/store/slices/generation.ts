@@ -4,7 +4,9 @@ import type { GenerationEvent, GenerationRecord } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   PREVIEW_DELAY_MS,
+  createFailedGenerationState,
   createIdleGenerationState,
+  prependRecentPrompt,
   sleep,
   variationLabel,
 } from "@/app/lib/store-helpers";
@@ -17,14 +19,10 @@ import {
 import { createGenerationRecord, shouldPreviewFail } from "@/app/lib/preview-record";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { shouldMarkBootstrapFailed } from "@/app/lib/model-bootstrap";
-import { mergeGenerationRecords, recordToGenerationForm } from "@/app/lib/history-workflow";
+import { mergeGenerationRecords } from "@/app/lib/history-workflow";
 import { validateGenerationForm } from "@/app/lib/validation";
-import i18next from "@/app/lib/i18n";
+import { tr } from "@/app/lib/i18n";
 import { isModelDownloaded } from "@/app/lib/model-packs";
-
-function tr(key: string, options?: Record<string, unknown>) {
-  return i18next.t(key, options);
-}
 
 export function createGenerationSlice(
   set: StoreApi<GenerationStore>["setState"],
@@ -138,12 +136,7 @@ export function createGenerationSlice(
             bootstrapStatus: shouldMarkBootstrapFailed(error.code)
               ? { state: "failed", message: error.message, error }
               : { state: "ready", message: tr("status.localStackReady") },
-            generationState: {
-              status: "failed",
-              phase: "failed",
-              statusMessage: tr("status.failed"),
-              error,
-            },
+            generationState: createFailedGenerationState(tr("status.failed"), error),
           });
           break;
         }
@@ -166,24 +159,20 @@ export function createGenerationSlice(
 
       if (!validation.isValid || validation.request === null) {
         set({
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.validationFailed"),
-            error: createValidationError(tr("errors.requestNotReady")),
-          },
+          generationState: createFailedGenerationState(
+            tr("status.validationFailed"),
+            createValidationError(tr("errors.requestNotReady")),
+          ),
         });
         return;
       }
 
       if (!isModelDownloaded(get().settings, get().settings.modelVariant)) {
         set({
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.downloadBeforeGenerating"),
-            error: createModelRequiredError(),
-          },
+          generationState: createFailedGenerationState(
+            tr("status.downloadBeforeGenerating"),
+            createModelRequiredError(),
+          ),
         });
         return;
       }
@@ -197,12 +186,7 @@ export function createGenerationSlice(
           set((state) => ({
             currentGeneration: latestRecord ?? state.currentGeneration,
             history: mergeGenerationRecords(persistedRecords, state.history),
-            recentPrompts: requestPrompt
-              ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(
-                  0,
-                  20,
-                )
-              : state.recentPrompts,
+            recentPrompts: prependRecentPrompt(state.recentPrompts, requestPrompt),
             generationState: {
               status: persistedRecords.length === 0 ? "cancelled" : "completed",
               phase: persistedRecords.length === 0 ? "cancelled" : "completed",
@@ -218,12 +202,7 @@ export function createGenerationSlice(
             bootstrapStatus: shouldMarkBootstrapFailed(appError.code)
               ? { state: "failed", message: appError.message, error: appError }
               : { state: "ready", message: tr("status.localStackReady") },
-            generationState: {
-              status: "failed",
-              phase: "failed",
-              statusMessage: tr("status.failed"),
-              error: appError,
-            },
+            generationState: createFailedGenerationState(tr("status.failed"), appError),
           });
         }
         return;
@@ -241,12 +220,10 @@ export function createGenerationSlice(
 
       if (shouldPreviewFail(validation.request)) {
         set({
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.previewFailedPrompt"),
-            error: createPreviewRuntimeError(),
-          },
+          generationState: createFailedGenerationState(
+            tr("status.previewFailedPrompt"),
+            createPreviewRuntimeError(),
+          ),
         });
         return;
       }
@@ -259,9 +236,7 @@ export function createGenerationSlice(
       set((state) => ({
         currentGeneration: persistedRecord,
         history: [persistedRecord, ...state.history],
-        recentPrompts: requestPrompt
-          ? [requestPrompt, ...state.recentPrompts.filter((p) => p !== requestPrompt)].slice(0, 20)
-          : state.recentPrompts,
+        recentPrompts: prependRecentPrompt(state.recentPrompts, requestPrompt),
         generationState: {
           status: "completed",
           phase: "completed",
@@ -292,15 +267,14 @@ export function createGenerationSlice(
         currentRequest: validation.request,
       });
       if (!validation.isValid || validation.request === null) {
+        const validationError = createValidationError(tr("errors.requestNotReady"));
         set({
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.validationFailed"),
-            error: createValidationError(tr("errors.requestNotReady")),
-          },
+          generationState: createFailedGenerationState(
+            tr("status.validationFailed"),
+            validationError,
+          ),
         });
-        throw createValidationError(tr("errors.requestNotReady"));
+        throw validationError;
       }
       const enhanced = await api.enhancePrompt(validation.request);
       const nextForm = {
@@ -355,12 +329,7 @@ export function createGenerationSlice(
       } catch (error) {
         const appError = localizeAppError(error);
         set({
-          generationState: {
-            status: "failed",
-            phase: "failed",
-            statusMessage: tr("status.recoveryFailed"),
-            error: appError,
-          },
+          generationState: createFailedGenerationState(tr("status.recoveryFailed"), appError),
         });
       }
     },
@@ -378,18 +347,6 @@ export function createGenerationSlice(
       set((state) => ({
         playbackToggleRequest: state.playbackToggleRequest + 1,
       }));
-    },
-
-    loadGenerationSettings: (id: string, mode: "settings" | "reproduce") => {
-      const record = get().history.find((item) => item.id === id);
-      if (!record) return;
-      const nextForm = recordToGenerationForm(get().form, record, mode);
-      set({
-        form: nextForm,
-        currentGeneration: record,
-        ...computeValidationState(nextForm),
-        generationState: createIdleGenerationState(),
-      });
     },
   };
 }

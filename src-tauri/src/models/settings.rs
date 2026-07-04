@@ -20,6 +20,30 @@ pub enum ModelVariant {
     Pro,
 }
 
+impl ModelVariant {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Lite => "Lite",
+            Self::Turbo => "Turbo",
+            Self::Pro => "Pro",
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Lite => "lite",
+            Self::Turbo => "turbo",
+            Self::Pro => "pro",
+        }
+    }
+}
+
+impl std::fmt::Display for ModelVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.label())
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {

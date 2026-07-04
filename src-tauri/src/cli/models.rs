@@ -64,7 +64,7 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
             let is_active = settings.model_variant == Some(descriptor.variant);
 
             items.push(serde_json::json!({
-                "variant": variant_str(descriptor.variant),
+                "variant": descriptor.variant.as_str(),
                 "size_gb": descriptor.recommended_memory_gb,
                 "status": if is_downloaded { "downloaded" } else { "not_downloaded" },
                 "active": is_active,
@@ -96,7 +96,7 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
 
             println!(
                 "{:<10} {:<8} {:<12} {}",
-                variant_label(descriptor.variant),
+                descriptor.variant.label(),
                 size,
                 status,
                 descriptor.description
@@ -111,7 +111,7 @@ fn execute_download(state: &AppState, json: bool, variant: ModelVariant) -> AppR
     let settings = state.db.get_settings()?;
 
     if settings.downloaded_models.contains(&variant) {
-        let label = variant_label(variant);
+        let label = variant.label();
         if json {
             super::json_output(&format!(r#"{{"event":"completed","model":"{label}"}}"#));
         } else {
@@ -121,7 +121,7 @@ fn execute_download(state: &AppState, json: bool, variant: ModelVariant) -> AppR
     }
 
     if !json {
-        human_output(&format!("↓ Downloading {} ...", variant_label(variant)));
+        human_output(&format!("↓ Downloading {} ...", variant.label()));
     }
 
     let models = ModelManager::new(state.app_data_dir.clone(), Arc::clone(&state.network_log));
@@ -141,10 +141,10 @@ fn execute_download(state: &AppState, json: bool, variant: ModelVariant) -> AppR
     if json {
         super::json_output(&format!(
             r#"{{"event":"completed","model":"{}"}}"#,
-            variant_label(variant)
+            variant.label()
         ));
     } else {
-        human_output(&format!("✓ Model downloaded: {}", variant_label(variant)));
+        human_output(&format!("✓ Model downloaded: {}", variant.label()));
     }
 
     Ok(())
@@ -188,7 +188,7 @@ fn execute_delete(state: &AppState, json: bool, variant: ModelVariant) -> AppRes
             .map_err(|e| cli_error(format!("failed to parse manifest: {e}")))?;
         if let Some(obj) = manifest.as_object_mut() {
             if let Some(installed) = obj.get_mut("installed").and_then(|v| v.as_object_mut()) {
-                installed.remove(variant_key_str(variant));
+                installed.remove(variant.as_str());
             }
             obj.insert(
                 "updatedAt".to_string(),
@@ -212,10 +212,10 @@ fn execute_delete(state: &AppState, json: bool, variant: ModelVariant) -> AppRes
     if json {
         super::json_output(&format!(
             r#"{{"event":"deleted","model":"{}"}}"#,
-            variant_label(variant)
+            variant.label()
         ));
     } else {
-        human_output(&format!("✓ Model deleted: {}", variant_label(variant)));
+        human_output(&format!("✓ Model deleted: {}", variant.label()));
     }
 
     Ok(())
@@ -231,10 +231,10 @@ fn execute_cancel(state: &AppState, json: bool, variant: ModelVariant) -> AppRes
     if json {
         super::json_output(&format!(
             r#"{{"event":"cancelled","model":"{}"}}"#,
-            variant_label(variant)
+            variant.label()
         ));
     } else {
-        human_output(&format!("✓ Download cancelled: {}", variant_label(variant)));
+        human_output(&format!("✓ Download cancelled: {}", variant.label()));
     }
 
     Ok(())
@@ -251,13 +251,10 @@ fn execute_clear_partial(state: &AppState, json: bool, variant: ModelVariant) ->
     if json {
         super::json_output(&format!(
             r#"{{"event":"cleared","model":"{}"}}"#,
-            variant_label(variant)
+            variant.label()
         ));
     } else {
-        human_output(&format!(
-            "✓ Partial downloads cleared: {}",
-            variant_label(variant)
-        ));
+        human_output(&format!("✓ Partial downloads cleared: {}", variant.label()));
     }
 
     Ok(())
@@ -312,28 +309,4 @@ fn execute_delete_all(state: &AppState, json: bool, yes: bool) -> AppResult<()> 
     }
 
     Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn variant_str(variant: ModelVariant) -> &'static str {
-    match variant {
-        ModelVariant::Lite => "lite",
-        ModelVariant::Turbo => "turbo",
-        ModelVariant::Pro => "pro",
-    }
-}
-
-fn variant_label(variant: ModelVariant) -> &'static str {
-    match variant {
-        ModelVariant::Lite => "Lite",
-        ModelVariant::Turbo => "Turbo",
-        ModelVariant::Pro => "Pro",
-    }
-}
-
-fn variant_key_str(variant: ModelVariant) -> &'static str {
-    variant_str(variant)
 }

@@ -1311,4 +1311,16 @@ mod tests {
         assert!(manifest_migration_warning(&error).contains("emit failed"));
         assert!(provision_status_emit_warning(&"emit failed").contains("emit failed"));
     }
+
+    #[test]
+    fn flush_archive_error_includes_details() {
+        let error = flush_archive_error("disk full");
+        assert!(
+            error
+                .details
+                .as_deref()
+                .unwrap_or("")
+                .contains("disk full")
+        );
+    }
 }

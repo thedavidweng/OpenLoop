@@ -880,6 +880,13 @@ where
                     spec.repo, spec.remote_path, written, spec.size
                 );
                 if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        last_error = Some(AppError::model_download_failed(message));
+                        mirror_index += 1;
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        continue 'mirrors;
+                    }
                     return Err(AppError::model_download_failed(message));
                 }
                 eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);

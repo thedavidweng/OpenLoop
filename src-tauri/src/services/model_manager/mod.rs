@@ -983,11 +983,18 @@ fn download_single_file_blocking(
                         repo = spec.repo,
                         path = spec.remote_path
                     );
-                    if attempt >= MAX_ATTEMPTS || mirror_index + 1 >= mirrors.len() {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    if attempt >= MAX_ATTEMPTS {
                         return Err(AppError::model_download_failed(message));
                     }
-                    mirror_index += 1;
-                    continue 'mirrors;
+                    eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                    std::thread::sleep(retry_delay(attempt));
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    continue;
                 }
             };
 
@@ -1037,12 +1044,19 @@ fn download_single_file_blocking(
                             "stream error for {}/{}: {error}",
                             spec.repo, spec.remote_path
                         );
-                        if attempt >= MAX_ATTEMPTS || mirror_index + 1 >= mirrors.len() {
+                        if mirror_index + 1 < mirrors.len() {
+                            eprintln!("openloop: {} (trying next mirror)", message);
+                            mirror_index += 1;
+                            written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                            continue 'mirrors;
+                        }
+                        if attempt >= MAX_ATTEMPTS {
                             return Err(AppError::model_download_failed(message));
                         }
-                        mirror_index += 1;
+                        eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                        std::thread::sleep(retry_delay(attempt));
                         written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-                        continue 'mirrors;
+                        break;
                     }
                 }
             }

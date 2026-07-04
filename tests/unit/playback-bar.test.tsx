@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { GenerationRecord } from "@/app/lib/types";
 
@@ -25,7 +25,12 @@ Element.prototype.getBoundingClientRect = function () {
   const rect = origGetBCR.call(this);
   // Only inflate the playback bar container (has class app-panel-surface)
   if ((this as HTMLElement).classList?.contains("app-panel-surface")) {
-    return { ...rect, width: REALISTIC_WIDTH, height: 86, right: REALISTIC_WIDTH };
+    return {
+      ...rect,
+      width: REALISTIC_WIDTH,
+      height: 86,
+      right: REALISTIC_WIDTH,
+    };
   }
   return rect;
 };
@@ -63,8 +68,10 @@ vi.mock("react-i18next", () => ({
   Trans: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+const mockAddToast = vi.fn();
+
 vi.mock("@/app/components/overlay/Toast", () => ({
-  useToast: () => ({ addToast: vi.fn() }),
+  useToast: () => ({ addToast: mockAddToast }),
 }));
 
 vi.mock("@/app/components/overlay/Tooltip", () => ({
@@ -143,6 +150,49 @@ function getButtonByTooltip(label: string): HTMLButtonElement | undefined {
   }) as HTMLButtonElement | undefined;
 }
 
+function getSeekRail(): HTMLElement {
+  const seekSlider = screen.getByRole("slider", { name: /seek/i });
+  const rail = seekSlider.parentElement;
+  if (!rail) {
+    throw new Error("seek rail not found");
+  }
+  return rail;
+}
+
+function mockSeekRailRect(width = 200) {
+  const rail = getSeekRail();
+  rail.getBoundingClientRect = () =>
+    ({
+      left: 0,
+      top: 0,
+      width,
+      height: 8,
+      right: width,
+      bottom: 8,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect;
+}
+
+async function loadAudioWithDuration(duration = 100) {
+  await vi.waitFor(() => {
+    expect(mockReadGenerationAudio).toHaveBeenCalled();
+  });
+  const audio = document.querySelector("audio");
+  if (!audio) {
+    throw new Error("audio element not found");
+  }
+  Object.defineProperty(audio, "duration", {
+    configurable: true,
+    value: duration,
+  });
+  fireEvent.loadedMetadata(audio, { currentTarget: audio });
+  await vi.waitFor(() => {
+    expect(screen.getByRole("slider", { name: /seek/i })).not.toBeDisabled();
+  });
+}
+
 // --- Tests -------------------------------------------------------------------
 
 describe("PlaybackBar", () => {
@@ -150,6 +200,9 @@ describe("PlaybackBar", () => {
     currentStoreState = makeStoreOverrides();
     mockReadGenerationAudio.mockResolvedValue([0xff, 0xd8]);
     mockReadGenerationWaveform.mockResolvedValue({ peaks: [0.5, 0.8] });
+    mockDeleteGenerationFileAndRecord.mockResolvedValue(undefined);
+    mockDeleteGenerationRecord.mockClear();
+    mockAddToast.mockClear();
   });
 
   // 1. Renders correctly with no track
@@ -175,28 +228,40 @@ describe("PlaybackBar", () => {
   // 2. Renders track info when a generation is loaded
   describe("with a track loaded", () => {
     it("shows the generation prompt as the track title", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(await screen.findByText("lo-fi warm piano")).toBeInTheDocument();
     });
 
     it("shows format and duration metadata", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       await screen.findByText("lo-fi warm piano");
       expect(screen.getByText(/WAV.*120s/)).toBeInTheDocument();
     });
 
     it("fetches audio and waveform data for the generation", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(mockReadGenerationAudio).toHaveBeenCalledWith("gen-1");
       expect(mockReadGenerationWaveform).toHaveBeenCalledWith("gen-1");
     });
 
     it("uses lyrics as track title when prompt is empty", async () => {
-      const lyricsGeneration = { ...SAMPLE_GENERATION, prompt: "", lyrics: "Verse one lyrics" };
-      currentStoreState = makeStoreOverrides({ currentGeneration: lyricsGeneration });
+      const lyricsGeneration = {
+        ...SAMPLE_GENERATION,
+        prompt: "",
+        lyrics: "Verse one lyrics",
+      };
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: lyricsGeneration,
+      });
       render(<PlaybackBar />);
       expect(await screen.findByText("Verse one lyrics")).toBeInTheDocument();
     });
@@ -205,7 +270,9 @@ describe("PlaybackBar", () => {
   // 3. Handles play/pause button click
   describe("play/pause toggle", () => {
     it("enables the play button when a track is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       // Wait for the async audio fetch to resolve and set audioSrc
@@ -220,7 +287,9 @@ describe("PlaybackBar", () => {
   // 4. Handles seek interaction
   describe("seek slider", () => {
     it("renders a seek range input with aria-label", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const seekSlider = screen.getByRole("slider", { name: /seek/i });
       expect(seekSlider).toBeInTheDocument();
@@ -233,7 +302,9 @@ describe("PlaybackBar", () => {
     });
 
     it("renders the seek slider when audio source is loaded", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const seekSlider = screen.getByRole("slider", { name: /seek/i });
       expect(seekSlider).toBeInTheDocument();
@@ -243,16 +314,22 @@ describe("PlaybackBar", () => {
   // 5. Handles volume interaction
   describe("volume control", () => {
     it("renders a volume range input", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const volumeSlider = screen.getByRole("slider", { name: /volume/i });
       expect(volumeSlider).toBeInTheDocument();
     });
 
     it("defaults to full volume", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(1);
     });
 
@@ -263,7 +340,9 @@ describe("PlaybackBar", () => {
     });
 
     it("enables the volume slider when audio source is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       await vi.waitFor(() => {
         const volumeSlider = screen.getByRole("slider", { name: /volume/i });
@@ -272,19 +351,25 @@ describe("PlaybackBar", () => {
     });
 
     it("toggles mute when the mute button is clicked", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
       const muteBtn = getButtonByTooltip("player.mute")!;
       await user.click(muteBtn);
 
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(0);
     });
 
     it("restores previous volume when unmuted", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -294,7 +379,9 @@ describe("PlaybackBar", () => {
       // Unmute
       await user.click(getButtonByTooltip("player.unmute")!);
 
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(1);
     });
   });
@@ -302,7 +389,9 @@ describe("PlaybackBar", () => {
   // 6. Handles next/previous track buttons (skip back / skip forward)
   describe("skip buttons", () => {
     it("renders skip-back and skip-forward buttons", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       expect(getButtonByTooltip("player.back10")).toBeDefined();
@@ -317,7 +406,9 @@ describe("PlaybackBar", () => {
     });
 
     it("enables skip buttons when audio source is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       await vi.waitFor(() => {
@@ -351,13 +442,17 @@ describe("PlaybackBar", () => {
   // Bonus: speed control
   describe("speed control", () => {
     it("displays the default speed of 1x", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(screen.getByText("1x")).toBeInTheDocument();
     });
 
     it("cycles through speed options on click", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -377,7 +472,9 @@ describe("PlaybackBar", () => {
   // Bonus: loop toggle
   describe("loop toggle", () => {
     it("toggles loop mode on click", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -397,6 +494,176 @@ describe("PlaybackBar", () => {
       render(<PlaybackBar />);
       const timeLabels = screen.getAllByText("0:00");
       expect(timeLabels.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe("drag export", () => {
+    it("sets encoded file URI on drag start", async () => {
+      const generationWithSpaces = {
+        ...SAMPLE_GENERATION,
+        outputPath: "/output/my track/file.wav",
+      };
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: generationWithSpaces,
+      });
+      const { container } = render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const bar = container.querySelector(".app-panel-surface");
+      expect(bar).toHaveAttribute("draggable", "true");
+
+      const setData = vi.fn();
+      fireEvent.dragStart(bar!, {
+        dataTransfer: {
+          effectAllowed: "",
+          setData,
+        },
+      });
+
+      expect(setData).toHaveBeenCalledWith("text/uri-list", "file:///output/my%20track/file.wav");
+      expect(setData).toHaveBeenCalledWith("text/plain", "/output/my track/file.wav");
+    });
+
+    it("is not draggable without an output path", () => {
+      const generationWithoutPath = { ...SAMPLE_GENERATION, outputPath: null };
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: generationWithoutPath,
+      });
+      const { container } = render(<PlaybackBar />);
+      const bar = container.querySelector(".app-panel-surface");
+      expect(bar).toHaveAttribute("draggable", "false");
+    });
+  });
+
+  describe("AB loop markers", () => {
+    it("renders loop region using min/max when B is set before A", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 40 });
+
+      expect(screen.getByText("A")).toBeInTheDocument();
+      expect(screen.getByText("B")).toBeInTheDocument();
+
+      const region = rail.querySelector("[class*='bg-[var(--color-accent)]/15']");
+      expect(region).toHaveStyle({ left: "20%", width: "60%" });
+    });
+
+    it("clears loop markers when the generation changes", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      const { rerender } = render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      expect(screen.getByText("A")).toBeInTheDocument();
+
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: {
+          ...SAMPLE_GENERATION,
+          id: "gen-2",
+          prompt: "second track",
+        },
+      });
+      rerender(<PlaybackBar />);
+      await screen.findByText("second track");
+
+      expect(screen.queryByText("A")).not.toBeInTheDocument();
+      expect(screen.queryByText("B")).not.toBeInTheDocument();
+    });
+    it("clears loop markers on Escape", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      expect(screen.getByText("A")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(screen.queryByText("A")).not.toBeInTheDocument();
+      expect(screen.queryByText("B")).not.toBeInTheDocument();
+    });
+
+    it("wraps playback to loop start when passing loop end", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 40 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+
+      const audio = document.querySelector("audio") as HTMLAudioElement;
+      Object.defineProperty(audio, "currentTime", {
+        configurable: true,
+        writable: true,
+        value: 85,
+      });
+
+      fireEvent.timeUpdate(audio, { currentTarget: audio });
+
+      expect(audio.currentTime).toBe(20);
+    });
+  });
+
+  describe("delete from export menu", () => {
+    it("shows success toast when delete succeeds", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      const user = userEvent.setup();
+      render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const exportBtn = getButtonByTooltip("player.exportMenu")!;
+      await user.click(exportBtn);
+      await user.click(screen.getByText("player.deleteFileAndRecord"));
+
+      await vi.waitFor(() => {
+        expect(mockDeleteGenerationFileAndRecord).toHaveBeenCalledWith("gen-1");
+        expect(mockDeleteGenerationRecord).toHaveBeenCalledWith("gen-1", {
+          alreadyDeleted: true,
+        });
+        expect(mockAddToast).toHaveBeenCalledWith("success", "toast.fileDeleted");
+      });
+    });
+
+    it("shows error toast when delete fails", async () => {
+      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(new Error("disk busy"));
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      const user = userEvent.setup();
+      render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const exportBtn = getButtonByTooltip("player.exportMenu")!;
+      await user.click(exportBtn);
+      await user.click(screen.getByText("player.deleteFileAndRecord"));
+
+      await vi.waitFor(() => {
+        expect(mockAddToast).toHaveBeenCalledWith("error", "toast.deleteFailed");
+      });
+      expect(mockDeleteGenerationRecord).not.toHaveBeenCalled();
     });
   });
 });

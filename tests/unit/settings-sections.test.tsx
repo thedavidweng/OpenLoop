@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type {
-  AppSettings,
-  BackendProvisionStatus,
-  ModelStatusSnapshot,
-} from "@/app/lib/types";
+import type { AppSettings, BackendProvisionStatus, ModelStatusSnapshot } from "@/app/lib/types";
 import type { SettingsDraft } from "@/app/components/settings/hooks/useSettingsDraft";
 
 // ---------------------------------------------------------------------------

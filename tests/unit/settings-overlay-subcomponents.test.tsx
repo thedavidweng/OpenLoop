@@ -178,7 +178,9 @@ describe("ModelVariantCard", () => {
   });
 
   it("does not disable when selected even if pack is not ready", () => {
-    render(<ModelVariantCard {...baseProps} selected packReady={false} packState="not_installed" />);
+    render(
+      <ModelVariantCard {...baseProps} selected packReady={false} packState="not_installed" />,
+    );
     const button = screen.getByText("model.selected").closest("button")!;
     expect(button.disabled).toBe(false);
   });
@@ -232,7 +234,9 @@ describe("ModelPackCard", () => {
   });
 
   it("shows cancel and downloading indicator for downloading state", () => {
-    render(<ModelPackCard {...baseProps} state="downloading" downloadedBytes={1024 * 1024 * 1024} />);
+    render(
+      <ModelPackCard {...baseProps} state="downloading" downloadedBytes={1024 * 1024 * 1024} />,
+    );
     expect(screen.getByText("model.cancel")).toBeTruthy();
     expect(screen.getByText("Downloading…")).toBeTruthy();
   });

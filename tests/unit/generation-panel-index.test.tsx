@@ -25,9 +25,24 @@ const openSettings = vi.fn();
 vi.mock("@/app/lib/store", () => ({
   useGenerationStore: vi.fn(),
   MODEL_VARIANTS: {
-    lite: { id: "lite", label: "Lite", modelName: "acestep-v15-turbo", lmModelPath: "acestep-5Hz-lm-0.6B" },
-    turbo: { id: "turbo", label: "Turbo", modelName: "acestep-v15-turbo", lmModelPath: "acestep-5Hz-lm-0.6B" },
-    pro: { id: "pro", label: "XL Turbo", modelName: "acestep-v15-xl-turbo", lmModelPath: "acestep-5Hz-lm-1.7B" },
+    lite: {
+      id: "lite",
+      label: "Lite",
+      modelName: "acestep-v15-turbo",
+      lmModelPath: "acestep-5Hz-lm-0.6B",
+    },
+    turbo: {
+      id: "turbo",
+      label: "Turbo",
+      modelName: "acestep-v15-turbo",
+      lmModelPath: "acestep-5Hz-lm-0.6B",
+    },
+    pro: {
+      id: "pro",
+      label: "XL Turbo",
+      modelName: "acestep-v15-xl-turbo",
+      lmModelPath: "acestep-5Hz-lm-1.7B",
+    },
   },
   isModelDownloaded: vi.fn(() => true),
   modelDownloadStateForVariant: vi.fn(() => "ready"),

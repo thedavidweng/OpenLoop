@@ -113,7 +113,7 @@ fn run_interactive_wizard(state: &AppState) -> AppResult<()> {
     let model_selection = Select::new()
         .with_prompt(format!(
             "  Current: {} ({})",
-            variant_label(current_model),
+            current_model.label(),
             variant_gb(current_model)
         ))
         .items(model_items)
@@ -227,17 +227,7 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
             serde_json::to_value(variant).map_err(|e| cli_error(e.to_string()))?
         }
         "thinking" => {
-            let on = match value.to_lowercase().as_str() {
-                "on" | "true" | "1" | "yes" | "enabled" => true,
-                "off" | "false" | "0" | "no" | "disabled" => false,
-                _ => {
-                    return Err(cli_error(format!(
-                        "invalid thinking value '{}'. Use on/off.",
-                        value
-                    )))
-                }
-            };
-            serde_json::Value::Bool(on)
+            serde_json::Value::Bool(parse_bool_flag(value, "thinking")?)
         }
         "duration" => {
             let d: f64 = value.parse().map_err(|_| {
@@ -258,17 +248,7 @@ fn set_setting(state: &AppState, key: &str, value: &str) -> AppResult<()> {
             }
         },
         "checkForUpdates" => {
-            let on = match value.to_lowercase().as_str() {
-                "on" | "true" | "1" | "yes" | "enabled" => true,
-                "off" | "false" | "0" | "no" | "disabled" => false,
-                _ => {
-                    return Err(cli_error(format!(
-                        "invalid checkForUpdates value '{}'. Use on/off.",
-                        value
-                    )))
-                }
-            };
-            serde_json::Value::Bool(on)
+            serde_json::Value::Bool(parse_bool_flag(value, "checkForUpdates")?)
         }
         _ => {
             return Err(cli_error(format!(
@@ -306,75 +286,48 @@ fn set_setting_raw(state: &AppState, key: SettingKey, value: serde_json::Value) 
     Ok(())
 }
 
+fn parse_bool_flag(value: &str, name: &str) -> AppResult<bool> {
+    match value.to_lowercase().as_str() {
+        "on" | "true" | "1" | "yes" | "enabled" => Ok(true),
+        "off" | "false" | "0" | "no" | "disabled" => Ok(false),
+        _ => Err(cli_error(format!("invalid {name} value '{value}'. Use on/off."))),
+    }
+}
+
 fn get_setting_value(settings: &AppSettings, key: &str) -> AppResult<String> {
     match key {
-        "model" => Ok(match settings.model_variant {
-            Some(ModelVariant::Lite) => "lite".to_owned(),
-            Some(ModelVariant::Turbo) => "turbo".to_owned(),
-            Some(ModelVariant::Pro) => "pro".to_owned(),
-            None => "none".to_owned(),
-        }),
-        "thinking" => Ok(if settings.default_thinking {
-            "on".to_owned()
-        } else {
-            "off".to_owned()
-        }),
+        "model" => Ok(model_str(settings).to_owned()),
+        "thinking" => Ok(on_off(settings.default_thinking).to_owned()),
         "duration" => Ok(settings.default_duration_seconds.to_string()),
         "format" => Ok(settings.default_audio_format.clone()),
-        "checkForUpdates" => Ok(if settings.check_for_updates {
-            "on".to_owned()
-        } else {
-            "off".to_owned()
-        }),
+        "checkForUpdates" => Ok(on_off(settings.check_for_updates).to_owned()),
         _ => Err(cli_error(format!("unknown setting '{}'", key))),
     }
 }
 
-fn print_settings_json(settings: &AppSettings) {
-    let model = match settings.model_variant {
-        Some(ModelVariant::Lite) => "lite",
-        Some(ModelVariant::Turbo) => "turbo",
-        Some(ModelVariant::Pro) => "pro",
-        None => "none",
-    };
-    let thinking = if settings.default_thinking {
-        "on"
-    } else {
-        "off"
-    };
-    let check_updates = if settings.check_for_updates {
-        "on"
-    } else {
-        "off"
-    };
+fn on_off(value: bool) -> &'static str {
+    if value { "on" } else { "off" }
+}
 
+fn model_str(settings: &AppSettings) -> &str {
+    settings.model_variant.map_or("none", ModelVariant::as_str)
+}
+
+fn print_settings_json(settings: &AppSettings) {
     let json = serde_json::json!({
-        "model": model,
-        "thinking": thinking,
+        "model": model_str(settings),
+        "thinking": on_off(settings.default_thinking),
         "duration": settings.default_duration_seconds.to_string(),
         "format": settings.default_audio_format,
-        "checkForUpdates": check_updates,
+        "checkForUpdates": on_off(settings.check_for_updates),
     });
     super::json_output(&serde_json::to_string_pretty(&json).unwrap_or_default());
 }
 
 fn print_settings_table(settings: &AppSettings) {
-    let model = match settings.model_variant {
-        Some(ModelVariant::Lite) => "lite",
-        Some(ModelVariant::Turbo) => "turbo",
-        Some(ModelVariant::Pro) => "pro",
-        None => "none",
-    };
-    let thinking = if settings.default_thinking {
-        "on"
-    } else {
-        "off"
-    };
-    let check_updates = if settings.check_for_updates {
-        "on"
-    } else {
-        "off"
-    };
+    let model = model_str(settings);
+    let thinking = on_off(settings.default_thinking);
+    let check_updates = on_off(settings.check_for_updates);
 
     human_output(&format!("model              = {model}"));
     human_output(&format!("thinking           = {thinking}"));
@@ -387,14 +340,6 @@ fn print_settings_table(settings: &AppSettings) {
         settings.default_audio_format
     ));
     human_output(&format!("checkForUpdates    = {check_updates}"));
-}
-
-fn variant_label(v: ModelVariant) -> &'static str {
-    match v {
-        ModelVariant::Lite => "Lite",
-        ModelVariant::Turbo => "Turbo",
-        ModelVariant::Pro => "Pro",
-    }
 }
 
 fn variant_gb(v: ModelVariant) -> &'static str {

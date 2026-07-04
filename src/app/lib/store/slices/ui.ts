@@ -4,6 +4,7 @@ import type { GenerationFormValues } from "@/app/lib/types";
 import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { INITIAL_CURRENT_REQUEST } from "@/app/lib/history-workflow";
+import { createIdleGenerationState } from "@/app/lib/store-helpers";
 
 const MIN_SIDEBAR_WIDTH = 240;
 const MAX_SIDEBAR_WIDTH = 420;
@@ -47,12 +48,7 @@ export function createUISlice(
           state.generationState.status === "running" ||
           state.generationState.status === "validating"
             ? state.generationState
-            : {
-                status: "idle",
-                phase: "idle",
-                statusMessage: "Ready",
-                error: null,
-              },
+            : createIdleGenerationState(),
       }));
     },
 
@@ -105,12 +101,7 @@ export function createUISlice(
         form: DEFAULT_GENERATION_FORM_VALUES,
         validationErrors: {},
         currentRequest: INITIAL_CURRENT_REQUEST,
-        generationState: {
-          status: "idle",
-          phase: "idle",
-          statusMessage: "Ready",
-          error: null,
-        },
+        generationState: createIdleGenerationState(),
         lyricsPanelOpen: false,
       });
     },

@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GenerationRequest } from "@/app/lib/types";
 
-vi.mock("@/app/lib/i18n", () => ({
-  default: {
-    t: (key: string, opts?: Record<string, unknown>) => {
-      if (opts && "defaultValue" in opts) return opts.defaultValue as string;
-      return key;
-    },
-  },
-}));
+vi.mock("@/app/lib/i18n", () => {
+  const t = (key: string, opts?: Record<string, unknown>) => {
+    if (opts && "defaultValue" in opts) return opts.defaultValue as string;
+    return key;
+  };
+  return { default: { t }, tr: t };
+});
 
 const { shouldPreviewFail, createGenerationRecord } = await import("@/app/lib/preview-record");
 

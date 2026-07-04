@@ -1,17 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/lib/i18n", () => ({
-  default: {
-    t: (key: string, opts?: Record<string, unknown>) => {
-      if (opts && "defaultValue" in opts) return opts.defaultValue as string;
-      if (key === "generation.variationProgress") {
-        return `${opts?.current}/${opts?.total}`;
-      }
-      if (key === "status.ready") return "Ready";
-      return key;
-    },
-  },
-}));
+vi.mock("@/app/lib/i18n", () => {
+  const t = (key: string, opts?: Record<string, unknown>) => {
+    if (opts && "defaultValue" in opts) return opts.defaultValue as string;
+    if (key === "generation.variationProgress") {
+      return `${opts?.current}/${opts?.total}`;
+    }
+    if (key === "status.ready") return "Ready";
+    return key;
+  };
+  return { default: { t }, tr: t };
+});
 
 const { PREVIEW_DELAY_MS, sleep, variationLabel, createIdleGenerationState } =
   await import("@/app/lib/store-helpers");

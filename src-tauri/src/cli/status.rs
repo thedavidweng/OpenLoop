@@ -7,7 +7,7 @@ use crate::{
 
 pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
     let settings = state.db.get_settings()?;
-    let mut backend = state.backend.lock().map_err(|e| cli_error(e.to_string()))?;
+    let mut backend = state.lock_backend()?;
     let status = backend.status_with_port(Some(settings.backend_port));
     let active_tasks = state.db.list_active_generation_tasks()?;
     let device_info = device::detect_device_info()?;
@@ -84,11 +84,7 @@ pub fn execute(state: &AppState, json: bool) -> AppResult<()> {
         }
 
         if let Some(variant) = settings.model_variant {
-            let label = match variant {
-                crate::models::settings::ModelVariant::Lite => "Lite",
-                crate::models::settings::ModelVariant::Turbo => "Turbo",
-                crate::models::settings::ModelVariant::Pro => "Pro",
-            };
+            let label = variant.label();
             let downloaded = if settings.downloaded_models.contains(&variant) {
                 "downloaded"
             } else {

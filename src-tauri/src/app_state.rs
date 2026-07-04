@@ -8,6 +8,7 @@ use crate::{
     models::errors::{AppError, AppResult},
     services::{
         backend_manager::BackendManager, backend_provisioner::BackendProvisioner, db::Database,
+        file_store::FileStore, generation_task::GenerationTaskRunner,
         model_manager::ModelManager, network_log::NetworkActivityLog,
     },
 };
@@ -56,6 +57,20 @@ impl AppState {
 
     pub fn init_for_cli() -> AppResult<Self> {
         Self::init(default_app_data_dir()?, current_executable_dir()?)
+    }
+
+    pub fn lock_backend(&self) -> AppResult<std::sync::MutexGuard<'_, BackendManager>> {
+        self.backend
+            .lock()
+            .map_err(|_| AppError::internal("backend manager lock poisoned"))
+    }
+
+    pub fn generation_runner(&self) -> GenerationTaskRunner {
+        GenerationTaskRunner::new(
+            self.db.clone(),
+            FileStore::new(self.app_data_dir.clone()),
+            self.generation_cancelled.clone(),
+        )
     }
 }
 

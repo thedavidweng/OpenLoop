@@ -134,12 +134,7 @@ impl Database {
     ) -> AppResult<Vec<GenerationRecord>> {
         let connection = self.connection()?;
         let query = query.map(str::trim).filter(|value| !value.is_empty());
-        let limit_i64: Option<i64> = limit
-            .map(|n| {
-                n.try_into()
-                    .map_err(|_| AppError::internal("limit out of range"))
-            })
-            .transpose()?;
+        let limit_i64: Option<i64> = limit.map(i64::from);
 
         const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
         const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";

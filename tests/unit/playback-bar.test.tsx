@@ -25,7 +25,12 @@ Element.prototype.getBoundingClientRect = function () {
   const rect = origGetBCR.call(this);
   // Only inflate the playback bar container (has class app-panel-surface)
   if ((this as HTMLElement).classList?.contains("app-panel-surface")) {
-    return { ...rect, width: REALISTIC_WIDTH, height: 86, right: REALISTIC_WIDTH };
+    return {
+      ...rect,
+      width: REALISTIC_WIDTH,
+      height: 86,
+      right: REALISTIC_WIDTH,
+    };
   }
   return rect;
 };
@@ -39,10 +44,12 @@ const mockDeleteGenerationFileAndRecord = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/app/lib/api", () => ({
   isTauriRuntime: () => false,
   readGenerationAudio: (...args: unknown[]) => mockReadGenerationAudio(...args),
-  readGenerationWaveform: (...args: unknown[]) => mockReadGenerationWaveform(...args),
+  readGenerationWaveform: (...args: unknown[]) =>
+    mockReadGenerationWaveform(...args),
   copyAudioTo: vi.fn(),
   revealInFinder: vi.fn(),
-  deleteGenerationFileAndRecord: (...args: unknown[]) => mockDeleteGenerationFileAndRecord(...args),
+  deleteGenerationFileAndRecord: (...args: unknown[]) =>
+    mockDeleteGenerationFileAndRecord(...args),
 }));
 
 // IMPORTANT: `t` must be a stable reference — the PlaybackBar component has
@@ -70,9 +77,13 @@ vi.mock("@/app/components/overlay/Toast", () => ({
 }));
 
 vi.mock("@/app/components/overlay/Tooltip", () => ({
-  Tooltip: ({ children, label }: { children: React.ReactNode; label: string }) => (
-    <span data-tooltip-label={label}>{children}</span>
-  ),
+  Tooltip: ({
+    children,
+    label,
+  }: {
+    children: React.ReactNode;
+    label: string;
+  }) => <span data-tooltip-label={label}>{children}</span>,
 }));
 
 // Store mock
@@ -90,7 +101,8 @@ interface MockStoreState {
 let currentStoreState: MockStoreState;
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (selector: (state: MockStoreState) => unknown) => selector(currentStoreState),
+  useGenerationStore: (selector: (state: MockStoreState) => unknown) =>
+    selector(currentStoreState),
 }));
 
 // --- Helpers -----------------------------------------------------------------
@@ -123,13 +135,17 @@ const SAMPLE_GENERATION: GenerationRecord = {
   isFavorite: false,
 };
 
-function makeStoreOverrides(overrides: Partial<MockStoreState> = {}): MockStoreState {
+function makeStoreOverrides(
+  overrides: Partial<MockStoreState> = {},
+): MockStoreState {
   return {
     currentGeneration: overrides.currentGeneration ?? null,
-    deleteGenerationRecord: overrides.deleteGenerationRecord ?? mockDeleteGenerationRecord,
+    deleteGenerationRecord:
+      overrides.deleteGenerationRecord ?? mockDeleteGenerationRecord,
     playbackToggleRequest: overrides.playbackToggleRequest ?? 0,
     compareModeActive: overrides.compareModeActive ?? false,
-    toggleCompareTarget: overrides.toggleCompareTarget ?? mockToggleCompareTarget,
+    toggleCompareTarget:
+      overrides.toggleCompareTarget ?? mockToggleCompareTarget,
   };
 }
 
@@ -178,7 +194,10 @@ async function loadAudioWithDuration(duration = 100) {
   if (!audio) {
     throw new Error("audio element not found");
   }
-  Object.defineProperty(audio, "duration", { configurable: true, value: duration });
+  Object.defineProperty(audio, "duration", {
+    configurable: true,
+    value: duration,
+  });
   fireEvent.loadedMetadata(audio, { currentTarget: audio });
   await vi.waitFor(() => {
     expect(screen.getByRole("slider", { name: /seek/i })).not.toBeDisabled();
@@ -210,7 +229,8 @@ describe("PlaybackBar", () => {
 
     it("disables the play button when no audio source is loaded", () => {
       render(<PlaybackBar />);
-      const playPauseBtn = getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause");
+      const playPauseBtn =
+        getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause");
       expect(playPauseBtn).toBeDefined();
       expect(playPauseBtn).toBeDisabled();
     });
@@ -219,28 +239,40 @@ describe("PlaybackBar", () => {
   // 2. Renders track info when a generation is loaded
   describe("with a track loaded", () => {
     it("shows the generation prompt as the track title", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(await screen.findByText("lo-fi warm piano")).toBeInTheDocument();
     });
 
     it("shows format and duration metadata", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       await screen.findByText("lo-fi warm piano");
       expect(screen.getByText(/WAV.*120s/)).toBeInTheDocument();
     });
 
     it("fetches audio and waveform data for the generation", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(mockReadGenerationAudio).toHaveBeenCalledWith("gen-1");
       expect(mockReadGenerationWaveform).toHaveBeenCalledWith("gen-1");
     });
 
     it("uses lyrics as track title when prompt is empty", async () => {
-      const lyricsGeneration = { ...SAMPLE_GENERATION, prompt: "", lyrics: "Verse one lyrics" };
-      currentStoreState = makeStoreOverrides({ currentGeneration: lyricsGeneration });
+      const lyricsGeneration = {
+        ...SAMPLE_GENERATION,
+        prompt: "",
+        lyrics: "Verse one lyrics",
+      };
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: lyricsGeneration,
+      });
       render(<PlaybackBar />);
       expect(await screen.findByText("Verse one lyrics")).toBeInTheDocument();
     });
@@ -249,13 +281,16 @@ describe("PlaybackBar", () => {
   // 3. Handles play/pause button click
   describe("play/pause toggle", () => {
     it("enables the play button when a track is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       // Wait for the async audio fetch to resolve and set audioSrc
       await vi.waitFor(() => {
         const playPauseBtn =
-          getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause")!;
+          getButtonByTooltip("player.play") ??
+          getButtonByTooltip("player.pause")!;
         expect(playPauseBtn).not.toBeDisabled();
       });
     });
@@ -264,7 +299,9 @@ describe("PlaybackBar", () => {
   // 4. Handles seek interaction
   describe("seek slider", () => {
     it("renders a seek range input with aria-label", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const seekSlider = screen.getByRole("slider", { name: /seek/i });
       expect(seekSlider).toBeInTheDocument();
@@ -277,7 +314,9 @@ describe("PlaybackBar", () => {
     });
 
     it("renders the seek slider when audio source is loaded", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const seekSlider = screen.getByRole("slider", { name: /seek/i });
       expect(seekSlider).toBeInTheDocument();
@@ -287,16 +326,22 @@ describe("PlaybackBar", () => {
   // 5. Handles volume interaction
   describe("volume control", () => {
     it("renders a volume range input", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       const volumeSlider = screen.getByRole("slider", { name: /volume/i });
       expect(volumeSlider).toBeInTheDocument();
     });
 
     it("defaults to full volume", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(1);
     });
 
@@ -307,7 +352,9 @@ describe("PlaybackBar", () => {
     });
 
     it("enables the volume slider when audio source is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       await vi.waitFor(() => {
         const volumeSlider = screen.getByRole("slider", { name: /volume/i });
@@ -316,19 +363,25 @@ describe("PlaybackBar", () => {
     });
 
     it("toggles mute when the mute button is clicked", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
       const muteBtn = getButtonByTooltip("player.mute")!;
       await user.click(muteBtn);
 
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(0);
     });
 
     it("restores previous volume when unmuted", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -338,7 +391,9 @@ describe("PlaybackBar", () => {
       // Unmute
       await user.click(getButtonByTooltip("player.unmute")!);
 
-      const volumeSlider = screen.getByRole("slider", { name: /volume/i }) as HTMLInputElement;
+      const volumeSlider = screen.getByRole("slider", {
+        name: /volume/i,
+      }) as HTMLInputElement;
       expect(parseFloat(volumeSlider.value)).toBe(1);
     });
   });
@@ -346,7 +401,9 @@ describe("PlaybackBar", () => {
   // 6. Handles next/previous track buttons (skip back / skip forward)
   describe("skip buttons", () => {
     it("renders skip-back and skip-forward buttons", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       expect(getButtonByTooltip("player.back10")).toBeDefined();
@@ -361,7 +418,9 @@ describe("PlaybackBar", () => {
     });
 
     it("enables skip buttons when audio source is loaded", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
 
       await vi.waitFor(() => {
@@ -395,13 +454,17 @@ describe("PlaybackBar", () => {
   // Bonus: speed control
   describe("speed control", () => {
     it("displays the default speed of 1x", () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       expect(screen.getByText("1x")).toBeInTheDocument();
     });
 
     it("cycles through speed options on click", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -421,7 +484,9 @@ describe("PlaybackBar", () => {
   // Bonus: loop toggle
   describe("loop toggle", () => {
     it("toggles loop mode on click", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
 
@@ -450,7 +515,9 @@ describe("PlaybackBar", () => {
         ...SAMPLE_GENERATION,
         outputPath: "/output/my track/file.wav",
       };
-      currentStoreState = makeStoreOverrides({ currentGeneration: generationWithSpaces });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: generationWithSpaces,
+      });
       const { container } = render(<PlaybackBar />);
       await screen.findByText("lo-fi warm piano");
 
@@ -469,12 +536,17 @@ describe("PlaybackBar", () => {
         "text/uri-list",
         "file:///output/my%20track/file.wav",
       );
-      expect(setData).toHaveBeenCalledWith("text/plain", "/output/my track/file.wav");
+      expect(setData).toHaveBeenCalledWith(
+        "text/plain",
+        "/output/my track/file.wav",
+      );
     });
 
     it("is not draggable without an output path", () => {
       const generationWithoutPath = { ...SAMPLE_GENERATION, outputPath: null };
-      currentStoreState = makeStoreOverrides({ currentGeneration: generationWithoutPath });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: generationWithoutPath,
+      });
       const { container } = render(<PlaybackBar />);
       const bar = container.querySelector(".app-panel-surface");
       expect(bar).toHaveAttribute("draggable", "false");
@@ -483,7 +555,9 @@ describe("PlaybackBar", () => {
 
   describe("AB loop markers", () => {
     it("renders loop region using min/max when B is set before A", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       render(<PlaybackBar />);
       await loadAudioWithDuration(100);
       mockSeekRailRect(200);
@@ -495,12 +569,16 @@ describe("PlaybackBar", () => {
       expect(screen.getByText("A")).toBeInTheDocument();
       expect(screen.getByText("B")).toBeInTheDocument();
 
-      const region = rail.querySelector("[class*='bg-[var(--color-accent)]/15']");
+      const region = rail.querySelector(
+        "[class*='bg-[var(--color-accent)]/15']",
+      );
       expect(region).toHaveStyle({ left: "20%", width: "60%" });
     });
 
     it("clears loop markers when the generation changes", async () => {
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const { rerender } = render(<PlaybackBar />);
       await loadAudioWithDuration(100);
       mockSeekRailRect(200);
@@ -511,7 +589,11 @@ describe("PlaybackBar", () => {
       expect(screen.getByText("A")).toBeInTheDocument();
 
       currentStoreState = makeStoreOverrides({
-        currentGeneration: { ...SAMPLE_GENERATION, id: "gen-2", prompt: "second track" },
+        currentGeneration: {
+          ...SAMPLE_GENERATION,
+          id: "gen-2",
+          prompt: "second track",
+        },
       });
       rerender(<PlaybackBar />);
       await screen.findByText("second track");
@@ -523,8 +605,12 @@ describe("PlaybackBar", () => {
 
   describe("delete from export menu", () => {
     it("shows error toast when delete fails", async () => {
-      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(new Error("disk busy"));
-      currentStoreState = makeStoreOverrides({ currentGeneration: SAMPLE_GENERATION });
+      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(
+        new Error("disk busy"),
+      );
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
       const user = userEvent.setup();
       render(<PlaybackBar />);
       await screen.findByText("lo-fi warm piano");
@@ -534,7 +620,10 @@ describe("PlaybackBar", () => {
       await user.click(screen.getByText("player.deleteFileAndRecord"));
 
       await vi.waitFor(() => {
-        expect(mockAddToast).toHaveBeenCalledWith("error", "toast.deleteFailed");
+        expect(mockAddToast).toHaveBeenCalledWith(
+          "error",
+          "toast.deleteFailed",
+        );
       });
       expect(mockDeleteGenerationRecord).not.toHaveBeenCalled();
     });

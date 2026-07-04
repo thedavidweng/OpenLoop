@@ -40,6 +40,7 @@ export function UpdateBanner() {
 
   const handleInstall = async () => {
     setInstalling(true);
+    setInstallError(null);
     try {
       const update = await check();
       if (update) {

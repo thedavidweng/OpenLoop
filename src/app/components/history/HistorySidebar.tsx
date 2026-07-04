@@ -587,7 +587,8 @@ function FailedRunsDrawer() {
         await api.deleteFailedRun(id);
         setFailedRuns((runs) => runs.filter((run) => run.id !== id));
         addToast("info", t("history.failedRunRemoved"));
-      } catch {
+      } catch (error) {
+        console.warn("Failed to remove failed run:", error);
         addToast(
           "error",
           t("history.failedRunRemoveFailed", { defaultValue: "Failed to remove run." }),
@@ -603,7 +604,8 @@ function FailedRunsDrawer() {
       await api.clearFailedRuns();
       setFailedRuns([]);
       addToast("info", t("history.failedRunCleared"));
-    } catch {
+    } catch (error) {
+      console.warn("Failed to clear failed runs:", error);
       addToast(
         "error",
         t("history.failedRunClearFailed", { defaultValue: "Failed to clear runs." }),

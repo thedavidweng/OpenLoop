@@ -12,13 +12,17 @@ pub fn execute(state: &AppState, _json: bool, args: crate::cli::spec::StopArgs) 
                 crate::services::file_store::FileStore::new(state.app_data_dir.clone()),
                 state.generation_cancelled.clone(),
             );
-            if let Err(e) = runner.request_cancel_via_db(Some(task_id)) {
-                eprintln!(
-                    "warning: failed to write cancellation to database: {}",
-                    e.message
-                );
+            match runner.request_cancel_via_db(Some(task_id)) {
+                Ok(()) => {
+                    human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
+                }
+                Err(e) => {
+                    eprintln!(
+                        "warning: failed to write cancellation to database: {}",
+                        e.message
+                    );
+                }
             }
-            human_output(&format!("✓ Cancellation signal sent for task {task_id}"));
         }
         _ => {
             state

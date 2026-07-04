@@ -145,7 +145,7 @@ impl Write for AppLogSink {
     fn flush(&mut self) -> std::io::Result<()> {
         match self {
             AppLogSink::File(Some(file)) => file.flush(),
-            AppLogSink::File(None) => Ok(()),
+            AppLogSink::File(None) => std::io::stderr().flush(),
             AppLogSink::Stderr => std::io::stderr().flush(),
         }
     }

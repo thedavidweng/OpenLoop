@@ -35,6 +35,13 @@ impl FileStore {
         audio_format: &str,
         settings: &AppSettings,
     ) -> AppResult<String> {
+        const ALLOWED_FORMATS: &[&str] = &["wav", "mp3", "flac", "ogg"];
+        if !ALLOWED_FORMATS.contains(&audio_format) {
+            return Err(AppError::validation_failed(
+                "audioFormat must be one of: wav, mp3, flac, ogg",
+            ));
+        }
+
         let directory = self.resolve_output_directory(settings)?;
         let filename = format!(
             "openloop-{}-{}.{}",

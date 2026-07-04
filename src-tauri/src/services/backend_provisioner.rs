@@ -761,6 +761,38 @@ where
 // Zip extraction
 // ---------------------------------------------------------------------------
 
+fn resolve_path_within_base(canonical_base: &Path, relative: &str) -> AppResult<PathBuf> {
+    for component in std::path::Path::new(relative).components() {
+        if matches!(
+            component,
+            std::path::Component::ParentDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_)
+        ) {
+            return Err(AppError::backend_provision_failed(format!(
+                "zip entry contains unsafe path component: {relative}"
+            )));
+        }
+    }
+
+    let mut resolved = canonical_base.to_path_buf();
+    for component in std::path::Path::new(relative).components() {
+        match component {
+            std::path::Component::Normal(part) => resolved.push(part),
+            std::path::Component::CurDir => {}
+            _ => unreachable!("path components validated above"),
+        }
+    }
+
+    if !resolved.starts_with(canonical_base) {
+        return Err(AppError::backend_provision_failed(format!(
+            "zip entry escapes extraction directory: {relative}"
+        )));
+    }
+
+    Ok(resolved)
+}
+
 fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
     let file = fs::File::open(archive_path).map_err(|error| {
         AppError::backend_provision_failed(format!(
@@ -776,6 +808,19 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
     // GitHub zips have a single top-level directory like "ACE-Step-1.5-d5d958e/"
     // We need to strip that prefix when extracting.
     let top_level_prefix = find_top_level_prefix(&mut archive)?;
+
+    fs::create_dir_all(runtime_dir).map_err(|error| {
+        AppError::backend_provision_failed(format!(
+            "failed to create runtime directory {}: {error}",
+            runtime_dir.display()
+        ))
+    })?;
+    let canonical_base = fs::canonicalize(runtime_dir).map_err(|error| {
+        AppError::backend_provision_failed(format!(
+            "failed to canonicalize runtime directory {}: {error}",
+            runtime_dir.display()
+        ))
+    })?;
 
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i).map_err(|error| {
@@ -803,7 +848,25 @@ fn extract_archive(archive_path: &Path, runtime_dir: &Path) -> AppResult<()> {
             continue;
         }
 
-        let outpath = runtime_dir.join(&relative);
+        // Reject entries with path traversal or absolute components to prevent zip-slip
+        for component in std::path::Path::new(&relative).components() {
+            if matches!(
+                component,
+                std::path::Component::ParentDir | std::path::Component::RootDir
+            ) {
+                return Err(AppError::backend_provision_failed(format!(
+                    "zip entry contains unsafe path component: {relative}"
+                )));
+            }
+            #[cfg(windows)]
+            if matches!(component, std::path::Component::Prefix(_)) {
+                return Err(AppError::backend_provision_failed(format!(
+                    "zip entry contains unsafe path component: {relative}"
+                )));
+            }
+        }
+
+        let outpath = resolve_path_within_base(&canonical_base, &relative)?;
 
         if entry.is_dir() {
             fs::create_dir_all(&outpath).map_err(|error| {
@@ -1197,5 +1260,29 @@ mod tests {
         assert!(runtime_dir.join("acestep/__init__.py").exists());
         // The prefix directory should NOT exist
         assert!(!runtime_dir.join("ACE-Step-1.5-abc123").exists());
+    }
+
+    #[test]
+    fn resolve_path_within_base_rejects_parent_dir_components() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let base = fs::canonicalize(temp.path()).expect("canonical base");
+
+        let error = resolve_path_within_base(&base, "nested/../../outside.txt")
+            .expect_err("reject parent dir");
+        assert!(error
+            .details
+            .as_deref()
+            .unwrap_or("")
+            .contains("unsafe path component"));
+    }
+
+    #[test]
+    fn resolve_path_within_base_allows_nested_paths() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let base = fs::canonicalize(temp.path()).expect("canonical base");
+
+        let resolved =
+            resolve_path_within_base(&base, "acestep/__init__.py").expect("resolve nested path");
+        assert_eq!(resolved, base.join("acestep").join("__init__.py"));
     }
 }

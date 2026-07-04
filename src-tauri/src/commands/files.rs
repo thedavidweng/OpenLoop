@@ -9,6 +9,18 @@ use crate::{
     AppState,
 };
 
+fn reject_path_traversal(path: &str) -> AppResult<()> {
+    let p = std::path::Path::new(path);
+    for component in p.components() {
+        if matches!(component, std::path::Component::ParentDir) {
+            return Err(AppError::validation_failed(
+                "path must not contain '..' components",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Export multiple generation audio files to a folder.
 #[command]
 pub fn export_generations_to_folder(
@@ -79,6 +91,8 @@ pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult
 
 #[command]
 pub fn reveal_in_finder(path: String) -> AppResult<()> {
+    reject_path_traversal(&path)?;
+
     let status = Command::new("open")
         .arg("-R")
         .arg(&path)
@@ -96,6 +110,8 @@ pub fn reveal_in_finder(path: String) -> AppResult<()> {
 
 #[command]
 pub fn copy_audio_to(path: String, destination: String) -> AppResult<String> {
+    reject_path_traversal(&path)?;
+    reject_path_traversal(&destination)?;
     let source = PathBuf::from(&path);
     let destination_path = PathBuf::from(&destination);
     let target_path = if destination_path.is_dir() {
@@ -152,6 +168,7 @@ pub fn read_generation_waveform(
 
 #[command]
 pub fn delete_generation_file(path: String) -> AppResult<()> {
+    reject_path_traversal(&path)?;
     fs::remove_file(path).map_err(|error| AppError::output_write_failed(error.to_string()))
 }
 

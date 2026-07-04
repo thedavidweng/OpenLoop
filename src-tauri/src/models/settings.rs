@@ -122,6 +122,16 @@ where
     seq.end()
 }
 
+/// Legacy settings storage uses a plain string for a single mirror and a JSON
+/// array only when multiple mirrors are configured.
+fn mirrors_to_setting_string(mirrors: &[String]) -> Result<String, serde_json::Error> {
+    match mirrors.len() {
+        0 => serde_json::to_string(""),
+        1 => serde_json::to_string(&mirrors[0]),
+        _ => serde_json::to_string(mirrors),
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SettingKey {
     Profile,
@@ -329,7 +339,10 @@ impl AppSettings {
                 serde_json::to_string(&self.backend_working_directory),
             ),
             ("logDirectory", serde_json::to_string(&self.log_directory)),
-            ("modelMirror", serde_json::to_string(&self.model_mirrors)),
+            (
+                "modelMirror",
+                mirrors_to_setting_string(&self.model_mirrors),
+            ),
         ];
 
         serialized
@@ -411,6 +424,38 @@ mod tests {
         assert!(!SettingKey::Language.impacts_backend_startup());
         assert!(!SettingKey::OutputDirectory.impacts_backend_startup());
         assert!(!SettingKey::CheckForUpdates.impacts_backend_startup());
+    }
+
+    #[test]
+    fn entries_serializes_single_mirror_as_legacy_string() {
+        let mut settings = AppSettings::default();
+        settings.model_mirrors = vec!["https://hf-mirror.com".to_owned()];
+        let entries = settings.entries().expect("entries should succeed");
+        let mirror = entries
+            .into_iter()
+            .find(|(key, _)| *key == "modelMirror")
+            .map(|(_, value)| value)
+            .expect("modelMirror entry");
+        assert_eq!(mirror, "\"https://hf-mirror.com\"");
+    }
+
+    #[test]
+    fn entries_serializes_multiple_mirrors_as_json_array() {
+        let mut settings = AppSettings::default();
+        settings.model_mirrors = vec![
+            "https://mirror-a.example".to_owned(),
+            "https://mirror-b.example".to_owned(),
+        ];
+        let entries = settings.entries().expect("entries should succeed");
+        let mirror = entries
+            .into_iter()
+            .find(|(key, _)| *key == "modelMirror")
+            .map(|(_, value)| value)
+            .expect("modelMirror entry");
+        assert_eq!(
+            mirror,
+            "[\"https://mirror-a.example\",\"https://mirror-b.example\"]"
+        );
     }
 
     #[test]

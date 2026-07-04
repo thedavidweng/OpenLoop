@@ -786,12 +786,12 @@ where
                         path = spec.remote_path
                     );
                     last_error = Some(AppError::model_download_failed(message.clone()));
-                    if mirror_index + 1 < mirrors.len() {
-                        eprintln!("openloop: {} (trying next mirror)", message);
-                        mirror_index += 1;
-                        continue 'mirrors;
-                    }
                     if attempt >= MAX_ATTEMPTS {
+                        if mirror_index + 1 < mirrors.len() {
+                            eprintln!("openloop: {} (trying next mirror)", message);
+                            mirror_index += 1;
+                            continue 'mirrors;
+                        }
                         return Err(AppError::model_download_failed(message));
                     }
                     eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
@@ -805,12 +805,21 @@ where
                 let status_code = response.status();
                 let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
                 last_error = Some(AppError::model_download_failed(message.clone()));
-                if mirror_index + 1 < mirrors.len() {
+                if status_code.is_client_error() && mirror_index + 1 < mirrors.len() {
                     mirror_index += 1;
                     continue 'mirrors;
                 }
-                if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    return Err(AppError::model_download_failed(message));
+                }
+                if status_code.is_server_error() {
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    tokio::time::sleep(retry_delay(attempt)).await;
                     continue;
                 }
                 return Err(AppError::model_download_failed(message));
@@ -861,14 +870,14 @@ where
             drop(writer);
 
             if let Some(error) = stream_failed {
-                if mirror_index + 1 < mirrors.len() {
-                    eprintln!("openloop: {} (trying next mirror)", error.message);
-                    last_error = Some(error);
-                    mirror_index += 1;
-                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-                    continue 'mirrors;
-                }
                 if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", error.message);
+                        last_error = Some(error);
+                        mirror_index += 1;
+                        written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                        continue 'mirrors;
+                    }
                     return Err(error);
                 }
                 eprintln!(
@@ -983,12 +992,12 @@ fn download_single_file_blocking(
                         repo = spec.repo,
                         path = spec.remote_path
                     );
-                    if mirror_index + 1 < mirrors.len() {
-                        eprintln!("openloop: {} (trying next mirror)", message);
-                        mirror_index += 1;
-                        continue 'mirrors;
-                    }
                     if attempt >= MAX_ATTEMPTS {
+                        if mirror_index + 1 < mirrors.len() {
+                            eprintln!("openloop: {} (trying next mirror)", message);
+                            mirror_index += 1;
+                            continue 'mirrors;
+                        }
                         return Err(AppError::model_download_failed(message));
                     }
                     eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
@@ -1001,12 +1010,21 @@ fn download_single_file_blocking(
             if !response.status().is_success() {
                 let status_code = response.status();
                 let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
-                if mirror_index + 1 < mirrors.len() {
+                if status_code.is_client_error() && mirror_index + 1 < mirrors.len() {
                     mirror_index += 1;
                     continue 'mirrors;
                 }
-                if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
+                if attempt >= MAX_ATTEMPTS {
+                    if mirror_index + 1 < mirrors.len() {
+                        eprintln!("openloop: {} (trying next mirror)", message);
+                        mirror_index += 1;
+                        continue 'mirrors;
+                    }
+                    return Err(AppError::model_download_failed(message));
+                }
+                if status_code.is_server_error() {
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    std::thread::sleep(retry_delay(attempt));
                     continue;
                 }
                 return Err(AppError::model_download_failed(message));
@@ -1044,13 +1062,13 @@ fn download_single_file_blocking(
                             "stream error for {}/{}: {error}",
                             spec.repo, spec.remote_path
                         );
-                        if mirror_index + 1 < mirrors.len() {
-                            eprintln!("openloop: {} (trying next mirror)", message);
-                            mirror_index += 1;
-                            written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-                            continue 'mirrors;
-                        }
                         if attempt >= MAX_ATTEMPTS {
+                            if mirror_index + 1 < mirrors.len() {
+                                eprintln!("openloop: {} (trying next mirror)", message);
+                                mirror_index += 1;
+                                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                                continue 'mirrors;
+                            }
                             return Err(AppError::model_download_failed(message));
                         }
                         eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);

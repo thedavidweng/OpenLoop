@@ -21,7 +21,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         .find(|arg| !arg.starts_with('-'))
         .ok_or_else(|| cli_error("id is required. Usage: openloop delete <id>"))?;
 
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
 
     let record = records
         .iter()

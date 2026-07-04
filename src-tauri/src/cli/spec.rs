@@ -138,6 +138,10 @@ pub struct RunArgs {
     /// Disable thinking mode
     #[arg(long)]
     pub no_thinking: bool,
+
+    /// Replay a previous generation by ID
+    #[arg(long)]
+    pub from_history: Option<String>,
 }
 
 #[derive(Args)]

@@ -20,7 +20,7 @@ impl HistoryService {
     }
 
     pub fn clear_generation_history(&self) -> AppResult<()> {
-        let records = self.db.list_generations(None)?;
+        let records = self.db.list_generations(None, None)?;
         for record in records {
             if let Ok(path) = generation_output_path(&record, &record.id) {
                 if path.is_file() {
@@ -69,7 +69,7 @@ pub fn resolve_by_prefix(db: &Database, id: &str) -> AppResult<GenerationRecord>
     if let Some(record) = db.get_generation(id)? {
         return Ok(record);
     }
-    let records = db.list_generations(None)?;
+    let records = db.list_generations(None, None)?;
     let matches: Vec<_> = records.iter().filter(|r| r.id.starts_with(id)).collect();
     match matches.len() {
         0 => Err(AppError::not_found("Generation record", id.to_owned())),
@@ -164,7 +164,7 @@ mod tests {
             .expect("clear generated output history");
 
         assert!(!first_path.exists());
-        assert!(db.list_generations(None).expect("history").is_empty());
+        assert!(db.list_generations(None, None).expect("history").is_empty());
     }
 
     #[test]

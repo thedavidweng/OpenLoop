@@ -35,8 +35,9 @@ Shell completions:
   completions  Generate shell completion scripts (bash/zsh/fish/powershell/elvish)
 
 Global flags:
-  --json    Machine-readable JSON output
-  --help    Show help for a command
+  --json      Machine-readable JSON output
+  --version   Print the app version
+  --help      Show help for a command
 
 Examples:
   openloop run \"upbeat electronic track\"

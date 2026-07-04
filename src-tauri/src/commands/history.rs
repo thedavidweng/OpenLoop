@@ -14,7 +14,7 @@ pub fn list_generations(
     state: State<'_, AppState>,
     query: Option<String>,
 ) -> AppResult<Vec<GenerationRecord>> {
-    state.db.list_generations(query.as_deref())
+    state.db.list_generations(query.as_deref(), None)
 }
 
 #[tauri::command]

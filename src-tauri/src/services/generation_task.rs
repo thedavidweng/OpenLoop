@@ -660,7 +660,7 @@ mod tests {
             .expect("cancellation is a run outcome");
 
         assert!(result.records.is_empty());
-        assert!(db.list_generations(None).expect("history").is_empty());
+        assert!(db.list_generations(None, None).expect("history").is_empty());
         assert!(db
             .list_active_generation_tasks()
             .expect("active tasks")
@@ -701,7 +701,7 @@ mod tests {
             .expect_err("failure remains a run error");
 
         assert_eq!(error.code, "TASK_FAILED");
-        assert!(db.list_generations(None).expect("history").is_empty());
+        assert!(db.list_generations(None, None).expect("history").is_empty());
         assert!(db
             .list_active_generation_tasks()
             .expect("active tasks")

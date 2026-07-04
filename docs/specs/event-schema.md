@@ -2,6 +2,8 @@
 
 OpenLoop's CLI emits newline-delimited JSON (NDJSON) when invoked with `--json`. Each line is a self-contained JSON object. This document defines the schema for all event types.
 
+> **Machine-readable schema:** [`../schemas/cli-ndjson-event.schema.json`](../schemas/cli-ndjson-event.schema.json) is a JSON Schema (Draft 2020-12) for a single NDJSON line. Use it to validate consumers or generate bindings.
+
 ## Envelope
 
 Every event shares a common envelope:

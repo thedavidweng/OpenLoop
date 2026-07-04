@@ -1267,8 +1267,11 @@ mod tests {
         let options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Stored);
 
-        zip.start_file("ACE-Step-1.5-abc123/../../evil.txt", options)
+        zip.start_file("ACE-Step-1.5-abc123/pyproject.toml", options.clone())
             .expect("start file");
+        zip.write_all(b"[project]").expect("write file");
+        zip.start_file("ACE-Step-1.5-abc123/nested/../../outside.txt", options)
+            .expect("start traversal file");
         zip.write_all(b"pwned").expect("write file");
         zip.finish().expect("finish zip");
 

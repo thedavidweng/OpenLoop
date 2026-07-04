@@ -911,6 +911,12 @@ where
             if let Err(error) = verify_sha256(target, expected_sha256) {
                 let _ = fs::remove_file(target);
                 let _ = fs::remove_file(&part);
+                if mirror_index + 1 < mirrors.len() {
+                    eprintln!("openloop: {} (trying next mirror)", error.message);
+                    mirror_index += 1;
+                    written = 0;
+                    continue 'mirrors;
+                }
                 return Err(error);
             }
         }

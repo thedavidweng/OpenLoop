@@ -2,7 +2,6 @@ use std::{
     fs::{self, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
-    sync::Mutex,
 };
 
 use chrono::Utc;
@@ -22,19 +21,23 @@ pub fn app_log_dir(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("logs").join("app")
 }
 
+/// Install a stderr-only tracing subscriber so diagnostic events are captured
+/// even when the app data directory is unavailable.
+pub fn init_stderr_only() {
+    let _ = install_subscriber(AppLogWriter::stderr());
+}
+
 /// Initialize structured tracing: JSONL lines written to a timestamped file
-/// under `<app_data_dir>/logs/app/`, plus a fallback stderr writer so CLI
-/// panics remain visible. Old log files beyond [`APP_LOG_RETAIN_COUNT`] are
-/// pruned at startup so the directory cannot grow without bound.
+/// under `<app_data_dir>/logs/app/`. Falls back to [`init_stderr_only`] when the
+/// log directory cannot be created. Old log files beyond [`APP_LOG_RETAIN_COUNT`]
+/// are pruned at startup so the directory cannot grow without bound.
 ///
 /// Safe to call once per process; repeated calls are no-ops because the global
 /// subscriber is already installed.
 pub fn init(app_data_dir: &Path) {
     let log_dir = app_log_dir(app_data_dir);
     if fs::create_dir_all(&log_dir).is_err() {
-        // Without a writable log dir we still install a stderr-only subscriber
-        // so diagnostic events are not lost.
-        let _ = install_subscriber(AppLogWriter::stderr());
+        init_stderr_only();
         return;
     }
 
@@ -114,7 +117,7 @@ impl<'a> MakeWriter<'a> for AppLogWriter {
         match &self.path {
             Some(path) => {
                 let file = OpenOptions::new().create(true).append(true).open(path).ok();
-                AppLogSink::File(Mutex::new(file))
+                AppLogSink::File(file)
             }
             None => AppLogSink::Stderr,
         }
@@ -123,31 +126,26 @@ impl<'a> MakeWriter<'a> for AppLogWriter {
 
 /// Output sink backing [`AppLogWriter`].
 pub enum AppLogSink {
-    File(Mutex<Option<fs::File>>),
+    File(Option<fs::File>),
     Stderr,
 }
 
 impl Write for AppLogSink {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self {
-            AppLogSink::File(lock) => {
-                if let Some(file) = lock.get_mut().unwrap() {
-                    file.write_all(buf)?;
-                }
+            AppLogSink::File(Some(file)) => {
+                file.write_all(buf)?;
                 Ok(buf.len())
             }
+            AppLogSink::File(None) => Ok(buf.len()),
             AppLogSink::Stderr => std::io::stderr().write(buf),
         }
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         match self {
-            AppLogSink::File(lock) => {
-                if let Some(file) = lock.get_mut().unwrap() {
-                    file.flush()?;
-                }
-                Ok(())
-            }
+            AppLogSink::File(Some(file)) => file.flush(),
+            AppLogSink::File(None) => Ok(()),
             AppLogSink::Stderr => std::io::stderr().flush(),
         }
     }

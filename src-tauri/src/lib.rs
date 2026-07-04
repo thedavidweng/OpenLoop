@@ -16,7 +16,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
-            let app_data_dir = app.path().app_data_dir()?;
+            let app_data_dir = match app.path().app_data_dir() {
+                Ok(dir) => dir,
+                Err(error) => {
+                    crate::services::observability::init_stderr_only();
+                    return Err(error);
+                }
+            };
             crate::services::observability::init(&app_data_dir);
             let sidecar_dir = app_state::current_executable_dir()
                 .map_err(|error| std::io::Error::other(error.message.clone()))?;
@@ -89,6 +95,7 @@ pub fn run() {
         .on_menu_event(app_menu::handle_menu_event);
 
     if let Err(error) = builder.run(tauri::generate_context!()) {
+        crate::services::observability::init_stderr_only();
         tracing::error!("openloop: {error}");
     }
 }

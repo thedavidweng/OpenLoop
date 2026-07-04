@@ -44,12 +44,10 @@ const mockDeleteGenerationFileAndRecord = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/app/lib/api", () => ({
   isTauriRuntime: () => false,
   readGenerationAudio: (...args: unknown[]) => mockReadGenerationAudio(...args),
-  readGenerationWaveform: (...args: unknown[]) =>
-    mockReadGenerationWaveform(...args),
+  readGenerationWaveform: (...args: unknown[]) => mockReadGenerationWaveform(...args),
   copyAudioTo: vi.fn(),
   revealInFinder: vi.fn(),
-  deleteGenerationFileAndRecord: (...args: unknown[]) =>
-    mockDeleteGenerationFileAndRecord(...args),
+  deleteGenerationFileAndRecord: (...args: unknown[]) => mockDeleteGenerationFileAndRecord(...args),
 }));
 
 // IMPORTANT: `t` must be a stable reference — the PlaybackBar component has
@@ -77,13 +75,9 @@ vi.mock("@/app/components/overlay/Toast", () => ({
 }));
 
 vi.mock("@/app/components/overlay/Tooltip", () => ({
-  Tooltip: ({
-    children,
-    label,
-  }: {
-    children: React.ReactNode;
-    label: string;
-  }) => <span data-tooltip-label={label}>{children}</span>,
+  Tooltip: ({ children, label }: { children: React.ReactNode; label: string }) => (
+    <span data-tooltip-label={label}>{children}</span>
+  ),
 }));
 
 // Store mock
@@ -101,8 +95,7 @@ interface MockStoreState {
 let currentStoreState: MockStoreState;
 
 vi.mock("@/app/lib/store", () => ({
-  useGenerationStore: (selector: (state: MockStoreState) => unknown) =>
-    selector(currentStoreState),
+  useGenerationStore: (selector: (state: MockStoreState) => unknown) => selector(currentStoreState),
 }));
 
 // --- Helpers -----------------------------------------------------------------
@@ -135,17 +128,13 @@ const SAMPLE_GENERATION: GenerationRecord = {
   isFavorite: false,
 };
 
-function makeStoreOverrides(
-  overrides: Partial<MockStoreState> = {},
-): MockStoreState {
+function makeStoreOverrides(overrides: Partial<MockStoreState> = {}): MockStoreState {
   return {
     currentGeneration: overrides.currentGeneration ?? null,
-    deleteGenerationRecord:
-      overrides.deleteGenerationRecord ?? mockDeleteGenerationRecord,
+    deleteGenerationRecord: overrides.deleteGenerationRecord ?? mockDeleteGenerationRecord,
     playbackToggleRequest: overrides.playbackToggleRequest ?? 0,
     compareModeActive: overrides.compareModeActive ?? false,
-    toggleCompareTarget:
-      overrides.toggleCompareTarget ?? mockToggleCompareTarget,
+    toggleCompareTarget: overrides.toggleCompareTarget ?? mockToggleCompareTarget,
   };
 }
 
@@ -229,8 +218,7 @@ describe("PlaybackBar", () => {
 
     it("disables the play button when no audio source is loaded", () => {
       render(<PlaybackBar />);
-      const playPauseBtn =
-        getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause");
+      const playPauseBtn = getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause");
       expect(playPauseBtn).toBeDefined();
       expect(playPauseBtn).toBeDisabled();
     });
@@ -289,8 +277,7 @@ describe("PlaybackBar", () => {
       // Wait for the async audio fetch to resolve and set audioSrc
       await vi.waitFor(() => {
         const playPauseBtn =
-          getButtonByTooltip("player.play") ??
-          getButtonByTooltip("player.pause")!;
+          getButtonByTooltip("player.play") ?? getButtonByTooltip("player.pause")!;
         expect(playPauseBtn).not.toBeDisabled();
       });
     });
@@ -532,14 +519,8 @@ describe("PlaybackBar", () => {
         },
       });
 
-      expect(setData).toHaveBeenCalledWith(
-        "text/uri-list",
-        "file:///output/my%20track/file.wav",
-      );
-      expect(setData).toHaveBeenCalledWith(
-        "text/plain",
-        "/output/my track/file.wav",
-      );
+      expect(setData).toHaveBeenCalledWith("text/uri-list", "file:///output/my%20track/file.wav");
+      expect(setData).toHaveBeenCalledWith("text/plain", "/output/my track/file.wav");
     });
 
     it("is not draggable without an output path", () => {
@@ -569,9 +550,7 @@ describe("PlaybackBar", () => {
       expect(screen.getByText("A")).toBeInTheDocument();
       expect(screen.getByText("B")).toBeInTheDocument();
 
-      const region = rail.querySelector(
-        "[class*='bg-[var(--color-accent)]/15']",
-      );
+      const region = rail.querySelector("[class*='bg-[var(--color-accent)]/15']");
       expect(region).toHaveStyle({ left: "20%", width: "60%" });
     });
 
@@ -605,9 +584,7 @@ describe("PlaybackBar", () => {
 
   describe("delete from export menu", () => {
     it("shows error toast when delete fails", async () => {
-      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(
-        new Error("disk busy"),
-      );
+      mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(new Error("disk busy"));
       currentStoreState = makeStoreOverrides({
         currentGeneration: SAMPLE_GENERATION,
       });
@@ -620,10 +597,7 @@ describe("PlaybackBar", () => {
       await user.click(screen.getByText("player.deleteFileAndRecord"));
 
       await vi.waitFor(() => {
-        expect(mockAddToast).toHaveBeenCalledWith(
-          "error",
-          "toast.deleteFailed",
-        );
+        expect(mockAddToast).toHaveBeenCalledWith("error", "toast.deleteFailed");
       });
       expect(mockDeleteGenerationRecord).not.toHaveBeenCalled();
     });

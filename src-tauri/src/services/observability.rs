@@ -187,4 +187,14 @@ mod tests {
         let sink = writer.make_writer();
         assert!(matches!(sink, AppLogSink::Stderr));
     }
+
+    #[test]
+    fn app_log_writer_stderr_fallback_accepts_writes() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let writer = AppLogWriter::file(dir.path().to_path_buf());
+        let mut sink = writer.make_writer();
+        assert!(matches!(sink, AppLogSink::Stderr));
+        sink.write_all(b"fallback\n").expect("stderr write");
+        sink.flush().expect("stderr flush");
+    }
 }

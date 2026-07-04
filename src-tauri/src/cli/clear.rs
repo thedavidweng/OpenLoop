@@ -16,7 +16,7 @@ pub fn execute(state: &AppState, args: &[String]) -> AppResult<()> {
         return Ok(());
     }
 
-    let records = state.db.list_generations(None)?;
+    let records = state.db.list_generations(None, None)?;
     let count = records.len();
 
     if count == 0 {

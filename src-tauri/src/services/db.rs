@@ -127,36 +127,74 @@ impl Database {
         Ok(settings)
     }
 
-    pub fn list_generations(&self, query: Option<&str>) -> AppResult<Vec<GenerationRecord>> {
+    pub fn list_generations(
+        &self,
+        query: Option<&str>,
+        limit: Option<u32>,
+    ) -> AppResult<Vec<GenerationRecord>> {
         let connection = self.connection()?;
         let query = query.map(str::trim).filter(|value| !value.is_empty());
+        let limit_i64: Option<i64> = limit.map(i64::from);
 
-        let mut statement = if query.is_some() {
-            connection
-                .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1) ORDER BY is_favorite DESC, created_at DESC",
-                )
-                .map_err(|error| AppError::db_read_failed(error.to_string()))?
-        } else {
-            connection
-                .prepare(
-                    "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' ORDER BY is_favorite DESC, created_at DESC",
-                )
-                .map_err(|error| AppError::db_read_failed(error.to_string()))?
-        };
+        const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
+        const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";
 
-        let mapped = if let Some(value) = query {
-            let like_query = format!("%{value}%");
-            statement.query_map([like_query], Self::map_generation_row)
-        } else {
-            statement.query_map([], Self::map_generation_row)
+        match (query, limit_i64) {
+            (Some(value), Some(limit_i64)) => {
+                let like_query = format!("%{value}%");
+                let mut statement = connection
+                    .prepare(&format!(
+                        "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER} LIMIT ?2"
+                    ))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![like_query, limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (Some(value), None) => {
+                let like_query = format!("%{value}%");
+                let mut statement = connection
+                    .prepare(&format!(
+                        "{SELECT} AND (COALESCE(prompt, '') LIKE ?1 OR COALESCE(lyrics, '') LIKE ?1){ORDER}"
+                    ))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![like_query], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (None, Some(limit_i64)) => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER} LIMIT ?1"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            (None, None) => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER}"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map([], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
         }
-        .map_err(|error| AppError::db_read_failed(error.to_string()))?;
-
-        mapped
-            .into_iter()
-            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
-            .collect()
     }
 
     pub fn get_generation(&self, id: &str) -> AppResult<Option<GenerationRecord>> {
@@ -568,7 +606,7 @@ mod tests {
             .expect("generation record should insert");
 
         let listed = database
-            .list_generations(Some("piano"))
+            .list_generations(Some("piano"), None)
             .expect("generation record should list");
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].id, record.id);
@@ -584,7 +622,7 @@ mod tests {
             .expect("generation record should delete");
 
         let remaining = database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should still load");
         assert!(remaining.is_empty());
     }
@@ -616,7 +654,7 @@ mod tests {
             .expect("legacy cancelled generation should insert");
 
         let listed = database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should load");
 
         assert_eq!(
@@ -645,7 +683,7 @@ mod tests {
             .expect("generation records should clear");
 
         assert!(database
-            .list_generations(None)
+            .list_generations(None, None)
             .expect("generation list should load")
             .is_empty());
         assert!(output.exists());

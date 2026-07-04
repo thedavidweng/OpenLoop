@@ -201,6 +201,7 @@ describe("PlaybackBar", () => {
     mockReadGenerationAudio.mockResolvedValue([0xff, 0xd8]);
     mockReadGenerationWaveform.mockResolvedValue({ peaks: [0.5, 0.8] });
     mockDeleteGenerationFileAndRecord.mockResolvedValue(undefined);
+    mockDeleteGenerationRecord.mockClear();
     mockAddToast.mockClear();
   });
 
@@ -580,9 +581,72 @@ describe("PlaybackBar", () => {
       expect(screen.queryByText("A")).not.toBeInTheDocument();
       expect(screen.queryByText("B")).not.toBeInTheDocument();
     });
+    it("clears loop markers on Escape", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 80 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+      expect(screen.getByText("A")).toBeInTheDocument();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+
+      expect(screen.queryByText("A")).not.toBeInTheDocument();
+      expect(screen.queryByText("B")).not.toBeInTheDocument();
+    });
+
+    it("wraps playback to loop start when passing loop end", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      render(<PlaybackBar />);
+      await loadAudioWithDuration(100);
+      mockSeekRailRect(200);
+
+      const rail = getSeekRail();
+      fireEvent.click(rail, { shiftKey: true, clientX: 40 });
+      fireEvent.click(rail, { shiftKey: true, clientX: 160 });
+
+      const audio = document.querySelector("audio") as HTMLAudioElement;
+      Object.defineProperty(audio, "currentTime", {
+        configurable: true,
+        writable: true,
+        value: 85,
+      });
+
+      fireEvent.timeUpdate(audio, { currentTarget: audio });
+
+      expect(audio.currentTime).toBe(20);
+    });
   });
 
   describe("delete from export menu", () => {
+    it("shows success toast when delete succeeds", async () => {
+      currentStoreState = makeStoreOverrides({
+        currentGeneration: SAMPLE_GENERATION,
+      });
+      const user = userEvent.setup();
+      render(<PlaybackBar />);
+      await screen.findByText("lo-fi warm piano");
+
+      const exportBtn = getButtonByTooltip("player.exportMenu")!;
+      await user.click(exportBtn);
+      await user.click(screen.getByText("player.deleteFileAndRecord"));
+
+      await vi.waitFor(() => {
+        expect(mockDeleteGenerationFileAndRecord).toHaveBeenCalledWith("gen-1");
+        expect(mockDeleteGenerationRecord).toHaveBeenCalledWith("gen-1", {
+          alreadyDeleted: true,
+        });
+        expect(mockAddToast).toHaveBeenCalledWith("success", "toast.fileDeleted");
+      });
+    });
+
     it("shows error toast when delete fails", async () => {
       mockDeleteGenerationFileAndRecord.mockRejectedValueOnce(new Error("disk busy"));
       currentStoreState = makeStoreOverrides({

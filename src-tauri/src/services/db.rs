@@ -708,28 +708,41 @@ mod tests {
         drop(conn);
 
         // Step 2: run full migration via Database::new
-        let database = Database::new(temp_dir.path()).expect("database should initialize with migration");
+        let database =
+            Database::new(temp_dir.path()).expect("database should initialize with migration");
 
         // Step 3: verify v1 record is still readable
         let all = database.list_generations(None).expect("list should work");
-        assert!(all.iter().any(|r| r.id == "gen_v1"), "v1 record should survive migration");
+        assert!(
+            all.iter().any(|r| r.id == "gen_v1"),
+            "v1 record should survive migration"
+        );
 
         // Step 4: verify new columns work (is_favorite from 003)
         let mut record = sample_record();
         record.is_favorite = true;
-        database.insert_generation(&record).expect("record with is_favorite should insert");
+        database
+            .insert_generation(&record)
+            .expect("record with is_favorite should insert");
         let fetched = database
             .get_generation(&record.id)
             .expect("get should work")
             .expect("record should exist");
         assert!(fetched.is_favorite, "is_favorite should persist");
 
-        // Step 5: verify failed_runs table (004) and cancel_requested_at (002)
-        let failed = database.list_failed_runs(10).expect("failed runs should list");
+        // Step 5: verify failed_runs table (004)
+        let failed = database
+            .list_failed_runs(10)
+            .expect("failed runs should list");
         assert!(failed.is_empty(), "failed_runs table should exist");
 
         // Step 6: verify active tasks still work with cancel_requested_at
-        let tasks = database.list_active_generation_tasks().expect("tasks should list");
-        assert!(tasks.iter().any(|t| t.id == "task_v1"), "v1 task should survive migration");
+        let tasks = database
+            .list_active_generation_tasks()
+            .expect("tasks should list");
+        assert!(
+            tasks.iter().any(|t| t.id == "task_v1"),
+            "v1 task should survive migration"
+        );
     }
 }

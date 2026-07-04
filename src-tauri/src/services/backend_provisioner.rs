@@ -762,18 +762,25 @@ where
 // ---------------------------------------------------------------------------
 
 fn resolve_path_within_base(canonical_base: &Path, relative: &str) -> AppResult<PathBuf> {
+    for component in std::path::Path::new(relative).components() {
+        if matches!(
+            component,
+            std::path::Component::ParentDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_)
+        ) {
+            return Err(AppError::backend_provision_failed(format!(
+                "zip entry contains unsafe path component: {relative}"
+            )));
+        }
+    }
+
     let mut resolved = canonical_base.to_path_buf();
     for component in std::path::Path::new(relative).components() {
         match component {
             std::path::Component::Normal(part) => resolved.push(part),
             std::path::Component::CurDir => {}
-            std::path::Component::ParentDir
-            | std::path::Component::RootDir
-            | std::path::Component::Prefix(_) => {
-                return Err(AppError::backend_provision_failed(format!(
-                    "zip entry contains unsafe path component: {relative}"
-                )));
-            }
+            _ => unreachable!("path components validated above"),
         }
     }
 

@@ -1256,26 +1256,22 @@ mod tests {
     }
 
     #[test]
-    fn extract_archive_rejects_parent_dir_entries() {
+    fn resolve_path_within_base_rejects_parent_dir_components() {
         let temp = tempfile::tempdir().expect("temp dir");
-        let runtime_dir = temp.path().join("runtime");
-        fs::create_dir_all(&runtime_dir).expect("create runtime");
+        let base = fs::canonicalize(temp.path()).expect("canonical base");
 
-        let zip_path = temp.path().join("evil.zip");
-        let zip_file = fs::File::create(&zip_path).expect("create zip");
-        let mut zip = zip::ZipWriter::new(zip_file);
-        let options = zip::write::SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Stored);
-
-        zip.start_file("ACE-Step-1.5-abc123/pyproject.toml", options.clone())
-            .expect("start file");
-        zip.write_all(b"[project]").expect("write file");
-        zip.start_file("ACE-Step-1.5-abc123/nested/../../outside.txt", options)
-            .expect("start traversal file");
-        zip.write_all(b"pwned").expect("write file");
-        zip.finish().expect("finish zip");
-
-        let error = extract_archive(&zip_path, &runtime_dir).expect_err("reject traversal");
+        let error = resolve_path_within_base(&base, "nested/../../outside.txt")
+            .expect_err("reject parent dir");
         assert!(error.message.contains("unsafe path component"));
+    }
+
+    #[test]
+    fn resolve_path_within_base_allows_nested_paths() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let base = fs::canonicalize(temp.path()).expect("canonical base");
+
+        let resolved =
+            resolve_path_within_base(&base, "acestep/__init__.py").expect("resolve nested path");
+        assert_eq!(resolved, base.join("acestep").join("__init__.py"));
     }
 }

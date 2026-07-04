@@ -1,0 +1,5 @@
+[advisories]
+ignore = [
+    "RUSTSEC-2026-0194", # transitive via plist ^0.39; blocked until upstream bumps quick-xml
+    "RUSTSEC-2026-0195", # transitive via plist ^0.39; blocked until upstream bumps quick-xml
+]

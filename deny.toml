@@ -1,6 +1,10 @@
 [advisories]
 unmaintained = "workspace"
 yanked = "warn"
+ignore = [
+    { id = "RUSTSEC-2026-0194", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
+    { id = "RUSTSEC-2026-0195", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
+]
 
 [licenses]
 allow = [

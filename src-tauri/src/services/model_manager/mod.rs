@@ -796,96 +796,100 @@ where
 
             if !response.status().is_success() {
                 let status_code = response.status();
-                let message = format!(
-                    "HTTP {status_code} for {}/{}",
-                    spec.repo, spec.remote_path
-                );
+                let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
                 last_error = Some(AppError::model_download_failed(message.clone()));
+                if mirror_index + 1 < mirrors.len() {
+                    mirror_index += 1;
+                    continue 'mirrors;
+                }
                 if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                    if mirror_index + 1 < mirrors.len() {
-                        mirror_index += 1;
-                        continue 'mirrors;
-                    }
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
                     continue;
                 }
                 return Err(AppError::model_download_failed(message));
             }
 
-        let mut writer = OpenOptions::new()
-            .create(true)
-            .append(written > 0)
-            .write(true)
-            .truncate(written == 0)
-            .open(&part)
-            .map_err(|error| {
-                AppError::model_download_failed(format!(
-                    "failed to open temporary file {}: {error}",
-                    part.display()
-                ))
-            })?;
+            let mut writer = OpenOptions::new()
+                .create(true)
+                .append(written > 0)
+                .write(true)
+                .truncate(written == 0)
+                .open(&part)
+                .map_err(|error| {
+                    AppError::model_download_failed(format!(
+                        "failed to open temporary file {}: {error}",
+                        part.display()
+                    ))
+                })?;
 
-        let mut stream = response.bytes_stream();
-        let mut stream_failed: Option<AppError> = None;
+            let mut stream = response.bytes_stream();
+            let mut stream_failed: Option<AppError> = None;
 
-        while let Some(chunk) = stream.next().await {
-            match chunk {
-                Ok(bytes) => {
-                    if bytes.is_empty() {
-                        continue;
+            while let Some(chunk) = stream.next().await {
+                match chunk {
+                    Ok(bytes) => {
+                        if bytes.is_empty() {
+                            continue;
+                        }
+                        if let Err(error) = writer.write_all(&bytes) {
+                            return Err(AppError::model_download_failed(format!(
+                                "failed to write to {}: {error}",
+                                part.display()
+                            )));
+                        }
+                        written += bytes.len() as u64;
+                        on_progress(written);
                     }
-                    if let Err(error) = writer.write_all(&bytes) {
-                        return Err(AppError::model_download_failed(format!(
-                            "failed to write to {}: {error}",
-                            part.display()
+                    Err(error) => {
+                        stream_failed = Some(AppError::model_download_failed(format!(
+                            "stream error for {}/{}: {error}",
+                            spec.repo, spec.remote_path
                         )));
+                        break;
                     }
-                    written += bytes.len() as u64;
-                    on_progress(written);
-                }
-                Err(error) => {
-                    stream_failed = Some(AppError::model_download_failed(format!(
-                        "stream error for {}/{}: {error}",
-                        spec.repo, spec.remote_path
-                    )));
-                    break;
                 }
             }
-        }
 
-        writer.flush().ok();
-        drop(writer);
+            writer.flush().ok();
+            drop(writer);
 
-        if let Some(error) = stream_failed {
-            if attempt >= MAX_ATTEMPTS {
-                return Err(error);
+            if let Some(error) = stream_failed {
+                if mirror_index + 1 < mirrors.len() {
+                    eprintln!("openloop: {} (trying next mirror)", error.message);
+                    last_error = Some(error);
+                    mirror_index += 1;
+                    written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                    continue 'mirrors;
+                }
+                if attempt >= MAX_ATTEMPTS {
+                    return Err(error);
+                }
+                eprintln!(
+                    "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
+                    error.message
+                );
+                last_error = Some(error);
+                tokio::time::sleep(retry_delay(attempt)).await;
+                written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
+                continue;
             }
-            eprintln!(
-                "openloop: {} (retry {attempt}/{MAX_ATTEMPTS})",
-                error.message
-            );
-            last_error = Some(error);
-            tokio::time::sleep(retry_delay(attempt)).await;
-            written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
-            continue;
-        }
 
-        if written < spec.size {
-            let message = format!(
-                "incomplete download for {}/{} ({} / {} bytes)",
-                spec.repo, spec.remote_path, written, spec.size
-            );
-            if attempt >= MAX_ATTEMPTS {
-                return Err(AppError::model_download_failed(message));
+            if written < spec.size {
+                let message = format!(
+                    "incomplete download for {}/{} ({} / {} bytes)",
+                    spec.repo, spec.remote_path, written, spec.size
+                );
+                if attempt >= MAX_ATTEMPTS {
+                    return Err(AppError::model_download_failed(message));
+                }
+                eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
+                last_error = Some(AppError::model_download_failed(message));
+                tokio::time::sleep(retry_delay(attempt)).await;
+                continue;
             }
-            eprintln!("openloop: {} (retry {attempt}/{MAX_ATTEMPTS})", message);
-            last_error = Some(AppError::model_download_failed(message));
-            tokio::time::sleep(retry_delay(attempt)).await;
-            continue;
-        }
 
-        break;
-    }
+            break;
+        }
 
         let _ = last_error;
         fs::rename(&part, target).map_err(|error| {
@@ -908,9 +912,8 @@ where
         return Ok(());
     }
 
-    Err(last_error.unwrap_or_else(|| {
-        AppError::model_download_failed("all mirrors exhausted".to_owned())
-    }))
+    Err(last_error
+        .unwrap_or_else(|| AppError::model_download_failed("all mirrors exhausted".to_owned())))
 }
 
 fn download_single_file_blocking(
@@ -970,15 +973,12 @@ fn download_single_file_blocking(
 
             if !response.status().is_success() {
                 let status_code = response.status();
-                let message = format!(
-                    "HTTP {status_code} for {}/{}",
-                    spec.repo, spec.remote_path
-                );
+                let message = format!("HTTP {status_code} for {}/{}", spec.repo, spec.remote_path);
+                if mirror_index + 1 < mirrors.len() {
+                    mirror_index += 1;
+                    continue 'mirrors;
+                }
                 if status_code.is_server_error() && attempt < MAX_ATTEMPTS {
-                    if mirror_index + 1 < mirrors.len() {
-                        mirror_index += 1;
-                        continue 'mirrors;
-                    }
                     written = fs::metadata(&part).map(|m| m.len()).unwrap_or(written);
                     continue;
                 }

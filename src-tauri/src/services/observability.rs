@@ -58,8 +58,8 @@ pub fn read_app_logs(
         })
         .collect();
 
-    entries.truncate(max);
     entries.reverse();
+    entries.truncate(max);
     entries
 }
 
@@ -91,7 +91,7 @@ fn parse_log_line(line: &str) -> Option<AppLogEntry> {
     let level = value
         .get("level")
         .and_then(|v| v.as_str())
-        .unwrap_or("info")
+        .unwrap_or("unknown")
         .to_owned();
     let target = value
         .get("target")
@@ -370,6 +370,46 @@ mod tests {
 
         let entries = read_app_logs(dir.path(), None, Some(3));
         assert_eq!(entries.len(), 3);
+    }
+
+    #[test]
+    fn read_app_logs_limit_returns_newest_entries() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        // File is appended oldest-first: m0, m1, ..., m9
+        let lines: Vec<String> = (0..10).map(|i| json_line("info", "app", &format!("m{i}"))).collect();
+        let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
+        write_log_file(dir.path(), "openloop-20260704T120000.log", &refs);
+
+        let entries = read_app_logs(dir.path(), None, Some(3));
+        // Newest-first after reverse+truncate: m9, m8, m7
+        let messages: Vec<String> = entries
+            .iter()
+            .map(|e| e.fields["message"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(messages, vec!["m9", "m8", "m7"]);
+    }
+
+    #[test]
+    fn read_app_logs_unknown_level_excluded_by_filter() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        // Entry with no "level" field → defaults to "unknown"
+        let no_level = serde_json::json!({
+            "timestamp": "2026-07-04T12:00:00Z",
+            "target": "app",
+            "fields": { "message": "no-level" }
+        })
+        .to_string();
+        let warn_line = json_line("warn", "app", "warn-entry");
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T120000.log",
+            &[&no_level, &warn_line],
+        );
+
+        // Filtering for "warn" should exclude the unknown-level entry
+        let entries = read_app_logs(dir.path(), Some("warn"), None);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].level, "warn");
     }
 
     #[test]

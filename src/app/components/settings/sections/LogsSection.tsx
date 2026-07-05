@@ -98,7 +98,12 @@ export function LogsSection() {
                 )}
               </div>
               <p className="mt-0.5 text-white break-all">
-                {extractMessage(entry.fields) ?? entry.raw}
+                {extractMessage(entry.fields) ??
+                  (entry.fields &&
+                  typeof entry.fields === "object" &&
+                  Object.keys(entry.fields as object).length > 0
+                    ? JSON.stringify(entry.fields)
+                    : entry.raw)}
               </p>
             </div>
           ))}

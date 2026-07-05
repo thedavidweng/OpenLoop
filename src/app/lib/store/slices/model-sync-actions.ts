@@ -67,13 +67,16 @@ export function createModelSyncActions(
           modelVariant:
             state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
               ? state.settings.modelVariant
-              : state.settings.modelVariant,
+              : null,
         },
         bootstrapStatus: resolveModelBootstrapStatus(
           {
             ...state.settings,
             downloadedModels,
-            modelVariant: state.settings.modelVariant,
+            modelVariant:
+              state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
+                ? state.settings.modelVariant
+                : null,
           },
           state.deviceInfo,
           modelStatuses,

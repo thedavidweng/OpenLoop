@@ -143,7 +143,7 @@ fn cmd_rename(state: &AppState, json: bool, id: &str, name: &str) -> AppResult<(
 fn cmd_delete(state: &AppState, json: bool, id: &str, yes: bool) -> AppResult<()> {
     let resolved = resolve_profile_by_prefix(&state.db, id)?;
 
-    if !yes {
+    if !yes && !json {
         use std::io::Write;
         let profiles = state.db.list_profiles()?;
         let display_name = profiles

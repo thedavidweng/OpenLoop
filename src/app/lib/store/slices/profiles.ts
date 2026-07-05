@@ -32,14 +32,17 @@ export function createProfilesSlice(
 
     createProfile: async (name: string, form: GenerationFormValues) => {
       if (!api.isTauriRuntime()) return;
+      const durationSeconds = parseFloat(form.durationSeconds);
+      const inferenceSteps = parseInt(form.inferenceSteps, 10);
+      const guidanceScale = parseFloat(form.guidanceScale);
       const request = {
         name,
         modelVariant: form.model || null,
-        durationSeconds: parseFloat(form.durationSeconds) || null,
+        durationSeconds: isNaN(durationSeconds) ? null : durationSeconds,
         audioFormat: form.audioFormat || null,
         thinking: form.thinking,
-        inferenceSteps: parseInt(form.inferenceSteps, 10) || null,
-        guidanceScale: parseFloat(form.guidanceScale) || null,
+        inferenceSteps: isNaN(inferenceSteps) ? null : inferenceSteps,
+        guidanceScale: isNaN(guidanceScale) ? null : guidanceScale,
         bpm: form.bpm ? parseInt(form.bpm, 10) : null,
         keyScale: form.keyScale || null,
         timeSignature: form.timeSignature || null,
@@ -71,18 +74,18 @@ export function createProfilesSlice(
       const form: GenerationFormValues = {
         ...currentForm,
         model: profile.modelVariant ?? currentForm.model,
-        durationSeconds: profile.durationSeconds
+        durationSeconds: profile.durationSeconds != null
           ? String(profile.durationSeconds)
           : currentForm.durationSeconds,
         audioFormat: (profile.audioFormat as GenerationFormValues["audioFormat"]) ?? currentForm.audioFormat,
         thinking: profile.thinking ?? currentForm.thinking,
-        inferenceSteps: profile.inferenceSteps
+        inferenceSteps: profile.inferenceSteps != null
           ? String(profile.inferenceSteps)
           : currentForm.inferenceSteps,
-        guidanceScale: profile.guidanceScale
+        guidanceScale: profile.guidanceScale != null
           ? String(profile.guidanceScale)
           : currentForm.guidanceScale,
-        bpm: profile.bpm ? String(profile.bpm) : currentForm.bpm,
+        bpm: profile.bpm != null ? String(profile.bpm) : currentForm.bpm,
         keyScale: profile.keyScale ?? currentForm.keyScale,
         timeSignature: (profile.timeSignature as GenerationFormValues["timeSignature"]) ?? currentForm.timeSignature,
         vocalLanguage: profile.vocalLanguage ?? currentForm.vocalLanguage,

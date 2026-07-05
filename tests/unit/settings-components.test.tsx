@@ -43,6 +43,7 @@ vi.mock("@/app/lib/api", () => ({
   setSetting: vi.fn(() => Promise.resolve({})),
   clearBackendCache: vi.fn(() => Promise.resolve(undefined)),
   getNetworkLog: vi.fn(() => Promise.resolve([])),
+  getAppLogs: vi.fn(() => Promise.resolve([])),
 }));
 
 vi.mock("react-i18next", () => ({

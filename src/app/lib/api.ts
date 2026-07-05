@@ -282,3 +282,15 @@ export type NetworkEntry = {
 export function getNetworkLog(limit = 100): Promise<NetworkEntry[]> {
   return invoke<NetworkEntry[]>("get_network_log", { limit });
 }
+
+export type AppLogEntry = {
+  timestamp: string;
+  level: string;
+  target: string;
+  fields: unknown;
+  raw: string;
+};
+
+export function getAppLogs(minLevel?: string, limit = 200): Promise<AppLogEntry[]> {
+  return invoke<AppLogEntry[]>("get_app_logs", { minLevel, limit });
+}

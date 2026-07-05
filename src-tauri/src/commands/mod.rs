@@ -3,6 +3,7 @@ pub mod device;
 pub mod files;
 pub mod generation;
 pub mod history;
+pub mod logs;
 pub mod models;
 pub mod network;
 pub mod provisioner;

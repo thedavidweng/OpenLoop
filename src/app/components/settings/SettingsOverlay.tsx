@@ -12,6 +12,7 @@ import { GeneralSection } from "./sections/GeneralSection";
 import { BackendSection } from "./sections/BackendSection";
 import { DangerZoneSection } from "./sections/DangerZoneSection";
 import { NetworkActivitySection } from "./sections/NetworkActivitySection";
+import { LogsSection } from "./sections/LogsSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 import { SettingsDialogs } from "./SettingsDialogs";
 
@@ -87,6 +88,7 @@ export function SettingsOverlay() {
     { id: "general", label: t("settings.general") },
     { id: "backend", label: t("settings.backend") },
     { id: "network", label: t("settings.networkActivity", { defaultValue: "Network" }) },
+    { id: "logs", label: t("settings.appLogs", { defaultValue: "Logs" }) },
     { id: "danger", label: t("settings.danger") },
   ] as const;
 
@@ -159,6 +161,7 @@ export function SettingsOverlay() {
               onShowNotice={setSaveNotice}
             />
             <NetworkActivitySection />
+            <LogsSection />
             <DangerZoneSection
               historyCount={history.length}
               downloadedModelsCount={settings.downloadedModels.length}

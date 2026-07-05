@@ -6,9 +6,110 @@ use std::{
 };
 
 use chrono::Utc;
+use serde::Serialize;
 use tracing_subscriber::{
     fmt::MakeWriter, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter,
 };
+
+/// A single parsed log entry from the app log file.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AppLogEntry {
+    pub timestamp: String,
+    pub level: String,
+    pub target: String,
+    pub fields: serde_json::Value,
+    pub raw: String,
+}
+
+/// Read up to `limit` entries from the most recent app log file, optionally
+/// filtering by minimum severity level. Returns entries newest-first.
+pub fn read_app_logs(
+    app_data_dir: &Path,
+    min_level: Option<&str>,
+    limit: Option<usize>,
+) -> Vec<AppLogEntry> {
+    let log_dir = app_log_dir(app_data_dir);
+    let latest = match latest_app_log(&log_dir) {
+        Some(path) => path,
+        None => return Vec::new(),
+    };
+
+    let content = match fs::read_to_string(&latest) {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+
+    let level_order = ["trace", "debug", "info", "warn", "error"];
+    let min_idx = min_level
+        .and_then(|l| level_order.iter().position(|&o| o.eq_ignore_ascii_case(l)))
+        .unwrap_or(0);
+
+    let max = limit.unwrap_or(200);
+    let mut entries: Vec<AppLogEntry> = content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .filter_map(parse_log_line)
+        .filter(|e| {
+            level_order
+                .iter()
+                .position(|&o| o.eq_ignore_ascii_case(&e.level))
+                .is_some_and(|idx| idx >= min_idx)
+        })
+        .collect();
+
+    entries.reverse();
+    entries.truncate(max);
+    entries
+}
+
+fn latest_app_log(log_dir: &Path) -> Option<PathBuf> {
+    let mut entries: Vec<(PathBuf, String)> = Vec::new();
+    if let Ok(read_dir) = fs::read_dir(log_dir) {
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let name = match path.file_name().and_then(|n| n.to_str()) {
+                Some(n) => n.to_owned(),
+                None => continue,
+            };
+            if name.starts_with(APP_LOG_PREFIX) && name.ends_with(APP_LOG_SUFFIX) {
+                entries.push((path, name));
+            }
+        }
+    }
+    entries.sort_by(|a, b| b.1.cmp(&a.1));
+    entries.first().map(|(p, _)| p.clone())
+}
+
+fn parse_log_line(line: &str) -> Option<AppLogEntry> {
+    let value: serde_json::Value = serde_json::from_str(line).ok()?;
+    let timestamp = value
+        .get("timestamp")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_owned();
+    let level = value
+        .get("level")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_owned();
+    let target = value
+        .get("target")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_owned();
+    let fields = value
+        .get("fields")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    Some(AppLogEntry {
+        timestamp,
+        level,
+        target,
+        fields,
+        raw: line.to_owned(),
+    })
+}
 
 /// Number of historical app log files to keep on disk.
 pub const APP_LOG_RETAIN_COUNT: usize = 10;
@@ -196,5 +297,144 @@ mod tests {
         assert!(matches!(sink, AppLogSink::Stderr));
         sink.write_all(b"fallback\n").expect("stderr write");
         sink.flush().expect("stderr flush");
+    }
+
+    fn write_log_file(dir: &Path, name: &str, lines: &[&str]) {
+        let log_dir = dir.join("logs").join("app");
+        fs::create_dir_all(&log_dir).expect("create log dir");
+        let path = log_dir.join(name);
+        let mut content = String::new();
+        for line in lines {
+            content.push_str(line);
+            content.push('\n');
+        }
+        fs::write(path, content).expect("write log file");
+    }
+
+    fn json_line(level: &str, target: &str, msg: &str) -> String {
+        serde_json::json!({
+            "timestamp": "2026-07-04T12:00:00Z",
+            "level": level,
+            "target": target,
+            "fields": { "message": msg }
+        })
+        .to_string()
+    }
+
+    #[test]
+    fn read_app_logs_parses_jsonl_entries() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T120000.log",
+            &[
+                &json_line("info", "app", "started"),
+                &json_line("error", "backend", "failed"),
+            ],
+        );
+
+        let entries = read_app_logs(dir.path(), None, None);
+        assert_eq!(entries.len(), 2);
+        // newest-first (file is appended oldest-first, reversed on read)
+        assert_eq!(entries[0].level, "error");
+        assert_eq!(entries[0].target, "backend");
+        assert_eq!(entries[1].level, "info");
+    }
+
+    #[test]
+    fn read_app_logs_filters_by_min_level() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T120000.log",
+            &[
+                &json_line("trace", "app", "t"),
+                &json_line("debug", "app", "d"),
+                &json_line("info", "app", "i"),
+                &json_line("warn", "app", "w"),
+                &json_line("error", "app", "e"),
+            ],
+        );
+
+        let entries = read_app_logs(dir.path(), Some("warn"), None);
+        assert_eq!(entries.len(), 2);
+        assert!(entries.iter().all(|e| e.level == "warn" || e.level == "error"));
+    }
+
+    #[test]
+    fn read_app_logs_respects_limit() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let lines: Vec<String> = (0..10).map(|i| json_line("info", "app", &format!("m{i}"))).collect();
+        let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
+        write_log_file(dir.path(), "openloop-20260704T120000.log", &refs);
+
+        let entries = read_app_logs(dir.path(), None, Some(3));
+        assert_eq!(entries.len(), 3);
+    }
+
+    #[test]
+    fn read_app_logs_limit_returns_newest_entries() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        // File is appended oldest-first: m0, m1, ..., m9
+        let lines: Vec<String> = (0..10).map(|i| json_line("info", "app", &format!("m{i}"))).collect();
+        let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
+        write_log_file(dir.path(), "openloop-20260704T120000.log", &refs);
+
+        let entries = read_app_logs(dir.path(), None, Some(3));
+        // Newest-first after reverse+truncate: m9, m8, m7
+        let messages: Vec<String> = entries
+            .iter()
+            .map(|e| e.fields["message"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(messages, vec!["m9", "m8", "m7"]);
+    }
+
+    #[test]
+    fn read_app_logs_unknown_level_excluded_by_filter() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        // Entry with no "level" field → defaults to "unknown"
+        let no_level = serde_json::json!({
+            "timestamp": "2026-07-04T12:00:00Z",
+            "target": "app",
+            "fields": { "message": "no-level" }
+        })
+        .to_string();
+        let warn_line = json_line("warn", "app", "warn-entry");
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T120000.log",
+            &[&no_level, &warn_line],
+        );
+
+        // Filtering for "warn" should exclude the unknown-level entry
+        let entries = read_app_logs(dir.path(), Some("warn"), None);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].level, "warn");
+    }
+
+    #[test]
+    fn read_app_logs_returns_empty_when_no_log_file() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let entries = read_app_logs(dir.path(), None, None);
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn read_app_logs_picks_latest_file() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T110000.log",
+            &[&json_line("info", "old", "old")],
+        );
+        write_log_file(
+            dir.path(),
+            "openloop-20260704T120000.log",
+            &[&json_line("info", "new", "new")],
+        );
+
+        let entries = read_app_logs(dir.path(), None, None);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].target, "new");
     }
 }

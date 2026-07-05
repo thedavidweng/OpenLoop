@@ -135,6 +135,14 @@ export type GenerationRecord = {
   errorMessage: string | null;
   generationInfo?: string;
   isFavorite: boolean;
+  projectId?: string | null;
+};
+
+export type Project = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type GenerationRunResult = {

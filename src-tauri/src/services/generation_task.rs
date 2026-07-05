@@ -371,6 +371,7 @@ pub fn build_generation_record(
         error_message,
         generation_info,
         is_favorite: false,
+        project_id: None,
     }
 }
 

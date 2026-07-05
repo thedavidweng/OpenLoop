@@ -16,6 +16,7 @@ vi.mock("@/app/lib/api", () => ({
   listModelCatalog: vi.fn(),
   getModelStatus: vi.fn(),
   listActiveGenerationTasks: vi.fn(),
+  listProjects: vi.fn(() => Promise.resolve([])),
   listenToGenerationEvents: vi.fn(),
   listenToModelDownloadEvents: vi.fn(),
   deleteGenerationFileAndRecord: (id: string) => deleteGenerationFileAndRecord(id),

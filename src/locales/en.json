@@ -328,6 +328,19 @@
     "failedRunRemoved": "Failed run removed.",
     "failedRunCleared": "Failed runs cleared."
   },
+  "projects": {
+    "label": "Projects",
+    "allProjects": "All projects",
+    "create": "Create project",
+    "created": "Project \"{{name}}\" created.",
+    "createFailed": "Could not create project.",
+    "delete": "Delete project",
+    "deleteConfirm": "Delete project \"{{name}}\"? Generations will be unassigned, not deleted.",
+    "deleted": "Project \"{{name}}\" deleted.",
+    "deleteFailed": "Could not delete project.",
+    "namePlaceholder": "Project name",
+    "add": "Add"
+  },
   "player": {
     "noGeneration": "No generation selected",
     "loop": "Loop",

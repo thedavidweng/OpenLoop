@@ -5,7 +5,15 @@ use super::AppState;
 pub fn execute(state: &AppState, json: bool, args: ListArgs) -> AppResult<()> {
     let limit = args.limit;
 
-    let records = state.db.list_generations(None, Some(limit as u32))?;
+    let records = match args.project.as_deref() {
+        Some(prefix) => {
+            let project_id = resolve_project_by_prefix(&state.db, prefix)?;
+            state
+                .db
+                .list_generations_by_project(&project_id, Some(limit as u32))?
+        }
+        None => state.db.list_generations(None, Some(limit as u32))?,
+    };
 
     if json {
         let json_output = serde_json::to_string_pretty(&records)
@@ -48,4 +56,26 @@ pub fn execute(state: &AppState, json: bool, args: ListArgs) -> AppResult<()> {
     }
 
     Ok(())
+}
+
+fn resolve_project_by_prefix(
+    db: &crate::services::db::Database,
+    prefix: &str,
+) -> crate::models::errors::AppResult<String> {
+    let projects = db.list_projects()?;
+    let matches: Vec<_> = projects
+        .iter()
+        .filter(|p| p.id.starts_with(prefix) || p.name == prefix)
+        .collect();
+    match matches.len() {
+        0 => Err(crate::models::errors::AppError::not_found(
+            "Project",
+            format!("No project matches '{prefix}'"),
+        )),
+        1 => Ok(matches[0].id.clone()),
+        _ => Err(crate::models::errors::AppError::validation_failed(format!(
+            "Ambiguous project prefix '{prefix}' matched {} projects",
+            matches.len()
+        ))),
+    }
 }

@@ -129,6 +129,7 @@ export function createSettingsSlice(
           modelCatalog,
           rawModelStatuses,
           activeTasks,
+          projects,
         ] = await Promise.all([
           api.getSettings(),
           api.listGenerations(),
@@ -136,6 +137,7 @@ export function createSettingsSlice(
           api.listModelCatalog(),
           api.getModelStatus(),
           api.listActiveGenerationTasks(),
+          api.listProjects(),
         ]);
 
         const profile = persistedSettings.firstRunCompleted
@@ -170,6 +172,7 @@ export function createSettingsSlice(
           history: persistedHistory,
           favoriteRecordIds,
           activeTasks,
+          projects,
           currentGeneration: persistedHistory[0] ?? null,
         });
         await get().refreshBootstrapStatus();

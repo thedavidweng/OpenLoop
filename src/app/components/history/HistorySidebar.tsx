@@ -394,7 +394,9 @@ export function HistorySidebar() {
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        assignGenerationToProject(item.id, null);
+                                        void assignGenerationToProject(item.id, null).catch((error) => {
+                                          console.warn("Failed to unassign generation:", error);
+                                        });
                                         setProjectAssignTargetId(null);
                                       }}
                                       className="block w-full px-3 py-1 text-left text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-surface-muted)]"
@@ -407,7 +409,9 @@ export function HistorySidebar() {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          assignGenerationToProject(item.id, project.id);
+                                          void assignGenerationToProject(item.id, project.id).catch((error) => {
+                                            console.warn("Failed to assign generation:", error);
+                                          });
                                           setProjectAssignTargetId(null);
                                         }}
                                         className={`block w-full px-3 py-1 text-left text-[11px] hover:bg-[var(--color-surface-muted)] ${

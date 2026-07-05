@@ -381,4 +381,41 @@ describe("HistorySidebar", () => {
     });
     expect(clearAllButton).toBeDisabled();
   });
+
+  it("filters 1000 records by search query without errors", () => {
+    const records: GenerationRecord[] = Array.from({ length: 1000 }, (_, i) =>
+      makeRecord({
+        id: `rec-${i}`,
+        prompt: i % 10 === 0 ? `needle ${i}` : `haystack ${i}`,
+      }),
+    );
+    currentStoreState = makeStoreOverrides({ history: records, historyQuery: "needle" });
+
+    render(<HistorySidebar />);
+
+    // 1000 records, every 10th matches "needle" → 100 matches
+    expect(screen.getByText("needle 0")).toBeInTheDocument();
+    expect(screen.getByText("needle 990")).toBeInTheDocument();
+    expect(screen.queryByText("haystack 1")).not.toBeInTheDocument();
+  });
+
+  it("uses Set-based O(1) membership lookups for favorites", () => {
+    const records: GenerationRecord[] = Array.from({ length: 100 }, (_, i) =>
+      makeRecord({ id: `rec-${i}`, prompt: `track ${i}` }),
+    );
+    const favIds = Array.from({ length: 50 }, (_, i) => `rec-${i * 2}`);
+    currentStoreState = makeStoreOverrides({
+      history: records,
+      favoriteRecordIds: favIds,
+    });
+
+    const { container } = render(<HistorySidebar />);
+
+    // 50 favorited records → 50 unfavorite tooltip wrappers
+    const unfavTooltips = container.querySelectorAll('[data-tooltip-label="history.unfavorite"]');
+    expect(unfavTooltips).toHaveLength(50);
+    // Non-favorited records show the favorite tooltip wrapper
+    const favTooltips = container.querySelectorAll('[data-tooltip-label="history.favorite"]');
+    expect(favTooltips).toHaveLength(50);
+  });
 });

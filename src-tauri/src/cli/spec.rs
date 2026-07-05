@@ -56,6 +56,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ProjectCommand,
     },
+    /// Manage generation profiles (named presets)
+    Profiles {
+        #[command(subcommand)]
+        command: ProfileCommand,
+    },
     /// Delete a generation record
     Delete(DeleteArgs),
     /// Clear all generation history
@@ -340,6 +345,66 @@ pub enum ProjectCommand {
         /// Project ID prefix (omit to unassign)
         #[arg(long)]
         project: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+#[allow(clippy::large_enum_variant)]
+pub enum ProfileCommand {
+    /// List all profiles
+    List,
+    /// Create a new profile from current form values
+    Create {
+        /// Profile name
+        name: String,
+        /// Model variant (lite, turbo, pro)
+        #[arg(long)]
+        model: Option<String>,
+        /// Duration in seconds
+        #[arg(long)]
+        duration: Option<f64>,
+        /// Audio format (wav, mp3, flac, ogg)
+        #[arg(long)]
+        format: Option<String>,
+        /// Thinking mode (on/off)
+        #[arg(long)]
+        thinking: Option<String>,
+        /// Inference steps
+        #[arg(long)]
+        steps: Option<i64>,
+        /// Guidance scale
+        #[arg(long)]
+        guidance: Option<f64>,
+        /// BPM
+        #[arg(long)]
+        bpm: Option<i64>,
+        /// Key/scale
+        #[arg(long)]
+        key: Option<String>,
+        /// Time signature
+        #[arg(long)]
+        time_signature: Option<String>,
+        /// Vocal language
+        #[arg(long)]
+        language: Option<String>,
+        /// LM backend (pt, vllm, mlx)
+        #[arg(long)]
+        lm_backend: Option<String>,
+    },
+    /// Rename an existing profile
+    Rename {
+        /// Profile ID prefix
+        id: String,
+        /// New profile name
+        name: String,
+    },
+    /// Delete a profile
+    Delete {
+        /// Profile ID prefix
+        id: String,
+        /// Skip confirmation
+        #[arg(long)]
+        yes: bool,
     },
 }
 

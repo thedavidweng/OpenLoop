@@ -13,6 +13,7 @@ import { BackendSection } from "./sections/BackendSection";
 import { DangerZoneSection } from "./sections/DangerZoneSection";
 import { NetworkActivitySection } from "./sections/NetworkActivitySection";
 import { LogsSection } from "./sections/LogsSection";
+import { ProfilesSection } from "./sections/ProfilesSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 import { SettingsDialogs } from "./SettingsDialogs";
 
@@ -144,6 +145,7 @@ export function SettingsOverlay() {
               showModelDirRestartHint={showModelDirRestartHint}
               onPickDirectory={pickDirectory}
             />
+            <ProfilesSection />
           </div>
           <div className="space-y-6">
             <GeneralSection

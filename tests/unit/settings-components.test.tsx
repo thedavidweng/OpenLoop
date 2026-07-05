@@ -235,6 +235,7 @@ function defaultStoreValues() {
     modelStatuses: makeModelStatuses(),
     backendProvisionStatus: makeProvisionReady(),
     history: [makeGenerationRecord()],
+    profiles: [],
     closeSettings,
     completeSetup,
     enterDemoMode,

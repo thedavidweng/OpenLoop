@@ -30,6 +30,7 @@ vi.mock("@/app/lib/api", () => ({
   getModelStatus: vi.fn(() => Promise.resolve([])),
   listActiveGenerationTasks: vi.fn(() => Promise.resolve([])),
   listProjects: vi.fn(() => Promise.resolve([])),
+  listProfiles: vi.fn(() => Promise.resolve([])),
 }));
 
 vi.mock("@/app/lib/errors", () => ({
@@ -68,6 +69,7 @@ vi.mock("@/app/lib/profile-presets", async (importOriginal) => {
 /* ------------------------------------------------------------------ */
 
 const { createSettingsSlice } = await import("@/app/lib/store/slices/settings");
+const { createProfilesSlice } = await import("@/app/lib/store/slices/profiles");
 const api = await import("@/app/lib/api");
 const { PROFILE_FORM_PRESETS } = await import("@/app/lib/profile-presets");
 const { computeValidationState } = await import("@/app/lib/validation-helpers");
@@ -116,6 +118,7 @@ function createTestStore(overrides: Partial<GenerationStore> = {}) {
     (set, get) =>
       ({
         ...createSettingsSlice(set, get),
+        ...createProfilesSlice(set, get),
         form: { ...mockForm },
         modelStatuses: [],
         generationState: {

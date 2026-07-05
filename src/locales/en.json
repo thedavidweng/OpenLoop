@@ -519,5 +519,18 @@
     "pathCopied": "File path copied to clipboard.",
     "copyFailed": "Failed to copy to clipboard.",
     "retryStarted": "Retrying with same settings..."
+  },
+  "profiles": {
+    "title": "Generation profiles",
+    "description": "Save and switch between named presets of generation defaults.",
+    "save": "Save",
+    "namePlaceholder": "Profile name...",
+    "empty": "No profiles yet. Create one from your current form values.",
+    "created": "Profile \"{{name}}\" created.",
+    "createFailed": "Failed to create profile.",
+    "renamed": "Profile renamed.",
+    "renameFailed": "Failed to rename profile.",
+    "deleted": "Profile deleted.",
+    "deleteFailed": "Failed to delete profile."
   }
 }

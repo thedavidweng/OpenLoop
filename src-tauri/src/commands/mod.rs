@@ -7,6 +7,7 @@ pub mod logs;
 pub mod models;
 pub mod network;
 pub mod projects;
+pub mod profiles;
 pub mod provisioner;
 pub mod settings;
 pub mod support;

@@ -519,5 +519,18 @@
     "pathCopied": "文件路径已复制到剪贴板。",
     "copyFailed": "复制到剪贴板失败。",
     "retryStarted": "正在使用相同参数重试..."
+  },
+  "profiles": {
+    "title": "生成配置档",
+    "description": "保存并切换命名的生成参数预设。",
+    "save": "保存",
+    "namePlaceholder": "配置档名称...",
+    "empty": "尚无配置档。从当前表单值创建一个。",
+    "created": "配置档「{{name}}」已创建。",
+    "createFailed": "创建配置档失败。",
+    "renamed": "配置档已重命名。",
+    "renameFailed": "重命名配置档失败。",
+    "deleted": "配置档已删除。",
+    "deleteFailed": "删除配置档失败。"
   }
 }

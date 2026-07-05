@@ -1,21 +1,14 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type {
-  AppSettings,
-  ModelVariant,
-  ModelStatusSnapshot,
-  BackendProvisionStatus,
-} from "@/app/lib/types";
+import type { ModelVariant, ModelStatusSnapshot, BackendProvisionStatus } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   MODEL_PACKS,
   aggregatePackStatus,
-  expandDownloadedVariantsFromStatuses,
   packIdForVariant,
   primaryVariantForPack,
   profileForVariant,
 } from "@/app/lib/model-packs";
-import { localizeModelStatuses } from "@/app/lib/errors";
 import {
   PROFILE_FORM_PRESETS,
   applyModelVariantToForm,
@@ -24,6 +17,10 @@ import {
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 import { tr } from "@/app/lib/i18n";
+import { MODEL_CATALOG } from "./model-catalog";
+import { createBackendProvisionActions } from "./backend-provision-actions";
+import { computeModelStatusPatch } from "./model-status-apply";
+import { createModelSyncActions } from "./model-sync-actions";
 
 export function createModelSlice(
   set: StoreApi<GenerationStore>["setState"],
@@ -34,35 +31,7 @@ export function createModelSlice(
       state: "pending",
       message: tr("status.chooseAndDownload"),
     } as const,
-    modelCatalog: Object.values({
-      lite: {
-        id: "lite",
-        label: "Lite",
-        modelName: "acestep-v15-turbo",
-        description: "",
-      },
-      turbo: {
-        id: "turbo",
-        label: "Turbo",
-        modelName: "acestep-v15-turbo",
-        description: "",
-      },
-      pro: {
-        id: "pro",
-        label: "XL Turbo",
-        modelName: "acestep-v15-xl-turbo",
-        description: "",
-      },
-    }).map((variant) => ({
-      variant: variant.id as ModelVariant,
-      label: variant.label,
-      modelName: variant.modelName,
-      lmModel: variant.id === "pro" ? "acestep-5Hz-lm-1.7B" : "acestep-5Hz-lm-0.6B",
-      lmBackend: "mlx" as const,
-      estimatedSizeBytes: variant.id === "pro" ? 22 * 1024 * 1024 * 1024 : 8 * 1024 * 1024 * 1024,
-      description: variant.description,
-      recommendedMemoryGb: variant.id === "pro" ? 20 : variant.id === "lite" ? 8 : 16,
-    })),
+    modelCatalog: MODEL_CATALOG,
     modelStatuses: [],
     backendProvisionStatus: {
       state: "not_installed",
@@ -176,146 +145,11 @@ export function createModelSlice(
       }
     },
 
-    deleteAllModels: async () => {
-      if (!api.isTauriRuntime()) return;
-      const state = get();
-      const rawModelStatuses = await api.deleteAllModels();
-      const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-      const nextModelVariant = (
-        downloadedModels.length === 0 ? "" : state.settings.modelVariant
-      ) as AppSettings["modelVariant"];
-      set((prev) => ({
-        modelStatuses,
-        settings: {
-          ...prev.settings,
-          downloadedModels,
-          modelVariant: nextModelVariant,
-        },
-        bootstrapStatus: resolveModelBootstrapStatus(
-          {
-            ...prev.settings,
-            downloadedModels,
-            modelVariant: nextModelVariant,
-          },
-          null,
-          modelStatuses,
-          prev.backendProvisionStatus,
-        ),
-      }));
-      void api.setSetting("downloadedModels", downloadedModels);
-      void api.setSetting("modelVariant", nextModelVariant);
-    },
-
-    refreshModelStatuses: async () => {
-      if (!api.isTauriRuntime()) return;
-      const [modelCatalog, rawModelStatuses, backendProvision] = await Promise.all([
-        api.listModelCatalog(),
-        api.getModelStatus(),
-        api
-          .getBackendProvisionStatus()
-          .catch(() => ({ state: "not_installed" }) as BackendProvisionStatus),
-      ]);
-      const modelStatuses = localizeModelStatuses(rawModelStatuses);
-      const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-      set((state) => ({
-        modelCatalog,
-        modelStatuses,
-        backendProvisionStatus: backendProvision,
-        settings: {
-          ...state.settings,
-          downloadedModels,
-          modelVariant:
-            state.settings.modelVariant && downloadedModels.includes(state.settings.modelVariant)
-              ? state.settings.modelVariant
-              : state.settings.modelVariant,
-        },
-        bootstrapStatus: resolveModelBootstrapStatus(
-          {
-            ...state.settings,
-            downloadedModels,
-            modelVariant: state.settings.modelVariant,
-          },
-          state.deviceInfo,
-          modelStatuses,
-          backendProvision,
-        ),
-      }));
-    },
-
     applyModelStatus: (status: ModelStatusSnapshot) => {
       set((state) => {
-        const modelStatuses = [
-          ...state.modelStatuses.filter((current) => current.variant !== status.variant),
-          status,
-        ];
-        const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
-        const selectedPack = state.settings.modelVariant
-          ? packIdForVariant(state.settings.modelVariant)
-          : null;
-        const eventPack = packIdForVariant(status.variant);
-        const packAggregate = aggregatePackStatus(modelStatuses, eventPack);
-        const nextSettings = { ...state.settings, downloadedModels };
-
-        if (status.state !== "downloading") {
-          const currentSelected = state.settings.modelVariant;
-          const nextSelected =
-            currentSelected &&
-            MODEL_PACKS[eventPack].variants.includes(currentSelected) &&
-            !downloadedModels.includes(currentSelected)
-              ? null
-              : currentSelected;
-          if (nextSettings.modelVariant !== nextSelected) {
-            nextSettings.modelVariant = nextSelected;
-          }
-          if (api.isTauriRuntime()) {
-            void api.setSetting("downloadedModels", downloadedModels);
-            if (nextSelected === null && currentSelected !== null) {
-              void api.setSetting("modelVariant", nextSelected);
-            }
-          }
-        }
-
-        return {
-          modelStatuses,
-          settings: nextSettings,
-          bootstrapStatus:
-            selectedPack === eventPack
-              ? packAggregate.state === "downloading"
-                ? {
-                    state: "downloading",
-                    message: tr("status.downloadingModel", {
-                      model: MODEL_PACKS[eventPack].label,
-                    }),
-                    downloadedBytes: packAggregate.downloadedBytes,
-                    totalBytes: packAggregate.totalBytes,
-                  }
-                : packAggregate.state === "failed"
-                  ? {
-                      state: "failed",
-                      message: packAggregate.error?.message ?? tr("status.stackReportedError"),
-                      error: packAggregate.error ?? null,
-                    }
-                  : packAggregate.state === "ready"
-                    ? {
-                        state: "ready",
-                        message: tr("status.modelReady", {
-                          model: MODEL_PACKS[eventPack].label,
-                        }),
-                      }
-                    : {
-                        state: "pending",
-                        message: tr("status.downloadModelToStart", {
-                          model: MODEL_PACKS[eventPack].label,
-                        }),
-                      }
-              : resolveModelBootstrapStatus(
-                  nextSettings,
-                  state.deviceInfo,
-                  modelStatuses,
-                  state.backendProvisionStatus,
-                ),
-        };
+        const { patch, sideEffects } = computeModelStatusPatch(status, state);
+        for (const effect of sideEffects) void effect;
+        return patch;
       });
     },
 
@@ -356,68 +190,7 @@ export function createModelSlice(
       set({ bootstrapStatus });
     },
 
-    refreshBackendProvisionStatus: async () => {
-      if (!api.isTauriRuntime()) return;
-      try {
-        const status = await api.getBackendProvisionStatus();
-        set({ backendProvisionStatus: status });
-      } catch (error) {
-        console.warn("Failed to refresh backend provision status:", error);
-      }
-    },
-
-    provisionBackend: async () => {
-      if (!api.isTauriRuntime()) return;
-      try {
-        const status = await api.provisionBackend();
-        set({ backendProvisionStatus: status });
-        // Refresh bootstrap status after provisioning
-        await get().refreshBootstrapStatus();
-      } catch (error) {
-        set({
-          backendProvisionStatus: {
-            state: "failed",
-            installedCommit: null,
-            installedTag: null,
-            latestCommit: null,
-            latestTag: null,
-            updateAvailable: false,
-            downloadedBytes: 0,
-            error:
-              error instanceof Error
-                ? {
-                    code: "BACKEND_PROVISION_FAILED",
-                    message: error.message,
-                    recoverable: true,
-                  }
-                : undefined,
-          },
-        });
-      }
-    },
-
-    updateBackend: async () => {
-      if (!api.isTauriRuntime()) return;
-      try {
-        const status = await api.updateBackend();
-        set({ backendProvisionStatus: status });
-        await get().refreshBootstrapStatus();
-      } catch (error) {
-        set({
-          backendProvisionStatus: {
-            ...get().backendProvisionStatus,
-            state: "failed",
-            error:
-              error instanceof Error
-                ? {
-                    code: "BACKEND_PROVISION_FAILED",
-                    message: error.message,
-                    recoverable: true,
-                  }
-                : undefined,
-          },
-        });
-      }
-    },
+    ...createBackendProvisionActions(set, get),
+    ...createModelSyncActions(set, get),
   };
 }

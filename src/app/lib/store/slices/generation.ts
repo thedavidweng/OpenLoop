@@ -1,6 +1,6 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type { GenerationEvent, GenerationRecord } from "@/app/lib/types";
+import type { GenerationRecord } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   PREVIEW_DELAY_MS,
@@ -8,7 +8,6 @@ import {
   createIdleGenerationState,
   prependRecentPrompt,
   sleep,
-  variationLabel,
 } from "@/app/lib/store-helpers";
 import {
   createModelRequiredError,
@@ -23,6 +22,8 @@ import { mergeGenerationRecords } from "@/app/lib/history-workflow";
 import { validateGenerationForm } from "@/app/lib/validation";
 import { tr } from "@/app/lib/i18n";
 import { isModelDownloaded } from "@/app/lib/model-packs";
+import { applyGenerationEvent } from "./generation-events";
+import { createGenerationTaskActions } from "./generation-tasks";
 
 export function createGenerationSlice(
   set: StoreApi<GenerationStore>["setState"],
@@ -34,114 +35,8 @@ export function createGenerationSlice(
     playbackToggleRequest: 0,
     activeTasks: [],
 
-    applyGenerationEvent: (event: GenerationEvent) => {
-      switch (event.type) {
-        case "backend_starting":
-          set({
-            bootstrapStatus: {
-              state: "downloading",
-              message: tr("status.preparingBackend"),
-            },
-            generationState: {
-              status: "running",
-              phase: "backend_starting",
-              statusMessage: `${tr("status.startingBackend")}${variationLabel(event)}`,
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "submitted":
-          set({
-            generationState: {
-              status: "running",
-              phase: "submitted",
-              statusMessage: `${tr("status.submittedTask", { taskId: event.taskId })}${variationLabel(event)}`,
-              error: null,
-              taskId: event.taskId,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "queued":
-          set({
-            generationState: {
-              status: "running",
-              phase: "queued",
-              statusMessage: `${tr("status.queued")}${variationLabel(event)}`,
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "running":
-          set({
-            generationState: {
-              status: "running",
-              phase: "running",
-              statusMessage: `${tr("status.running")}${variationLabel(event)}`,
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-              progressPercent: event.progressPercent,
-            },
-          });
-          break;
-        case "downloading":
-          set({
-            generationState: {
-              status: "running",
-              phase: "downloading",
-              statusMessage: `${tr("status.downloadingAudio")}${variationLabel(event)}`,
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "completed":
-          set({
-            bootstrapStatus: {
-              state: "ready",
-              message: tr("status.localStackReady"),
-            },
-            generationState: {
-              status: "completed",
-              phase: "completed",
-              statusMessage: tr("status.completed"),
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "cancelled":
-          set({
-            generationState: {
-              status: "cancelled",
-              phase: "cancelled",
-              statusMessage: tr("status.cancelled"),
-              error: null,
-              variationCurrent: event.variationCurrent,
-              variationTotal: event.variationTotal,
-            },
-          });
-          break;
-        case "failed": {
-          const error = localizeAppError(event.error);
-          set({
-            bootstrapStatus: shouldMarkBootstrapFailed(error.code)
-              ? { state: "failed", message: error.message, error }
-              : { state: "ready", message: tr("status.localStackReady") },
-            generationState: createFailedGenerationState(tr("status.failed"), error),
-          });
-          break;
-        }
-      }
-    },
+    applyGenerationEvent: (event: Parameters<typeof applyGenerationEvent>[0]) =>
+      applyGenerationEvent(event, set),
 
     runGeneration: async () => {
       const validation = validateGenerationForm(get().form);
@@ -298,55 +193,12 @@ export function createGenerationSlice(
       });
     },
 
-    refreshActiveTasks: async () => {
-      if (!api.isTauriRuntime()) return;
-      const activeTasks = await api.listActiveGenerationTasks();
-      set({ activeTasks });
-    },
-
-    resumeActiveTask: async (id: string) => {
-      set({
-        generationState: {
-          status: "running",
-          phase: "recovering",
-          statusMessage: tr("status.recovering"),
-          error: null,
-        },
-      });
-      try {
-        const record = await api.resumeGenerationTask(id);
-        set((state) => ({
-          activeTasks: state.activeTasks.filter((task) => task.id !== id),
-          currentGeneration: record,
-          history: [record, ...state.history.filter((item) => item.id !== record.id)],
-          generationState: {
-            status: "completed",
-            phase: "completed",
-            statusMessage: tr("status.completed"),
-            error: null,
-          },
-        }));
-      } catch (error) {
-        const appError = localizeAppError(error);
-        set({
-          generationState: createFailedGenerationState(tr("status.recoveryFailed"), appError),
-        });
-      }
-    },
-
-    discardActiveTask: async (id: string) => {
-      if (api.isTauriRuntime()) {
-        await api.discardActiveGenerationTask(id);
-      }
-      set((state) => ({
-        activeTasks: state.activeTasks.filter((task) => task.id !== id),
-      }));
-    },
-
     requestPlaybackToggle: () => {
       set((state) => ({
         playbackToggleRequest: state.playbackToggleRequest + 1,
       }));
     },
+
+    ...createGenerationTaskActions(set, get),
   };
 }

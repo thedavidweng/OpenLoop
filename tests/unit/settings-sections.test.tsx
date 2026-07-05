@@ -155,6 +155,8 @@ function setupMockStore(overrides?: Record<string, unknown>) {
     deleteModelVariant,
     cancelModelDownload,
     clearPartialModelDownloads,
+    highContrast: false,
+    setHighContrast: vi.fn(),
     ...overrides,
   };
   (vi.mocked(useGenerationStore) as any).mockImplementation(
@@ -315,6 +317,28 @@ describe("GeneralSection", () => {
       .getAllByRole("checkbox")
       .find((cb) => cb.hasAttribute("disabled"));
     expect(disabledCheckbox).toBeTruthy();
+  });
+
+  it("toggles high contrast mode when checkbox is clicked", async () => {
+    const mockSetHighContrast = vi.fn();
+    setupMockStore({ setHighContrast: mockSetHighContrast });
+    const user = userEvent.setup();
+    render(<GeneralSection {...baseProps} />);
+    const highContrastCheckbox = screen.getByRole("checkbox", {
+      name: /settings\.highContrast/i,
+    }) as HTMLInputElement;
+    expect(highContrastCheckbox.checked).toBe(false);
+    await user.click(highContrastCheckbox);
+    expect(mockSetHighContrast).toHaveBeenCalledWith(true);
+  });
+
+  it("reflects high contrast enabled state from store", () => {
+    setupMockStore({ highContrast: true });
+    render(<GeneralSection {...baseProps} />);
+    const highContrastCheckbox = screen.getByRole("checkbox", {
+      name: /settings\.highContrast/i,
+    }) as HTMLInputElement;
+    expect(highContrastCheckbox.checked).toBe(true);
   });
 
   it("renders reset to defaults button", () => {

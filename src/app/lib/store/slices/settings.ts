@@ -173,6 +173,7 @@ export function createSettingsSlice(
           favoriteRecordIds,
           activeTasks,
           projects,
+          highContrast: mergedSettings.highContrast ?? false,
           currentGeneration: persistedHistory[0] ?? null,
         });
         await get().refreshBootstrapStatus();

@@ -477,7 +477,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       {backendProvisionStatus.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                           <CheckCircle2 size={10} />
-                          {t("setup.downloadComplete")}
+                          {t("setup.engineReady")}
                         </span>
                       ) : backendProvisionStatus.state === "failed" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">

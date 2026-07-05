@@ -42,6 +42,7 @@
     "modelProfileHeading": "运行配置档",
     "downloadAccent": "已下载 {{percent}}%",
     "downloadComplete": "权重已下载",
+    "engineReady": "就绪",
     "downloadedBadge": "已下载",
     "shortcutsHint": "键盘快捷键",
     "shortcut_toggleSidebar": "切换侧边栏",

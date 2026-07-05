@@ -42,6 +42,7 @@
     "modelProfileHeading": "Runtime profiles",
     "downloadAccent": "{{percent}}% downloaded",
     "downloadComplete": "Pack downloaded",
+    "engineReady": "Ready",
     "downloadedBadge": "Downloaded",
     "shortcutsHint": "Keyboard shortcuts",
     "shortcut_toggleSidebar": "Toggle sidebar",

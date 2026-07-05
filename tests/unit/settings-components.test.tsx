@@ -406,7 +406,7 @@ describe("SetupScreen", () => {
     expect(
       screen.getByText("settings.backendEngineDescription"),
     ).toBeTruthy();
-    expect(screen.getByText("setup.downloadComplete")).toBeTruthy();
+    expect(screen.getByText("setup.engineReady")).toBeTruthy();
   });
 
   it("shows variant picker cards on the model step", async () => {

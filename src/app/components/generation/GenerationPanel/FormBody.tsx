@@ -128,8 +128,9 @@ export function FormBody({
           value={form.prompt}
           onChange={handleTextFieldChange("prompt")}
           disabled={isBusy}
+          aria-describedby={validationErrors.prompt ? "error-prompt" : undefined}
         />
-        <FieldError message={validationErrors.prompt} />
+        <FieldError id="error-prompt" message={validationErrors.prompt} />
       </label>
 
       {/* Model info - compact row */}
@@ -223,8 +224,9 @@ export function FormBody({
           value={form.lyrics}
           onChange={handleTextFieldChange("lyrics")}
           disabled={isBusy || form.instrumental}
+          aria-describedby={validationErrors.lyrics ? "error-lyrics" : undefined}
         />
-        <FieldError message={validationErrors.lyrics} />
+        <FieldError id="error-lyrics" message={validationErrors.lyrics} />
       </div>
 
       {/* Basic parameters - grouped */}
@@ -244,8 +246,9 @@ export function FormBody({
               value={form.durationSeconds}
               onChange={handleTextFieldChange("durationSeconds")}
               disabled={isBusy}
+              aria-describedby={validationErrors.durationSeconds ? "error-duration" : undefined}
             />
-            <FieldError message={validationErrors.durationSeconds} />
+            <FieldError id="error-duration" message={validationErrors.durationSeconds} />
           </label>
           <label className="space-y-1">
             <FieldLabel>{t("generation.bpm")}</FieldLabel>
@@ -271,9 +274,10 @@ export function FormBody({
                 value={form.bpm}
                 onChange={handleTextFieldChange("bpm")}
                 disabled={isBusy || form.bpmMode === "auto"}
+                aria-describedby={validationErrors.bpm ? "error-bpm" : undefined}
               />
             </div>
-            <FieldError message={validationErrors.bpm} />
+            <FieldError id="error-bpm" message={validationErrors.bpm} />
           </label>
           <label className="space-y-1">
             <FieldLabel>{t("generation.keyScale")}</FieldLabel>
@@ -366,7 +370,7 @@ export function FormBody({
         contentClassName="border-t border-[var(--color-border-light)]"
       >
         <div className="space-y-4 p-4">
-          <p className="text-[12px] text-[var(--color-text-dim)]">
+          <p id="desc-tweak-sound" className="text-[12px] text-[var(--color-text-dim)]">
             {t("generation.tweakSoundDesc")}
           </p>
           <div className="grid gap-3 md:grid-cols-2">
@@ -378,8 +382,13 @@ export function FormBody({
                 value={form.negativePrompt}
                 onChange={handleTextFieldChange("negativePrompt")}
                 disabled={isBusy}
+                aria-describedby={
+                  validationErrors.negativePrompt
+                    ? "error-negative-prompt desc-tweak-sound"
+                    : "desc-tweak-sound"
+                }
               />
-              <FieldError message={validationErrors.negativePrompt} />
+              <FieldError id="error-negative-prompt" message={validationErrors.negativePrompt} />
             </label>
 
             <label className="space-y-1">
@@ -391,8 +400,11 @@ export function FormBody({
                 value={form.inferenceSteps}
                 onChange={handleTextFieldChange("inferenceSteps")}
                 disabled={isBusy}
+                aria-describedby={
+                  validationErrors.inferenceSteps ? "error-inference-steps" : undefined
+                }
               />
-              <FieldError message={validationErrors.inferenceSteps} />
+              <FieldError id="error-inference-steps" message={validationErrors.inferenceSteps} />
             </label>
             <label className="space-y-1">
               <FieldLabel>{t("generation.guidanceScale")}</FieldLabel>
@@ -404,8 +416,11 @@ export function FormBody({
                 value={form.guidanceScale}
                 onChange={handleTextFieldChange("guidanceScale")}
                 disabled={isBusy}
+                aria-describedby={
+                  validationErrors.guidanceScale ? "error-guidance-scale" : undefined
+                }
               />
-              <FieldError message={validationErrors.guidanceScale} />
+              <FieldError id="error-guidance-scale" message={validationErrors.guidanceScale} />
             </label>
           </div>
 

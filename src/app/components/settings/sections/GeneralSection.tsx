@@ -22,6 +22,8 @@ export function GeneralSection({
   const reopenSetup = useGenerationStore((state) => state.reopenSetup);
   const closeSettings = useGenerationStore((state) => state.closeSettings);
   const settings = useGenerationStore((state) => state.settings);
+  const highContrast = useGenerationStore((state) => state.highContrast);
+  const setHighContrast = useGenerationStore((state) => state.setHighContrast);
 
   return (
     <SettingsSectionCard
@@ -74,19 +76,29 @@ export function GeneralSection({
         </div>
       </label>
 
+      <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={highContrast}
+          onChange={(event) => setHighContrast(event.target.checked)}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-white">{t("settings.highContrast")}</p>
+          <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
+            {t("settings.highContrastDescription")}
+          </p>
+        </div>
+      </label>
+
       <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3 opacity-50 cursor-not-allowed">
         <input type="checkbox" className="mt-0.5" disabled checked={false} onChange={() => {}} />
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-medium text-white">
-            {t("settings.anonymousErrorReports", {
-              defaultValue: "Anonymous error reports",
-            })}
+            {t("settings.anonymousErrorReports")}
           </p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
-            {t("settings.anonymousErrorReportsDescription", {
-              defaultValue:
-                "Help improve OpenLoop by sending anonymous error reports. Coming in a future update.",
-            })}
+            {t("settings.anonymousErrorReportsDescription")}
           </p>
         </div>
       </label>

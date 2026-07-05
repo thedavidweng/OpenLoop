@@ -25,6 +25,7 @@ export function createUISlice(
     setupOverride: false,
     lyricsPanelOpen: false,
     demoMode: false,
+    highContrast: false,
     form: DEFAULT_GENERATION_FORM_VALUES,
     validationErrors: {},
     currentRequest: INITIAL_CURRENT_REQUEST,
@@ -94,6 +95,10 @@ export function createUISlice(
 
     dismissDemoMode: () => {
       set({ demoMode: false });
+    },
+
+    setHighContrast: (enabled: boolean) => {
+      set({ highContrast: enabled });
     },
 
     resetForm: () => {

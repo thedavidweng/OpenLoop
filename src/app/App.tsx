@@ -8,6 +8,13 @@ import * as api from "@/app/lib/api";
 import { useGenerationStore } from "@/app/lib/store";
 import { useAppMenuRuntime } from "@/app/runtime/menu-runtime";
 
+function useHighContrast() {
+  const highContrast = useGenerationStore((s) => s.highContrast);
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-high-contrast", highContrast);
+  }, [highContrast]);
+}
+
 function BootShell() {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-[#121212] text-[12px] tracking-wide text-[rgba(255,255,255,0.55)]">
@@ -17,6 +24,7 @@ function BootShell() {
 }
 
 function App() {
+  useHighContrast();
   const { t } = useTranslation();
   const { addToast } = useToast();
   const hydrateFromPersistence = useGenerationStore((state) => state.hydrateFromPersistence);

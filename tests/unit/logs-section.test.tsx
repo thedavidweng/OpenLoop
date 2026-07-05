@@ -7,6 +7,17 @@ vi.mock("@/app/lib/api", () => ({
   getAppLogs: vi.fn(),
 }));
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) => {
+      if (opts?.defaultValue) return opts.defaultValue as string;
+      return key;
+    },
+    i18n: { language: "en", changeLanguage: vi.fn() },
+  }),
+  initReactI18next: { type: "3rdParty", init: vi.fn() },
+}));
+
 import * as api from "@/app/lib/api";
 
 const mockGetAppLogs = vi.mocked(api.getAppLogs);
@@ -19,7 +30,7 @@ describe("LogsSection", () => {
   it("renders empty state when no logs", async () => {
     mockGetAppLogs.mockResolvedValue([]);
     render(<LogsSection />);
-    await screen.findByText(/No log entries/i);
+    await screen.findByText("settings.noLogs");
     expect(mockGetAppLogs).toHaveBeenCalledWith("info", 200);
   });
 
@@ -54,7 +65,7 @@ describe("LogsSection", () => {
     const user = userEvent.setup();
     mockGetAppLogs.mockResolvedValue([]);
     render(<LogsSection />);
-    await screen.findByText(/No log entries/i);
+    await screen.findByText("settings.noLogs");
     expect(mockGetAppLogs).toHaveBeenLastCalledWith("info", 200);
 
     const select = screen.getByDisplayValue("info");

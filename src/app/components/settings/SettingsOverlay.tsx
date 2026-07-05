@@ -65,11 +65,7 @@ export function SettingsOverlay() {
 
   const handleSave = async () => {
     if (!(await saveChanges())) {
-      setSaveNotice(
-        t("settings.backendPortInvalid", {
-          defaultValue: "Backend port must be between 1024 and 65535.",
-        }),
-      );
+      setSaveNotice(t("settings.backendPortInvalid"));
       return;
     }
     await hydrateFromPersistence();
@@ -87,8 +83,8 @@ export function SettingsOverlay() {
     { id: "defaults", label: t("settings.defaults") },
     { id: "general", label: t("settings.general") },
     { id: "backend", label: t("settings.backend") },
-    { id: "network", label: t("settings.networkActivity", { defaultValue: "Network" }) },
-    { id: "logs", label: t("settings.appLogs", { defaultValue: "Logs" }) },
+    { id: "network", label: t("settings.networkActivity") },
+    { id: "logs", label: t("settings.appLogs") },
     { id: "danger", label: t("settings.danger") },
   ] as const;
 

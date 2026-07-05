@@ -63,6 +63,10 @@ export function HistorySidebar() {
     });
   }, [history, historyQuery]);
 
+  // O(1) membership lookups for per-row checks in the virtualized render loop.
+  const selectedHistoryIdSet = useMemo(() => new Set(selectedHistoryIds), [selectedHistoryIds]);
+  const favoriteRecordIdSet = useMemo(() => new Set(favoriteRecordIds), [favoriteRecordIds]);
+
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: filteredHistory.length,
@@ -233,7 +237,7 @@ export function HistorySidebar() {
               {virtualizer.getVirtualItems().map((virtualItem) => {
                 const item = filteredHistory[virtualItem.index];
                 const selected = currentGeneration?.id === item.id;
-                const isMultiSelected = selectedHistoryIds.includes(item.id);
+                const isMultiSelected = selectedHistoryIdSet.has(item.id);
                 return (
                   <div
                     key={virtualItem.key}
@@ -301,7 +305,7 @@ export function HistorySidebar() {
                             {/* Favorite star */}
                             <Tooltip
                               label={
-                                favoriteRecordIds.includes(item.id)
+                                favoriteRecordIdSet.has(item.id)
                                   ? t("history.unfavorite")
                                   : t("history.favorite")
                               }
@@ -312,13 +316,11 @@ export function HistorySidebar() {
                                   e.stopPropagation();
                                   toggleFavoriteRecord(item.id);
                                 }}
-                                className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIds.includes(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
+                                className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${favoriteRecordIdSet.has(item.id) ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
                               >
                                 <Star
                                   size={11}
-                                  fill={
-                                    favoriteRecordIds.includes(item.id) ? "currentColor" : "none"
-                                  }
+                                  fill={favoriteRecordIdSet.has(item.id) ? "currentColor" : "none"}
                                 />
                               </button>
                             </Tooltip>

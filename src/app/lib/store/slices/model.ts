@@ -148,7 +148,11 @@ export function createModelSlice(
     applyModelStatus: (status: ModelStatusSnapshot) => {
       set((state) => {
         const { patch, sideEffects } = computeModelStatusPatch(status, state);
-        for (const effect of sideEffects) void effect;
+        for (const effect of sideEffects) {
+          Promise.resolve(effect).catch((error) => {
+            console.warn("Model status side effect failed:", error);
+          });
+        }
         return patch;
       });
     },

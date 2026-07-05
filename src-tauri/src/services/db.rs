@@ -346,10 +346,17 @@ impl Database {
                 format!("No project exists for id {id}"),
             ));
         }
+        let created_at: String = connection
+            .query_row(
+                "SELECT created_at FROM projects WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
         Ok(Project {
             id: id.to_string(),
             name: name.to_string(),
-            created_at: now.clone(),
+            created_at,
             updated_at: now,
         })
     }
@@ -387,6 +394,22 @@ impl Database {
             ));
         }
         Ok(())
+    }
+
+    /// Find generation IDs matching a prefix. Returns up to 2 matches for ambiguity detection.
+    pub fn find_generation_ids_by_prefix(&self, prefix: &str) -> AppResult<Vec<String>> {
+        let connection = self.connection()?;
+        let pattern = format!("{prefix}%");
+        let mut statement = connection
+            .prepare("SELECT id FROM generations WHERE id LIKE ?1 LIMIT 2")
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        let mapped = statement
+            .query_map(params![pattern], |row| row.get::<_, String>(0))
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        mapped
+            .into_iter()
+            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+            .collect()
     }
 
     pub fn list_generations_by_project(
@@ -1033,5 +1056,37 @@ mod tests {
             .expect("get")
             .expect("record");
         assert!(fetched.project_id.is_none());
+    }
+
+    #[test]
+    fn find_generation_ids_by_prefix_returns_targeted_matches() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let database = Database::new(temp_dir.path()).expect("database should init");
+
+        let mut record = sample_record();
+        record.id = "gen_abc123".to_owned();
+        database.insert_generation(&record).expect("insert");
+
+        let mut other = sample_record();
+        other.id = "gen_xyz789".to_owned();
+        database.insert_generation(&other).expect("insert");
+
+        // Prefix match
+        let matches = database
+            .find_generation_ids_by_prefix("gen_abc")
+            .expect("prefix search");
+        assert_eq!(matches, vec!["gen_abc123".to_owned()]);
+
+        // No match
+        let none = database
+            .find_generation_ids_by_prefix("zzz")
+            .expect("prefix search");
+        assert!(none.is_empty());
+
+        // Ambiguous prefix (both start with "gen_")
+        let ambiguous = database
+            .find_generation_ids_by_prefix("gen_")
+            .expect("prefix search");
+        assert_eq!(ambiguous.len(), 2);
     }
 }

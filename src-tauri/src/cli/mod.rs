@@ -103,3 +103,26 @@ pub fn human_output(line: &str) {
 pub fn human_error(line: &str) {
     eprintln!("\x1b[31m✗\x1b[0m Error: {line}");
 }
+
+/// Resolve a project reference (ID prefix or exact name) to a project ID.
+pub fn resolve_project_by_prefix(
+    db: &crate::services::db::Database,
+    prefix: &str,
+) -> crate::models::errors::AppResult<String> {
+    let projects = db.list_projects()?;
+    let matches: Vec<_> = projects
+        .iter()
+        .filter(|p| p.id.starts_with(prefix) || p.name == prefix)
+        .collect();
+    match matches.len() {
+        0 => Err(crate::models::errors::AppError::not_found(
+            "Project",
+            format!("No project matches '{prefix}'"),
+        )),
+        1 => Ok(matches[0].id.clone()),
+        _ => Err(crate::models::errors::AppError::validation_failed(format!(
+            "Ambiguous project prefix '{prefix}' matched {} projects",
+            matches.len()
+        ))),
+    }
+}

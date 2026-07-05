@@ -1,5 +1,5 @@
 use crate::{
-    cli::{cli_error, human_output, json_output, spec::ProjectCommand},
+    cli::{cli_error, human_output, json_output, resolve_project_by_prefix, spec::ProjectCommand},
     models::errors::{AppError, AppResult},
 };
 
@@ -82,16 +82,23 @@ fn cmd_delete(state: &AppState, json: bool, id: &str, yes: bool) -> AppResult<()
 
     if !yes {
         use std::io::Write;
+        let projects = state.db.list_projects()?;
+        let display_name = projects
+            .iter()
+            .find(|p| p.id == resolved)
+            .map(|p| p.name.as_str())
+            .unwrap_or(&resolved);
         print!(
             "Delete project '{}'? Generations will be unassigned, not deleted. [y/N] ",
-            resolved
+            display_name
         );
         std::io::stdout().flush().ok();
         let mut input = String::new();
         std::io::stdin()
             .read_line(&mut input)
             .map_err(|e| cli_error(e.to_string()))?;
-        if !["y\n", "Y\n", "yes\n", "Yes\n"].contains(&input.as_str()) {
+        let trimmed = input.trim();
+        if !["y", "Y", "yes", "Yes"].contains(&trimmed) {
             human_output("Cancelled.");
             return Ok(());
         }
@@ -144,37 +151,14 @@ fn cmd_assign(
     Ok(())
 }
 
-fn resolve_project_by_prefix(
-    db: &crate::services::db::Database,
-    prefix: &str,
-) -> AppResult<String> {
-    let projects = db.list_projects()?;
-    let matches: Vec<_> = projects
-        .iter()
-        .filter(|p| p.id.starts_with(prefix) || p.name == prefix)
-        .collect();
-    match matches.len() {
-        0 => Err(AppError::not_found(
-            "Project",
-            format!("No project matches '{prefix}'"),
-        )),
-        1 => Ok(matches[0].id.clone()),
-        _ => Err(AppError::validation_failed(format!(
-            "Ambiguous project prefix '{prefix}' matched {} projects",
-            matches.len()
-        ))),
-    }
-}
-
 fn resolve_generation_by_prefix(state: &AppState, prefix: &str) -> AppResult<String> {
-    let records = state.db.list_generations(None, None)?;
-    let matches: Vec<_> = records.iter().filter(|r| r.id.starts_with(prefix)).collect();
+    let matches = state.db.find_generation_ids_by_prefix(prefix)?;
     match matches.len() {
         0 => Err(AppError::not_found(
             "Generation record",
             format!("No generation record matches '{prefix}'"),
         )),
-        1 => Ok(matches[0].id.clone()),
+        1 => Ok(matches[0].clone()),
         _ => Err(AppError::validation_failed(format!(
             "Ambiguous generation prefix '{prefix}' matched {} records",
             matches.len()

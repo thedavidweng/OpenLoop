@@ -57,6 +57,7 @@ pub struct AppSettings {
     pub default_thinking: bool,
     pub first_run_completed: bool,
     pub check_for_updates: bool,
+    pub high_contrast: bool,
     pub language: Option<String>,
     pub model_directory: Option<String>,
     pub backend_working_directory: Option<String>,
@@ -93,6 +94,7 @@ impl Default for AppSettings {
             default_thinking: true,
             first_run_completed: false,
             check_for_updates: true,
+            high_contrast: false,
             language: None,
             model_directory: None,
             backend_working_directory: None,
@@ -168,6 +170,7 @@ pub enum SettingKey {
     DefaultThinking,
     FirstRunCompleted,
     CheckForUpdates,
+    HighContrast,
     Language,
     ModelDirectory,
     BackendWorkingDirectory,
@@ -188,6 +191,7 @@ impl SettingKey {
             "defaultThinking" => Ok(Self::DefaultThinking),
             "firstRunCompleted" => Ok(Self::FirstRunCompleted),
             "checkForUpdates" => Ok(Self::CheckForUpdates),
+            "highContrast" => Ok(Self::HighContrast),
             "language" => Ok(Self::Language),
             "modelDirectory" => Ok(Self::ModelDirectory),
             "backendWorkingDirectory" => Ok(Self::BackendWorkingDirectory),
@@ -211,6 +215,7 @@ impl SettingKey {
             Self::DefaultThinking => "defaultThinking",
             Self::FirstRunCompleted => "firstRunCompleted",
             Self::CheckForUpdates => "checkForUpdates",
+            Self::HighContrast => "highContrast",
             Self::Language => "language",
             Self::ModelDirectory => "modelDirectory",
             Self::BackendWorkingDirectory => "backendWorkingDirectory",
@@ -289,6 +294,11 @@ impl AppSettings {
                     AppError::validation_failed(format!("invalid checkForUpdates value: {error}"))
                 })?;
             }
+            SettingKey::HighContrast => {
+                self.high_contrast = serde_json::from_value(value).map_err(|error| {
+                    AppError::validation_failed(format!("invalid highContrast value: {error}"))
+                })?;
+            }
             SettingKey::Language => {
                 self.language = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid language value: {error}"))
@@ -353,6 +363,7 @@ impl AppSettings {
                 "checkForUpdates",
                 serde_json::to_string(&self.check_for_updates),
             ),
+            ("highContrast", serde_json::to_string(&self.high_contrast)),
             ("language", serde_json::to_string(&self.language)),
             (
                 "modelDirectory",
@@ -404,6 +415,7 @@ mod tests {
             "defaultThinking",
             "firstRunCompleted",
             "checkForUpdates",
+            "highContrast",
             "language",
             "modelDirectory",
             "backendWorkingDirectory",

@@ -403,9 +403,7 @@ describe("SetupScreen", () => {
     await goToStep(user, "setup.model");
 
     expect(screen.getByText("ACE-Step Engine")).toBeTruthy();
-    expect(
-      screen.getByText("settings.backendEngineDescription"),
-    ).toBeTruthy();
+    expect(screen.getByText("settings.backendEngineDescription")).toBeTruthy();
     expect(screen.getByText("setup.engineReady")).toBeTruthy();
   });
 

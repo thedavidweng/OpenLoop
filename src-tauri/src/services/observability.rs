@@ -358,13 +358,17 @@ mod tests {
 
         let entries = read_app_logs(dir.path(), Some("warn"), None);
         assert_eq!(entries.len(), 2);
-        assert!(entries.iter().all(|e| e.level == "warn" || e.level == "error"));
+        assert!(entries
+            .iter()
+            .all(|e| e.level == "warn" || e.level == "error"));
     }
 
     #[test]
     fn read_app_logs_respects_limit() {
         let dir = tempfile::tempdir().expect("temp dir");
-        let lines: Vec<String> = (0..10).map(|i| json_line("info", "app", &format!("m{i}"))).collect();
+        let lines: Vec<String> = (0..10)
+            .map(|i| json_line("info", "app", &format!("m{i}")))
+            .collect();
         let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
         write_log_file(dir.path(), "openloop-20260704T120000.log", &refs);
 
@@ -376,7 +380,9 @@ mod tests {
     fn read_app_logs_limit_returns_newest_entries() {
         let dir = tempfile::tempdir().expect("temp dir");
         // File is appended oldest-first: m0, m1, ..., m9
-        let lines: Vec<String> = (0..10).map(|i| json_line("info", "app", &format!("m{i}"))).collect();
+        let lines: Vec<String> = (0..10)
+            .map(|i| json_line("info", "app", &format!("m{i}")))
+            .collect();
         let refs: Vec<&str> = lines.iter().map(|s| s.as_str()).collect();
         write_log_file(dir.path(), "openloop-20260704T120000.log", &refs);
 

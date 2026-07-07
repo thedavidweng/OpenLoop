@@ -305,11 +305,7 @@ export function HistorySidebar() {
                           <div className="flex items-center gap-1">
                             {/* Favorite star */}
                             <Tooltip
-                              label={
-                                isFavorited
-                                  ? t("history.unfavorite")
-                                  : t("history.favorite")
-                              }
+                              label={isFavorited ? t("history.unfavorite") : t("history.favorite")}
                             >
                               <button
                                 type="button"
@@ -319,10 +315,7 @@ export function HistorySidebar() {
                                 }}
                                 className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors hover:bg-[var(--color-ghost-hover)] ${isFavorited ? "text-amber-300" : "text-[var(--color-text-dim)] hover:text-amber-200"}`}
                               >
-                                <Star
-                                  size={11}
-                                  fill={isFavorited ? "currentColor" : "none"}
-                                />
+                                <Star size={11} fill={isFavorited ? "currentColor" : "none"} />
                               </button>
                             </Tooltip>
                             {/* Quick play button */}

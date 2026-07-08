@@ -38,14 +38,12 @@ export function LogsSection() {
   return (
     <SettingsSectionCard
       id="settings-section-logs"
-      title={t("settings.appLogs", { defaultValue: "Application Logs" })}
-      description={t("settings.appLogsDescription", {
-        defaultValue: "Structured diagnostic events from the current session.",
-      })}
+      title={t("settings.appLogs")}
+      description={t("settings.appLogsDescription")}
       headerAction={
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-dim)]">
-            {t("settings.logLevel", { defaultValue: "Level" })}
+            {t("settings.logLevel")}
             <select
               value={minLevel}
               onChange={(e) => setMinLevel(e.target.value as Level)}
@@ -64,19 +62,13 @@ export function LogsSection() {
             disabled={loading}
             className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white disabled:opacity-50"
           >
-            {loading
-              ? t("settings.refreshing", { defaultValue: "Refreshing..." })
-              : t("settings.refresh", { defaultValue: "Refresh" })}
+            {loading ? t("settings.refreshing") : t("settings.refresh")}
           </button>
         </div>
       }
     >
       {entries.length === 0 ? (
-        <p className="text-[12px] text-[var(--color-text-dim)]">
-          {t("settings.noLogs", {
-            defaultValue: "No log entries at this level.",
-          })}
-        </p>
+        <p className="text-[12px] text-[var(--color-text-dim)]">{t("settings.noLogs")}</p>
       ) : (
         <div className="max-h-72 overflow-y-auto rounded-md border border-[var(--color-border-light)] font-mono text-[11px]">
           {entries.map((entry, index) => (

@@ -230,6 +230,7 @@ export type AppSettings = {
   logDirectory?: string | null;
   modelMirror?: string | null;
   checkForUpdates?: boolean;
+  highContrast?: boolean;
   recentPrompts?: string[];
   favoritePrompts?: string[];
 };

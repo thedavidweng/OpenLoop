@@ -5,6 +5,7 @@ import { DEFAULT_GENERATION_FORM_VALUES } from "@/app/lib/validation";
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { INITIAL_CURRENT_REQUEST } from "@/app/lib/history-workflow";
 import { createIdleGenerationState } from "@/app/lib/store-helpers";
+import * as api from "@/app/lib/api";
 
 const MIN_SIDEBAR_WIDTH = 240;
 const MAX_SIDEBAR_WIDTH = 420;
@@ -25,6 +26,7 @@ export function createUISlice(
     setupOverride: false,
     lyricsPanelOpen: false,
     demoMode: false,
+    highContrast: false,
     form: DEFAULT_GENERATION_FORM_VALUES,
     validationErrors: {},
     currentRequest: INITIAL_CURRENT_REQUEST,
@@ -94,6 +96,13 @@ export function createUISlice(
 
     dismissDemoMode: () => {
       set({ demoMode: false });
+    },
+
+    setHighContrast: (enabled: boolean) => {
+      set({ highContrast: enabled });
+      if (api.isTauriRuntime()) {
+        api.setSetting("highContrast", enabled);
+      }
     },
 
     resetForm: () => {

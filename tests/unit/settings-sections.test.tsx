@@ -155,6 +155,8 @@ function setupMockStore(overrides?: Record<string, unknown>) {
     deleteModelVariant,
     cancelModelDownload,
     clearPartialModelDownloads,
+    highContrast: false,
+    setHighContrast: vi.fn(),
     ...overrides,
   };
   (vi.mocked(useGenerationStore) as any).mockImplementation(
@@ -309,12 +311,34 @@ describe("GeneralSection", () => {
 
   it("renders anonymous error reports as disabled", () => {
     render(<GeneralSection {...baseProps} />);
-    expect(screen.getByText("Anonymous error reports")).toBeTruthy();
+    expect(screen.getByText("settings.anonymousErrorReports")).toBeTruthy();
     // The disabled checkbox for anonymous error reports
     const disabledCheckbox = screen
       .getAllByRole("checkbox")
       .find((cb) => cb.hasAttribute("disabled"));
     expect(disabledCheckbox).toBeTruthy();
+  });
+
+  it("toggles high contrast mode when checkbox is clicked", async () => {
+    const mockSetHighContrast = vi.fn();
+    setupMockStore({ setHighContrast: mockSetHighContrast });
+    const user = userEvent.setup();
+    render(<GeneralSection {...baseProps} />);
+    const highContrastCheckbox = screen.getByRole("checkbox", {
+      name: /settings\.highContrast/i,
+    }) as HTMLInputElement;
+    expect(highContrastCheckbox.checked).toBe(false);
+    await user.click(highContrastCheckbox);
+    expect(mockSetHighContrast).toHaveBeenCalledWith(true);
+  });
+
+  it("reflects high contrast enabled state from store", () => {
+    setupMockStore({ highContrast: true });
+    render(<GeneralSection {...baseProps} />);
+    const highContrastCheckbox = screen.getByRole("checkbox", {
+      name: /settings\.highContrast/i,
+    }) as HTMLInputElement;
+    expect(highContrastCheckbox.checked).toBe(true);
   });
 
   it("renders reset to defaults button", () => {
@@ -363,12 +387,12 @@ describe("BackendSection", () => {
 
   it("shows invalid port warning when backendPortValid is false", () => {
     render(<BackendSection {...baseProps} backendPortValid={false} />);
-    expect(screen.getByText("Backend port must be between 1024 and 65535.")).toBeTruthy();
+    expect(screen.getByText("settings.backendPortInvalid")).toBeTruthy();
   });
 
   it("hides invalid port warning when backendPortValid is true", () => {
     render(<BackendSection {...baseProps} />);
-    expect(screen.queryByText("Backend port must be between 1024 and 65535.")).toBeNull();
+    expect(screen.queryByText("settings.backendPortInvalid")).toBeNull();
   });
 
   it("renders log directory picker", () => {
@@ -388,12 +412,12 @@ describe("BackendSection", () => {
 
   it("renders reset default port button", () => {
     render(<BackendSection {...baseProps} />);
-    expect(screen.getByText("Reset default port")).toBeTruthy();
+    expect(screen.getByText("settings.resetDefaultPort")).toBeTruthy();
   });
 
   it("renders repair runtime config button", () => {
     render(<BackendSection {...baseProps} />);
-    expect(screen.getByText("Repair runtime config")).toBeTruthy();
+    expect(screen.getByText("settings.repairRuntime")).toBeTruthy();
   });
 
   it("renders backend engine section", () => {
@@ -439,7 +463,7 @@ describe("BackendSection", () => {
       },
     });
     render(<BackendSection {...baseProps} />);
-    expect(screen.getByText("Not installed")).toBeTruthy();
+    expect(screen.getByText("common.notInstalled")).toBeTruthy();
   });
 
   it("calls setDraft reset to defaults", async () => {

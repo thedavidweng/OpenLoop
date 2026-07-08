@@ -59,9 +59,13 @@ type ToggleField =
   | "useCotLanguage"
   | "constrainedDecoding";
 
-function FieldError({ message }: { message?: string }) {
+function FieldError({ message, id }: { message?: string; id?: string }) {
   if (!message) return null;
-  return <p className="text-[11px] text-red-300">{message}</p>;
+  return (
+    <p id={id} className="text-[11px] text-red-300">
+      {message}
+    </p>
+  );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -396,8 +400,9 @@ export function GenerationPanel() {
             value={form.prompt}
             onChange={handleTextFieldChange("prompt")}
             disabled={isBusy}
+            aria-describedby={validationErrors.prompt ? "gen-error-prompt" : undefined}
           />
-          <FieldError message={validationErrors.prompt} />
+          <FieldError id="gen-error-prompt" message={validationErrors.prompt} />
         </label>
 
         {/* Model info - compact row */}

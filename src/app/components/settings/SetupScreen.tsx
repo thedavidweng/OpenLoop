@@ -163,7 +163,7 @@ function PackDownloadCard({
             {state === "ready" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                 <CheckCircle2 size={10} />
-                {t("setup.downloadComplete", { defaultValue: "Downloaded" })}
+                {t("setup.downloadedBadge")}
               </span>
             ) : state === "failed" ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">
@@ -199,7 +199,7 @@ function PackDownloadCard({
           {state === "downloading" || busy ? (
             <>
               <Loader2 size={12} className="animate-spin" />
-              {t("setup.downloadingButton", { defaultValue: "Downloading…" })}
+              {t("setup.downloadingButton")}
             </>
           ) : state === "ready" ? (
             <>
@@ -404,10 +404,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               <SetupActionCard
                 icon={Sparkles}
                 title={t("setup.downloadModel")}
-                description={t("setup.downloadModelDesc", {
-                  defaultValue:
-                    "Download the ACE-Step engine and a model weight pack to start generating.",
-                })}
+                description={t("setup.downloadModelDesc")}
               />
               <SetupActionCard
                 icon={FolderOutput}
@@ -470,9 +467,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             {/* Engine provisioning card */}
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-                {t("settings.backendEngine", {
-                  defaultValue: "Backend engine",
-                })}
+                {t("settings.backendEngine")}
               </p>
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -482,9 +477,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       {backendProvisionStatus.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                           <CheckCircle2 size={10} />
-                          {t("setup.downloadComplete", {
-                            defaultValue: "Ready",
-                          })}
+                          {t("setup.engineReady")}
                         </span>
                       ) : backendProvisionStatus.state === "failed" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">
@@ -494,9 +487,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       ) : null}
                     </div>
                     <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
-                      {t("settings.backendEngineDescription", {
-                        defaultValue: "The ACE-Step Python engine runs locally to generate music.",
-                      })}
+                      {t("settings.backendEngineDescription")}
                     </p>
                     {backendProvisionStatus.state === "ready" &&
                     backendProvisionStatus.installedTag ? (
@@ -519,9 +510,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                     backendProvisionStatus.state === "extracting" ? (
                       <>
                         <Loader2 size={12} className="animate-spin" />
-                        {t("settings.provisioningBackend", {
-                          defaultValue: "Downloading…",
-                        })}
+                        {t("settings.provisioningBackend")}
                       </>
                     ) : backendProvisionStatus.state === "ready" ? (
                       <>
@@ -557,7 +546,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
 
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-                {t("setup.modelPackHeading", { defaultValue: "Weight packs" })}
+                {t("setup.modelPackHeading")}
               </p>
               {(Object.keys(MODEL_PACKS) as ModelPackId[]).map((packId) => {
                 const pack = MODEL_PACKS[packId];
@@ -584,9 +573,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
 
             <div className="space-y-3">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
-                {t("setup.modelProfileHeading", {
-                  defaultValue: "Runtime profiles",
-                })}
+                {t("setup.modelProfileHeading")}
               </p>
               <div className="grid gap-3 md:grid-cols-3">
                 {(["lite", "turbo", "pro"] as const).map((variant) => {
@@ -622,9 +609,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60 disabled:opacity-50"
               >
                 {skipLoading ? <Loader2 size={10} className="animate-spin" /> : null}
-                {t("setup.skipDemo", {
-                  defaultValue: "Skip and try a demo prompt",
-                })}
+                {t("setup.skipDemo")}
               </button>
             </div>
           </div>
@@ -684,11 +669,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
               <div className="flex items-center gap-2 text-[var(--color-accent)]">
                 <Keyboard size={16} />
-                <p className="text-[13px] font-semibold text-white">
-                  {t("setup.shortcutsHint", {
-                    defaultValue: "Keyboard shortcuts",
-                  })}
-                </p>
+                <p className="text-[13px] font-semibold text-white">{t("setup.shortcutsHint")}</p>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {(
@@ -707,9 +688,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       className="flex items-center justify-between rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2"
                     >
                       <span className="text-[12px] text-[var(--color-text-dim)]">
-                        {t(`setup.shortcut_${labelKey}`, {
-                          defaultValue: labelKey,
-                        })}
+                        {t(`setup.shortcut_${labelKey}`)}
                       </span>
                       <kbd className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-0.5 font-mono text-[11px] text-[var(--color-text)]">
                         {getShortcutDisplay(shortcut, platform)}

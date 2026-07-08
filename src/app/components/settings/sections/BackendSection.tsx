@@ -85,11 +85,7 @@ export function BackendSection({
       />
 
       {!backendPortValid ? (
-        <p className="text-[11px] text-amber-300">
-          {t("settings.backendPortInvalid", {
-            defaultValue: "Backend port must be between 1024 and 65535.",
-          })}
-        </p>
+        <p className="text-[11px] text-amber-300">{t("settings.backendPortInvalid")}</p>
       ) : null}
 
       <div className="flex flex-wrap gap-2">
@@ -122,36 +118,24 @@ export function BackendSection({
           onClick={() => {
             void api.setSetting("backendPort", 8001).then(async () => {
               await hydrateFromPersistence();
-              onShowNotice(
-                t("settings.backendPortReset", {
-                  defaultValue: "Backend port reset to 8001.",
-                }),
-              );
+              onShowNotice(t("settings.backendPortReset"));
             });
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
         >
-          {t("settings.resetDefaultPort", {
-            defaultValue: "Reset default port",
-          })}
+          {t("settings.resetDefaultPort")}
         </button>
         <button
           type="button"
           onClick={() => {
             void api.resetRuntimeSettings().then(async () => {
               await hydrateFromPersistence();
-              onShowNotice(
-                t("settings.runtimeSettingsRepaired", {
-                  defaultValue: "Runtime configuration repaired.",
-                }),
-              );
+              onShowNotice(t("settings.runtimeSettingsRepaired"));
             });
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-white transition-colors hover:bg-[var(--color-accent)]/25"
         >
-          {t("settings.repairRuntime", {
-            defaultValue: "Repair runtime config",
-          })}
+          {t("settings.repairRuntime")}
         </button>
       </div>
 
@@ -165,7 +149,7 @@ export function BackendSection({
             <p className="text-[12px] text-[var(--color-text)]">
               {backendProvisionStatus.installedTag ??
                 backendProvisionStatus.installedCommit ??
-                t("common.notInstalled", { defaultValue: "Not installed" })}
+                t("common.notInstalled")}
             </p>
             {backendProvisionStatus.updateAvailable ? (
               <p className="text-[11px] text-[var(--color-accent)]">

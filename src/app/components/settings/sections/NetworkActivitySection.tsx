@@ -23,10 +23,8 @@ export function NetworkActivitySection() {
   return (
     <SettingsSectionCard
       id="settings-section-network"
-      title={t("settings.networkActivity", { defaultValue: "Network Activity" })}
-      description={t("settings.networkActivityDescription", {
-        defaultValue: "Recent outbound HTTP requests made by OpenLoop this session.",
-      })}
+      title={t("settings.networkActivity")}
+      description={t("settings.networkActivityDescription")}
       headerAction={
         <button
           type="button"
@@ -34,17 +32,13 @@ export function NetworkActivitySection() {
           disabled={loading}
           className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white disabled:opacity-50"
         >
-          {loading
-            ? t("settings.refreshing", { defaultValue: "Refreshing..." })
-            : t("settings.refresh", { defaultValue: "Refresh" })}
+          {loading ? t("settings.refreshing") : t("settings.refresh")}
         </button>
       }
     >
       {entries.length === 0 ? (
         <p className="text-[12px] text-[var(--color-text-dim)]">
-          {t("settings.noNetworkActivity", {
-            defaultValue: "No outbound requests recorded this session.",
-          })}
+          {t("settings.noNetworkActivity")}
         </p>
       ) : (
         <div className="max-h-60 overflow-y-auto rounded-md border border-[var(--color-border-light)]">
@@ -52,16 +46,16 @@ export function NetworkActivitySection() {
             <thead>
               <tr className="border-b border-[var(--color-border-light)] bg-[var(--color-surface)]">
                 <th className="px-3 py-1.5 text-left font-medium text-[var(--color-text-dim)]">
-                  {t("settings.networkTime", { defaultValue: "Time" })}
+                  {t("settings.networkTime")}
                 </th>
                 <th className="px-3 py-1.5 text-left font-medium text-[var(--color-text-dim)]">
-                  {t("settings.networkMethod", { defaultValue: "Method" })}
+                  {t("settings.networkMethod")}
                 </th>
                 <th className="px-3 py-1.5 text-left font-medium text-[var(--color-text-dim)]">
-                  {t("settings.networkUrl", { defaultValue: "URL" })}
+                  {t("settings.networkUrl")}
                 </th>
                 <th className="px-3 py-1.5 text-right font-medium text-[var(--color-text-dim)]">
-                  {t("settings.networkStatus", { defaultValue: "Status" })}
+                  {t("settings.networkStatus")}
                 </th>
               </tr>
             </thead>

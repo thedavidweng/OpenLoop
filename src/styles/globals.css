@@ -15,7 +15,7 @@
   --color-active: #3a3a3c;
   --color-text: #d1d1d6;
   --color-text-dim: #8e8e93;
-  --color-text-dimmer: #7a7a82;
+  --color-text-dimmer: #8a8a8e;
   --color-accent: #007aff;
   --color-control-primary: #ebebf5;
   --color-control-primary-foreground: #121212;
@@ -121,7 +121,7 @@
     --color-active: #2b3037;
     --color-text: #d9dde3;
     --color-text-dim: #9ea6b0;
-    --color-text-dimmer: #6f7780;
+    --color-text-dimmer: #858d96;
     --color-accent: #3f8cff;
     --color-control-primary: #eef2f7;
     --color-control-primary-foreground: #17191d;
@@ -140,13 +140,18 @@
     --color-active: #36363d;
     --color-text: #e6e6eb;
     --color-text-dim: #a0a0a7;
-    --color-text-dimmer: #66666d;
+    --color-text-dimmer: #808087;
     --color-accent: #0a84ff;
     --color-control-primary: #f5f5f7;
     --color-control-primary-foreground: #18181b;
     --color-ghost-hover: rgba(255, 255, 255, 0.06);
     --panel-blur: 8px;
     --sidebar-item-radius: 10px;
+  }
+
+  [data-high-contrast] {
+    --color-text-dim: #bbbbc0;
+    --color-text-dimmer: #9e9ea3;
   }
 
   html,

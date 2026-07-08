@@ -691,6 +691,7 @@ function FailedRunsDrawer() {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
         className="flex w-full items-center justify-between text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]"
       >
         <span className="flex items-center gap-1.5">

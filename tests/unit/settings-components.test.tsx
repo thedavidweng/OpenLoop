@@ -404,11 +404,8 @@ describe("SetupScreen", () => {
     await goToStep(user, "setup.model");
 
     expect(screen.getByText("ACE-Step Engine")).toBeTruthy();
-    expect(
-      screen.getByText("The ACE-Step Python engine runs locally to generate music."),
-    ).toBeTruthy();
-    // Ready badge (defaultValue: "Ready")
-    expect(screen.getByText("Ready")).toBeTruthy();
+    expect(screen.getByText("settings.backendEngineDescription")).toBeTruthy();
+    expect(screen.getByText("setup.engineReady")).toBeTruthy();
   });
 
   it("shows variant picker cards on the model step", async () => {
@@ -430,8 +427,8 @@ describe("SetupScreen", () => {
     await goToStep(user, "setup.device");
     await goToStep(user, "setup.model");
 
-    // "setup.skipDemo" has defaultValue: "Skip and try a demo prompt"
-    expect(screen.getByText("Skip and try a demo prompt")).toBeTruthy();
+    // "setup.skipDemo" has defaultValue: "setup.skipDemo"
+    expect(screen.getByText("setup.skipDemo")).toBeTruthy();
   });
 
   it("calls enterDemoMode and completeSetup when skip demo is clicked", async () => {
@@ -440,7 +437,7 @@ describe("SetupScreen", () => {
 
     await goToStep(user, "setup.device");
     await goToStep(user, "setup.model");
-    await user.click(screen.getByText("Skip and try a demo prompt"));
+    await user.click(screen.getByText("setup.skipDemo"));
 
     expect(enterDemoMode).toHaveBeenCalledTimes(1);
     await waitFor(() => {
@@ -488,8 +485,8 @@ describe("SetupScreen", () => {
     await goToStep(user, "setup.output");
     await goToStep(user, "setup.done");
 
-    // "setup.shortcutsHint" has defaultValue: "Keyboard shortcuts"
-    expect(screen.getByText("Keyboard shortcuts")).toBeTruthy();
+    // "setup.shortcutsHint" has defaultValue: "setup.shortcutsHint"
+    expect(screen.getByText("setup.shortcutsHint")).toBeTruthy();
   });
 
   // -- StepIndicator --------------------------------------------------------

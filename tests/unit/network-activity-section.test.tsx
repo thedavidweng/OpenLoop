@@ -34,7 +34,7 @@ describe("NetworkActivitySection", () => {
     render(<NetworkActivitySection />);
 
     await waitFor(() => {
-      expect(screen.getByText(/No outbound requests/)).toBeTruthy();
+      expect(screen.getByText("settings.noNetworkActivity")).toBeTruthy();
     });
   });
 
@@ -73,7 +73,7 @@ describe("NetworkActivitySection", () => {
       expect(getNetworkLog).toHaveBeenCalledTimes(1);
     });
 
-    const refreshButton = screen.getByText("Refresh");
+    const refreshButton = screen.getByText("settings.refresh");
     await userEvent.click(refreshButton);
 
     await waitFor(() => {

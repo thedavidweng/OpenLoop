@@ -74,7 +74,7 @@ check(
 // 5. README_CN.md has Release badge (shield.io release badge anywhere in the file)
 check(
   "5. README_CN.md has Release badge",
-  /img\.shields\.io.*release/i.test(readmeCN) || /\[!\[Release\]/i.test(readmeCN),
+  /\/\/img\.shields\.io\/[^?]*release/i.test(readmeCN) || /\[!\[Release\]/i.test(readmeCN),
   "missing Release badge"
 );
 

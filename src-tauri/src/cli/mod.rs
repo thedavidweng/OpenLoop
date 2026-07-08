@@ -9,6 +9,7 @@ mod files;
 mod generation;
 mod list;
 mod models;
+mod profiles;
 mod project;
 mod ps;
 mod pull;
@@ -71,6 +72,7 @@ fn run_inner(args: Vec<String>) -> AppResult<()> {
                 }
                 spec::Commands::List(args) => list::execute(&state, json, args),
                 spec::Commands::Project { command } => project::execute(&state, json, command),
+                spec::Commands::Profiles { command } => profiles::execute(&state, json, command),
                 spec::Commands::Delete(args) => delete::execute(&state, json, args),
                 spec::Commands::Clear(args) => clear::execute(&state, json, args),
                 spec::Commands::Ps => ps::execute(&state, json),

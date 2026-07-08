@@ -5,6 +5,7 @@ import type {
   DeviceInfo,
   GenerationEvent,
   GenerationFormValues,
+  GenerationProfile,
   GenerationRecord,
   GenerationRequest,
   GenerationState,
@@ -35,6 +36,7 @@ export interface GenerationStore {
   currentGeneration: GenerationRecord | null;
   history: GenerationRecord[];
   historyQuery: string;
+  profiles: GenerationProfile[];
   activeTasks: ActiveGenerationTask[];
   playbackToggleRequest: number;
   settings: AppSettings;
@@ -75,6 +77,11 @@ export interface GenerationStore {
     value: GenerationFormValues[K],
   ) => void;
   setHistoryQuery: (query: string) => void;
+  refreshProfiles: () => Promise<void>;
+  createProfile: (name: string, form: GenerationFormValues) => Promise<void>;
+  renameProfile: (id: string, name: string) => Promise<void>;
+  deleteProfile: (id: string) => Promise<void>;
+  applyProfile: (id: string) => void;
   toggleSettings: () => void;
   toggleSidebar: () => void;
   toggleLyricsPanel: () => void;

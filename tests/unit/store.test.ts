@@ -21,6 +21,7 @@ vi.mock("@/app/lib/api", () => ({
   listenToModelDownloadEvents: vi.fn(),
   deleteGenerationFileAndRecord: (id: string) => deleteGenerationFileAndRecord(id),
   clearGenerationHistory: () => clearGenerationHistory(),
+  listProfiles: vi.fn(() => Promise.resolve([])),
 }));
 
 const { DEFAULT_GENERATION_FORM_VALUES } = await import("@/app/lib/validation");

@@ -15,6 +15,8 @@ import type {
   ModelStatusSnapshot,
   GenerationRecord,
   GenerationRequest,
+  GenerationProfile,
+  CreateProfileRequest,
   ModelVariant,
   Project,
   PromptEnhancementResult,
@@ -289,6 +291,22 @@ export function assignGenerationToProject(
     generationId,
     projectId,
   });
+}
+
+export function listProfiles(): Promise<GenerationProfile[]> {
+  return invoke<GenerationProfile[]>("list_profiles");
+}
+
+export function createProfile(request: CreateProfileRequest): Promise<GenerationProfile> {
+  return invoke<GenerationProfile>("create_profile", { request });
+}
+
+export function renameProfile(id: string, name: string): Promise<GenerationProfile> {
+  return invoke<GenerationProfile>("rename_profile", { id, request: { name } });
+}
+
+export function deleteProfile(id: string): Promise<void> {
+  return invoke<void>("delete_profile", { id });
 }
 
 export function exportGenerationsToFolder(ids: string[], destination: string): Promise<string[]> {

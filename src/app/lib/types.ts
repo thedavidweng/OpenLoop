@@ -145,6 +145,39 @@ export type Project = {
   updatedAt: string;
 };
 
+export type GenerationProfile = {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  modelVariant?: string | null;
+  durationSeconds?: number | null;
+  audioFormat?: string | null;
+  thinking?: boolean | null;
+  inferenceSteps?: number | null;
+  guidanceScale?: number | null;
+  bpm?: number | null;
+  keyScale?: string | null;
+  timeSignature?: string | null;
+  vocalLanguage?: string | null;
+  lmBackend?: string | null;
+};
+
+export type CreateProfileRequest = {
+  name: string;
+  modelVariant?: string | null;
+  durationSeconds?: number | null;
+  audioFormat?: string | null;
+  thinking?: boolean | null;
+  inferenceSteps?: number | null;
+  guidanceScale?: number | null;
+  bpm?: number | null;
+  keyScale?: string | null;
+  timeSignature?: string | null;
+  vocalLanguage?: string | null;
+  lmBackend?: string | null;
+};
+
 export type GenerationRunResult = {
   records: GenerationRecord[];
 };

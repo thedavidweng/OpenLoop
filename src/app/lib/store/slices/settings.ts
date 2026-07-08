@@ -176,6 +176,7 @@ export function createSettingsSlice(
           currentGeneration: persistedHistory[0] ?? null,
         });
         await get().refreshBootstrapStatus();
+        await get().refreshProfiles();
       } catch (error) {
         set({
           hydrated: true,

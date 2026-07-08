@@ -1,4 +1,7 @@
-use crate::{cli::human_output, cli::resolve_project_by_prefix, cli::spec::ListArgs, models::errors::AppResult};
+use crate::{
+    cli::human_output, cli::resolve_project_by_prefix, cli::spec::ListArgs,
+    models::errors::AppResult,
+};
 
 use super::AppState;
 

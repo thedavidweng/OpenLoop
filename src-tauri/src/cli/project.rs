@@ -11,9 +11,10 @@ pub fn execute(state: &AppState, json: bool, command: ProjectCommand) -> AppResu
         ProjectCommand::Create { name } => cmd_create(state, json, &name),
         ProjectCommand::Rename { id, name } => cmd_rename(state, json, &id, &name),
         ProjectCommand::Delete { id, yes } => cmd_delete(state, json, &id, yes),
-        ProjectCommand::Assign { generation, project } => {
-            cmd_assign(state, json, &generation, project.as_deref())
-        }
+        ProjectCommand::Assign {
+            generation,
+            project,
+        } => cmd_assign(state, json, &generation, project.as_deref()),
     }
 }
 
@@ -145,7 +146,10 @@ fn cmd_assign(
                 "Assigned generation {} to project {}",
                 generation_id, id
             )),
-            None => human_output(&format!("Unassigned generation {} from project", generation_id)),
+            None => human_output(&format!(
+                "Unassigned generation {} from project",
+                generation_id
+            )),
         }
     }
     Ok(())

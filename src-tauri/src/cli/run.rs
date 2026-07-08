@@ -246,7 +246,10 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
                 .set_generation_project(&record.id, Some(&project_id))?;
         }
         if !json {
-            human_output(&format!("✓ Assigned {} generation(s) to project.", result.records.len()));
+            human_output(&format!(
+                "✓ Assigned {} generation(s) to project.",
+                result.records.len()
+            ));
         }
     }
 
@@ -415,7 +418,10 @@ fn resolve_project_ref(
     reference: &str,
 ) -> crate::models::errors::AppResult<String> {
     let projects = db.list_projects()?;
-    let by_id: Vec<_> = projects.iter().filter(|p| p.id.starts_with(reference)).collect();
+    let by_id: Vec<_> = projects
+        .iter()
+        .filter(|p| p.id.starts_with(reference))
+        .collect();
     if by_id.len() == 1 {
         return Ok(by_id[0].id.clone());
     }

@@ -36,9 +36,7 @@ export function createProjectsSlice(
       set((state) => ({
         projects: state.projects.filter((p) => p.id !== id),
         activeProjectId: state.activeProjectId === id ? null : state.activeProjectId,
-        history: state.history.map((r) =>
-          r.projectId === id ? { ...r, projectId: null } : r,
-        ),
+        history: state.history.map((r) => (r.projectId === id ? { ...r, projectId: null } : r)),
       }));
     },
 
@@ -50,9 +48,7 @@ export function createProjectsSlice(
       if (!api.isTauriRuntime()) return;
       await api.assignGenerationToProject(generationId, projectId);
       set((state) => ({
-        history: state.history.map((r) =>
-          r.id === generationId ? { ...r, projectId } : r,
-        ),
+        history: state.history.map((r) => (r.id === generationId ? { ...r, projectId } : r)),
       }));
     },
   };

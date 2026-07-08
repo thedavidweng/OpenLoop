@@ -295,7 +295,9 @@ impl Database {
     pub fn list_projects(&self) -> AppResult<Vec<Project>> {
         let connection = self.connection()?;
         let mut statement = connection
-            .prepare("SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC")
+            .prepare(
+                "SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC",
+            )
             .map_err(|error| AppError::db_read_failed(error.to_string()))?;
         let mapped = statement
             .query_map([], |row| {
@@ -963,9 +965,7 @@ mod tests {
         assert!(database.list_projects().expect("list").is_empty());
 
         // Create
-        let project = database
-            .create_project("Album A")
-            .expect("create project");
+        let project = database.create_project("Album A").expect("create project");
         assert_eq!(project.name, "Album A");
 
         // List

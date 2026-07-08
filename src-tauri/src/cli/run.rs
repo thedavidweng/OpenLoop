@@ -237,6 +237,22 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
         }
     }
 
+    // Assign generations to a project if --project was specified
+    if let Some(project_ref) = args.project.as_deref() {
+        let project_id = resolve_project_ref(&state.db, project_ref)?;
+        for record in &result.records {
+            state
+                .db
+                .set_generation_project(&record.id, Some(&project_id))?;
+        }
+        if !json {
+            human_output(&format!(
+                "✓ Assigned {} generation(s) to project.",
+                result.records.len()
+            ));
+        }
+    }
+
     // Detach the backend so it keeps running after this CLI command exits
     if let Ok(mut backend) = state.lock_backend() {
         backend.detach();
@@ -393,4 +409,33 @@ fn map_model_to_variant(model_name: Option<&str>) -> Option<String> {
         "ACE-Step-1.5-pro" | "mlx-community/ACE-Step-1.5-pro" => Some("pro".to_owned()),
         _ => None,
     }
+}
+
+/// Resolve a project reference (ID prefix or exact name) to a project ID.
+/// Creates the project if it does not exist (by name match).
+fn resolve_project_ref(
+    db: &crate::services::db::Database,
+    reference: &str,
+) -> crate::models::errors::AppResult<String> {
+    let projects = db.list_projects()?;
+    let by_id: Vec<_> = projects
+        .iter()
+        .filter(|p| p.id.starts_with(reference))
+        .collect();
+    if by_id.len() == 1 {
+        return Ok(by_id[0].id.clone());
+    }
+    if by_id.len() > 1 {
+        return Err(crate::models::errors::AppError::validation_failed(format!(
+            "Ambiguous project prefix '{reference}' matched {} projects",
+            by_id.len()
+        )));
+    }
+    let by_name: Vec<_> = projects.iter().filter(|p| p.name == reference).collect();
+    if let Some(project) = by_name.first() {
+        return Ok(project.id.clone());
+    }
+    // Create a new project by name
+    let project = db.create_project(reference)?;
+    Ok(project.id)
 }

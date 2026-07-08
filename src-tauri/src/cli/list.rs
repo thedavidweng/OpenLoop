@@ -1,11 +1,22 @@
-use crate::{cli::human_output, cli::spec::ListArgs, models::errors::AppResult};
+use crate::{
+    cli::human_output, cli::resolve_project_by_prefix, cli::spec::ListArgs,
+    models::errors::AppResult,
+};
 
 use super::AppState;
 
 pub fn execute(state: &AppState, json: bool, args: ListArgs) -> AppResult<()> {
     let limit = args.limit;
 
-    let records = state.db.list_generations(None, Some(limit as u32))?;
+    let records = match args.project.as_deref() {
+        Some(prefix) => {
+            let project_id = resolve_project_by_prefix(&state.db, prefix)?;
+            state
+                .db
+                .list_generations_by_project(&project_id, Some(limit as u32))?
+        }
+        None => state.db.list_generations(None, Some(limit as u32))?,
+    };
 
     if json {
         let json_output = serde_json::to_string_pretty(&records)

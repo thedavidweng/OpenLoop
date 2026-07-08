@@ -39,6 +39,7 @@ const { createUISlice } = await import("@/app/lib/store/slices/ui");
 const { createSettingsSlice } = await import("@/app/lib/store/slices/settings");
 const { createHistorySlice } = await import("@/app/lib/store/slices/history");
 const { createGenerationSlice } = await import("@/app/lib/store/slices/generation");
+const { createProjectsSlice } = await import("@/app/lib/store/slices/projects");
 
 const { create } = await import("zustand");
 
@@ -52,6 +53,7 @@ function createStore() {
     ...createModelSlice(set, get),
     ...createGenerationSlice(set, get),
     ...createHistorySlice(set, get),
+    ...createProjectsSlice(set, get),
     ...createSettingsSlice(set, get),
   }));
 }

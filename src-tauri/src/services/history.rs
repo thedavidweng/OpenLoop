@@ -123,6 +123,7 @@ mod tests {
             error_message: None,
             generation_info: None,
             is_favorite: false,
+            project_id: None,
         }
     }
 

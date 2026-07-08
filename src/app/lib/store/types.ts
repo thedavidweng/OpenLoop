@@ -12,6 +12,7 @@ import type {
   ModelStatusSnapshot,
   ModelVariant,
   ModelBootstrapStatus,
+  Project,
   ValidationErrors,
 } from "@/app/lib/types";
 
@@ -45,6 +46,8 @@ export interface GenerationStore {
   selectedHistoryIds: string[];
   compareModeActive: boolean;
   compareGenerationId: string | null;
+  projects: Project[];
+  activeProjectId: string | null;
 
   applyGenerationEvent: (event: GenerationEvent) => void;
   completeSetup: () => Promise<void>;
@@ -104,4 +107,10 @@ export interface GenerationStore {
   enterCompareMode: (id: string) => void;
   exitCompareMode: () => void;
   toggleCompareTarget: () => void;
+  refreshProjects: () => Promise<void>;
+  createProject: (name: string) => Promise<void>;
+  renameProject: (id: string, name: string) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  setActiveProject: (id: string | null) => void;
+  assignGenerationToProject: (generationId: string, projectId: string | null) => Promise<void>;
 }

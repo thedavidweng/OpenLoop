@@ -10,6 +10,7 @@ use serde_json::Value;
 use crate::models::{
     errors::{AppError, AppResult},
     generation::{ActiveGenerationTask, FailedRun, GenerationRecord, GenerationRequest},
+    project::Project,
     settings::{AppSettings, SettingKey},
 };
 
@@ -49,6 +50,7 @@ impl Database {
             include_str!("../../migrations/003_add_favorite.sql"),
             include_str!("../../migrations/004_add_failed_runs.sql"),
             include_str!("../../migrations/005_history_indexes.sql"),
+            include_str!("../../migrations/006_add_projects.sql"),
         ] {
             let _ = connection.execute_batch(sql);
         }
@@ -136,7 +138,7 @@ impl Database {
         let query = query.map(str::trim).filter(|value| !value.is_empty());
         let limit_i64: Option<i64> = limit.map(i64::from);
 
-        const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
+        const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite, project_id FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> ''";
         const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";
 
         match (query, limit_i64) {
@@ -201,7 +203,7 @@ impl Database {
         let connection = self.connection()?;
         connection
             .query_row(
-                "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite FROM generations WHERE id = ?1",
+                "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite, project_id FROM generations WHERE id = ?1",
                 [id],
                 Self::map_generation_row,
             )
@@ -213,7 +215,7 @@ impl Database {
         let connection = self.connection()?;
         connection
             .execute(
-                "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22) ON CONFLICT(id) DO UPDATE SET created_at = excluded.created_at, prompt = excluded.prompt, lyrics = excluded.lyrics, vocal_language = excluded.vocal_language, duration_seconds = excluded.duration_seconds, bpm = excluded.bpm, key_scale = excluded.key_scale, time_signature = excluded.time_signature, model = excluded.model, lm_model = excluded.lm_model, thinking = excluded.thinking, inference_steps = excluded.inference_steps, guidance_scale = excluded.guidance_scale, use_random_seed = excluded.use_random_seed, seed = excluded.seed, audio_format = excluded.audio_format, output_path = excluded.output_path, status = excluded.status, error_message = excluded.error_message, generation_info = excluded.generation_info, is_favorite = excluded.is_favorite",
+                "INSERT INTO generations (id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite, project_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23) ON CONFLICT(id) DO UPDATE SET created_at = excluded.created_at, prompt = excluded.prompt, lyrics = excluded.lyrics, vocal_language = excluded.vocal_language, duration_seconds = excluded.duration_seconds, bpm = excluded.bpm, key_scale = excluded.key_scale, time_signature = excluded.time_signature, model = excluded.model, lm_model = excluded.lm_model, thinking = excluded.thinking, inference_steps = excluded.inference_steps, guidance_scale = excluded.guidance_scale, use_random_seed = excluded.use_random_seed, seed = excluded.seed, audio_format = excluded.audio_format, output_path = excluded.output_path, status = excluded.status, error_message = excluded.error_message, generation_info = excluded.generation_info, is_favorite = excluded.is_favorite, project_id = excluded.project_id",
                 params![
                     record.id,
                     record.created_at,
@@ -237,6 +239,7 @@ impl Database {
                     record.error_message,
                     record.generation_info,
                     record.is_favorite,
+                    record.project_id,
                 ],
             )
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
@@ -283,6 +286,170 @@ impl Database {
             .execute("DELETE FROM generations", [])
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
         Ok(())
+    }
+
+    // -----------------------------------------------------------------
+    // Projects
+    // -----------------------------------------------------------------
+
+    pub fn list_projects(&self) -> AppResult<Vec<Project>> {
+        let connection = self.connection()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, name, created_at, updated_at FROM projects ORDER BY updated_at DESC",
+            )
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        let mapped = statement
+            .query_map([], |row| {
+                Ok(Project {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    created_at: row.get(2)?,
+                    updated_at: row.get(3)?,
+                })
+            })
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        mapped
+            .into_iter()
+            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+            .collect()
+    }
+
+    pub fn create_project(&self, name: &str) -> AppResult<Project> {
+        let connection = self.connection()?;
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = Utc::now().to_rfc3339();
+        connection
+            .execute(
+                "INSERT INTO projects (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+                params![id, name, now, now],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(Project {
+            id,
+            name: name.to_string(),
+            created_at: now.clone(),
+            updated_at: now,
+        })
+    }
+
+    pub fn rename_project(&self, id: &str, name: &str) -> AppResult<Project> {
+        let connection = self.connection()?;
+        let now = Utc::now().to_rfc3339();
+        let updated = connection
+            .execute(
+                "UPDATE projects SET name = ?1, updated_at = ?2 WHERE id = ?3",
+                params![name, now, id],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        if updated == 0 {
+            return Err(AppError::not_found(
+                "Project",
+                format!("No project exists for id {id}"),
+            ));
+        }
+        let created_at: String = connection
+            .query_row(
+                "SELECT created_at FROM projects WHERE id = ?1",
+                [id],
+                |row| row.get(0),
+            )
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        Ok(Project {
+            id: id.to_string(),
+            name: name.to_string(),
+            created_at,
+            updated_at: now,
+        })
+    }
+
+    pub fn delete_project(&self, id: &str) -> AppResult<()> {
+        let connection = self.connection()?;
+        let deleted = connection
+            .execute("DELETE FROM projects WHERE id = ?1", [id])
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        if deleted == 0 {
+            return Err(AppError::not_found(
+                "Project",
+                format!("No project exists for id {id}"),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn set_generation_project(
+        &self,
+        generation_id: &str,
+        project_id: Option<&str>,
+    ) -> AppResult<()> {
+        let connection = self.connection()?;
+        let updated = connection
+            .execute(
+                "UPDATE generations SET project_id = ?1 WHERE id = ?2",
+                params![project_id, generation_id],
+            )
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        if updated == 0 {
+            return Err(AppError::not_found(
+                "Generation record",
+                format!("No generation record exists for id {generation_id}"),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Find generation IDs matching a prefix. Returns up to 2 matches for ambiguity detection.
+    pub fn find_generation_ids_by_prefix(&self, prefix: &str) -> AppResult<Vec<String>> {
+        let connection = self.connection()?;
+        let pattern = format!("{prefix}%");
+        let mut statement = connection
+            .prepare("SELECT id FROM generations WHERE id LIKE ?1 LIMIT 2")
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        let mapped = statement
+            .query_map(params![pattern], |row| row.get::<_, String>(0))
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        mapped
+            .into_iter()
+            .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+            .collect()
+    }
+
+    pub fn list_generations_by_project(
+        &self,
+        project_id: &str,
+        limit: Option<u32>,
+    ) -> AppResult<Vec<GenerationRecord>> {
+        let connection = self.connection()?;
+        let limit_i64: Option<i64> = limit.map(i64::from);
+        const SELECT: &str = "SELECT id, created_at, prompt, lyrics, vocal_language, duration_seconds, bpm, key_scale, time_signature, model, lm_model, thinking, inference_steps, guidance_scale, use_random_seed, seed, audio_format, output_path, status, error_message, generation_info, is_favorite, project_id FROM generations WHERE status = 'completed' AND COALESCE(output_path, '') <> '' AND project_id = ?1";
+        const ORDER: &str = " ORDER BY is_favorite DESC, created_at DESC";
+
+        match limit_i64 {
+            Some(limit_i64) => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER} LIMIT ?2"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![project_id, limit_i64], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+            None => {
+                let mut statement = connection
+                    .prepare(&format!("{SELECT}{ORDER}"))
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                let mapped = statement
+                    .query_map(params![project_id], Self::map_generation_row)
+                    .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+                mapped
+                    .into_iter()
+                    .map(|row| row.map_err(|error| AppError::db_read_failed(error.to_string())))
+                    .collect()
+            }
+        }
     }
 
     pub fn upsert_active_generation_task(
@@ -410,6 +577,7 @@ impl Database {
         let seed: Option<String> = row.get(15)?;
 
         let is_favorite_int: i32 = row.get(21)?;
+        let project_id: Option<String> = row.get(22)?;
 
         Ok(GenerationRecord {
             id: row.get(0)?,
@@ -438,6 +606,7 @@ impl Database {
             error_message: row.get(19)?,
             generation_info: row.get(20)?,
             is_favorite: is_favorite_int != 0,
+            project_id,
         })
     }
 
@@ -512,6 +681,7 @@ mod tests {
             error_message: None,
             generation_info: Some("ok".to_owned()),
             is_favorite: false,
+            project_id: None,
         }
     }
 
@@ -784,5 +954,139 @@ mod tests {
             tasks.iter().any(|t| t.id == "task_v1"),
             "v1 task should survive migration"
         );
+    }
+
+    #[test]
+    fn project_crud_works_end_to_end() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let database = Database::new(temp_dir.path()).expect("database should init");
+
+        // Initially no projects
+        assert!(database.list_projects().expect("list").is_empty());
+
+        // Create
+        let project = database.create_project("Album A").expect("create project");
+        assert_eq!(project.name, "Album A");
+
+        // List
+        let projects = database.list_projects().expect("list");
+        assert_eq!(projects.len(), 1);
+        assert_eq!(projects[0].id, project.id);
+
+        // Rename
+        let renamed = database
+            .rename_project(&project.id, "Album B")
+            .expect("rename");
+        assert_eq!(renamed.name, "Album B");
+
+        // Delete
+        database.delete_project(&project.id).expect("delete");
+        assert!(database.list_projects().expect("list").is_empty());
+    }
+
+    #[test]
+    fn assign_generation_to_project_and_query_by_project() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let database = Database::new(temp_dir.path()).expect("database should init");
+
+        let project = database
+            .create_project("Soundtrack")
+            .expect("create project");
+
+        let record = sample_record();
+        database.insert_generation(&record).expect("insert");
+
+        // Assign
+        database
+            .set_generation_project(&record.id, Some(&project.id))
+            .expect("assign");
+
+        // Verify via get_generation
+        let fetched = database
+            .get_generation(&record.id)
+            .expect("get")
+            .expect("record");
+        assert_eq!(fetched.project_id, Some(project.id.clone()));
+
+        // Query by project
+        let in_project = database
+            .list_generations_by_project(&project.id, None)
+            .expect("list by project");
+        assert_eq!(in_project.len(), 1);
+        assert_eq!(in_project[0].id, record.id);
+
+        // Unassign
+        database
+            .set_generation_project(&record.id, None)
+            .expect("unassign");
+        let unassigned = database
+            .get_generation(&record.id)
+            .expect("get")
+            .expect("record");
+        assert!(unassigned.project_id.is_none());
+
+        // Query by project returns empty
+        let empty = database
+            .list_generations_by_project(&project.id, None)
+            .expect("list by project");
+        assert!(empty.is_empty());
+    }
+
+    #[test]
+    fn delete_project_unassigns_generations_not_deletes_them() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let database = Database::new(temp_dir.path()).expect("database should init");
+
+        let project = database
+            .create_project("Ephemeral")
+            .expect("create project");
+
+        let record = sample_record();
+        database.insert_generation(&record).expect("insert");
+        database
+            .set_generation_project(&record.id, Some(&project.id))
+            .expect("assign");
+
+        // Delete project
+        database.delete_project(&project.id).expect("delete");
+
+        // Generation still exists but project_id is null (ON DELETE SET NULL)
+        let fetched = database
+            .get_generation(&record.id)
+            .expect("get")
+            .expect("record");
+        assert!(fetched.project_id.is_none());
+    }
+
+    #[test]
+    fn find_generation_ids_by_prefix_returns_targeted_matches() {
+        let temp_dir = tempfile::tempdir().expect("temp dir");
+        let database = Database::new(temp_dir.path()).expect("database should init");
+
+        let mut record = sample_record();
+        record.id = "gen_abc123".to_owned();
+        database.insert_generation(&record).expect("insert");
+
+        let mut other = sample_record();
+        other.id = "gen_xyz789".to_owned();
+        database.insert_generation(&other).expect("insert");
+
+        // Prefix match
+        let matches = database
+            .find_generation_ids_by_prefix("gen_abc")
+            .expect("prefix search");
+        assert_eq!(matches, vec!["gen_abc123".to_owned()]);
+
+        // No match
+        let none = database
+            .find_generation_ids_by_prefix("zzz")
+            .expect("prefix search");
+        assert!(none.is_empty());
+
+        // Ambiguous prefix (both start with "gen_")
+        let ambiguous = database
+            .find_generation_ids_by_prefix("gen_")
+            .expect("prefix search");
+        assert_eq!(ambiguous.len(), 2);
     }
 }

@@ -51,6 +51,11 @@ pub enum Commands {
     },
     /// Show generation history
     List(ListArgs),
+    /// Manage projects (named groups of generations)
+    Project {
+        #[command(subcommand)]
+        command: ProjectCommand,
+    },
     /// Delete a generation record
     Delete(DeleteArgs),
     /// Clear all generation history
@@ -141,6 +146,10 @@ pub struct RunArgs {
     /// Replay a previous generation by ID
     #[arg(long)]
     pub from_history: Option<String>,
+
+    /// Assign the generation to a project (by name or ID prefix)
+    #[arg(long)]
+    pub project: Option<String>,
 }
 
 #[derive(Args)]
@@ -300,6 +309,40 @@ pub enum GenerationCommand {
     },
 }
 
+#[derive(Subcommand)]
+pub enum ProjectCommand {
+    /// List all projects
+    List,
+    /// Create a new project
+    Create {
+        /// Project name
+        name: String,
+    },
+    /// Rename an existing project
+    Rename {
+        /// Project ID prefix
+        id: String,
+        /// New project name
+        name: String,
+    },
+    /// Delete a project (generations are unassigned, not deleted)
+    Delete {
+        /// Project ID prefix
+        id: String,
+        /// Skip confirmation
+        #[arg(long)]
+        yes: bool,
+    },
+    /// Assign a generation to a project
+    Assign {
+        /// Generation ID prefix
+        generation: String,
+        /// Project ID prefix (omit to unassign)
+        #[arg(long)]
+        project: Option<String>,
+    },
+}
+
 // ---------------------------------------------------------------------------
 // Leaf commands
 // ---------------------------------------------------------------------------
@@ -309,6 +352,10 @@ pub struct ListArgs {
     /// Number of records to show
     #[arg(long, default_value = "20")]
     pub limit: usize,
+
+    /// Filter by project (by name or ID prefix)
+    #[arg(long)]
+    pub project: Option<String>,
 }
 
 #[derive(Args)]

@@ -16,6 +16,7 @@ import type {
   GenerationRecord,
   GenerationRequest,
   ModelVariant,
+  Project,
   PromptEnhancementResult,
   WindowShellStateSnapshot,
 } from "@/app/lib/types";
@@ -262,6 +263,32 @@ export function clearFailedRuns(): Promise<void> {
 
 export function deleteFailedRun(id: string): Promise<void> {
   return invoke<void>("delete_failed_run", { id });
+}
+
+export function listProjects(): Promise<Project[]> {
+  return invoke<Project[]>("list_projects");
+}
+
+export function createProject(name: string): Promise<Project> {
+  return invoke<Project>("create_project", { request: { name } });
+}
+
+export function renameProject(id: string, name: string): Promise<Project> {
+  return invoke<Project>("rename_project", { id, request: { name } });
+}
+
+export function deleteProject(id: string): Promise<void> {
+  return invoke<void>("delete_project", { id });
+}
+
+export function assignGenerationToProject(
+  generationId: string,
+  projectId: string | null,
+): Promise<void> {
+  return invoke<void>("assign_generation_to_project", {
+    generationId,
+    projectId,
+  });
 }
 
 export function exportGenerationsToFolder(ids: string[], destination: string): Promise<string[]> {

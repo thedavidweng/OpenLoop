@@ -29,6 +29,7 @@ vi.mock("@/app/lib/api", () => ({
   listModelCatalog: vi.fn(() => Promise.resolve([])),
   getModelStatus: vi.fn(() => Promise.resolve([])),
   listActiveGenerationTasks: vi.fn(() => Promise.resolve([])),
+  listProjects: vi.fn(() => Promise.resolve([])),
 }));
 
 vi.mock("@/app/lib/errors", () => ({

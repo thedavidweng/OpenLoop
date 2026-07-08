@@ -6,6 +6,7 @@ import {
   Clipboard,
   Clock3,
   FileDown,
+  FolderInput,
   Play,
   Repeat,
   RotateCcw,
@@ -17,6 +18,7 @@ import {
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
 import { SearchBox } from "@/app/components/history/SearchBox";
+import { ProjectSelector } from "@/app/components/history/ProjectSelector";
 import { useGenerationStore } from "@/app/lib/store";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
 import { useToast } from "@/app/components/overlay/Toast";
@@ -46,22 +48,29 @@ export function HistorySidebar() {
   const exitCompareMode = useGenerationStore((state) => state.exitCompareMode);
   const compareModeActive = useGenerationStore((state) => state.compareModeActive);
   const compareGenerationId = useGenerationStore((state) => state.compareGenerationId);
+  const activeProjectId = useGenerationStore((state) => state.activeProjectId);
+  const projects = useGenerationStore((state) => state.projects);
+  const assignGenerationToProject = useGenerationStore((state) => state.assignGenerationToProject);
   const { addToast } = useToast();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
   const [batchDeleteConfirmOpen, setBatchDeleteConfirmOpen] = useState(false);
   const [batchExportOpen, setBatchExportOpen] = useState(false);
+  const [projectAssignTargetId, setProjectAssignTargetId] = useState<string | null>(null);
 
   const filteredHistory = useMemo(() => {
     const query = historyQuery.trim().toLowerCase();
     return history.filter((record) => {
+      if (activeProjectId !== null && record.projectId !== activeProjectId) {
+        return false;
+      }
       if (!query) {
         return true;
       }
 
       return `${record.prompt} ${record.lyrics}`.toLowerCase().includes(query);
     });
-  }, [history, historyQuery]);
+  }, [history, historyQuery, activeProjectId]);
 
   // O(1) membership lookups for per-row checks in the virtualized render loop.
   const selectedHistoryIdSet = useMemo(() => new Set(selectedHistoryIds), [selectedHistoryIds]);
@@ -103,6 +112,10 @@ export function HistorySidebar() {
     >
       <div className="shrink-0 px-3 pb-3 pt-3">
         <SearchBox />
+      </div>
+
+      <div className="shrink-0 px-3 pb-2">
+        <ProjectSelector />
       </div>
 
       <div className="shrink-0 px-3 pb-2">
@@ -358,6 +371,66 @@ export function HistorySidebar() {
                                 <Play size={11} />
                               </button>
                             </Tooltip>
+                            {/* Assign to project */}
+                            {projects.length > 0 && (
+                              <div className="relative">
+                                <Tooltip label={t("projects.label")}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setProjectAssignTargetId(
+                                        projectAssignTargetId === item.id ? null : item.id,
+                                      );
+                                    }}
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                  >
+                                    <FolderInput size={11} />
+                                  </button>
+                                </Tooltip>
+                                {projectAssignTargetId === item.id && (
+                                  <div className="absolute right-0 top-7 z-50 min-w-[140px] rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] py-1 shadow-lg">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        void assignGenerationToProject(item.id, null).catch(
+                                          (error) => {
+                                            console.warn("Failed to unassign generation:", error);
+                                          },
+                                        );
+                                        setProjectAssignTargetId(null);
+                                      }}
+                                      className="block w-full px-3 py-1 text-left text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-surface-muted)]"
+                                    >
+                                      {t("projects.allProjects")}
+                                    </button>
+                                    {projects.map((project) => (
+                                      <button
+                                        key={project.id}
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void assignGenerationToProject(item.id, project.id).catch(
+                                            (error) => {
+                                              console.warn("Failed to assign generation:", error);
+                                            },
+                                          );
+                                          setProjectAssignTargetId(null);
+                                        }}
+                                        className={`block w-full px-3 py-1 text-left text-[11px] hover:bg-[var(--color-surface-muted)] ${
+                                          item.projectId === project.id
+                                            ? "font-medium text-[var(--color-text)]"
+                                            : "text-[var(--color-text-dim)]"
+                                        }`}
+                                      >
+                                        {project.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             {/* Delete button */}
                             <Tooltip label={t("common.delete")}>
                               <button

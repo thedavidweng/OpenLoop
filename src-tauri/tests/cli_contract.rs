@@ -41,6 +41,7 @@ fn sample_record(id: &str, output_path: Option<String>) -> GenerationRecord {
         error_message: None,
         generation_info: None,
         is_favorite: false,
+        project_id: None,
     }
 }
 

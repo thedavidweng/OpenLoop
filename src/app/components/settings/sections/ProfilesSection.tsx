@@ -53,10 +53,7 @@ export function ProfilesSection() {
   };
 
   return (
-    <SettingsSectionCard
-      title={t("profiles.title")}
-      description={t("profiles.description")}
-    >
+    <SettingsSectionCard title={t("profiles.title")} description={t("profiles.description")}>
       <div className="space-y-3">
         {/* Create new profile */}
         <div className="flex items-center gap-2">

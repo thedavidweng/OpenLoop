@@ -10,8 +10,8 @@ use serde_json::Value;
 use crate::models::{
     errors::{AppError, AppResult},
     generation::{ActiveGenerationTask, FailedRun, GenerationRecord, GenerationRequest},
-    project::Project,
     profile::{CreateProfileRequest, GenerationProfile},
+    project::Project,
     settings::{AppSettings, SettingKey},
 };
 

@@ -25,8 +25,20 @@ pub fn execute(state: &AppState, json: bool, command: ProfileCommand) -> AppResu
             language,
             lm_backend,
         } => cmd_create(
-            state, json, &name, model, duration, format, thinking, steps, guidance, bpm, key,
-            time_signature, language, lm_backend,
+            state,
+            json,
+            &name,
+            model,
+            duration,
+            format,
+            thinking,
+            steps,
+            guidance,
+            bpm,
+            key,
+            time_signature,
+            language,
+            lm_backend,
         ),
         ProfileCommand::Rename { id, name } => cmd_rename(state, json, &id, &name),
         ProfileCommand::Delete { id, yes } => cmd_delete(state, json, &id, yes),
@@ -45,7 +57,10 @@ fn cmd_list(state: &AppState, json: bool) -> AppResult<()> {
             human_output("No profiles.");
             return Ok(());
         }
-        println!("{:<12} {:<20} {:<8} {:<8} {:<8}", "ID", "Name", "Model", "Steps", "Format");
+        println!(
+            "{:<12} {:<20} {:<8} {:<8} {:<8}",
+            "ID", "Name", "Model", "Steps", "Format"
+        );
         println!("{}", "-".repeat(60));
         for profile in &profiles {
             let short_id = &profile.id[..8.min(profile.id.len())];

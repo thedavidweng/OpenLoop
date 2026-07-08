@@ -74,22 +74,27 @@ export function createProfilesSlice(
       const form: GenerationFormValues = {
         ...currentForm,
         model: profile.modelVariant ?? currentForm.model,
-        durationSeconds: profile.durationSeconds != null
-          ? String(profile.durationSeconds)
-          : currentForm.durationSeconds,
-        audioFormat: (profile.audioFormat as GenerationFormValues["audioFormat"]) ?? currentForm.audioFormat,
+        durationSeconds:
+          profile.durationSeconds != null
+            ? String(profile.durationSeconds)
+            : currentForm.durationSeconds,
+        audioFormat:
+          (profile.audioFormat as GenerationFormValues["audioFormat"]) ?? currentForm.audioFormat,
         thinking: profile.thinking ?? currentForm.thinking,
-        inferenceSteps: profile.inferenceSteps != null
-          ? String(profile.inferenceSteps)
-          : currentForm.inferenceSteps,
-        guidanceScale: profile.guidanceScale != null
-          ? String(profile.guidanceScale)
-          : currentForm.guidanceScale,
+        inferenceSteps:
+          profile.inferenceSteps != null
+            ? String(profile.inferenceSteps)
+            : currentForm.inferenceSteps,
+        guidanceScale:
+          profile.guidanceScale != null ? String(profile.guidanceScale) : currentForm.guidanceScale,
         bpm: profile.bpm != null ? String(profile.bpm) : currentForm.bpm,
         keyScale: profile.keyScale ?? currentForm.keyScale,
-        timeSignature: (profile.timeSignature as GenerationFormValues["timeSignature"]) ?? currentForm.timeSignature,
+        timeSignature:
+          (profile.timeSignature as GenerationFormValues["timeSignature"]) ??
+          currentForm.timeSignature,
         vocalLanguage: profile.vocalLanguage ?? currentForm.vocalLanguage,
-        lmBackend: (profile.lmBackend as GenerationFormValues["lmBackend"]) ?? currentForm.lmBackend,
+        lmBackend:
+          (profile.lmBackend as GenerationFormValues["lmBackend"]) ?? currentForm.lmBackend,
       };
       set({
         form,

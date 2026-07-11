@@ -217,16 +217,18 @@ function main() {
 
     const fileCoverage = coverage.get(normalizedPath);
     if (!fileCoverage) {
-      // File has no coverage data — all added lines are uncovered
-      totalAdded += lines.length;
-      uncoveredDetails.push({ file: normalizedPath, lines });
+      // File has no coverage data — skip (no executable lines tracked)
       continue;
     }
 
     for (const lineNum of lines) {
+      // Only count lines that lcov tracks as executable (DA: entries).
+      // Import statements, type definitions, and comments are not executable
+      // and won't appear in lcov, so they shouldn't count toward patch coverage.
+      if (!fileCoverage.has(lineNum)) continue;
       totalAdded++;
       const hits = fileCoverage.get(lineNum);
-      if (hits !== undefined && hits > 0) {
+      if (hits > 0) {
         coveredAdded++;
       } else {
         uncoveredDetails.push({ file: normalizedPath, line: lineNum });

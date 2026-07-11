@@ -84,6 +84,10 @@ function makeStoreOverrides(
     resetForm: mockResetForm,
     setField: mockSetField,
     openSettings: mockOpenSettings,
+    recentPrompts: [],
+    favoritePrompts: [],
+    toggleFavoritePrompt: vi.fn(),
+    removeRecentPrompt: vi.fn(),
   };
 }
 

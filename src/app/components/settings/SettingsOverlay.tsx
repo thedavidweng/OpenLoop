@@ -191,17 +191,22 @@ export function SettingsOverlay() {
           onDismissDeleteAllModels={() => setDeleteModelsOpen(false)}
           onConfirmClearHistory={() => {
             setClearHistoryOpen(false);
-            void clearGenerationHistory().then(() => setSaveNotice(t("settings.historyCleared")));
+            void clearGenerationHistory()
+              .then(() => setSaveNotice(t("settings.historyCleared")))
+              .catch(() => setSaveNotice(t("settings.clearHistoryFailed")));
           }}
           onConfirmClearCache={() => {
             setClearCacheOpen(false);
             void api
               .clearBackendCache()
-              .then(() => setSaveNotice(t("settings.backendCacheCleared")));
+              .then(() => setSaveNotice(t("settings.backendCacheCleared")))
+              .catch(() => setSaveNotice(t("settings.clearCacheFailed")));
           }}
           onConfirmDeleteAllModels={() => {
             setDeleteModelsOpen(false);
-            void deleteAllModels().then(() => setSaveNotice(t("settings.modelsDeleted")));
+            void deleteAllModels()
+              .then(() => setSaveNotice(t("settings.modelsDeleted")))
+              .catch(() => setSaveNotice(t("settings.deleteModelsFailed")));
           }}
         />
       </div>

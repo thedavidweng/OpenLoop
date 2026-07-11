@@ -30,18 +30,24 @@ pub fn remove_variant_files(
     for spec in pack_for_descriptor(descriptor) {
         let target = checkpoints_dir.join(spec.local_path);
         if target.exists() {
-            let _ = fs::remove_file(&target);
+            if let Err(e) = fs::remove_file(&target) {
+                tracing::warn!("Failed to remove model file: {e}");
+            }
         }
         let part = part_path(&target);
         if part.exists() {
-            let _ = fs::remove_file(&part);
+            if let Err(e) = fs::remove_file(&part) {
+                tracing::warn!("Failed to remove partial download: {e}");
+            }
         }
     }
     for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
         let dir = checkpoints_dir.join(model_dir_name);
         let _ = fs::read_dir(&dir).map(|mut iter| {
             if iter.next().is_none() {
-                let _ = fs::remove_dir(&dir);
+                if let Err(e) = fs::remove_dir(&dir) {
+                    tracing::warn!("Failed to remove empty model directory: {e}");
+                }
             }
         });
     }
@@ -67,7 +73,9 @@ pub fn clear_partial_downloads(
         let target = checkpoints_dir.join(spec.local_path);
         let part = part_path(&target);
         if part.exists() {
-            let _ = fs::remove_file(&part);
+            if let Err(e) = fs::remove_file(&part) {
+                tracing::warn!("Failed to remove partial download: {e}");
+            }
         }
     }
     Ok(inspect_descriptor_for(app_data_dir, settings, descriptor))

@@ -186,7 +186,11 @@ impl ModelManager {
                         for spec in &pack_for_cleanup {
                             let part = download::part_path(&checkpoints_dir.join(spec.local_path));
                             if part.exists() {
-                                let _ = fs::remove_file(&part);
+                                if let Err(e) = fs::remove_file(&part) {
+                                    tracing::warn!(
+                                        "Failed to clean up partial download on cancel: {e}"
+                                    );
+                                }
                             }
                         }
                         let cancelled = ModelStatusSnapshot {

@@ -103,13 +103,19 @@ pub fn delete_marker_path(app_data_dir: &Path, variant: ModelVariant) -> PathBuf
 pub fn write_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
     let path = delete_marker_path(app_data_dir, variant);
     if let Some(parent) = path.parent() {
-        let _ = fs::create_dir_all(parent);
+        if let Err(e) = fs::create_dir_all(parent) {
+            tracing::warn!("Failed to create delete marker directory: {e}");
+        }
     }
-    let _ = fs::write(&path, Utc::now().to_rfc3339());
+    if let Err(e) = fs::write(&path, Utc::now().to_rfc3339()) {
+        tracing::warn!("Failed to write delete marker: {e}");
+    }
 }
 
 pub fn clear_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
-    let _ = fs::remove_file(delete_marker_path(app_data_dir, variant));
+    if let Err(e) = fs::remove_file(delete_marker_path(app_data_dir, variant)) {
+        tracing::warn!("Failed to clear delete marker: {e}");
+    }
 }
 
 pub fn read_delete_marker(app_data_dir: &Path, variant: ModelVariant) -> bool {
@@ -128,18 +134,26 @@ pub fn resume_pending_deletions(
             for spec in pack_for_descriptor(descriptor) {
                 let target = checkpoints_dir.join(spec.local_path);
                 if target.exists() {
-                    let _ = fs::remove_file(&target);
+                    if let Err(e) = fs::remove_file(&target) {
+                        tracing::warn!("Failed to remove model file during resume: {e}");
+                    }
                 }
                 let part = part_path(&target);
                 if part.exists() {
-                    let _ = fs::remove_file(&part);
+                    if let Err(e) = fs::remove_file(&part) {
+                        tracing::warn!("Failed to remove partial download during resume: {e}");
+                    }
                 }
             }
             for model_dir_name in unique_model_dirs(pack_for_descriptor(descriptor)) {
                 let dir = checkpoints_dir.join(model_dir_name);
                 let _ = fs::read_dir(&dir).map(|mut iter| {
                     if iter.next().is_none() {
-                        let _ = fs::remove_dir(&dir);
+                        if let Err(e) = fs::remove_dir(&dir) {
+                            tracing::warn!(
+                                "Failed to remove empty model directory during resume: {e}"
+                            );
+                        }
                     }
                 });
             }

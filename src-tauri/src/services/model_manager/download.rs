@@ -411,7 +411,9 @@ where
         0
     };
     if resume_from == 0 && part.exists() {
-        let _ = fs::remove_file(&part);
+        if let Err(e) = fs::remove_file(&part) {
+            tracing::warn!("Failed to remove stale partial download: {e}");
+        }
     }
 
     const MAX_ATTEMPTS: u32 = 4;
@@ -572,7 +574,7 @@ where
             break;
         }
 
-        let _ = last_error;
+        // last_error is retained for the error return path below
         fs::rename(&part, target).map_err(|error| {
             AppError::model_download_failed(format!(
                 "failed to move temporary download {} to {}: {error}",
@@ -583,8 +585,12 @@ where
 
         if let Some(expected_sha256) = spec.sha256 {
             if let Err(error) = verify_sha256(target, expected_sha256) {
-                let _ = fs::remove_file(target);
-                let _ = fs::remove_file(&part);
+                if let Err(e) = fs::remove_file(target) {
+                    tracing::warn!("Failed to remove corrupt download: {e}");
+                }
+                if let Err(e) = fs::remove_file(&part) {
+                    tracing::warn!("Failed to remove partial download: {e}");
+                }
                 if mirror_index + 1 < mirrors.len() {
                     eprintln!("openloop: {} (trying next mirror)", error.message);
                     mirror_index += 1;
@@ -620,7 +626,9 @@ pub fn download_single_file_blocking(
         0
     };
     if resume_from == 0 && part.exists() {
-        let _ = fs::remove_file(&part);
+        if let Err(e) = fs::remove_file(&part) {
+            tracing::warn!("Failed to remove stale partial download: {e}");
+        }
     }
 
     const MAX_ATTEMPTS: u32 = 4;
@@ -769,8 +777,12 @@ pub fn download_single_file_blocking(
 
         if let Some(expected_sha256) = spec.sha256 {
             if let Err(error) = verify_sha256(target, expected_sha256) {
-                let _ = fs::remove_file(target);
-                let _ = fs::remove_file(&part);
+                if let Err(e) = fs::remove_file(target) {
+                    tracing::warn!("Failed to remove corrupt download: {e}");
+                }
+                if let Err(e) = fs::remove_file(&part) {
+                    tracing::warn!("Failed to remove partial download: {e}");
+                }
                 if mirror_index + 1 < mirrors.len() {
                     eprintln!("openloop: {} (trying next mirror)", error.message);
                     mirror_index += 1;

@@ -316,7 +316,9 @@ impl GenerationTaskRunner {
                         self.db.delete_active_generation_task(active_id)?;
                     }
                     // Archive the failed run for diagnostics and retry
-                    let request_json = serde_json::to_string(&request).unwrap_or_default();
+                    let request_json = serde_json::to_string(&request).map_err(|e| {
+                        AppError::internal(format!("failed to serialize request: {e}"))
+                    })?;
                     let failed_run = FailedRun {
                         id: Uuid::new_v4().to_string(),
                         created_at: Utc::now().to_rfc3339(),

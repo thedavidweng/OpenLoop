@@ -54,7 +54,9 @@ impl Database {
             include_str!("../../migrations/006_add_projects.sql"),
             include_str!("../../migrations/007_add_profiles.sql"),
         ] {
-            let _ = connection.execute_batch(sql);
+            if let Err(e) = connection.execute_batch(sql) {
+                tracing::warn!("Migration step failed (may be idempotent): {e}");
+            }
         }
 
         Ok(())

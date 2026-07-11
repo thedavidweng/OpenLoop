@@ -188,7 +188,9 @@ fn prune_old_app_logs(log_dir: &Path) {
         .into_iter()
         .skip(APP_LOG_RETAIN_COUNT.saturating_sub(1))
     {
-        let _ = fs::remove_file(path);
+        if let Err(e) = fs::remove_file(path) {
+            tracing::warn!("Failed to prune old log file: {e}");
+        }
     }
 }
 

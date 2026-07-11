@@ -40,7 +40,7 @@ export function useAppMenuRuntime(enabled: boolean) {
           break;
         case "reveal-output-folder":
           if (outputDirectory) {
-            void api.revealInFinder(outputDirectory);
+            void api.revealInFinder(outputDirectory).catch(() => {});
           }
           break;
         case "new-generation":

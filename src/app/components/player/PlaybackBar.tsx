@@ -657,7 +657,7 @@ export function PlaybackBar() {
                     onClick={() => {
                       setExportDropdownOpen(false);
                       if (currentGeneration?.outputPath) {
-                        void api.revealInFinder(currentGeneration.outputPath);
+                        void api.revealInFinder(currentGeneration.outputPath).catch(() => {});
                       }
                     }}
                   >

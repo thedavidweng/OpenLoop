@@ -147,7 +147,9 @@ impl BackendProvisioner {
 
         // Extract
         extract_archive(&archive_path, &runtime_dir)?;
-        let _ = fs::remove_file(&archive_path);
+        if let Err(e) = fs::remove_file(&archive_path) {
+            tracing::warn!("Failed to clean up archive after extraction: {e}");
+        }
 
         // Write manifest
         let manifest = BackendManifest {
@@ -292,7 +294,9 @@ impl BackendProvisioner {
         ));
         backup_runtime_code(&runtime_dir, &backup_dir)?;
         extract_archive(&archive_path, &runtime_dir)?;
-        let _ = fs::remove_file(&archive_path);
+        if let Err(e) = fs::remove_file(&archive_path) {
+            tracing::warn!("Failed to clean up archive after extraction: {e}");
+        }
 
         // Update manifest
         let manifest = BackendManifest {
@@ -303,7 +307,9 @@ impl BackendProvisioner {
         write_backend_manifest(&self.app_data_dir, &manifest)?;
 
         // Clean up backup
-        let _ = fs::remove_dir_all(&backup_dir);
+        if let Err(e) = fs::remove_dir_all(&backup_dir) {
+            tracing::warn!("Failed to clean up backup directory: {e}");
+        }
 
         if let Ok(mut status) = self.status.lock() {
             *status = BackendProvisionStatus {
@@ -453,7 +459,9 @@ async fn provision_async_inner(
 
     // Extract
     extract_archive(&archive_path, runtime_dir)?;
-    let _ = fs::remove_file(&archive_path);
+    if let Err(e) = fs::remove_file(&archive_path) {
+        tracing::warn!("Failed to clean up archive after extraction: {e}");
+    }
 
     Ok(())
 }
@@ -505,7 +513,9 @@ async fn update_async_inner(
 
     // Extract new
     extract_archive(&archive_path, runtime_dir)?;
-    let _ = fs::remove_file(&archive_path);
+    if let Err(e) = fs::remove_file(&archive_path) {
+        tracing::warn!("Failed to clean up archive after extraction: {e}");
+    }
 
     // Update manifest
     let manifest = BackendManifest {
@@ -516,7 +526,9 @@ async fn update_async_inner(
     write_backend_manifest(app_data_dir, &manifest)?;
 
     // Clean up backup
-    let _ = fs::remove_dir_all(&backup_dir);
+    if let Err(e) = fs::remove_dir_all(&backup_dir) {
+        tracing::warn!("Failed to clean up backup directory: {e}");
+    }
 
     Ok((latest_tag, latest_commit))
 }
@@ -782,7 +794,11 @@ fn resolve_path_within_base(canonical_base: &Path, relative: &str) -> AppResult<
         match component {
             std::path::Component::Normal(part) => resolved.push(part),
             std::path::Component::CurDir => {}
-            _ => unreachable!("path components validated above"),
+            _ => {
+                return Err(AppError::backend_provision_failed(
+                    "zip entry contains invalid path component after validation",
+                ));
+            }
         }
     }
 

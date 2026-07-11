@@ -509,16 +509,16 @@ export function HistorySidebar() {
         onConfirm={async () => {
           setBatchExportOpen(false);
           if (!api.isTauriRuntime()) {
-            addToast("error", "Export requires the desktop app.");
+            addToast("error", t("toast.exportRequiresDesktop"));
             return;
           }
           const destination = await api.selectDirectory();
           if (!destination) return;
           try {
             const copied = await api.exportGenerationsToFolder(selectedHistoryIds, destination);
-            addToast("success", `Exported ${copied.length} files.`);
+            addToast("success", t("toast.filesExported", { count: copied.length }));
           } catch (error) {
-            const msg = error instanceof Error ? error.message : "Export failed.";
+            const msg = error instanceof Error ? error.message : t("toast.exportFailed");
             addToast("error", msg);
           }
         }}

@@ -7,7 +7,6 @@ import {
   useReducer,
   useRef,
   useState,
-  type ReactElement,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
@@ -44,12 +43,9 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
         : `${existing} ${tooltipId}`
       : tooltipId;
 
-    return cloneElement(
-      children as ReactElement,
-      {
-        "aria-describedby": merged,
-      } as Record<string, unknown>,
-    );
+    return cloneElement(children, {
+      "aria-describedby": merged,
+    } as Record<string, unknown>);
   })();
 
   useLayoutEffect(() => {
@@ -108,7 +104,10 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
         onMouseLeave={() => dispatch({ type: "pointer-leave" })}
         onFocusCapture={() => dispatch({ type: "focus" })}
         onBlurCapture={(event) => {
-          if (anchorRef.current?.contains(event.relatedTarget as Node)) {
+          if (
+            event.relatedTarget instanceof Node &&
+            anchorRef.current?.contains(event.relatedTarget)
+          ) {
             return;
           }
           dispatch({ type: "blur" });

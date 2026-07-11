@@ -243,7 +243,11 @@ export function PlaybackBar() {
   useEffect(() => {
     if (!exportDropdownOpen) return;
     const handleClick = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+      if (
+        event.target instanceof Node &&
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(event.target)
+      ) {
         setExportDropdownOpen(false);
       }
     };
@@ -683,10 +687,11 @@ export function PlaybackBar() {
                           });
                           const reader = new FileReader();
                           reader.addEventListener("load", () => {
-                            const dataUrl = reader.result as string;
-                            void navigator.clipboard.writeText(dataUrl).then(() => {
-                              addToast("success", t("toast.dataUrlCopied"));
-                            });
+                            if (typeof reader.result === "string") {
+                              void navigator.clipboard.writeText(reader.result).then(() => {
+                                addToast("success", t("toast.dataUrlCopied"));
+                              });
+                            }
                           });
                           reader.addEventListener("error", () => {
                             addToast("error", t("toast.copyFailed"));

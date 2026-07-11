@@ -1,8 +1,36 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type { GenerationFormValues, GenerationProfile } from "@/app/lib/types";
+import type {
+  AudioFormat,
+  GenerationFormValues,
+  GenerationProfile,
+  LmBackend,
+  TimeSignature,
+} from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import { computeValidationState } from "@/app/lib/validation-helpers";
+
+const AUDIO_FORMATS: readonly AudioFormat[] = ["wav", "mp3", "flac", "ogg"];
+const TIME_SIGNATURES: readonly TimeSignature[] = ["2", "3", "4", "6"];
+const LM_BACKENDS: readonly LmBackend[] = ["pt", "vllm", "mlx"];
+
+function isAudioFormat(value: string | null | undefined): value is AudioFormat {
+  return (
+    value !== null && value !== undefined && (AUDIO_FORMATS as readonly string[]).includes(value)
+  );
+}
+
+function isTimeSignature(value: string | null | undefined): value is TimeSignature {
+  return (
+    value !== null && value !== undefined && (TIME_SIGNATURES as readonly string[]).includes(value)
+  );
+}
+
+function isLmBackend(value: string | null | undefined): value is LmBackend {
+  return (
+    value !== null && value !== undefined && (LM_BACKENDS as readonly string[]).includes(value)
+  );
+}
 
 export interface ProfilesSlice {
   profiles: GenerationProfile[];
@@ -78,8 +106,9 @@ export function createProfilesSlice(
           profile.durationSeconds != null
             ? String(profile.durationSeconds)
             : currentForm.durationSeconds,
-        audioFormat:
-          (profile.audioFormat as GenerationFormValues["audioFormat"]) ?? currentForm.audioFormat,
+        audioFormat: isAudioFormat(profile.audioFormat)
+          ? profile.audioFormat
+          : currentForm.audioFormat,
         thinking: profile.thinking ?? currentForm.thinking,
         inferenceSteps:
           profile.inferenceSteps != null
@@ -89,12 +118,11 @@ export function createProfilesSlice(
           profile.guidanceScale != null ? String(profile.guidanceScale) : currentForm.guidanceScale,
         bpm: profile.bpm != null ? String(profile.bpm) : currentForm.bpm,
         keyScale: profile.keyScale ?? currentForm.keyScale,
-        timeSignature:
-          (profile.timeSignature as GenerationFormValues["timeSignature"]) ??
-          currentForm.timeSignature,
+        timeSignature: isTimeSignature(profile.timeSignature)
+          ? profile.timeSignature
+          : currentForm.timeSignature,
         vocalLanguage: profile.vocalLanguage ?? currentForm.vocalLanguage,
-        lmBackend:
-          (profile.lmBackend as GenerationFormValues["lmBackend"]) ?? currentForm.lmBackend,
+        lmBackend: isLmBackend(profile.lmBackend) ? profile.lmBackend : currentForm.lmBackend,
       };
       set({
         form,

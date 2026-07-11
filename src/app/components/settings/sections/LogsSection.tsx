@@ -6,6 +6,10 @@ import * as api from "@/app/lib/api";
 const LEVELS = ["trace", "debug", "info", "warn", "error"] as const;
 type Level = (typeof LEVELS)[number];
 
+function isLevel(value: string): value is Level {
+  return (LEVELS as readonly string[]).includes(value);
+}
+
 export function LogsSection() {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<api.AppLogEntry[]>([]);
@@ -46,7 +50,9 @@ export function LogsSection() {
             {t("settings.logLevel")}
             <select
               value={minLevel}
-              onChange={(e) => setMinLevel(e.target.value as Level)}
+              onChange={(e) => {
+                if (isLevel(e.target.value)) setMinLevel(e.target.value);
+              }}
               className="rounded border border-[var(--color-border-light)] bg-[var(--color-surface)] px-1.5 py-0.5 text-[11px] text-white outline-none"
             >
               {LEVELS.map((l) => (
@@ -81,7 +87,7 @@ export function LogsSection() {
                   {formatTimestamp(entry.timestamp)}
                 </span>
                 <span
-                  className={`uppercase font-semibold ${levelColor[entry.level as Level] ?? "text-white"}`}
+                  className={`uppercase font-semibold ${isLevel(entry.level) ? (levelColor[entry.level] ?? "text-white") : "text-white"}`}
                 >
                   {entry.level}
                 </span>

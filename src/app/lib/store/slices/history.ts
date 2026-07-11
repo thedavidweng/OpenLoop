@@ -15,13 +15,13 @@ export function createHistorySlice(
 ) {
   return {
     history: [] as GenerationRecord[],
-    currentGeneration: null as GenerationRecord | null,
+    currentGeneration: null,
     historyQuery: "",
     favoriteRecordIds: [] as string[],
-    lastDeletedRecord: null as GenerationRecord | null,
+    lastDeletedRecord: null,
     selectedHistoryIds: [] as string[],
     compareModeActive: false,
-    compareGenerationId: null as string | null,
+    compareGenerationId: null,
 
     selectGenerationRecord: (id: string) => {
       set((state) => ({

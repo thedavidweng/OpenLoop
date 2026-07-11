@@ -64,3 +64,51 @@ fn default_output_directory(app_data_dir: &std::path::Path) -> PathBuf {
         .map(|home| home.join("Music").join("OpenLoop"))
         .unwrap_or_else(|| app_data_dir.join("generated-audio"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_audio_rejects_invalid_format() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let store = FileStore::new(temp.path().to_path_buf());
+        let settings = AppSettings::default();
+        let error = store
+            .write_audio(vec![0u8; 4], "exe", &settings)
+            .expect_err("invalid format should be rejected");
+        assert!(error
+            .details
+            .as_deref()
+            .unwrap_or("")
+            .contains("audioFormat"));
+    }
+
+    #[test]
+    fn write_audio_creates_file_in_default_directory() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let store = FileStore::new(temp.path().to_path_buf());
+        let settings = AppSettings {
+            output_directory: Some(temp.path().join("output").display().to_string()),
+            ..AppSettings::default()
+        };
+        let path = store
+            .write_audio(vec![0xAB; 16], "wav", &settings)
+            .expect("write should succeed");
+        assert!(path.ends_with(".wav"));
+        assert!(std::path::Path::new(&path).exists());
+    }
+
+    #[test]
+    fn resolve_output_directory_creates_missing_dirs() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let store = FileStore::new(temp.path().to_path_buf());
+        let settings = AppSettings {
+            output_directory: Some(temp.path().join("nested/deep/output").display().to_string()),
+            ..AppSettings::default()
+        };
+        let dir = store.resolve_output_directory(&settings).expect("resolve");
+        assert!(dir.exists());
+        assert!(dir.ends_with("output"));
+    }
+}

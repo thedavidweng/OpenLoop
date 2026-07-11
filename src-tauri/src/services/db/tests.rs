@@ -1,11 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use crate::services::db::Database;
     use crate::models::{
         generation::{ActiveGenerationTask, GenerationRecord, GenerationRequest},
         profile::CreateProfileRequest,
         settings::RecommendedProfile,
     };
+    use crate::services::db::Database;
     use serde_json::json;
     use std::fs;
 

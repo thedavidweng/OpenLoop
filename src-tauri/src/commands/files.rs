@@ -81,7 +81,9 @@ pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult
     let temp_path = temp_dir.join(file_name);
     // Remove existing temp file if present
     if let Err(e) = fs::remove_file(&temp_path) {
-        tracing::warn!("Failed to remove existing temp file: {e}");
+        if e.kind() != std::io::ErrorKind::NotFound {
+            tracing::warn!("Failed to remove existing temp file: {e}");
+        }
     }
     // Try hard link first, fall back to copy
     if fs::hard_link(&source, &temp_path).is_err() {

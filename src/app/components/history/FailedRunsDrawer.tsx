@@ -171,32 +171,27 @@ export function FailedRunsDrawer() {
 
   return (
     <div className="shrink-0 border-t border-[color-mix(in_srgb,var(--color-border)_86%,transparent)] px-3 py-2">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        aria-expanded={expanded}
-        className="flex w-full items-center justify-between text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]"
-      >
-        <span className="flex items-center gap-1.5">
+      <div className="flex w-full items-center justify-between text-[11px] font-semibold tracking-wide text-[var(--color-text-dim)]">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          className="flex flex-1 items-center gap-1.5 text-left"
+        >
           <AlertTriangle size={12} className="text-amber-400" />
           {t("history.failedRuns", { count: failedRuns.length })}
-        </span>
-        <div className="flex items-center gap-1">
-          <Tooltip label={t("common.clearAll")}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                void handleClearAll();
-              }}
-              className="flex h-5 w-5 items-center justify-center rounded text-[var(--color-text-dimmer)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
-            >
-              <Trash2 size={10} />
-            </button>
-          </Tooltip>
           {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        </div>
-      </button>
+        </button>
+        <Tooltip label={t("common.clearAll")}>
+          <button
+            type="button"
+            onClick={() => void handleClearAll()}
+            className="flex h-5 w-5 items-center justify-center rounded text-[var(--color-text-dimmer)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+          >
+            <Trash2 size={10} />
+          </button>
+        </Tooltip>
+      </div>
 
       {expanded && (
         <div className="mt-2 max-h-48 space-y-1.5 overflow-auto">

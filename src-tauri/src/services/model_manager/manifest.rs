@@ -114,7 +114,9 @@ pub fn write_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
 
 pub fn clear_delete_marker(app_data_dir: &Path, variant: ModelVariant) {
     if let Err(e) = fs::remove_file(delete_marker_path(app_data_dir, variant)) {
-        tracing::warn!("Failed to clear delete marker: {e}");
+        if e.kind() != std::io::ErrorKind::NotFound {
+            tracing::warn!("Failed to clear delete marker: {e}");
+        }
     }
 }
 

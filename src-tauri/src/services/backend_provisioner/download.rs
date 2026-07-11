@@ -200,6 +200,10 @@ where
                 ))
             })?;
 
+        // Reset progress: the part file is truncated on each retry, so the
+        // previous attempt's partial byte count no longer applies.
+        written = 0;
+
         let mut stream = response.bytes_stream();
         let mut stream_failed: Option<AppError> = None;
 

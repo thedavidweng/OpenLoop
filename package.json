@@ -15,6 +15,7 @@
     "test": "vitest",
     "test:run": "vitest run --no-file-parallelism --maxWorkers=1",
     "test:coverage": "vitest run --coverage --no-file-parallelism --maxWorkers=1",
+    "coverage:patch": "node scripts/check-patch-coverage.mjs",
     "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "release:check": "pnpm typecheck && pnpm test:run && pnpm build && cargo fmt --manifest-path src-tauri/Cargo.toml --check && pnpm rust:check && cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings && cargo test -q --manifest-path src-tauri/Cargo.toml",
@@ -26,7 +27,8 @@
     "validate:release-notes": "node scripts/validate-release-notes.mjs",
     "validate:docs": "node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs",
     "changelog": "git cliff -o CHANGELOG.md",
-    "changelog:preview": "git cliff --latest"
+    "changelog:preview": "git cliff --latest",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.14.4",

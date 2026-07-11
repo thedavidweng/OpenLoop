@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import {
-  AlertCircle,
-  Check,
-  CheckCircle2,
-  Clock,
-  Download,
-  Loader2,
-} from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Clock, Download, Loader2 } from "lucide-react";
 import {
   MODEL_PACKS,
   MODEL_VARIANTS,

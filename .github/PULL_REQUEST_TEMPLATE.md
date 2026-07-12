@@ -8,11 +8,14 @@ Brief description of the changes.
 
 ## Test plan
 
-- [ ] `go test ./... -race` passes
-- [ ] `go vet ./...` clean
-- [ ] `gofmt -l` empty
-- [ ] New/changed commands tested with `--json` output
-- [ ] Safety model respected (dry-run, confirm, read-only) *(if applicable)*
+- [ ] `pnpm typecheck` passes
+- [ ] `pnpm lint` passes
+- [ ] `pnpm test:run` passes
+- [ ] `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings` clean
+- [ ] `cargo fmt --manifest-path src-tauri/Cargo.toml --check` clean
+- [ ] `cargo test --manifest-path src-tauri/Cargo.toml` passes
+- [ ] New/changed CLI commands tested with `--json` output
+- [ ] i18n keys added to both `en.json` and `zh-CN.json` *(if applicable)*
 
 ## Related issues
 

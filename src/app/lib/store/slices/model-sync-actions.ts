@@ -42,8 +42,8 @@ export function createModelSyncActions(
           prev.backendProvisionStatus,
         ),
       }));
-      void api.setSetting("downloadedModels", downloadedModels);
-      void api.setSetting("modelVariant", nextModelVariant);
+      void api.setSetting("downloadedModels", downloadedModels).catch(() => {});
+      void api.setSetting("modelVariant", nextModelVariant).catch(() => {});
     },
 
     refreshModelStatuses: async () => {

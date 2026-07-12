@@ -322,8 +322,12 @@ impl BackendManager {
 
     fn terminate_child(&mut self) {
         if let Some(mut child) = self.child.take() {
-            let _ = child.kill();
-            let _ = child.wait();
+            if let Err(e) = child.kill() {
+                tracing::warn!("Failed to kill backend process: {e}");
+            }
+            if let Err(e) = child.wait() {
+                tracing::warn!("Failed to wait for backend process: {e}");
+            }
         }
     }
 }

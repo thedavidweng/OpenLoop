@@ -1,6 +1,5 @@
 import type { GenerationStore } from "@/app/lib/store/types";
 import type { StoreApi } from "zustand";
-import type { GenerationRecord } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import {
   PREVIEW_DELAY_MS,
@@ -31,7 +30,7 @@ export function createGenerationSlice(
 ) {
   return {
     generationState: createIdleGenerationState(),
-    currentGeneration: null as GenerationRecord | null,
+    currentGeneration: null,
     playbackToggleRequest: 0,
     activeTasks: [],
 

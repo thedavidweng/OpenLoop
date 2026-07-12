@@ -92,7 +92,10 @@ export function BackendSection({
         <button
           type="button"
           onClick={() => {
-            void api.restartBackend().then(() => onShowNotice(t("settings.backendRestarted")));
+            void api
+              .restartBackend()
+              .then(() => onShowNotice(t("settings.backendRestarted")))
+              .catch(() => onShowNotice(t("settings.backendRestartFailed")));
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
         >
@@ -101,13 +104,16 @@ export function BackendSection({
         <button
           type="button"
           onClick={() => {
-            void api.getBackendLogsPath().then((path) => {
-              if (path) {
-                void api.revealInFinder(path);
-              } else {
-                onShowNotice(t("settings.noBackendLog"));
-              }
-            });
+            void api
+              .getBackendLogsPath()
+              .then((path) => {
+                if (path) {
+                  void api.revealInFinder(path);
+                } else {
+                  onShowNotice(t("settings.noBackendLog"));
+                }
+              })
+              .catch(() => onShowNotice(t("settings.backendLogPathFailed")));
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
         >
@@ -116,10 +122,13 @@ export function BackendSection({
         <button
           type="button"
           onClick={() => {
-            void api.setSetting("backendPort", 8001).then(async () => {
-              await hydrateFromPersistence();
-              onShowNotice(t("settings.backendPortReset"));
-            });
+            void api
+              .setSetting("backendPort", 8001)
+              .then(async () => {
+                await hydrateFromPersistence();
+                onShowNotice(t("settings.backendPortReset"));
+              })
+              .catch(() => onShowNotice(t("settings.settingUpdateFailed")));
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
         >
@@ -128,10 +137,13 @@ export function BackendSection({
         <button
           type="button"
           onClick={() => {
-            void api.resetRuntimeSettings().then(async () => {
-              await hydrateFromPersistence();
-              onShowNotice(t("settings.runtimeSettingsRepaired"));
-            });
+            void api
+              .resetRuntimeSettings()
+              .then(async () => {
+                await hydrateFromPersistence();
+                onShowNotice(t("settings.runtimeSettingsRepaired"));
+              })
+              .catch(() => onShowNotice(t("settings.settingUpdateFailed")));
           }}
           className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-white transition-colors hover:bg-[var(--color-accent)]/25"
         >

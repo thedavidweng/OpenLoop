@@ -81,7 +81,7 @@ export function Toolbar({
             type="button"
             onClick={() => {
               if (outputDirectory) {
-                void api.revealInFinder(outputDirectory);
+                void api.revealInFinder(outputDirectory).catch(() => {});
               }
             }}
             aria-label={t("toolbar.revealOutput")}

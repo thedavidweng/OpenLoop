@@ -116,9 +116,12 @@ export function DefaultsSection({
           <button
             type="button"
             onClick={() => {
-              void api.restartBackend().then(() => {
-                addToast("success", t("settings.backendRestarted"));
-              });
+              void api
+                .restartBackend()
+                .then(() => {
+                  addToast("success", t("settings.backendRestarted"));
+                })
+                .catch(() => addToast("error", t("settings.backendRestartFailed")));
             }}
             className="inline-flex h-7 shrink-0 items-center rounded-md border border-amber-500/30 bg-amber-500/15 px-2.5 text-[11px] font-medium text-amber-200 transition-colors hover:bg-amber-500/25"
           >

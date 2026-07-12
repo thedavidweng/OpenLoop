@@ -8,7 +8,7 @@ export function createProjectsSlice(
 ) {
   return {
     projects: [] as GenerationStore["projects"],
-    activeProjectId: null as string | null,
+    activeProjectId: null,
 
     refreshProjects: async () => {
       if (!api.isTauriRuntime()) return;

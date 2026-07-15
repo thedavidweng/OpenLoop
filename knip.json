@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "tests/unit/**/*.test.{ts,tsx}",
+    "src/app/lib/types.ts",
+    "src/app/lib/store.ts",
+    "src/app/lib/api.ts",
+    "src/app/lib/model-bootstrap.ts",
+    "src/app/components/player/playback-bar-layout.ts",
+    "src/app/runtime/menu-runtime.ts",
+    "src/app/components/generation/GenerationPanel/shared.tsx",
+    "src/app/lib/prompt-examples.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
+  "ignoreDependencies": ["playwright", "tailwindcss"],
+  "ignoreBinaries": ["rustc"],
+  "exclude": ["duplicates"]
+}

@@ -31,7 +31,7 @@
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.4",
+    "@tanstack/react-virtual": "^3.14.7",
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-process": "^2.3.1",

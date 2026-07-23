@@ -48,6 +48,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm lint
 
+      - name: knip (unused exports / dependencies)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm knip --no-progress
+
       - name: Frontend tests with coverage
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm vitest run --coverage --reporter=junit --outputFile=test-results.junit.xml

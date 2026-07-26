@@ -50,7 +50,7 @@ export function ModelPackCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-semibold text-white">{meta.label}</p>
+            <p className="text-[13px] font-semibold text-[var(--color-text)]">{meta.label}</p>
             <StateBadge state={state} />
           </div>
           <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
@@ -67,7 +67,7 @@ export function ModelPackCard({
               type="button"
               onClick={onDelete}
               disabled={busy}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_8%,transparent)] px-3 text-[11px] font-medium text-[var(--color-destructive)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-destructive)_16%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Trash2 size={11} />
               {t("model.delete")}
@@ -79,12 +79,12 @@ export function ModelPackCard({
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_8%,transparent)] px-3 text-[11px] font-medium text-[var(--color-destructive)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-destructive)_16%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <XCircle size={11} />
                 {t("model.cancel")}
               </button>
-              <div className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-white shadow-sm opacity-60 cursor-not-allowed">
+              <div className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-[var(--color-on-accent)] shadow-sm opacity-60 cursor-not-allowed">
                 <Loader2 size={11} className="animate-spin" />
                 {t("setup.downloadingButton", {
                   defaultValue: "Downloading…",
@@ -98,7 +98,7 @@ export function ModelPackCard({
                 type="button"
                 onClick={onDownload}
                 disabled={busy}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3 text-[11px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {state === "failed" ? (
                   <>
@@ -117,7 +117,7 @@ export function ModelPackCard({
                   type="button"
                   onClick={onClearPartial}
                   disabled={busy}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-600/8 px-3 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_8%,transparent)] px-3 text-[11px] font-medium text-[var(--color-destructive)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-destructive)_16%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Trash2 size={11} />
                   {t("model.clearCache")}
@@ -129,7 +129,7 @@ export function ModelPackCard({
       </div>
 
       {state === "downloading" ? (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
           <div
             className="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-300 ease-out"
             style={{ width: `${percent}%` }}
@@ -138,10 +138,12 @@ export function ModelPackCard({
       ) : null}
 
       {errorMessage ? (
-        <div className="mt-3 rounded-md border border-red-500/25 bg-red-500/8 px-3 py-2">
-          <p className="text-[11px] leading-5 text-red-200">{errorMessage}</p>
+        <div className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--color-destructive)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_8%,transparent)] px-3 py-2">
+          <p className="text-[11px] leading-5 text-[var(--color-destructive)]">{errorMessage}</p>
           {errorDetails ? (
-            <p className="mt-1 text-[10px] leading-4 text-red-300/70">{errorDetails}</p>
+            <p className="mt-1 text-[10px] leading-4 text-[var(--color-destructive)]">
+              {errorDetails}
+            </p>
           ) : null}
         </div>
       ) : null}

@@ -38,30 +38,53 @@ describe("Toast", () => {
     act(() => {
       api.current!.addToast("success", "It worked");
       api.current!.addToast("error", "Something broke");
+      api.current!.addToast("warning", "Careful now");
       api.current!.addToast("info", "Heads up");
     });
 
     expect(screen.getByText("It worked")).toBeTruthy();
     expect(screen.getByText("Something broke")).toBeTruthy();
+    expect(screen.getByText("Careful now")).toBeTruthy();
     expect(screen.getByText("Heads up")).toBeTruthy();
   });
 
-  it("dismisses when the close button is clicked", () => {
+  it("renders the warning variant with an amber tone", () => {
+    const { api } = renderWithProvider();
+
+    act(() => {
+      api.current!.addToast("warning", "Careful now");
+    });
+
+    const toastDiv = screen.getByText("Careful now").closest("div")!;
+    expect(toastDiv.className).toContain("amber");
+  });
+
+  it("animates out before unmounting on dismiss", () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const { api } = renderWithProvider();
 
     act(() => {
       api.current!.addToast("success", "It worked");
     });
 
-    const message = screen.getByText("It worked");
-    const toastDiv = message.closest("div")!;
+    const toastDiv = screen.getByText("It worked").closest("div")!;
     const dismissButton = toastDiv.querySelector("button:last-child")!;
 
     act(() => {
       fireEvent.click(dismissButton);
     });
 
+    // Still mounted while the exit animation plays.
+    const leaving = screen.getByText("It worked").closest("div")!;
+    expect(leaving.getAttribute("data-state")).toBe("closed");
+    expect(leaving.className).toContain("animate-fade-out");
+
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+
     expect(screen.queryByText("It worked")).toBeNull();
+    vi.useRealTimers();
   });
 
   it("auto-closes after the default duration (3000ms)", async () => {
@@ -75,6 +98,7 @@ describe("Toast", () => {
 
     act(() => {
       vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(220);
     });
 
     await waitFor(() => {
@@ -100,6 +124,7 @@ describe("Toast", () => {
 
     act(() => {
       vi.advanceTimersByTime(1);
+      vi.advanceTimersByTime(220);
     });
 
     await waitFor(() => {
@@ -110,6 +135,7 @@ describe("Toast", () => {
   });
 
   it("renders an action button and calls its onClick", () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const onClick = vi.fn();
     const { api } = renderWithProvider();
 
@@ -123,7 +149,13 @@ describe("Toast", () => {
     });
 
     expect(onClick).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      vi.advanceTimersByTime(220);
+    });
+
     expect(screen.queryByText("Saved")).toBeNull();
+    vi.useRealTimers();
   });
 
   it("cleans up timers on unmount", () => {

@@ -94,7 +94,9 @@ export function Header({
             <Music2 size={17} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-white">{t("generation.composerTitle")}</p>
+            <p className="text-[13px] font-semibold text-[var(--color-text)]">
+              {t("generation.composerTitle")}
+            </p>
             <p className="text-[12px] leading-5 text-[var(--color-text-dim)]">
               {t("generation.composerDescription")}
             </p>
@@ -131,12 +133,12 @@ export function Header({
               </button>
             </Tooltip>
             {showCategoryMenu && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-1.5 shadow-lg">
+              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-1.5 shadow-[var(--shadow-popover)]">
                 {PROMPT_CATEGORIES.map((cat) => (
                   <button
                     key={cat}
                     type="button"
-                    className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12px] text-white transition-colors hover:bg-[var(--color-hover)]"
+                    className="w-full rounded-lg px-2.5 py-1.5 text-left text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
                     onClick={() => handleCategorySelect(cat)}
                   >
                     {t(`generation.category.${cat}`, { defaultValue: cat })}
@@ -187,7 +189,7 @@ export function Header({
                 <button
                   key={p}
                   type="button"
-                  className="group flex max-w-[200px] items-center gap-1 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-0.5 text-[11px] text-[var(--color-text-dim)] transition-colors hover:border-[var(--color-accent)] hover:text-white"
+                  className="group flex max-w-[200px] items-center gap-1 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-0.5 text-[11px] text-[var(--color-text-dim)] transition-colors hover:border-[var(--color-border-light)] hover:text-[var(--color-text)]"
                   onClick={() => onSetField("prompt", p)}
                   disabled={isBusy}
                   title={p}
@@ -225,7 +227,7 @@ export function Header({
                 <button
                   key={p}
                   type="button"
-                  className="max-w-[200px] truncate rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200 transition-colors hover:border-amber-500/40 hover:text-white"
+                  className="max-w-[200px] truncate rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-200 transition-colors hover:border-amber-500/40 hover:text-[var(--color-text)]"
                   onClick={() => onSetField("prompt", p)}
                   disabled={isBusy}
                   title={p}

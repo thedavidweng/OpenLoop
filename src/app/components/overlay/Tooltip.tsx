@@ -1,35 +1,94 @@
 import {
   cloneElement,
   isValidElement,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
   useReducer,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import {
+  createTooltipScheduleController,
   getTooltipPosition,
   tooltipVisibilityReducer,
 } from "@/app/components/overlay/Tooltip.utils";
+import { useTooltipDelayCoordinator } from "@/app/components/overlay/Tooltip.context";
+import {
+  DEFAULT_DELAY_DURATION_MS,
+  DEFAULT_HIDE_GRACE_DURATION_MS,
+} from "@/app/components/overlay/Tooltip.constants";
 
 interface TooltipProps {
   children: ReactNode;
   label: string;
   shortcut?: string;
+  /** Override provider delay for low-frequency explanatory tooltips. */
+  delayDuration?: number;
+  disabled?: boolean;
 }
 
-export function Tooltip({ children, label, shortcut }: TooltipProps) {
+export function Tooltip({
+  children,
+  label,
+  shortcut,
+  delayDuration,
+  disabled = false,
+}: TooltipProps) {
+  const coordinator = useTooltipDelayCoordinator();
   const anchorRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const scheduleRef = useRef<ReturnType<typeof createTooltipScheduleController> | null>(null);
+  const openRef = useRef(false);
   const [open, dispatch] = useReducer(tooltipVisibilityReducer, false);
   const tooltipId = useId();
   const [position, setPosition] = useState<{
     left: number;
     top: number;
   } | null>(null);
+
+  openRef.current = open;
+
+  const resolvedDelayDuration = delayDuration ?? DEFAULT_DELAY_DURATION_MS;
+
+  const showTooltip = useCallback(() => {
+    if (openRef.current) {
+      return;
+    }
+    dispatch({ type: "show" });
+    coordinator.markOpened(tooltipId);
+  }, [coordinator, tooltipId]);
+
+  const hideTooltip = useCallback(() => {
+    if (!openRef.current) {
+      return;
+    }
+    dispatch({ type: "hide" });
+    coordinator.markClosed();
+  }, [coordinator]);
+
+  const forceHideTooltip = useCallback(() => {
+    scheduleRef.current?.cancelAll();
+    if (!openRef.current) {
+      return;
+    }
+    dispatch({ type: "hide" });
+    coordinator.markClosed();
+  }, [coordinator]);
+
+  const getScheduleController = useCallback(() => {
+    scheduleRef.current?.cancelAll();
+    scheduleRef.current = createTooltipScheduleController({
+      delayDuration: resolvedDelayDuration,
+      hideGraceDuration: DEFAULT_HIDE_GRACE_DURATION_MS,
+      skipDelay: coordinator.isSkipDelayActive(),
+    });
+    return scheduleRef.current;
+  }, [coordinator, resolvedDelayDuration]);
 
   const describedChildren = (() => {
     if (!open || !isValidElement(children)) {
@@ -43,13 +102,22 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
         : `${existing} ${tooltipId}`
       : tooltipId;
 
-    return cloneElement(children, {
-      "aria-describedby": merged,
-    } as Record<string, unknown>);
+    return cloneElement(
+      children as ReactElement,
+      {
+        "aria-describedby": merged,
+      } as Record<string, unknown>,
+    );
   })();
 
   useLayoutEffect(() => {
-    if (!open || !anchorRef.current || !tooltipRef.current || typeof window === "undefined") {
+    if (
+      disabled ||
+      !open ||
+      !anchorRef.current ||
+      !tooltipRef.current ||
+      typeof window === "undefined"
+    ) {
       return;
     }
 
@@ -80,29 +148,63 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [open]);
+  }, [disabled, open]);
 
   useEffect(() => {
-    if (!open) return;
+    if (disabled || !open) {
+      return;
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        scheduleRef.current?.cancelAll();
+        if (!openRef.current) {
+          return;
+        }
         dispatch({ type: "escape" });
+        coordinator.markClosed();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [coordinator, disabled, open]);
+
+  useEffect(() => {
+    if (disabled) {
+      return;
+    }
+
+    coordinator.registerTooltip(tooltipId, forceHideTooltip);
+    return () => {
+      coordinator.unregisterTooltip(tooltipId);
+      scheduleRef.current?.cancelAll();
+      if (openRef.current) {
+        coordinator.markClosed();
+      }
+    };
+  }, [coordinator, disabled, forceHideTooltip, tooltipId]);
+
+  if (disabled) {
+    return <>{children}</>;
+  }
 
   return (
     <>
       <span
         ref={anchorRef}
         className="inline-flex"
-        onMouseEnter={() => dispatch({ type: "pointer-enter" })}
-        onMouseLeave={() => dispatch({ type: "pointer-leave" })}
-        onFocusCapture={() => dispatch({ type: "focus" })}
+        onMouseEnter={() => {
+          coordinator.cancelClose();
+          getScheduleController().scheduleShow(showTooltip);
+        }}
+        onMouseLeave={() => {
+          getScheduleController().scheduleHide(hideTooltip);
+        }}
+        onFocusCapture={() => {
+          scheduleRef.current?.cancelAll();
+          showTooltip();
+        }}
         onBlurCapture={(event) => {
           if (
             event.relatedTarget instanceof Node &&
@@ -110,7 +212,8 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
           ) {
             return;
           }
-          dispatch({ type: "blur" });
+          scheduleRef.current?.cancelAll();
+          hideTooltip();
         }}
       >
         {describedChildren}
@@ -122,7 +225,7 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
               ref={tooltipRef}
               role="tooltip"
               id={tooltipId}
-              className="app-panel-surface pointer-events-none fixed z-[80] flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-border)_88%,transparent)] bg-[color-mix(in_srgb,var(--color-sidebar)_96%,transparent)] px-3 py-1.5 text-[11px] font-medium text-white shadow-[0_18px_36px_rgba(0,0,0,0.34)]"
+              className="app-panel-surface pointer-events-none fixed z-[80] flex items-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--color-border)_88%,transparent)] bg-[color-mix(in_srgb,var(--color-sidebar)_96%,transparent)] px-3 py-1.5 text-[11px] font-medium text-white shadow-[var(--shadow-popover)]"
               style={position ? position : { left: 0, top: 0, opacity: 0 }}
             >
               <span>{label}</span>
@@ -138,3 +241,5 @@ export function Tooltip({ children, label, shortcut }: TooltipProps) {
     </>
   );
 }
+
+export { TooltipProvider } from "@/app/components/overlay/TooltipProvider";

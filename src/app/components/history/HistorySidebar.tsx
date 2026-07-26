@@ -126,7 +126,7 @@ export function HistorySidebar() {
             type="button"
             onClick={() => setClearConfirmOpen(true)}
             disabled={historyCount === 0}
-            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-red-500/25 bg-red-600/8 px-2 text-[11px] font-medium text-red-200 transition-colors hover:bg-red-600/16 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-[color-mix(in_srgb,var(--color-destructive)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_8%,transparent)] px-2 text-[11px] font-medium text-[var(--color-destructive)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-destructive)_16%,transparent)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Trash2 size={11} />
             {t("history.clearAllShort")}
@@ -177,7 +177,7 @@ export function HistorySidebar() {
               <button
                 type="button"
                 onClick={() => setBatchDeleteConfirmOpen(true)}
-                className="inline-flex h-6 items-center gap-1 rounded-md bg-red-600/10 px-2 text-[10px] font-medium text-red-200 transition-colors hover:bg-red-600/20"
+                className="inline-flex h-6 items-center gap-1 rounded-md bg-[color-mix(in_srgb,var(--color-destructive)_10%,transparent)] px-2 text-[10px] font-medium text-[var(--color-destructive)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-destructive)_20%,transparent)]"
               >
                 <Trash2 size={10} />
                 Delete
@@ -185,7 +185,7 @@ export function HistorySidebar() {
               <button
                 type="button"
                 onClick={() => clearSelection()}
-                className="inline-flex h-6 items-center rounded-md px-2 text-[10px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                className="inline-flex h-6 items-center rounded-md px-2 text-[10px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
               >
                 Clear
               </button>
@@ -214,7 +214,7 @@ export function HistorySidebar() {
               <button
                 type="button"
                 onClick={exitCompareMode}
-                className="inline-flex h-6 items-center rounded-md px-2 text-[10px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                className="inline-flex h-6 items-center rounded-md px-2 text-[10px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
               >
                 <XCircle size={10} />
                 Close
@@ -288,7 +288,7 @@ export function HistorySidebar() {
                           className="flex w-full items-start justify-between gap-3 text-left"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-medium text-white">
+                            <p className="truncate text-[13px] font-medium text-[var(--color-text)]">
                               {item.prompt || item.lyrics.slice(0, 48) || t("history.untitled")}
                             </p>
                             {/* Key parameters row */}
@@ -333,7 +333,7 @@ export function HistorySidebar() {
                                   e.stopPropagation();
                                   selectGenerationRecord(item.id);
                                 }}
-                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                               >
                                 <Play size={11} fill="currentColor" />
                               </button>
@@ -346,7 +346,7 @@ export function HistorySidebar() {
                                   e.stopPropagation();
                                   loadGenerationSettings(item.id, "settings");
                                 }}
-                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                               >
                                 <Settings2 size={11} />
                               </button>
@@ -359,7 +359,7 @@ export function HistorySidebar() {
                                   e.stopPropagation();
                                   loadGenerationSettings(item.id, "reproduce");
                                 }}
-                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                                 data-visible={selected}
                               >
                                 <Play size={11} />
@@ -377,13 +377,13 @@ export function HistorySidebar() {
                                         projectAssignTargetId === item.id ? null : item.id,
                                       );
                                     }}
-                                    className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                                    className="flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                                   >
                                     <FolderInput size={11} />
                                   </button>
                                 </Tooltip>
                                 {projectAssignTargetId === item.id && (
-                                  <div className="absolute right-0 top-7 z-50 min-w-[140px] rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] py-1 shadow-lg">
+                                  <div className="absolute right-0 top-7 z-50 min-w-[140px] rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] py-1 shadow-[var(--shadow-popover)]">
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -433,7 +433,7 @@ export function HistorySidebar() {
                                   e.stopPropagation();
                                   setDeleteTargetId(item.id);
                                 }}
-                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
+                                className="contextual-reveal flex h-6 w-6 items-center justify-center rounded-md text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-destructive)]"
                                 data-visible={selected}
                               >
                                 <Trash2 size={11} />

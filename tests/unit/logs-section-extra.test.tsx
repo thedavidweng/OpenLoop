@@ -115,8 +115,8 @@ describe("LogsSection — isLevel type guard and level color branches", () => {
     // The level badge span should exist for the invalid level
     const levelBadge = screen.getAllByText("fatal").find((el) => el.tagName === "SPAN");
     expect(levelBadge).toBeTruthy();
-    // The className should contain text-white (fallback for invalid level)
-    expect(levelBadge?.className).toContain("text-white");
+    // The className should contain the default text token (fallback for invalid level)
+    expect(levelBadge?.className).toContain("text-[var(--color-text)]");
   });
 
   // Covers line 90 — isLevel true branch with info level (levelColor[entry.level])
@@ -135,7 +135,7 @@ describe("LogsSection — isLevel type guard and level color branches", () => {
 
     const infoBadge = screen.getAllByText("info").find((el) => el.tagName === "SPAN");
     expect(infoBadge).toBeTruthy();
-    expect(infoBadge?.className).toContain("text-white");
+    expect(infoBadge?.className).toContain("text-[var(--color-text)]");
   });
 
   // Covers line 90 — isLevel true branch with error level (red color)
@@ -154,7 +154,7 @@ describe("LogsSection — isLevel type guard and level color branches", () => {
 
     const errorBadge = screen.getAllByText("error").find((el) => el.tagName === "SPAN");
     expect(errorBadge).toBeTruthy();
-    expect(errorBadge?.className).toContain("text-red-400");
+    expect(errorBadge?.className).toContain("text-[var(--color-destructive)]");
   });
 
   // Covers line 90 — isLevel true branch with warn level (yellow color)

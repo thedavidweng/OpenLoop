@@ -1,26 +1,20 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AppLayout } from "@/app/components/layout/AppLayout";
+import { AppShellSkeleton } from "@/app/components/layout/AppShellSkeleton";
 import { UpdateBanner } from "@/app/components/bootstrap/UpdateBanner";
 import { useToast } from "@/app/components/overlay/Toast";
 import { SetupScreen } from "@/app/components/settings/SetupScreen";
 import * as api from "@/app/lib/api";
 import { useGenerationStore } from "@/app/lib/store";
 import { useAppMenuRuntime } from "@/app/runtime/menu-runtime";
+import { useAppReadyRuntime } from "@/app/runtime/app-ready-runtime";
 
 function useHighContrast() {
   const highContrast = useGenerationStore((s) => s.highContrast);
   useEffect(() => {
     document.documentElement.toggleAttribute("data-high-contrast", highContrast);
   }, [highContrast]);
-}
-
-function BootShell() {
-  return (
-    <div className="flex h-screen w-full items-center justify-center bg-[#121212] text-[12px] tracking-wide text-[rgba(255,255,255,0.55)]">
-      OpenLoop
-    </div>
-  );
 }
 
 function App() {
@@ -37,6 +31,7 @@ function App() {
   const applyModelStatus = useGenerationStore((state) => state.applyModelStatus);
 
   useAppMenuRuntime(hydrated && api.isTauriRuntime());
+  useAppReadyRuntime(hydrated);
 
   useEffect(() => {
     void hydrateFromPersistence();
@@ -88,7 +83,7 @@ function App() {
   }, [applyModelStatus]);
 
   if (!hydrated) {
-    return <BootShell />;
+    return <AppShellSkeleton />;
   }
 
   if (

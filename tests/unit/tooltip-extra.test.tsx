@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, act } from "@testing-library/react";
 import { Tooltip } from "@/app/components/overlay/Tooltip";
 
 // Tooltip uses createPortal — ensure document.body is available (jsdom provides it)
@@ -42,18 +42,30 @@ describe("Tooltip — aria-describedby cloneElement (lines 47-48)", () => {
     expect(button.getAttribute("aria-describedby")).toBeNull();
   });
 
-  it("sets aria-describedby when tooltip is opened via mouse enter", () => {
-    render(
-      <Tooltip label="Help text">
-        <button type="button">Hover me</button>
-      </Tooltip>,
-    );
+  it("sets aria-describedby when tooltip is opened via mouse enter after the delay", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <Tooltip label="Help text">
+          <button type="button">Hover me</button>
+        </Tooltip>,
+      );
 
-    const button = screen.getByText("Hover me");
-    const anchorSpan = button.parentElement!;
-    fireEvent.mouseEnter(anchorSpan);
+      const button = screen.getByText("Hover me");
+      const anchorSpan = button.parentElement!;
+      fireEvent.mouseEnter(anchorSpan);
 
-    expect(button.getAttribute("aria-describedby")).not.toBeNull();
+      // Hover open is delayed — nothing yet.
+      expect(button.getAttribute("aria-describedby")).toBeNull();
+
+      act(() => {
+        vi.advanceTimersByTime(700);
+      });
+
+      expect(button.getAttribute("aria-describedby")).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("removes aria-describedby when tooltip closes after blur", () => {
@@ -154,23 +166,34 @@ describe("Tooltip — onBlurCapture relatedTarget containment (lines 107-110)", 
     expect(button.getAttribute("aria-describedby")).toBeNull();
   });
 
-  it("closes tooltip on pointer leave", () => {
-    render(
-      <Tooltip label="Help text">
-        <button type="button">Hover me</button>
-      </Tooltip>,
-    );
+  it("closes tooltip after the hide grace on pointer leave", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <Tooltip label="Help text">
+          <button type="button">Hover me</button>
+        </Tooltip>,
+      );
 
-    const button = screen.getByText("Hover me");
-    const anchorSpan = button.parentElement!;
+      const button = screen.getByText("Hover me");
+      const anchorSpan = button.parentElement!;
 
-    // Open via mouse enter
-    fireEvent.mouseEnter(anchorSpan);
-    expect(button.getAttribute("aria-describedby")).not.toBeNull();
+      // Open via mouse enter (after delay)
+      fireEvent.mouseEnter(anchorSpan);
+      act(() => {
+        vi.advanceTimersByTime(700);
+      });
+      expect(button.getAttribute("aria-describedby")).not.toBeNull();
 
-    // Close via mouse leave
-    fireEvent.mouseLeave(anchorSpan);
-    expect(button.getAttribute("aria-describedby")).toBeNull();
+      // Close via mouse leave (after hide grace)
+      fireEvent.mouseLeave(anchorSpan);
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(button.getAttribute("aria-describedby")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders the label text in the portal when open", () => {

@@ -237,7 +237,7 @@ describe("ModelBootstrapBanner", () => {
     const { container } = render(<ModelBootstrapBanner />);
 
     // The details paragraph should not appear when it equals the message
-    const detailsEl = container.querySelector(".border-t.border-red-500\\/20");
+    const detailsEl = container.querySelector("p.border-t");
     expect(detailsEl).toBeNull();
   });
 

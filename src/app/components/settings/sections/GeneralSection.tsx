@@ -36,7 +36,7 @@ export function GeneralSection({
           onClick={() => {
             void setLanguage(detectSystemLanguage());
           }}
-          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)]"
         >
           {t("settings.resetToDefaults")}
         </button>
@@ -47,7 +47,7 @@ export function GeneralSection({
           {t("settings.language")}
         </span>
         <select
-          className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+          className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-accent)]"
           value={settings.language ?? i18n.resolvedLanguage ?? "en"}
           onChange={(event) => {
             void setLanguage(event.target.value);
@@ -69,7 +69,9 @@ export function GeneralSection({
           onChange={(event) => onDraftChange({ checkForUpdates: event.target.checked })}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-white">{t("settings.checkForUpdates")}</p>
+          <p className="text-[13px] font-medium text-[var(--color-text)]">
+            {t("settings.checkForUpdates")}
+          </p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
             {t("settings.checkForUpdatesDescription")}
           </p>
@@ -84,7 +86,9 @@ export function GeneralSection({
           onChange={(event) => setHighContrast(event.target.checked)}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-white">{t("settings.highContrast")}</p>
+          <p className="text-[13px] font-medium text-[var(--color-text)]">
+            {t("settings.highContrast")}
+          </p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
             {t("settings.highContrastDescription")}
           </p>
@@ -94,7 +98,7 @@ export function GeneralSection({
       <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-3 opacity-50 cursor-not-allowed">
         <input type="checkbox" className="mt-0.5" disabled checked={false} onChange={() => {}} />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-white">
+          <p className="text-[13px] font-medium text-[var(--color-text)]">
             {t("settings.anonymousErrorReports")}
           </p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
@@ -104,7 +108,7 @@ export function GeneralSection({
       </label>
 
       {saveNotice ? (
-        <div className="rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-2 text-[12px] text-white">
+        <div className="rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-2 text-[12px] text-[var(--color-text)]">
           {saveNotice}
         </div>
       ) : null}
@@ -116,7 +120,7 @@ export function GeneralSection({
             reopenSetup();
             closeSettings();
           }}
-          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
         >
           {t("settings.reopenSetup")}
         </button>
@@ -131,7 +135,7 @@ export function GeneralSection({
               // revealInFinder requires Tauri runtime; silently ignore
             }
           }}
-          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
         >
           {t("settings.revealConfigFile")}
         </button>
@@ -139,7 +143,7 @@ export function GeneralSection({
           href="https://github.com/thedavidweng/OpenLoop/releases"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white no-underline"
+          className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)] no-underline"
         >
           {t("settings.releaseNotes")}
         </a>

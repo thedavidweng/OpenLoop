@@ -34,7 +34,7 @@ export function DirectoryPickerRow({
         </code>
         <div className="flex shrink-0 items-center gap-1">
           {!value ? (
-            <span className="rounded-full bg-white/6 px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
+            <span className="rounded-full bg-[var(--color-ghost-hover)] px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
               {t("settings.defaultPath")}
             </span>
           ) : null}
@@ -42,7 +42,7 @@ export function DirectoryPickerRow({
             type="button"
             onClick={onPick}
             disabled={disabled}
-            className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <FolderOpen size={12} />
             {t("settings.chooseFolder")}
@@ -52,7 +52,7 @@ export function DirectoryPickerRow({
               type="button"
               onClick={onReset}
               disabled={disabled}
-              className="inline-flex h-8 items-center rounded-md px-2 text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 items-center rounded-md px-2 text-[11px] text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t("settings.useDefault")}
             </button>

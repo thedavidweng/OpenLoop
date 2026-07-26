@@ -381,7 +381,7 @@ export function PlaybackBar() {
                 <Music4 size={18} />
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
-                <span className="block truncate text-[14px] font-semibold text-white">
+                <span className="block truncate text-[14px] font-semibold text-[var(--color-text)]">
                   {compareModeActive && (
                     <span className="mr-1.5 inline-flex h-4 items-center rounded bg-[var(--color-accent)]/15 px-1 text-[10px] font-bold text-[var(--color-accent)]">
                       A
@@ -406,7 +406,7 @@ export function PlaybackBar() {
             <Tooltip label={t("player.back10")}>
               <button
                 type="button"
-                className="motion-icon-button rounded-full p-2 opacity-80 hover:bg-[var(--color-ghost-hover)] hover:text-white hover:opacity-100 disabled:opacity-30"
+                className="motion-icon-button rounded-full p-2 opacity-80 hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] hover:opacity-100 disabled:opacity-30"
                 disabled={!audioSrc}
                 onClick={() => {
                   if (audioRef.current) {
@@ -420,7 +420,7 @@ export function PlaybackBar() {
             <Tooltip label={isPlaying ? t("player.pause") : t("player.play")}>
               <button
                 type="button"
-                className="motion-icon-button flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-control-primary)] text-[var(--color-control-primary-foreground)] shadow-[0_10px_24px_rgba(0,0,0,0.22)] hover:bg-[color-mix(in_srgb,var(--color-control-primary)_90%,white)] disabled:opacity-30"
+                className="motion-icon-button flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-control-primary)] text-[var(--color-control-primary-foreground)] shadow-[var(--shadow-popover)] hover:bg-[color-mix(in_srgb,var(--color-control-primary)_90%,white)] disabled:opacity-30"
                 disabled={!audioSrc}
                 onClick={togglePlayback}
               >
@@ -434,7 +434,7 @@ export function PlaybackBar() {
             <Tooltip label={t("player.forward10")}>
               <button
                 type="button"
-                className="motion-icon-button rounded-full p-2 opacity-80 hover:bg-[var(--color-ghost-hover)] hover:text-white hover:opacity-100 disabled:opacity-30"
+                className="motion-icon-button rounded-full p-2 opacity-80 hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] hover:opacity-100 disabled:opacity-30"
                 disabled={!audioSrc}
                 onClick={() => {
                   if (audioRef.current) {
@@ -460,7 +460,7 @@ export function PlaybackBar() {
             </span>
             <div
               ref={seekRailRef}
-              className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)]`}
+              className={`group relative h-1.5 ${PLAYBACK_BAR_SEEK_RAIL_MIN_WIDTH_CLASS} flex-1 cursor-pointer rounded-full bg-[var(--color-border)] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--color-focus-ring)]`}
               onClick={(event) => {
                 if (!event.shiftKey || !duration || !seekRailRef.current) return;
                 const rect = seekRailRef.current.getBoundingClientRect();
@@ -557,7 +557,7 @@ export function PlaybackBar() {
           <Tooltip label={volume === 0 ? t("player.unmute") : t("player.mute")}>
             <button
               type="button"
-              className="motion-icon-button rounded-full p-2 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+              className="motion-icon-button rounded-full p-2 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] disabled:opacity-30"
               disabled={!audioSrc}
               onClick={toggleMute}
             >
@@ -593,7 +593,7 @@ export function PlaybackBar() {
           <Tooltip label={t("player.loop")}>
             <button
               type="button"
-              className={`motion-icon-button rounded-full p-2 disabled:opacity-30 ${loop ? "text-[var(--color-accent)]" : "text-[var(--color-text-dim)]"} hover:bg-[var(--color-ghost-hover)] hover:text-white`}
+              className={`motion-icon-button rounded-full p-2 disabled:opacity-30 ${loop ? "text-[var(--color-accent)]" : "text-[var(--color-text-dim)]"} hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]`}
               disabled={!audioSrc}
               onClick={() => setLoop((v) => !v)}
             >
@@ -605,7 +605,7 @@ export function PlaybackBar() {
           <Tooltip label={t("player.speed")}>
             <button
               type="button"
-              className="motion-icon-button rounded-full px-2 py-1 text-[11px] font-semibold tabular-nums text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+              className="motion-icon-button rounded-full px-2 py-1 text-[11px] font-semibold tabular-nums text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] disabled:opacity-30"
               disabled={!audioSrc}
               onClick={cycleSpeed}
             >
@@ -618,7 +618,7 @@ export function PlaybackBar() {
             <Tooltip label={t("player.exportMenu")}>
               <button
                 type="button"
-                className="motion-icon-button relative flex shrink-0 items-center gap-1 rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white disabled:opacity-30"
+                className="motion-icon-button relative flex shrink-0 items-center gap-1 rounded-[14px] p-2.5 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] disabled:opacity-30"
                 disabled={!currentGeneration?.outputPath}
                 onClick={() => setExportDropdownOpen((v) => !v)}
               >
@@ -630,7 +630,7 @@ export function PlaybackBar() {
               </button>
             </Tooltip>
             {exportDropdownOpen && (
-              <div className="absolute bottom-full right-0 z-30 mb-2 w-56 overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-elevated)] shadow-lg">
+              <div className="absolute bottom-full right-0 z-30 mb-2 w-56 overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-popover)]">
                 <div className="flex flex-col py-1">
                   <button
                     type="button"

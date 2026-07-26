@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import App from "@/app/App";
+import { ErrorBoundary } from "@/app/components/ErrorBoundary";
 import { ToastProvider } from "@/app/components/overlay/Toast";
+import { TooltipProvider } from "@/app/components/overlay/Tooltip";
 import "@/app/lib/i18n";
 import "@/styles/globals.css";
 
@@ -24,9 +26,13 @@ function Root() {
   }, []);
 
   return (
-    <ToastProvider>
-      <App />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <TooltipProvider>
+          <App />
+        </TooltipProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

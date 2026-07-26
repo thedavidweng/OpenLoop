@@ -71,7 +71,7 @@ export function ProfilesSection() {
             type="button"
             onClick={handleCreate}
             disabled={!newName.trim()}
-            className="flex items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 py-2 text-[12px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 py-2 text-[12px] font-medium text-[var(--color-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <Plus size={14} />
             {t("profiles.save")}
@@ -136,14 +136,14 @@ export function ProfilesSection() {
                         setEditingId(profile.id);
                         setEditName(profile.name);
                       }}
-                      className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                      className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                     >
                       <Pencil size={12} />
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(profile.id)}
-                      className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-red-400"
+                      className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-destructive)]"
                     >
                       <Trash2 size={12} />
                     </button>

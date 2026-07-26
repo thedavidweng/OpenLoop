@@ -26,9 +26,13 @@ export function ModelBootstrapBanner() {
       ? Math.min(100, Math.max(0, Math.round((downloadedBytes / totalBytes) * 100)))
       : null;
 
+  const isDownloading = bootstrapStatus.state === "downloading";
+  const indeterminate = isDownloading && !totalBytes;
+  const showCounter = isProgressState && (totalBytes != null || downloadedBytes > 0);
+
   const accent =
     bootstrapStatus.state === "failed"
-      ? "bg-red-500/12 border-red-500/30 text-red-100"
+      ? "bg-[color-mix(in_srgb,var(--color-destructive)_12%,transparent)] border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)] text-[var(--color-destructive)]"
       : bootstrapStatus.state === "experimental"
         ? "bg-amber-500/12 border-amber-500/30 text-amber-100"
         : "bg-[var(--color-sidebar)] border-[var(--color-border)] text-[var(--color-text)]";
@@ -41,7 +45,7 @@ export function ModelBootstrapBanner() {
           bootstrapStatus.state === "provisioning_backend" ? (
             <Loader2 size={14} className="shrink-0 animate-spin text-[var(--color-accent)]" />
           ) : bootstrapStatus.state === "failed" ? (
-            <AlertTriangle size={14} className="shrink-0 text-red-300" />
+            <AlertTriangle size={14} className="shrink-0 text-[var(--color-destructive)]" />
           ) : bootstrapStatus.state === "experimental" ? (
             <FlaskConical size={14} className="shrink-0 text-amber-300" />
           ) : (
@@ -50,9 +54,10 @@ export function ModelBootstrapBanner() {
           <p className="min-w-0 truncate text-[12px] leading-5">{bootstrapStatus.message}</p>
         </div>
 
-        {isProgressState && totalBytes ? (
+        {showCounter ? (
           <span className="shrink-0 font-mono text-[11px] text-[var(--color-text-dim)] tabular-nums">
-            {formatGigabytes(downloadedBytes)} / {formatGigabytes(totalBytes)}
+            {formatGigabytes(downloadedBytes)}
+            {totalBytes ? ` / ${formatGigabytes(totalBytes)}` : null}
             {percent !== null ? ` · ${percent}%` : null}
           </span>
         ) : null}
@@ -61,7 +66,7 @@ export function ModelBootstrapBanner() {
           <button
             type="button"
             onClick={settings.firstRunCompleted ? openSettings : reopenSetup}
-            className="shrink-0 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+            className="shrink-0 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
           >
             {settings.firstRunCompleted ? t("model.chooseModel") : t("setup.openSetup")}
           </button>
@@ -85,12 +90,16 @@ export function ModelBootstrapBanner() {
             style={{ width: `${percent ?? 0}%` }}
           />
         </div>
+      ) : indeterminate ? (
+        <div className="relative h-[3px] w-full overflow-hidden bg-[var(--color-border)]/60">
+          <div className="model-indeterminate-bar absolute inset-y-0 left-0 bg-[var(--color-accent)] will-change-transform" />
+        </div>
       ) : null}
 
       {bootstrapStatus.state === "failed" &&
       bootstrapStatus.error?.details &&
       bootstrapStatus.error.details !== bootstrapStatus.message ? (
-        <p className="border-t border-red-500/20 bg-red-500/5 px-4 py-2 text-[11px] text-red-200/80">
+        <p className="border-t border-[color-mix(in_srgb,var(--color-destructive)_20%,transparent)] bg-[color-mix(in_srgb,var(--color-destructive)_5%,transparent)] px-4 py-2 text-[11px] text-[var(--color-destructive)]">
           {bootstrapStatus.error.details}
         </p>
       ) : null}

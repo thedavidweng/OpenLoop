@@ -99,7 +99,7 @@
     "provisioningBackend": "正在下载 ACE-Step 引擎...",
     "runtimeSettingsRepaired": "运行配置已修复。",
     "restartForModelDir": "重新启动后端以应用新的模型目录",
-    "restartNow": "立即重启",
+    "restartNow": "立即重启后端",
     "save": "保存更改",
     "saved": "设置已保存。",
     "unsavedChanges": "未保存的更改",
@@ -108,7 +108,6 @@
     "highContrastDescription": "提高文字对比度以获得更好的可读性。",
     "resetToDefaults": "恢复默认值",
     "restartRequired": "需要重启后端使更改生效。",
-    "restartNow": "立即重启后端",
     "revealConfigFile": "显示配置文件",
     "reopenSetup": "重新打开设置向导",
     "releaseNotes": "发布说明",
@@ -153,7 +152,22 @@
     "cliPathAdd": "加入 PATH",
     "cliPathRemove": "从 PATH 移除",
     "cliPathRetry": "重试加入 PATH",
-    "cliPathChecking": "检查中..."
+    "cliPathChecking": "检查中...",
+    "about": {
+      "title": "关于",
+      "description": "版本、系统与用于反馈问题的诊断信息。",
+      "version": "版本",
+      "build": "构建",
+      "system": "系统",
+      "backend": "后端",
+      "logs": "日志",
+      "repository": "代码仓库",
+      "copyDebugInfo": "复制调试信息",
+      "copied": "已复制"
+    },
+    "checkForUpdates": "自动检查更新",
+    "checkForUpdatesDescription": "启动时检查 OpenLoop 新版本并显示更新提示。",
+    "deleteAllModelsMessage": "删除全部 {{count}} 个已下载的模型包及其权重？再次生成前需要重新下载模型。"
   },
   "model": {
     "notInstalled": "未安装",
@@ -308,10 +322,19 @@
     "volume": "音量",
     "mute": "静音",
     "unmute": "取消静音",
-    "speed": "速度"
+    "speed": "速度",
+    "removeRecent": "从最近提示中移除"
   },
   "stage": {
-    "selectGeneration": "选择一个生成记录开始"
+    "selectGeneration": "选择一个生成记录开始",
+    "somethingWentWrong": "出错了",
+    "showDetails": "显示详情",
+    "errorCode": "错误码：",
+    "errorMessage": "错误信息：",
+    "errorDetails": "详情：",
+    "retry": "重试",
+    "copyDetails": "复制详情",
+    "getHelp": "获取帮助"
   },
   "toolbar": {
     "history": "历史",
@@ -351,7 +374,12 @@
     "failedRunCopyDiagnostics": "复制诊断信息",
     "failedRunCopied": "失败任务诊断信息已复制。",
     "failedRunRemoved": "失败任务已移除。",
-    "failedRunCleared": "失败任务已清空。"
+    "failedRunCleared": "失败任务已清空。",
+    "deletedUndo": "已删除该生成记录。",
+    "failedRunClearFailed": "清除失败记录时出错。",
+    "failedRunRemoveFailed": "移除失败记录时出错。",
+    "favorite": "添加到收藏",
+    "unfavorite": "取消收藏"
   },
   "projects": {
     "label": "项目",
@@ -391,7 +419,8 @@
     "volume": "音量",
     "mute": "静音",
     "unmute": "取消静音",
-    "speed": "速度"
+    "speed": "速度",
+    "compareToggle": "A / B 对比"
   },
   "validation": {
     "promptOrLyrics": "请输入提示词、歌词，或同时输入两者。",
@@ -526,7 +555,12 @@
     "delete": "删除",
     "unknown": "未知",
     "close": "关闭",
-    "dismiss": "关闭提示"
+    "dismiss": "关闭提示",
+    "clearAll": "全部清除",
+    "copy": "复制",
+    "notInstalled": "未安装",
+    "retry": "重试",
+    "undo": "撤销"
   },
   "toast": {
     "generationCompleted": "生成已完成。",
@@ -560,5 +594,29 @@
     "renameFailed": "重命名配置档失败。",
     "deleted": "配置档已删除。",
     "deleteFailed": "删除配置档失败。"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "subtitle": "常用的 OpenLoop 操作。",
+    "close": "Esc",
+    "toggleSidebar": "切换侧边栏",
+    "newGeneration": "新建生成",
+    "openSettings": "打开设置",
+    "generate": "开始生成",
+    "retryGeneration": "重试失败的生成",
+    "togglePlayback": "播放 / 暂停",
+    "compareToggle": "A / B 对比",
+    "keyboardHelp": "键盘快捷键"
+  },
+  "update": {
+    "available": "有可用更新 · {{version}}",
+    "title": "有可用更新 · {{version}}",
+    "description": "OpenLoop 有新版本可用。立即安装以获取最新功能和修复。",
+    "releaseNotes": "更新说明",
+    "installing": "正在安装…",
+    "installOnRestart": "重启时安装",
+    "installFailed": "更新失败。请到发布页手动下载。",
+    "skip": "跳过",
+    "view": "查看"
   }
 }

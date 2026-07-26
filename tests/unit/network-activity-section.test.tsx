@@ -103,7 +103,7 @@ describe("NetworkActivitySection", () => {
       const okStatus = screen.getByText("200");
       expect(okStatus.className).toContain("text-green-400");
       const errStatus = screen.getByText("404");
-      expect(errStatus.className).toContain("text-red-400");
+      expect(errStatus.className).toContain("text-[var(--color-destructive)]");
     });
   });
 });

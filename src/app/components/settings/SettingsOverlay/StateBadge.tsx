@@ -21,12 +21,14 @@ export function StateBadge({ state }: { state: ModelDownloadState }) {
     },
     failed: {
       label: t("model.failed"),
-      classes: "bg-red-500/12 text-red-200 border-red-500/30",
+      classes:
+        "bg-[color-mix(in_srgb,var(--color-destructive)_12%,transparent)] text-[var(--color-destructive)] border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)]",
       Icon: AlertCircle,
     },
     not_installed: {
       label: t("model.notInstalled"),
-      classes: "bg-white/4 text-[var(--color-text-dim)] border-white/8",
+      classes:
+        "bg-[var(--color-ghost-hover)] text-[var(--color-text-dim)] border-[var(--color-border)]",
       Icon: Download,
     },
   };

@@ -143,7 +143,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-text-dim)]">
             {t("setup.eyebrow")}
           </p>
-          <h1 className="text-balance text-[26px] font-semibold leading-tight text-white">
+          <h1 className="text-balance text-[26px] font-semibold leading-tight text-[var(--color-text)]">
             {stepTitle}
           </h1>
           <p className="mx-auto max-w-xl text-balance text-[13px] leading-6 text-[var(--color-text-dim)]">
@@ -170,7 +170,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 href="https://github.com/thedavidweng/OpenLoop/blob/main/docs/privacy.md"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60"
+                className="underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-[var(--color-text)]/60"
               >
                 Privacy policy
               </a>
@@ -209,7 +209,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-text-dim)]">
                   {info.label}
                 </p>
-                <p className="mt-1.5 truncate text-[14px] font-semibold text-white">{info.value}</p>
+                <p className="mt-1.5 truncate text-[14px] font-semibold text-[var(--color-text)]">
+                  {info.value}
+                </p>
               </div>
             ))}
           </div>
@@ -226,14 +228,16 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[13px] font-semibold text-white">ACE-Step Engine</p>
+                      <p className="text-[13px] font-semibold text-[var(--color-text)]">
+                        ACE-Step Engine
+                      </p>
                       {backendProvisionStatus.state === "ready" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-200">
                           <CheckCircle2 size={10} />
                           {t("setup.engineReady")}
                         </span>
                       ) : backendProvisionStatus.state === "failed" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/12 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-200">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--color-destructive)_12%,transparent)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--color-destructive)]">
                           <AlertCircle size={10} />
                           {t("model.failed")}
                         </span>
@@ -257,7 +261,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                       backendProvisionStatus.state === "downloading" ||
                       backendProvisionStatus.state === "extracting"
                     }
-                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {backendProvisionStatus.state === "downloading" ||
                     backendProvisionStatus.state === "extracting" ? (
@@ -285,7 +289,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 </div>
                 {backendProvisionStatus.state === "downloading" ||
                 backendProvisionStatus.state === "extracting" ? (
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
                     <div
                       className="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-300 ease-out"
                       style={{
@@ -359,7 +363,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 type="button"
                 onClick={handleSkipDemo}
                 disabled={skipLoading}
-                className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-white hover:decoration-white/60 disabled:opacity-50"
+                className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-dim)] underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-[var(--color-text)]/60 disabled:opacity-50"
               >
                 {skipLoading ? <Loader2 size={10} className="animate-spin" /> : null}
                 {t("setup.skipDemo")}
@@ -383,13 +387,13 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
                 </code>
                 <div className="flex shrink-0 items-center gap-1">
                   {!outputDirectory ? (
-                    <span className="rounded-full bg-white/6 px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
+                    <span className="rounded-full bg-[var(--color-ghost-hover)] px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--color-text-dim)]">
                       {t("settings.defaultPath")}
                     </span>
                   ) : null}
                   <button
                     type="button"
-                    className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+                    className="motion-icon-button inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2.5 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
                     onClick={() => {
                       void api
                         .selectDirectory(outputDirectory || defaultPaths?.outputDirectory)
@@ -422,7 +426,9 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-sidebar)] p-4">
               <div className="flex items-center gap-2 text-[var(--color-accent)]">
                 <Keyboard size={16} />
-                <p className="text-[13px] font-semibold text-white">{t("setup.shortcutsHint")}</p>
+                <p className="text-[13px] font-semibold text-[var(--color-text)]">
+                  {t("setup.shortcutsHint")}
+                </p>
               </div>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {(
@@ -459,7 +465,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+              className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
             >
               {t("setup.close")}
             </button>
@@ -468,7 +474,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
             <button
               type="button"
               onClick={() => setStep(STEP_ORDER[currentIndex - 1])}
-              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
             >
               <ChevronLeft size={13} /> {t("setup.back")}
             </button>
@@ -479,7 +485,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               onClick={() => {
                 void nextStep();
               }}
-              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-4 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110"
+              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-4 text-[12px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110"
             >
               {t("setup.next")}
               <ChevronRight size={13} />
@@ -490,7 +496,7 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               onClick={() => {
                 void completeSetup();
               }}
-              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-4 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110"
+              className="inline-flex h-9 items-center gap-1 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-4 text-[12px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110"
             >
               {t("setup.finish")}
               <Check size={13} />

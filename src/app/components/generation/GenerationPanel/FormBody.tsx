@@ -123,7 +123,7 @@ export function FormBody({
       <label className="block space-y-2 px-1">
         <FieldLabel>{t("generation.prompt")}</FieldLabel>
         <textarea
-          className="min-h-[140px] w-full resize-none rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_82%,transparent)] px-4 py-3 text-[14px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+          className="min-h-[140px] w-full resize-none rounded-2xl border border-[var(--color-border-light)] bg-[color-mix(in_srgb,var(--color-surface)_82%,transparent)] px-4 py-3 text-[14px] leading-6 text-[var(--color-text)] outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
           placeholder={t("generation.promptPlaceholder")}
           value={form.prompt}
           onChange={handleTextFieldChange("prompt")}
@@ -139,7 +139,7 @@ export function FormBody({
           <Music4 size={13} />
         </div>
         <div className="min-w-0 flex-1">
-          <span className="text-[12px] font-medium text-white">
+          <span className="text-[12px] font-medium text-[var(--color-text)]">
             {selectedModel?.label ?? t("model.noModel")}
           </span>
           {selectedModel && (
@@ -148,7 +148,7 @@ export function FormBody({
                 modelReady
                   ? "bg-emerald-500/14 text-emerald-200"
                   : selectedModelState === "failed"
-                    ? "bg-red-500/14 text-red-200"
+                    ? "bg-[color-mix(in_srgb,var(--color-destructive)_14%,transparent)] text-[var(--color-destructive)]"
                     : selectedModelState === "downloading"
                       ? "bg-[var(--color-accent)]/14 text-[var(--color-accent)]"
                       : "bg-amber-500/14 text-amber-200"
@@ -168,7 +168,7 @@ export function FormBody({
         <button
           type="button"
           onClick={openSettings}
-          className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)] transition-colors hover:text-white"
+          className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)] transition-colors hover:text-[var(--color-text)]"
         >
           {t("model.openSettings")} →
         </button>
@@ -205,7 +205,7 @@ export function FormBody({
               <button
                 key={tagKey}
                 type="button"
-                className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-1 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:border-[var(--color-accent)] hover:text-white disabled:opacity-40"
+                className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-2 py-1 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:border-[var(--color-border-light)] hover:text-[var(--color-text)] disabled:opacity-40"
                 onClick={() => insertTag(tagKey)}
                 disabled={isBusy}
               >
@@ -217,7 +217,7 @@ export function FormBody({
 
         <textarea
           ref={lyricsRef}
-          className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+          className="min-h-[100px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-[var(--color-text)] outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
           placeholder={
             form.instrumental ? t("generation.instrumentalDesc") : t("generation.lyricsPlaceholder")
           }
@@ -360,7 +360,7 @@ export function FormBody({
         }
         badge={
           hasTweakErrors ? (
-            <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-300">
+            <span className="rounded-full bg-[color-mix(in_srgb,var(--color-destructive)_15%,transparent)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--color-destructive)]">
               {t("generation.needsReview")}
             </span>
           ) : null
@@ -377,7 +377,7 @@ export function FormBody({
             <label className="space-y-1 md:col-span-2">
               <FieldLabel>{t("generation.negativePrompt")}</FieldLabel>
               <textarea
-                className="min-h-[76px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-white outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
+                className="min-h-[76px] w-full resize-y rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-muted)] px-3 py-2 text-[13px] leading-6 text-[var(--color-text)] outline-none transition-colors placeholder:text-[var(--color-text-dimmer)] focus:border-[var(--color-accent)] disabled:opacity-60"
                 placeholder={t("generation.negativePromptPlaceholder")}
                 value={form.negativePrompt}
                 onChange={handleTextFieldChange("negativePrompt")}
@@ -512,7 +512,9 @@ export function FormBody({
               disabled={isBusy}
             />
             <div>
-              <p className="text-[13px] font-medium text-white">{t("generation.randomSeed")}</p>
+              <p className="text-[13px] font-medium text-[var(--color-text)]">
+                {t("generation.randomSeed")}
+              </p>
               <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
                 {t("generation.randomSeedDesc")}
               </p>
@@ -598,7 +600,7 @@ export function FormBody({
                   disabled={isBusy}
                 />
                 <div>
-                  <p className="text-[13px] font-medium text-white">{t(titleKey)}</p>
+                  <p className="text-[13px] font-medium text-[var(--color-text)]">{t(titleKey)}</p>
                   {descriptionKey ? (
                     <p className="mt-1 text-[12px] text-[var(--color-text-dim)]">
                       {t(descriptionKey)}
@@ -627,8 +629,8 @@ export function FormBody({
                 type="button"
                 className={`h-8 min-w-9 rounded-lg px-3 text-[12px] font-semibold transition-colors ${
                   selected
-                    ? "bg-[var(--color-accent)] text-white shadow-sm"
-                    : "text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-white"
+                    ? "bg-[var(--color-accent)] text-[var(--color-on-accent)] shadow-sm"
+                    : "text-[var(--color-text-dim)] hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
                 }`}
                 aria-label={t("generation.variationOption", { count: n })}
                 aria-pressed={selected}

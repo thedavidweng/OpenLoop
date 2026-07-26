@@ -71,7 +71,7 @@ export function UpdateBanner() {
     <>
       {/* Compact banner when modal dismissed but not skipped */}
       {!showModal && (
-        <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-600 text-white px-4 py-2 flex items-center justify-between text-sm">
+        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-muted)] px-4 py-2 text-sm text-[var(--color-text)]">
           <div className="flex items-center gap-2">
             <span className="font-medium">
               {t("update.available", {
@@ -82,7 +82,7 @@ export function UpdateBanner() {
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="px-3 py-1 bg-white/20 hover:bg-white/30 rounded text-white text-xs font-medium transition-colors"
+            className="rounded px-3 py-1 text-xs font-medium text-[var(--color-accent)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-accent)_16%,transparent)]"
           >
             {t("update.view")}
           </button>
@@ -91,11 +91,11 @@ export function UpdateBanner() {
 
       {/* Full modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-md rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[var(--color-scrim)] p-4">
+          <div className="w-full max-w-md rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] p-6 shadow-[var(--shadow-dialog)]">
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-[var(--color-text)]">
                   {t("update.title", {
                     version: version ?? "",
                     defaultValue: `Update available · ${version ?? ""}`,
@@ -110,7 +110,7 @@ export function UpdateBanner() {
               </div>
               <button
                 onClick={handleDismiss}
-                className="motion-icon-button inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-text-dim)] hover:bg-white/8 hover:text-white"
+                className="motion-icon-button inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                 aria-label={t("common.close")}
               >
                 <X size={16} />
@@ -123,14 +123,16 @@ export function UpdateBanner() {
               </div>
             )}
 
-            {installError && <p className="mb-3 text-[12px] text-red-400">{installError}</p>}
+            {installError && (
+              <p className="mb-3 text-[12px] text-[var(--color-destructive)]">{installError}</p>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               <a
                 href="https://github.com/thedavidweng/OpenLoop/releases"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
               >
                 <ExternalLink size={14} />
                 {t("update.releaseNotes", { defaultValue: "Release notes" })}
@@ -138,7 +140,7 @@ export function UpdateBanner() {
               <button
                 onClick={handleInstall}
                 disabled={installing}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Download size={14} />
                 {installing
@@ -149,7 +151,7 @@ export function UpdateBanner() {
               </button>
               <button
                 onClick={handleSkip}
-                className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-transparent px-3.5 text-[12px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+                className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-transparent px-3.5 text-[12px] text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
               >
                 {t("update.skip", { defaultValue: "Skip" })}
               </button>

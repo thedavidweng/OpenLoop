@@ -252,8 +252,8 @@ describe("Toolbar", () => {
       />,
     );
     const sidebarBtn = screen.getByLabelText("toolbar.toggleSidebar");
-    expect(sidebarBtn.className).toContain("bg-[color-mix");
-    expect(sidebarBtn.className).toContain("text-white");
+    expect(sidebarBtn.className).toContain("bg-[var(--color-control-selected-bg)]");
+    expect(sidebarBtn.className).toContain("text-[var(--color-text)]");
   });
 
   it("applies inactive style to sidebar toggle when sidebar is hidden", () => {
@@ -281,7 +281,8 @@ describe("Toolbar", () => {
       />,
     );
     const settingsBtn = screen.getByLabelText("toolbar.settings");
-    expect(settingsBtn.className).toContain("text-white");
+    expect(settingsBtn.className).toContain("bg-[var(--color-control-selected-bg)]");
+    expect(settingsBtn.className).toContain("text-[var(--color-text)]");
   });
 
   it("applies inactive style to settings button when settings are closed", () => {
@@ -587,18 +588,24 @@ describe("MainContentView", () => {
     expect(await screen.findByTestId("settings-overlay")).toBeTruthy();
   });
 
-  it("applies muted background when settings are open", () => {
+  it("applies muted background to the content pocket when settings are open", () => {
     currentStoreState = makeStoreOverrides({ isSettingsOpen: true });
     const { container } = render(<MainContentView />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root.className).toContain("bg-[var(--color-surface-muted)]");
+    const pocket = container.querySelector("[data-shell-content-pocket]") as HTMLElement;
+    expect(pocket.className).toContain("bg-[var(--color-surface-muted)]");
   });
 
-  it("applies normal background when settings are closed", () => {
+  it("applies normal background to the content pocket when settings are closed", () => {
     currentStoreState = makeStoreOverrides({ isSettingsOpen: false });
     const { container } = render(<MainContentView />);
+    const pocket = container.querySelector("[data-shell-content-pocket]") as HTMLElement;
+    expect(pocket.className).toContain("bg-[var(--color-surface)]");
+  });
+
+  it("keeps the chrome background on the frame around the pocket", () => {
+    const { container } = render(<MainContentView />);
     const root = container.firstElementChild as HTMLElement;
-    expect(root.className).toContain("bg-[var(--color-surface)]");
+    expect(root.className).toContain("bg-[var(--color-sidebar)]");
   });
 
   it("sets data-main-content-visual-variant attribute", () => {
@@ -669,7 +676,7 @@ describe("OpenLoopStage", () => {
       },
     });
     render(<OpenLoopStage />);
-    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText("stage.somethingWentWrong")).toBeTruthy();
   });
 
   it("does not show error banner when failed but no error object", () => {
@@ -677,7 +684,7 @@ describe("OpenLoopStage", () => {
       generationState: { status: "failed", phase: "failed", statusMessage: "Failed", error: null },
     });
     render(<OpenLoopStage />);
-    expect(screen.queryByText("Something went wrong")).toBeNull();
+    expect(screen.queryByText("stage.somethingWentWrong")).toBeNull();
   });
 
   it("shows error details in collapsible section", () => {
@@ -694,7 +701,7 @@ describe("OpenLoopStage", () => {
       },
     });
     render(<OpenLoopStage />);
-    expect(screen.getByText("Show details")).toBeTruthy();
+    expect(screen.getByText("stage.showDetails")).toBeTruthy();
     expect(screen.getByText(/TASK_FAILED/)).toBeTruthy();
     expect(screen.getByText(/Generation task failed/)).toBeTruthy();
     expect(screen.getByText(/model not found/)).toBeTruthy();
@@ -710,7 +717,7 @@ describe("OpenLoopStage", () => {
       },
     });
     render(<OpenLoopStage />);
-    expect(screen.getByText("Show details")).toBeTruthy();
+    expect(screen.getByText("stage.showDetails")).toBeTruthy();
     expect(screen.getByText(/TASK_FAILED/)).toBeTruthy();
   });
 
@@ -724,9 +731,9 @@ describe("OpenLoopStage", () => {
       },
     });
     render(<OpenLoopStage />);
-    expect(screen.getByText("Retry")).toBeTruthy();
-    expect(screen.getByText("Copy details")).toBeTruthy();
-    expect(screen.getByText("Get help")).toBeTruthy();
+    expect(screen.getByText("stage.retry")).toBeTruthy();
+    expect(screen.getByText("stage.copyDetails")).toBeTruthy();
+    expect(screen.getByText("stage.getHelp")).toBeTruthy();
   });
 
   it("calls runGeneration when retry is clicked", async () => {
@@ -740,7 +747,7 @@ describe("OpenLoopStage", () => {
       },
     });
     render(<OpenLoopStage />);
-    await user.click(screen.getByText("Retry"));
+    await user.click(screen.getByText("stage.retry"));
     expect(mockRunGeneration).toHaveBeenCalledOnce();
   });
 
@@ -751,7 +758,7 @@ describe("OpenLoopStage", () => {
       generationState: { status: "failed", phase: "failed", statusMessage: "Failed", error },
     });
     render(<OpenLoopStage />);
-    await user.click(screen.getByText("Copy details"));
+    await user.click(screen.getByText("stage.copyDetails"));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(JSON.stringify(error, null, 2));
   });
 
@@ -762,7 +769,7 @@ describe("OpenLoopStage", () => {
       generationState: { status: "failed", phase: "failed", statusMessage: "Failed", error },
     });
     render(<OpenLoopStage />);
-    await user.click(screen.getByText("Get help"));
+    await user.click(screen.getByText("stage.getHelp"));
     expect(window.open).toHaveBeenCalledWith(
       expect.stringContaining("github.com"),
       "_blank",
@@ -770,10 +777,11 @@ describe("OpenLoopStage", () => {
     );
   });
 
-  it("sets data-stage-visual-variant attribute", () => {
+  it("renders the generation panel on a flat card without ambience layers", () => {
     const { container } = render(<OpenLoopStage />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root.getAttribute("data-stage-visual-variant")).toBe("ambience");
+    expect(container.querySelector("[data-native-stage-backdrop]")).toBeNull();
+    const card = container.querySelector(".custom-scrollbar") as HTMLElement;
+    expect(card.className).toContain("bg-[var(--color-surface-muted)]");
   });
 });
 
@@ -840,7 +848,7 @@ describe("AppLayout", () => {
     render(<AppLayout />);
     fireEvent.keyDown(window, { key: "/", code: "Slash", ctrlKey: true });
     expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(screen.getByText("Common OpenLoop commands.")).toBeTruthy();
+    expect(screen.getByText("shortcuts.subtitle")).toBeTruthy();
   });
 
   it("closes keyboard shortcuts dialog on Escape", () => {
@@ -877,15 +885,15 @@ describe("AppLayout", () => {
   it("renders all shortcut rows in the keyboard shortcuts dialog", () => {
     render(<AppLayout />);
     fireEvent.keyDown(window, { key: "/", code: "Slash", ctrlKey: true });
-    expect(screen.getByText("Toggle sidebar")).toBeTruthy();
-    expect(screen.getByText("New generation")).toBeTruthy();
-    expect(screen.getByText("Open settings")).toBeTruthy();
-    expect(screen.getByText("Generate")).toBeTruthy();
-    expect(screen.getByText("Retry failed generation")).toBeTruthy();
-    expect(screen.getByText("Play / pause")).toBeTruthy();
-    expect(screen.getByText("A / B compare")).toBeTruthy();
+    expect(screen.getByText("shortcuts.toggleSidebar")).toBeTruthy();
+    expect(screen.getByText("shortcuts.newGeneration")).toBeTruthy();
+    expect(screen.getByText("shortcuts.openSettings")).toBeTruthy();
+    expect(screen.getByText("shortcuts.generate")).toBeTruthy();
+    expect(screen.getByText("shortcuts.retryGeneration")).toBeTruthy();
+    expect(screen.getByText("shortcuts.togglePlayback")).toBeTruthy();
+    expect(screen.getByText("shortcuts.compareToggle")).toBeTruthy();
     // "Keyboard shortcuts" appears as both the dialog title and a shortcut row label
-    expect(screen.getAllByText("Keyboard shortcuts")).toHaveLength(2);
+    expect(screen.getAllByText(/shortcuts\.(title|keyboardHelp)/)).toHaveLength(2);
   });
 
   it("calls runGeneration on submit shortcut when not already running", () => {

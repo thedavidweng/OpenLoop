@@ -44,7 +44,7 @@ export function DefaultsSection({
               defaultThinking: DEFAULT_APP_SETTINGS.defaultThinking,
             }));
           }}
-          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)]"
         >
           {t("settings.resetToDefaults")}
         </button>
@@ -56,7 +56,7 @@ export function DefaultsSection({
             {t("settings.defaultDuration")}
           </span>
           <input
-            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-accent)]"
             type="number"
             value={draft.defaultDurationSeconds}
             onChange={(event) =>
@@ -72,7 +72,7 @@ export function DefaultsSection({
             {t("settings.audioFormat")}
           </span>
           <select
-            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-accent)]"
             value={draft.defaultAudioFormat}
             onChange={(event) =>
               setDraft((current) => ({
@@ -143,7 +143,9 @@ export function DefaultsSection({
           }
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-white">{t("settings.defaultThinking")}</p>
+          <p className="text-[13px] font-medium text-[var(--color-text)]">
+            {t("settings.defaultThinking")}
+          </p>
           <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
             {t("settings.defaultThinkingDescription")}
           </p>

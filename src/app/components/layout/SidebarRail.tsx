@@ -81,7 +81,7 @@ export function SidebarRail({ visible, width, onResize, children }: SidebarRailP
             aria-orientation="vertical"
             aria-label={t("toolbar.resizeSidebar")}
             onPointerDown={handleDragStart}
-            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-white/10"
+            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-[var(--color-ghost-hover)]"
           />
         ) : null}
       </div>

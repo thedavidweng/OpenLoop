@@ -30,9 +30,9 @@
     "finish": "Finish setup",
     "downloaded": "Downloaded",
     "notDownloaded": "Not downloaded",
-    "preparing": "Preparing\u2026",
+    "preparing": "Preparing…",
     "downloadModelButton": "Download",
-    "downloadingButton": "Downloading\u2026",
+    "downloadingButton": "Downloading…",
     "reinstallButton": "Reinstall",
     "os": "OS",
     "architecture": "Architecture",
@@ -99,7 +99,7 @@
     "provisioningBackend": "Downloading ACE-Step engine...",
     "runtimeSettingsRepaired": "Runtime configuration repaired.",
     "restartForModelDir": "Restart backend to apply new model directory",
-    "restartNow": "Restart now",
+    "restartNow": "Restart backend now",
     "save": "Save changes",
     "saved": "Settings saved.",
     "unsavedChanges": "Unsaved changes",
@@ -108,7 +108,6 @@
     "highContrastDescription": "Increase text contrast for better readability.",
     "resetToDefaults": "Reset to defaults",
     "restartRequired": "Backend restart required for changes to take effect.",
-    "restartNow": "Restart backend now",
     "revealConfigFile": "Reveal config file",
     "reopenSetup": "Reopen setup",
     "releaseNotes": "Release notes",
@@ -153,7 +152,22 @@
     "cliPathAdd": "Add to PATH",
     "cliPathRemove": "Remove from PATH",
     "cliPathRetry": "Retry adding to PATH",
-    "cliPathChecking": "Checking..."
+    "cliPathChecking": "Checking...",
+    "about": {
+      "title": "About",
+      "description": "Version, system, and diagnostics for bug reports.",
+      "version": "Version",
+      "build": "Build",
+      "system": "System",
+      "backend": "Backend",
+      "logs": "Logs",
+      "repository": "Repository",
+      "copyDebugInfo": "Copy debug info",
+      "copied": "Copied"
+    },
+    "checkForUpdates": "Check for updates automatically",
+    "checkForUpdatesDescription": "Look for new OpenLoop releases at launch and show an update banner.",
+    "deleteAllModelsMessage": "Remove all {{count}} downloaded model packs and their weights? You will need to re-download models to generate again."
   },
   "model": {
     "notInstalled": "Not installed",
@@ -308,10 +322,19 @@
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "speed": "Speed"
+    "speed": "Speed",
+    "removeRecent": "Remove from recent prompts"
   },
   "stage": {
-    "selectGeneration": "Select a generation to start"
+    "selectGeneration": "Select a generation to start",
+    "somethingWentWrong": "Something went wrong",
+    "showDetails": "Show details",
+    "errorCode": "Code:",
+    "errorMessage": "Message:",
+    "errorDetails": "Details:",
+    "retry": "Retry",
+    "copyDetails": "Copy details",
+    "getHelp": "Get help"
   },
   "toolbar": {
     "history": "History",
@@ -351,7 +374,12 @@
     "failedRunCopyDiagnostics": "Copy diagnostics",
     "failedRunCopied": "Failed run diagnostics copied.",
     "failedRunRemoved": "Failed run removed.",
-    "failedRunCleared": "Failed runs cleared."
+    "failedRunCleared": "Failed runs cleared.",
+    "deletedUndo": "Generation deleted.",
+    "failedRunClearFailed": "Failed to clear runs.",
+    "failedRunRemoveFailed": "Failed to remove run.",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites"
   },
   "projects": {
     "label": "Projects",
@@ -391,7 +419,8 @@
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "speed": "Speed"
+    "speed": "Speed",
+    "compareToggle": "A / B compare"
   },
   "validation": {
     "promptOrLyrics": "Enter a prompt, lyrics, or both.",
@@ -526,7 +555,12 @@
     "delete": "Delete",
     "unknown": "Unknown",
     "close": "Close",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "clearAll": "Clear all",
+    "copy": "Copy",
+    "notInstalled": "Not installed",
+    "retry": "Retry",
+    "undo": "Undo"
   },
   "toast": {
     "generationCompleted": "Generation completed successfully.",
@@ -560,5 +594,29 @@
     "renameFailed": "Failed to rename profile.",
     "deleted": "Profile deleted.",
     "deleteFailed": "Failed to delete profile."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "subtitle": "Common OpenLoop commands.",
+    "close": "Esc",
+    "toggleSidebar": "Toggle sidebar",
+    "newGeneration": "New generation",
+    "openSettings": "Open settings",
+    "generate": "Generate",
+    "retryGeneration": "Retry failed generation",
+    "togglePlayback": "Play / pause",
+    "compareToggle": "A / B compare",
+    "keyboardHelp": "Keyboard shortcuts"
+  },
+  "update": {
+    "available": "Update available · {{version}}",
+    "title": "Update available · {{version}}",
+    "description": "A new version of OpenLoop is available. Install now to get the latest features and fixes.",
+    "releaseNotes": "Release notes",
+    "installing": "Installing…",
+    "installOnRestart": "Install on restart",
+    "installFailed": "Update failed. Try downloading from the releases page.",
+    "skip": "Skip",
+    "view": "View"
   }
 }

@@ -45,6 +45,13 @@ export function getWindowShellState(): Promise<WindowShellStateSnapshot> {
   return invoke<WindowShellStateSnapshot>("get_window_shell_state");
 }
 
+export function windowReady(): Promise<void> {
+  if (!isTauriRuntime()) {
+    return Promise.resolve();
+  }
+  return invoke<void>("window_ready");
+}
+
 export function setSetting<K extends keyof AppSettings>(
   key: K,
   value: AppSettings[K],

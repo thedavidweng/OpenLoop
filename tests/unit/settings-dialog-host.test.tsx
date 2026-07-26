@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 vi.mock("react-i18next", () => ({
@@ -64,6 +64,43 @@ describe("SettingsDialogHost", () => {
     render(<SettingsDialogHost {...baseProps} />);
     await user.click(screen.getByText("common.cancel"));
     expect(baseProps.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("autofocuses the cancel button on mount", () => {
+    render(<SettingsDialogHost {...baseProps} />);
+    const cancelButton = screen.getByText("common.cancel").closest("button")!;
+    expect(document.activeElement).toBe(cancelButton);
+  });
+
+  it("calls onCancel when Escape is pressed", () => {
+    render(<SettingsDialogHost {...baseProps} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(baseProps.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not listen for Escape while closed", () => {
+    render(<SettingsDialogHost {...baseProps} open={false} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(baseProps.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("calls onCancel when the backdrop is clicked", () => {
+    render(<SettingsDialogHost {...baseProps} />);
+    const backdrop = screen.getByRole("dialog").parentElement!;
+    fireEvent.click(backdrop);
+    expect(baseProps.onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not cancel when the panel itself is clicked", () => {
+    render(<SettingsDialogHost {...baseProps} />);
+    fireEvent.click(screen.getByRole("dialog"));
+    expect(baseProps.onCancel).not.toHaveBeenCalled();
+  });
+
+  it("renders into a portal on document.body", () => {
+    const { container } = render(<SettingsDialogHost {...baseProps} />);
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
   });
 });
 

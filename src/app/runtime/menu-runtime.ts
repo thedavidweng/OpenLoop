@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import * as api from "@/app/lib/api";
+import { copyDebugInfo } from "@/app/lib/diagnostics";
 import { useGenerationStore } from "@/app/lib/store";
 
 export const APP_MENU_ACTION_EVENT = "openloop://menu-action";
@@ -10,7 +11,8 @@ export type AppMenuAction =
   | "open-setup"
   | "toggle-sidebar"
   | "reveal-output-folder"
-  | "new-generation";
+  | "new-generation"
+  | "copy-debug-info";
 
 export function useAppMenuRuntime(enabled: boolean) {
   const openSettings = useGenerationStore((state) => state.openSettings);
@@ -45,6 +47,9 @@ export function useAppMenuRuntime(enabled: boolean) {
           break;
         case "new-generation":
           resetForm();
+          break;
+        case "copy-debug-info":
+          void copyDebugInfo().catch(() => {});
           break;
       }
     }).then((dispose) => {

@@ -47,7 +47,7 @@ export function BackendSection({
               logDirectory: "",
             }));
           }}
-          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)]"
         >
           {t("settings.resetToDefaults")}
         </button>
@@ -59,7 +59,7 @@ export function BackendSection({
             {t("settings.backendPort")}
           </span>
           <input
-            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-white outline-none transition-colors focus:border-[var(--color-accent)]"
+            className="w-full rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-2 text-[13px] text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-accent)]"
             type="number"
             min="1024"
             max="65535"
@@ -97,7 +97,7 @@ export function BackendSection({
               .then(() => onShowNotice(t("settings.backendRestarted")))
               .catch(() => onShowNotice(t("settings.backendRestartFailed")));
           }}
-          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
         >
           {t("settings.restartBackend")}
         </button>
@@ -115,7 +115,7 @@ export function BackendSection({
               })
               .catch(() => onShowNotice(t("settings.backendLogPathFailed")));
           }}
-          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
         >
           {t("settings.openBackendLog")}
         </button>
@@ -130,7 +130,7 @@ export function BackendSection({
               })
               .catch(() => onShowNotice(t("settings.settingUpdateFailed")));
           }}
-          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+          className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
         >
           {t("settings.resetDefaultPort")}
         </button>
@@ -145,7 +145,7 @@ export function BackendSection({
               })
               .catch(() => onShowNotice(t("settings.settingUpdateFailed")));
           }}
-          className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-white transition-colors hover:bg-[var(--color-accent)]/25"
+          className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-accent)]/25"
         >
           {t("settings.repairRuntime")}
         </button>
@@ -186,7 +186,7 @@ export function BackendSection({
               <button
                 type="button"
                 onClick={() => void updateBackend()}
-                className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-white transition-colors hover:bg-[var(--color-accent)]/25"
+                className="inline-flex h-8 items-center rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-accent)]/25"
               >
                 {t("settings.updateBackend")}
               </button>
@@ -194,7 +194,7 @@ export function BackendSection({
               <button
                 type="button"
                 onClick={() => void refreshBackendProvisionStatus()}
-                className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
+                className="inline-flex h-8 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
               >
                 {t("settings.checkForBackendUpdates")}
               </button>

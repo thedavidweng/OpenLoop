@@ -9,6 +9,14 @@ import { fileURLToPath, URL } from "node:url";
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig(() => ({
+  define: {
+    // Make package.json version available at runtime for the About section and
+    // diagnostics export. Vite replaces this at build time.
+    "import.meta.env.PACKAGE_VERSION": JSON.stringify(
+      // @ts-expect-error process is a Node.js global
+      process.env.npm_package_version || "unknown",
+    ),
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

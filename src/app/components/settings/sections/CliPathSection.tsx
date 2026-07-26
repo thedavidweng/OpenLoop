@@ -46,12 +46,14 @@ export function CliPathSection() {
           link: "/usr/local/bin/openloop",
         })}
       </p>
-      {cliPathError && <p className="text-[11px] text-red-400">{cliPathError}</p>}
+      {cliPathError && (
+        <p className="text-[11px] text-[var(--color-destructive)]">{cliPathError}</p>
+      )}
       <button
         type="button"
         onClick={handleCliPathToggle}
         disabled={cliPathStatus === "loading"}
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-hover)] disabled:cursor-wait disabled:opacity-60"
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 text-[11px] font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] disabled:cursor-wait disabled:opacity-60"
       >
         {cliPathStatus === "loading" ? (
           <>

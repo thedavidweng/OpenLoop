@@ -35,7 +35,7 @@ export function SettingsSaveBar({
             type="button"
             onClick={onDiscard}
             disabled={!hasUnsavedChanges}
-            className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("settings.discardChanges")}
           </button>
@@ -43,7 +43,7 @@ export function SettingsSaveBar({
             type="button"
             onClick={onSave}
             disabled={!backendPortValid || !hasUnsavedChanges}
-            className="inline-flex h-9 items-center rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 items-center rounded-md border border-[var(--color-accent)]/40 bg-[var(--color-accent)] px-3.5 text-[12px] font-semibold text-[var(--color-on-accent)] shadow-sm transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t("settings.save")}
           </button>

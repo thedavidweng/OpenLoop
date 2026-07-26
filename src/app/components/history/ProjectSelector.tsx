@@ -77,7 +77,7 @@ export function ProjectSelector() {
             type="button"
             onClick={handleCreate}
             disabled={!newName.trim()}
-            className="inline-flex h-6 shrink-0 items-center rounded-md bg-[var(--color-accent)] px-2 text-[11px] font-medium text-white transition-colors disabled:opacity-40"
+            className="inline-flex h-6 shrink-0 items-center rounded-md bg-[var(--color-accent)] px-2 text-[11px] font-medium text-[var(--color-on-accent)] transition-colors disabled:opacity-40"
           >
             {t("projects.add")}
           </button>
@@ -119,7 +119,7 @@ export function ProjectSelector() {
               e.stopPropagation();
               handleDelete(project.id, project.name);
             }}
-            className="ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--color-text-dimmer)] opacity-0 transition-opacity hover:text-red-300 group-hover:opacity-100"
+            className="ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--color-text-dimmer)] opacity-0 transition-opacity hover:text-[var(--color-destructive)] group-hover:opacity-100"
             title={t("projects.delete")}
             aria-label={t("projects.delete")}
           >

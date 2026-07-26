@@ -30,9 +30,9 @@ export function LogsSection() {
 
   const levelColor = useMemo(
     () => ({
-      error: "text-red-400",
+      error: "text-[var(--color-destructive)]",
       warn: "text-yellow-400",
-      info: "text-white",
+      info: "text-[var(--color-text)]",
       debug: "text-[var(--color-text-dim)]",
       trace: "text-[var(--color-text-dimmer)]",
     }),
@@ -53,7 +53,7 @@ export function LogsSection() {
               onChange={(e) => {
                 if (isLevel(e.target.value)) setMinLevel(e.target.value);
               }}
-              className="rounded border border-[var(--color-border-light)] bg-[var(--color-surface)] px-1.5 py-0.5 text-[11px] text-white outline-none"
+              className="rounded border border-[var(--color-border-light)] bg-[var(--color-surface)] px-1.5 py-0.5 text-[11px] text-[var(--color-text)] outline-none"
             >
               {LEVELS.map((l) => (
                 <option key={l} value={l}>
@@ -66,7 +66,7 @@ export function LogsSection() {
             type="button"
             onClick={refresh}
             disabled={loading}
-            className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white disabled:opacity-50"
+            className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] disabled:opacity-50"
           >
             {loading ? t("settings.refreshing") : t("settings.refresh")}
           </button>
@@ -87,7 +87,7 @@ export function LogsSection() {
                   {formatTimestamp(entry.timestamp)}
                 </span>
                 <span
-                  className={`uppercase font-semibold ${isLevel(entry.level) ? (levelColor[entry.level] ?? "text-white") : "text-white"}`}
+                  className={`uppercase font-semibold ${isLevel(entry.level) ? (levelColor[entry.level] ?? "text-[var(--color-text)]") : "text-[var(--color-text)]"}`}
                 >
                   {entry.level}
                 </span>
@@ -95,7 +95,7 @@ export function LogsSection() {
                   <span className="text-[var(--color-text-dimmer)] truncate">{entry.target}</span>
                 )}
               </div>
-              <p className="mt-0.5 text-white break-all">
+              <p className="mt-0.5 text-[var(--color-text)] break-all">
                 {extractMessage(entry.fields) ??
                   (entry.fields &&
                   typeof entry.fields === "object" &&

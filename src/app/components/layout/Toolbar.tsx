@@ -28,7 +28,7 @@ export function Toolbar({
 
   return (
     <div
-      className="flex shrink-0 items-center border-b border-[color-mix(in_srgb,var(--color-border)_80%,transparent)] bg-[color-mix(in_srgb,var(--color-toolbar)_90%,transparent)] px-4 shadow-[0_1px_0_rgba(255,255,255,0.02)] backdrop-blur-xl"
+      className="flex shrink-0 items-center bg-[var(--color-toolbar)] px-4"
       data-window-shell-tier={shellState.tier}
       style={{
         ...createWindowShellStyle(shellState),
@@ -49,10 +49,10 @@ export function Toolbar({
             type="button"
             onClick={onToggleSidebar}
             aria-label={t("toolbar.toggleSidebar")}
-            className={`motion-icon-button rounded-xl p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30 ${
+            className={`motion-icon-button rounded-xl p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)] ${
               sidebarVisible
-                ? "bg-[color-mix(in_srgb,var(--color-hover)_86%,transparent)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
-                : "text-[var(--color-text-dim)] hover:bg-white/4 hover:text-white"
+                ? "bg-[var(--color-control-selected-bg)] text-[var(--color-text)] shadow-[var(--shadow-control-selected)]"
+                : "text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
             }`}
           >
             <PanelLeft size={16} />
@@ -66,7 +66,7 @@ export function Toolbar({
           <button
             type="button"
             onClick={resetForm}
-            className="motion-surface flex items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-hover)] px-2.5 py-1 text-[12px] font-medium text-[var(--color-text)] hover:border-[color-mix(in_srgb,var(--color-accent)_24%,var(--color-border-light))] hover:bg-[var(--color-active)] hover:text-white"
+            className="motion-surface flex items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-hover)] px-2.5 py-1 text-[12px] font-medium text-[var(--color-text)] hover:bg-[var(--color-active)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
           >
             <Sparkles size={14} /> {t("toolbar.newGeneration")}
           </button>
@@ -85,7 +85,7 @@ export function Toolbar({
               }
             }}
             aria-label={t("toolbar.revealOutput")}
-            className="motion-icon-button rounded-xl p-2 text-[var(--color-text-dim)] hover:bg-white/4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30"
+            className="motion-icon-button rounded-xl p-2 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
           >
             <FolderOutput size={16} />
           </button>
@@ -95,7 +95,7 @@ export function Toolbar({
             type="button"
             onClick={reopenSetup}
             aria-label={t("toolbar.openSetup")}
-            className="motion-icon-button rounded-xl p-2 text-[var(--color-text-dim)] hover:bg-white/4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30"
+            className="motion-icon-button rounded-xl p-2 text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
           >
             <Wand2 size={16} />
           </button>
@@ -108,10 +108,10 @@ export function Toolbar({
             type="button"
             onClick={onToggleSettings}
             aria-label={t("toolbar.settings")}
-            className={`motion-icon-button rounded-xl p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30 ${
+            className={`motion-icon-button rounded-xl p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)] ${
               settingsOpen
-                ? "bg-[color-mix(in_srgb,var(--color-hover)_86%,transparent)] text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)]"
-                : "text-[var(--color-text-dim)] hover:bg-white/4 hover:text-white"
+                ? "bg-[var(--color-control-selected-bg)] text-[var(--color-text)] shadow-[var(--shadow-control-selected)]"
+                : "text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
             }`}
           >
             <Settings size={16} />

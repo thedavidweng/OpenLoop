@@ -44,7 +44,7 @@ export function Collapsible({
         type="button"
         onClick={toggle}
         aria-expanded={isOpen}
-        className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-[13px] font-semibold text-white ${headerClassName}`}
+        className={`flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-[13px] font-semibold text-[var(--color-text)] ${headerClassName}`}
       >
         <span className="flex items-center gap-2">
           {title}

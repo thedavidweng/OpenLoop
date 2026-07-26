@@ -38,7 +38,7 @@ export function ModelsSection() {
           onClick={() => {
             /* no-op: model selection is not a draft field */
           }}
-          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white"
+          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)]"
         >
           {t("settings.resetToDefaults")}
         </button>

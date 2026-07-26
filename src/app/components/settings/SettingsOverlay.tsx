@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
 import { useToast } from "@/app/components/overlay/Toast";
 import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
@@ -14,6 +14,7 @@ import { DangerZoneSection } from "./sections/DangerZoneSection";
 import { NetworkActivitySection } from "./sections/NetworkActivitySection";
 import { LogsSection } from "./sections/LogsSection";
 import { ProfilesSection } from "./sections/ProfilesSection";
+import { AboutSection } from "./sections/AboutSection";
 import { SettingsSaveBar } from "./SettingsSaveBar";
 import { SettingsDialogs } from "./SettingsDialogs";
 
@@ -87,6 +88,7 @@ export function SettingsOverlay() {
     { id: "network", label: t("settings.networkActivity") },
     { id: "logs", label: t("settings.appLogs") },
     { id: "danger", label: t("settings.danger") },
+    { id: "about", label: t("settings.about.title"), icon: Info },
   ] as const;
 
   return (
@@ -95,7 +97,9 @@ export function SettingsOverlay() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-semibold text-white">{t("settings.title")}</h2>
+            <h2 className="text-xl font-semibold text-[var(--color-text)]">
+              {t("settings.title")}
+            </h2>
             <p className="mt-1 text-[12px] leading-5 text-[var(--color-text-dim)]">
               {t("settings.description")}
             </p>
@@ -103,7 +107,7 @@ export function SettingsOverlay() {
           <button
             type="button"
             onClick={closeSettings}
-            className="motion-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-dim)] hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]/30"
+            className="motion-icon-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-dim)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus-ring)]"
             aria-label={t("setup.close")}
           >
             <X size={16} />
@@ -112,20 +116,24 @@ export function SettingsOverlay() {
 
         {/* Section navigation */}
         <div className="flex flex-wrap gap-2 border-b border-[var(--color-border-light)] pb-3">
-          {sectionNav.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() =>
-                document
-                  .getElementById(`settings-section-${s.id}`)
-                  ?.scrollIntoView({ block: "start" })
-              }
-              className="rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-white"
-            >
-              {s.label}
-            </button>
-          ))}
+          {sectionNav.map((s) => {
+            const Icon = "icon" in s ? s.icon : null;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById(`settings-section-${s.id}`)
+                    ?.scrollIntoView({ block: "start" })
+                }
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
+              >
+                {Icon ? <Icon size={12} /> : null}
+                {s.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Section cards */}
@@ -167,6 +175,7 @@ export function SettingsOverlay() {
               onClearCache={() => setClearCacheOpen(true)}
               onDeleteAllModels={() => setDeleteModelsOpen(true)}
             />
+            <AboutSection />
           </div>
         </div>
 

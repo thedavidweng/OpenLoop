@@ -35,7 +35,7 @@ export function ModelVariantCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[13px] font-semibold text-white">{meta.label}</p>
+            <p className="text-[13px] font-semibold text-[var(--color-text)]">{meta.label}</p>
             {selected ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)]/16 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--color-accent)]">
                 <CheckCircle2 size={10} />
@@ -56,8 +56,8 @@ export function ModelVariantCard({
           disabled={busy || (!packReady && !selected)}
           className={`inline-flex h-8 shrink-0 items-center rounded-md border px-3 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
             selected
-              ? "border-[var(--color-accent)]/40 bg-[var(--color-accent)]/15 text-white"
-              : "border-[var(--color-border-light)] bg-[var(--color-surface-muted)] text-[var(--color-text)] hover:bg-[var(--color-hover)] hover:text-white"
+              ? "border-[var(--color-accent)]/40 bg-[var(--color-accent)]/15 text-[var(--color-text)]"
+              : "border-[var(--color-border-light)] bg-[var(--color-surface-muted)] text-[var(--color-text)] hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
           }`}
         >
           {selected ? t("model.selected") : t("model.select")}

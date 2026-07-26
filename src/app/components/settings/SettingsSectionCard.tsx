@@ -24,15 +24,15 @@ export function SettingsSectionCard({
       id={id}
       className={`space-y-3 rounded-lg border p-5 scroll-mt-6 ${
         isDanger
-          ? "border-red-500/30 bg-[var(--color-sidebar)]"
+          ? "border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)] bg-[var(--color-sidebar)]"
           : "border-[var(--color-border)] bg-[var(--color-sidebar)]"
       }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-1">
           <label
-            className={`text-[12px] font-medium uppercase ${
-              isDanger ? "text-red-400" : "text-[var(--color-text-dim)]"
+            className={`text-[13px] font-semibold tracking-tight ${
+              isDanger ? "text-[var(--color-destructive)]" : "text-[var(--color-text)]"
             }`}
           >
             {title}

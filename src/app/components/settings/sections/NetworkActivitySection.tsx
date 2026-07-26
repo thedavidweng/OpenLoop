@@ -30,7 +30,7 @@ export function NetworkActivitySection() {
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-white disabled:opacity-50"
+          className="text-[11px] text-[var(--color-text-dim)] transition-colors hover:text-[var(--color-text)] disabled:opacity-50"
         >
           {loading ? t("settings.refreshing") : t("settings.refresh")}
         </button>
@@ -68,8 +68,11 @@ export function NetworkActivitySection() {
                   <td className="px-3 py-1.5 text-[var(--color-text-dim)] whitespace-nowrap">
                     {formatTimestamp(entry.timestamp)}
                   </td>
-                  <td className="px-3 py-1.5 font-mono text-white">{entry.method}</td>
-                  <td className="px-3 py-1.5 text-white truncate max-w-[280px]" title={entry.url}>
+                  <td className="px-3 py-1.5 font-mono text-[var(--color-text)]">{entry.method}</td>
+                  <td
+                    className="px-3 py-1.5 text-[var(--color-text)] truncate max-w-[280px]"
+                    title={entry.url}
+                  >
                     {truncateUrl(entry.url)}
                   </td>
                   <td className="px-3 py-1.5 text-right font-mono">
@@ -109,6 +112,6 @@ function truncateUrl(url: string): string {
 function statusColor(status: number): string {
   if (status >= 200 && status < 300) return "text-green-400";
   if (status >= 300 && status < 400) return "text-yellow-400";
-  if (status >= 400) return "text-red-400";
-  return "text-white";
+  if (status >= 400) return "text-[var(--color-destructive)]";
+  return "text-[var(--color-text)]";
 }

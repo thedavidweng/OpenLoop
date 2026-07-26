@@ -186,7 +186,7 @@ export function FailedRunsDrawer() {
           <button
             type="button"
             onClick={() => void handleClearAll()}
-            className="flex h-5 w-5 items-center justify-center rounded text-[var(--color-text-dimmer)] hover:bg-[var(--color-ghost-hover)] hover:text-white"
+            className="flex h-5 w-5 items-center justify-center rounded text-[var(--color-text-dimmer)] hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
           >
             <Trash2 size={10} />
           </button>
@@ -202,7 +202,7 @@ export function FailedRunsDrawer() {
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-medium text-red-300">
+                  <p className="truncate text-[11px] font-medium text-[var(--color-destructive)]">
                     {run.errorCode ?? t("history.unknownError")}
                   </p>
                   <p className="mt-0.5 line-clamp-2 text-[10px] text-[var(--color-text-dim)]">
@@ -214,7 +214,7 @@ export function FailedRunsDrawer() {
                 </div>
                 <XCircle
                   size={14}
-                  className="mt-0.5 shrink-0 cursor-pointer text-[var(--color-text-dimmer)] hover:text-red-400"
+                  className="mt-0.5 shrink-0 cursor-pointer text-[var(--color-text-dimmer)] hover:text-[var(--color-destructive)]"
                   onClick={() => void handleRemove(run.id)}
                 />
               </div>
@@ -224,7 +224,7 @@ export function FailedRunsDrawer() {
                     type="button"
                     onClick={() => handleRetry(run)}
                     disabled={!run.requestJson}
-                    className="inline-flex h-5 items-center gap-1 rounded bg-[var(--color-ghost-hover)] px-1.5 text-[9px] font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-5 items-center gap-1 rounded bg-[var(--color-ghost-hover)] px-1.5 text-[9px] font-medium text-[var(--color-text)] transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <RotateCcw size={9} />
                     {t("common.retry")}
@@ -234,7 +234,7 @@ export function FailedRunsDrawer() {
                   <button
                     type="button"
                     onClick={() => handleCopyDiagnostics(run)}
-                    className="inline-flex h-5 items-center gap-1 rounded bg-[var(--color-ghost-hover)] px-1.5 text-[9px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-white"
+                    className="inline-flex h-5 items-center gap-1 rounded bg-[var(--color-ghost-hover)] px-1.5 text-[9px] font-medium text-[var(--color-text-dim)] transition-colors hover:bg-[var(--color-ghost-hover)] hover:text-[var(--color-text)]"
                   >
                     <Clipboard size={9} />
                     {t("common.copy")}

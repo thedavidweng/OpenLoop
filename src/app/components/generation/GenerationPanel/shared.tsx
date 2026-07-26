@@ -36,7 +36,7 @@ export type ToggleField =
 export function FieldError({ message, id }: { message?: string; id?: string }) {
   if (!message) return null;
   return (
-    <p id={id} className="text-[11px] text-red-300">
+    <p id={id} className="text-[11px] text-[var(--color-destructive)]">
       {message}
     </p>
   );

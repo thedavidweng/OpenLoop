@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{fs, path::PathBuf};
 
 use tauri::{command, ipc::Response, State};
 
@@ -94,25 +94,6 @@ pub fn prepare_drag_payload(state: State<'_, AppState>, id: String) -> AppResult
 }
 
 #[command]
-pub fn reveal_in_finder(path: String) -> AppResult<()> {
-    reject_path_traversal(&path)?;
-
-    let status = Command::new("open")
-        .arg("-R")
-        .arg(&path)
-        .status()
-        .map_err(|error| AppError::output_write_failed(error.to_string()))?;
-
-    if status.success() {
-        return Ok(());
-    }
-
-    Err(AppError::output_write_failed(format!(
-        "open -R exited with status {status}"
-    )))
-}
-
-#[command]
 pub fn copy_audio_to(path: String, destination: String) -> AppResult<String> {
     reject_path_traversal(&path)?;
     reject_path_traversal(&destination)?;
@@ -127,6 +108,15 @@ pub fn copy_audio_to(path: String, destination: String) -> AppResult<String> {
     } else {
         destination_path
     };
+
+    // fs::copy(src, src) truncates the file to zero bytes on macOS, and the
+    // save panel pre-fills the original path — a user accepting the default
+    // destination must not destroy their generation.
+    if let (Ok(src), Ok(dst)) = (source.canonicalize(), target_path.canonicalize()) {
+        if src == dst {
+            return Ok(target_path.display().to_string());
+        }
+    }
 
     fs::copy(&source, &target_path)
         .map_err(|error| AppError::output_write_failed(error.to_string()))?;
@@ -179,4 +169,32 @@ pub fn delete_generation_file(path: String) -> AppResult<()> {
 #[command]
 pub fn delete_generation_file_and_record(state: State<'_, AppState>, id: String) -> AppResult<()> {
     HistoryService::new(state.db.clone()).delete_generation_file_and_record(&id)
+}
+
+/// Grant the asset protocol access to one recorded generation's output file.
+///
+/// The runtime scope only covers the default output locations plus the
+/// currently configured output directory, so history entries generated into a
+/// previously configured directory would fail to stream. The grant is
+/// per-file and only for paths stored in the generations table — never for
+/// caller-supplied paths.
+#[command]
+pub fn allow_generation_asset(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> AppResult<()> {
+    let record = state
+        .db
+        .get_generation(&id)?
+        .ok_or_else(|| AppError::not_found("Generation record", id.clone()))?;
+
+    let Some(output_path) = record.output_path.filter(|path| !path.is_empty()) else {
+        return Ok(());
+    };
+
+    use tauri::Manager;
+    app.asset_protocol_scope()
+        .allow_file(&output_path)
+        .map_err(|error| AppError::output_write_failed(error.to_string()))
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsSectionCard } from "@/app/components/settings/SettingsSectionCard";
+import { ExternalLink } from "@/app/components/ui/ExternalLink";
 import { useGenerationStore } from "@/app/lib/store";
 import {
   collectDiagnostics,
@@ -78,14 +79,12 @@ export function AboutSection() {
         <AboutRow
           label={t("settings.about.repository")}
           value={
-            <a
+            <ExternalLink
               href={REPOSITORY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
               className="text-[var(--color-accent)] no-underline hover:underline"
             >
               {REPOSITORY_URL}
-            </a>
+            </ExternalLink>
           }
         />
       </dl>

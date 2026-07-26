@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback, type CSSProperties } from "react";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   ChevronDown,
   Copy,
@@ -174,26 +175,45 @@ export function PlaybackBar() {
     let cancelled = false;
     let objectUrl: string | null = null;
 
-    void api
-      .readGenerationAudio(currentGeneration.id)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
+    if (api.isTauriRuntime()) {
+      // Served through the asset protocol: the webview streams the file from
+      // disk with HTTP range support (seek without re-download) instead of
+      // materializing the whole WAV over IPC on every track switch. The
+      // per-file grant covers history entries generated into a previously
+      // configured output directory that the startup scope misses. A missing
+      // file surfaces through the <audio> onError handler.
+      const outputPath = currentGeneration.outputPath;
+      void api
+        .allowGenerationAsset(currentGeneration.id)
+        .catch(() => {})
+        .then(() => {
+          if (!cancelled) {
+            setAudioSrc(convertFileSrc(outputPath));
+          }
+        });
+    } else {
+      // Browser preview has no asset protocol; keep the IPC/blob fallback.
+      void api
+        .readGenerationAudio(currentGeneration.id)
+        .then((payload) => {
+          if (cancelled) {
+            return;
+          }
 
-        const bytes = audioPayloadToBytes(payload);
-        objectUrl = URL.createObjectURL(
-          new Blob([bytes], {
-            type: audioMimeType(currentGeneration.audioFormat),
-          }),
-        );
-        setAudioSrc(objectUrl);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPlaybackStatus(t("player.missingFile"));
-        }
-      });
+          const bytes = audioPayloadToBytes(payload);
+          objectUrl = URL.createObjectURL(
+            new Blob([bytes], {
+              type: audioMimeType(currentGeneration.audioFormat),
+            }),
+          );
+          setAudioSrc(objectUrl);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setPlaybackStatus(t("player.missingFile"));
+          }
+        });
+    }
 
     void api
       .readGenerationWaveform(currentGeneration.id)
@@ -630,26 +650,28 @@ export function PlaybackBar() {
               </button>
             </Tooltip>
             {exportDropdownOpen && (
-              <div className="absolute bottom-full right-0 z-30 mb-2 w-56 overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-popover)]">
+              <div className="absolute bottom-full right-0 z-30 mb-2 w-56 overflow-hidden rounded-xl border border-[var(--color-border-light)] bg-[var(--color-surface)] shadow-[var(--shadow-popover)]">
                 <div className="flex flex-col py-1">
                   <button
                     type="button"
                     className="flex items-center gap-3 px-4 py-2.5 text-left text-[13px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)]"
                     onClick={() => {
                       setExportDropdownOpen(false);
-                      const destination = window.prompt(
-                        t("player.copyPrompt"),
-                        currentGeneration?.outputPath ?? "",
-                      );
-                      if (!destination || !currentGeneration?.outputPath) {
+                      const outputPath = currentGeneration?.outputPath;
+                      if (!outputPath) {
                         return;
                       }
-                      void api
-                        .copyAudioTo(currentGeneration.outputPath, destination)
-                        .then((result) => {
-                          setCopyStatus(t("player.copied", { path: result }));
-                          addToast("success", t("toast.fileExported"));
-                        });
+                      void (async () => {
+                        const destination = await api.chooseSaveDestination(outputPath);
+                        if (!destination) {
+                          return;
+                        }
+                        const result = await api.copyAudioTo(outputPath, destination);
+                        setCopyStatus(t("player.copied", { path: result }));
+                        addToast("success", t("toast.fileExported"));
+                      })().catch(() => {
+                        addToast("error", t("toast.exportFailed"));
+                      });
                     }}
                   >
                     <Copy size={16} className="shrink-0 opacity-70" />

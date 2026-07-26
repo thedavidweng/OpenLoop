@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import type {
   AppSettings,
   ActiveGenerationTask,
@@ -207,11 +208,47 @@ export function listenToModelDownloadEvents(onEvent: (event: ModelStatusSnapshot
 }
 
 export function revealInFinder(path: string): Promise<void> {
-  return invoke<void>("reveal_in_finder", { path });
+  if (!isTauriRuntime()) {
+    return Promise.resolve();
+  }
+  return revealItemInDir(path);
+}
+
+/**
+ * Open a URL in the system browser. In the packaged WKWebView, window.open and
+ * target="_blank" have no UI delegate and can silently do nothing — the opener
+ * plugin is the reliable path. Falls back to window.open in browser preview.
+ */
+export function openExternalUrl(url: string): Promise<void> {
+  if (!isTauriRuntime()) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    return Promise.resolve();
+  }
+  return openUrl(url);
 }
 
 export function copyAudioTo(path: string, destination: string): Promise<string> {
   return invoke<string>("copy_audio_to", { path, destination });
+}
+
+/**
+ * Grant the asset protocol access to a generation's output file before
+ * streaming it. History entries may live in a previously configured output
+ * directory that the startup scope grant does not cover.
+ */
+export function allowGenerationAsset(id: string): Promise<void> {
+  return invoke<void>("allow_generation_asset", { id });
+}
+
+/**
+ * Pick a save destination via the native save panel (browse, overwrite
+ * confirmation, extension defaulting). Returns null when cancelled.
+ */
+export function chooseSaveDestination(defaultPath: string): Promise<string | null> {
+  if (!isTauriRuntime()) {
+    return Promise.resolve(window.prompt("Destination path", defaultPath));
+  }
+  return save({ defaultPath });
 }
 
 export function fileExists(path: string): Promise<boolean> {

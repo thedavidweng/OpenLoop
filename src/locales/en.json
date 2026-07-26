@@ -50,7 +50,8 @@
     "shortcut_toggleSettings": "Toggle settings",
     "shortcut_submitGeneration": "Submit generation",
     "shortcut_togglePlayback": "Toggle playback",
-    "skipDemo": "Skip and try a demo prompt"
+    "skipDemo": "Skip and try a demo prompt",
+    "privacyPolicy": "Privacy policy"
   },
   "settings": {
     "title": "Settings",
@@ -618,5 +619,11 @@
     "installFailed": "Update failed. Try downloading from the releases page.",
     "skip": "Skip",
     "view": "View"
+  },
+  "notifications": {
+    "generationCompletedTitle": "Generation complete",
+    "generationCompletedBody": "Your track is ready to play in OpenLoop.",
+    "generationFailedTitle": "Generation failed",
+    "generationFailedBody": "Open OpenLoop to see the error details and retry."
   }
 }

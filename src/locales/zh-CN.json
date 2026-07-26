@@ -50,7 +50,8 @@
     "shortcut_toggleSettings": "切换设置",
     "shortcut_submitGeneration": "提交生成",
     "shortcut_togglePlayback": "切换播放",
-    "skipDemo": "跳过并试用演示提示词"
+    "skipDemo": "跳过并试用演示提示词",
+    "privacyPolicy": "隐私政策"
   },
   "settings": {
     "title": "设置",
@@ -618,5 +619,11 @@
     "installFailed": "更新失败。请到发布页手动下载。",
     "skip": "跳过",
     "view": "查看"
+  },
+  "notifications": {
+    "generationCompletedTitle": "生成完成",
+    "generationCompletedBody": "你的音乐已就绪，可在 OpenLoop 中播放。",
+    "generationFailedTitle": "生成失败",
+    "generationFailedBody": "打开 OpenLoop 查看错误详情并重试。"
   }
 }

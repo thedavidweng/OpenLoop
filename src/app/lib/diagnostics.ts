@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { writeText as writeClipboardText } from "@tauri-apps/plugin-clipboard-manager";
 
 export interface DiagnosticsBundle {
   appVersion: string;
@@ -97,8 +98,11 @@ interface CopyDebugInfoDependencies {
  * both surfaces produce byte-identical output from one code path.
  */
 export async function copyDebugInfo({
+  // The clipboard-manager plugin writes from the Rust side, so the copy also
+  // works when triggered from a native menu event — a path with no transient
+  // user activation, where navigator.clipboard can silently refuse.
   fetchDiagnostics = collectDiagnostics,
-  writeText = (text: string) => navigator.clipboard.writeText(text),
+  writeText = writeClipboardText,
   packageVersion = import.meta.env.PACKAGE_VERSION,
 }: CopyDebugInfoDependencies = {}): Promise<void> {
   const bundle = await fetchDiagnostics();

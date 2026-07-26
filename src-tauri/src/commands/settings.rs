@@ -25,11 +25,25 @@ pub fn get_settings(state: State<'_, AppState>) -> AppResult<AppSettings> {
 
 #[tauri::command]
 pub fn set_setting(
+    app: tauri::AppHandle,
     state: State<'_, AppState>,
     key: String,
     value: Value,
 ) -> AppResult<AppSettings> {
-    state.db.set_setting(&key, value)
+    let settings = state.db.set_setting(&key, value)?;
+
+    // A newly chosen output directory must be reachable by the asset protocol
+    // or playback of anything generated into it fails with a scope denial.
+    if key == "outputDirectory" {
+        if let Some(dir) = settings.output_directory.as_deref() {
+            use tauri::Manager;
+            if let Err(error) = app.asset_protocol_scope().allow_directory(dir, true) {
+                tracing::warn!("failed to extend asset scope to output directory {dir}: {error}");
+            }
+        }
+    }
+
+    Ok(settings)
 }
 
 #[tauri::command]

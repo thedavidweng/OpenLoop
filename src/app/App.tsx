@@ -6,6 +6,7 @@ import { UpdateBanner } from "@/app/components/bootstrap/UpdateBanner";
 import { useToast } from "@/app/components/overlay/Toast";
 import { SetupScreen } from "@/app/components/settings/SetupScreen";
 import * as api from "@/app/lib/api";
+import { notifyWhenUnfocused } from "@/app/lib/notifications";
 import { useGenerationStore } from "@/app/lib/store";
 import { useAppMenuRuntime } from "@/app/runtime/menu-runtime";
 import { useAppReadyRuntime } from "@/app/runtime/app-ready-runtime";
@@ -49,8 +50,16 @@ function App() {
         applyGenerationEvent(event);
         if (event.type === "completed") {
           addToast("success", t("toast.generationCompleted"));
+          void notifyWhenUnfocused(
+            t("notifications.generationCompletedTitle"),
+            t("notifications.generationCompletedBody"),
+          ).catch(() => {});
         } else if (event.type === "failed") {
           addToast("error", t("toast.generationFailed"));
+          void notifyWhenUnfocused(
+            t("notifications.generationFailedTitle"),
+            t("notifications.generationFailedBody"),
+          ).catch(() => {});
         }
       })
       .then((unlisten) => {

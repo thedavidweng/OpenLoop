@@ -3,6 +3,7 @@ import { AlertCircle, ClipboardCopy, ExternalLink, RefreshCw } from "lucide-reac
 import { useTranslation } from "react-i18next";
 import { Collapsible } from "@/app/components/ui/Collapsible";
 import { GenerationPanel } from "@/app/components/generation/GenerationPanel";
+import * as api from "@/app/lib/api";
 import { useGenerationStore } from "@/app/lib/store";
 import { buildGitHubIssueUrl } from "@/app/lib/error-help";
 
@@ -33,7 +34,7 @@ export function OpenLoopStage() {
   const handleGetHelp = useCallback(() => {
     if (!error) return;
     const url = buildGitHubIssueUrl(error);
-    window.open(url, "_blank", "noopener,noreferrer");
+    void api.openExternalUrl(url).catch(() => {});
   }, [error]);
 
   return (

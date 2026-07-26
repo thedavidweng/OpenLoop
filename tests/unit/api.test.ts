@@ -593,14 +593,9 @@ describe("deleteAllModels", () => {
 // ---------------------------------------------------------------------------
 
 describe("revealInFinder", () => {
-  it("calls 'reveal_in_finder' with path", async () => {
-    mockInvoke.mockResolvedValue(undefined);
-
-    await api.revealInFinder("/some/path");
-
-    expect(mockInvoke).toHaveBeenCalledWith("reveal_in_finder", {
-      path: "/some/path",
-    });
+  it("resolves without invoking outside the Tauri runtime", async () => {
+    await expect(api.revealInFinder("/some/path")).resolves.toBeUndefined();
+    expect(mockInvoke).not.toHaveBeenCalled();
   });
 });
 

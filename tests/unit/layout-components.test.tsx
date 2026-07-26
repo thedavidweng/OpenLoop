@@ -17,10 +17,12 @@ vi.hoisted(() => {
 // ---------------------------------------------------------------------------
 
 const mockRevealInFinder = vi.fn<(path: string) => Promise<void>>();
+const mockOpenExternalUrl = vi.fn<(url: string) => Promise<void>>();
 
 vi.mock("@/app/lib/api", () => ({
   isTauriRuntime: () => true,
   revealInFinder: (path: string) => mockRevealInFinder(path),
+  openExternalUrl: (url: string) => mockOpenExternalUrl(url),
   getWindowShellState: () =>
     Promise.resolve({
       chrome_variant: "mac",
@@ -222,6 +224,7 @@ describe("Toolbar", () => {
     vi.clearAllMocks();
     currentStoreState = makeStoreOverrides();
     mockRevealInFinder.mockResolvedValue(undefined);
+    mockOpenExternalUrl.mockResolvedValue(undefined);
   });
 
   it("renders sidebar toggle, new generation, reveal output, open setup, and settings buttons", () => {
@@ -770,11 +773,7 @@ describe("OpenLoopStage", () => {
     });
     render(<OpenLoopStage />);
     await user.click(screen.getByText("stage.getHelp"));
-    expect(window.open).toHaveBeenCalledWith(
-      expect.stringContaining("github.com"),
-      "_blank",
-      "noopener,noreferrer",
-    );
+    expect(mockOpenExternalUrl).toHaveBeenCalledWith(expect.stringContaining("github.com"));
   });
 
   it("renders the generation panel on a flat card without ambience layers", () => {

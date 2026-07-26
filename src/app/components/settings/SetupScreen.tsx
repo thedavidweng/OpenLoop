@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "@/app/components/ui/ExternalLink";
 import { useTranslation } from "react-i18next";
 import {
   AlertCircle,
@@ -166,14 +167,12 @@ export function SetupScreen({ onClose }: SetupScreenProps) {
               />
             </div>
             <p className="text-center text-[11px] text-[var(--color-text-dim)]">
-              <a
+              <ExternalLink
                 href="https://github.com/thedavidweng/OpenLoop/blob/main/docs/privacy.md"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="underline decoration-[var(--color-text-dimmer)]/40 underline-offset-2 transition-colors hover:text-[var(--color-text)] hover:decoration-[var(--color-text)]/60"
               >
-                Privacy policy
-              </a>
+                {t("setup.privacyPolicy")}
+              </ExternalLink>
             </p>
           </>
         ) : null}

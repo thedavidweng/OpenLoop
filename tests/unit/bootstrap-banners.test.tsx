@@ -479,7 +479,7 @@ describe("UpdateBanner", () => {
       const link = screen.getByText("Release notes").closest("a");
       expect(link).toBeTruthy();
       expect(link?.getAttribute("href")).toBe("https://github.com/thedavidweng/OpenLoop/releases");
-      expect(link?.getAttribute("target")).toBe("_blank");
+      expect(link?.getAttribute("rel")).toContain("noopener");
     });
   });
 });

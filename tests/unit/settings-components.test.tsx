@@ -288,9 +288,9 @@ describe("SetupScreen", () => {
   it("renders the privacy policy link on the welcome step", () => {
     render(<SetupScreen />);
 
-    const privacyLink = screen.getByText("Privacy policy");
+    const privacyLink = screen.getByText("setup.privacyPolicy");
     expect(privacyLink.getAttribute("href")).toContain("privacy.md");
-    expect(privacyLink.getAttribute("target")).toBe("_blank");
+    expect(privacyLink.getAttribute("rel")).toContain("noopener");
   });
 
   // -- Navigation -----------------------------------------------------------

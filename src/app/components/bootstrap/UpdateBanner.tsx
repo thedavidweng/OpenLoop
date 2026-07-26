@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { ExternalLink, Download, X } from "lucide-react";
+import { ExternalLink as ExternalHref } from "@/app/components/ui/ExternalLink";
 import { useGenerationStore } from "@/app/lib/store";
 
 export function UpdateBanner() {
@@ -128,15 +129,13 @@ export function UpdateBanner() {
             )}
 
             <div className="flex flex-wrap items-center gap-2">
-              <a
+              <ExternalHref
                 href="https://github.com/thedavidweng/OpenLoop/releases"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)]"
               >
                 <ExternalLink size={14} />
                 {t("update.releaseNotes", { defaultValue: "Release notes" })}
-              </a>
+              </ExternalHref>
               <button
                 onClick={handleInstall}
                 disabled={installing}

@@ -164,6 +164,13 @@ bool ok_window_shell_configure_main_window(
             return;
         }
 
+        // RATIONALE: an ObjC exception thrown anywhere in this block would
+        // unwind through the Rust FFI boundary and abort the whole app —
+        // exactly how the app died on macOS 26 when a private AppKit key
+        // disappeared. Configuration is cosmetic; on any exception we leave
+        // `configured` NO and the Rust side falls back to the default shell.
+        @try {
+
         window.titleVisibility = NSWindowTitleHidden;
         window.titlebarAppearsTransparent = YES;
         window.tabbingMode = NSWindowTabbingModeDisallowed;
@@ -186,8 +193,14 @@ bool ok_window_shell_configure_main_window(
             [window setStyleMask:(styleMask | NSWindowStyleMaskFullSizeContentView)];
         }
 
-        // Disable occlusion detection to prevent WebKit throttling when offscreen
-        [window setValue:@NO forKey:@"windowOcclusionDetectionEnabled"];
+        // Disable occlusion detection to prevent WebKit throttling when
+        // offscreen. The switch is a private AppKit property that macOS 26
+        // removed — KVC on a missing key raises NSUnknownKeyException, so
+        // probe the setter and skip silently where it no longer exists (the
+        // reveal path has timer backstops and does not depend on it).
+        if ([window respondsToSelector:NSSelectorFromString(@"setWindowOcclusionDetectionEnabled:")]) {
+            [window setValue:@NO forKey:@"windowOcclusionDetectionEnabled"];
+        }
 
         [window setToolbar:nil];
 
@@ -218,6 +231,11 @@ bool ok_window_shell_configure_main_window(
         }
 
         configured = YES;
+
+        } @catch (NSException *exception) {
+            NSLog(@"openloop window shell configuration failed: %@", exception);
+            configured = NO;
+        }
     });
 
     return configured;

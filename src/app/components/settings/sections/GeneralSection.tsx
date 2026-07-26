@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { SettingsSectionCard } from "@/app/components/settings/SettingsSectionCard";
+import { ExternalLink } from "@/app/components/ui/ExternalLink";
 import { useGenerationStore } from "@/app/lib/store";
 import * as api from "@/app/lib/api";
 import { SUPPORTED_LANGUAGES, detectSystemLanguage } from "@/app/lib/i18n";
@@ -139,14 +140,12 @@ export function GeneralSection({
         >
           {t("settings.revealConfigFile")}
         </button>
-        <a
+        <ExternalLink
           href="https://github.com/thedavidweng/OpenLoop/releases"
-          target="_blank"
-          rel="noopener noreferrer"
           className="inline-flex h-9 items-center rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface)] px-3.5 text-[12px] text-[var(--color-text)] transition-colors hover:bg-[var(--color-hover)] hover:text-[var(--color-text)] no-underline"
         >
           {t("settings.releaseNotes")}
-        </a>
+        </ExternalLink>
       </div>
     </SettingsSectionCard>
   );

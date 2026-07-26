@@ -126,7 +126,7 @@ pub fn app_log_dir(app_data_dir: &Path) -> PathBuf {
 /// Install a stderr-only tracing subscriber so diagnostic events are captured
 /// even when the app data directory is unavailable.
 pub fn init_stderr_only() {
-    let _ = install_subscriber(AppLogWriter::stderr());
+    let _ = install_subscriber(None);
 }
 
 /// Initialize structured tracing: JSONL lines written to a timestamped file
@@ -147,23 +147,33 @@ pub fn init(app_data_dir: &Path) {
 
     let timestamp = Utc::now().format("%Y%m%dT%H%M%S");
     let path = log_dir.join(format!("{APP_LOG_PREFIX}{timestamp}{APP_LOG_SUFFIX}"));
-    let writer = AppLogWriter::file(path);
 
-    let _ = install_subscriber(writer);
+    let _ = install_subscriber(Some(AppLogWriter::file(path)));
 }
 
+/// Install the global subscriber. Always mirrors to stderr so `tauri dev` shows
+/// logs in the terminal; when `file_writer` is present the packaged app also
+/// records structured JSONL to its log file. The filter honours `OPENLOOP_LOG`,
+/// then `RUST_LOG`, defaulting to `info`.
 fn install_subscriber(
-    writer: AppLogWriter,
+    file_writer: Option<AppLogWriter>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    let json_layer = tracing_subscriber::fmt::layer()
-        .json()
-        .with_writer(writer)
-        .with_ansi(false);
+    let filter = EnvFilter::try_from_env("OPENLOOP_LOG")
+        .or_else(|_| EnvFilter::try_from_default_env())
+        .unwrap_or_else(|_| EnvFilter::new("info"));
 
-    let registry = tracing_subscriber::registry().with(filter).with(json_layer);
+    let stderr_layer = tracing_subscriber::fmt::layer().with_writer(std::io::stderr);
+    let json_layer = file_writer.map(|writer| {
+        tracing_subscriber::fmt::layer()
+            .json()
+            .with_writer(writer)
+            .with_ansi(false)
+    });
 
-    registry
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(stderr_layer)
+        .with(json_layer)
         .try_init()
         .map_err(|error| -> Box<dyn std::error::Error + Send + Sync> { Box::new(error) })
 }
@@ -207,10 +217,6 @@ pub struct AppLogWriter {
 impl AppLogWriter {
     fn file(path: PathBuf) -> Self {
         Self { path: Some(path) }
-    }
-
-    fn stderr() -> Self {
-        Self { path: None }
     }
 }
 

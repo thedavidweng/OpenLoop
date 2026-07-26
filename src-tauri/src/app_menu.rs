@@ -15,6 +15,8 @@ pub const MENU_ACTION_OPEN_SETUP: &str = "open-setup";
 pub const MENU_ACTION_REVEAL_OUTPUT_FOLDER: &str = "reveal-output-folder";
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub const MENU_ACTION_TOGGLE_SIDEBAR: &str = "toggle-sidebar";
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub const MENU_ACTION_COPY_DEBUG_INFO: &str = "copy-debug-info";
 
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MENU_ITEM_NEW_GENERATION: &str = "file.new-generation";
@@ -26,6 +28,8 @@ const MENU_ITEM_OPEN_SETUP: &str = "app.open-setup";
 const MENU_ITEM_REVEAL_OUTPUT_FOLDER: &str = "file.reveal-output-folder";
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const MENU_ITEM_TOGGLE_SIDEBAR: &str = "view.toggle-sidebar";
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+const MENU_ITEM_COPY_DEBUG_INFO: &str = "help.copy-debug-info";
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 const ABOUT_AUTHOR_CREDIT: &str = "@David Weng";
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -162,6 +166,13 @@ pub fn build_app_menu<R: Runtime>(app_handle: &AppHandle<R>) -> tauri::Result<Me
                 "Help",
                 true,
                 &[
+                    &MenuItem::with_id(
+                        app_handle,
+                        MENU_ITEM_COPY_DEBUG_INFO,
+                        "Copy Debug Info",
+                        true,
+                        None::<&str>,
+                    )?,
                     #[cfg(not(target_os = "macos"))]
                     &PredefinedMenuItem::about(app_handle, None, Some(about_metadata.clone()))?,
                 ],
@@ -180,6 +191,7 @@ pub fn handle_menu_event<R: Runtime>(app_handle: &AppHandle<R>, event: MenuEvent
         MENU_ITEM_OPEN_SETUP => Some(MENU_ACTION_OPEN_SETUP),
         MENU_ITEM_REVEAL_OUTPUT_FOLDER => Some(MENU_ACTION_REVEAL_OUTPUT_FOLDER),
         MENU_ITEM_TOGGLE_SIDEBAR => Some(MENU_ACTION_TOGGLE_SIDEBAR),
+        MENU_ITEM_COPY_DEBUG_INFO => Some(MENU_ACTION_COPY_DEBUG_INFO),
         _ => None,
     };
 

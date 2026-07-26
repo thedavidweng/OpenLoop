@@ -32,6 +32,24 @@ pub fn run() {
 
             app.manage(window_shell_state);
             app.manage(state);
+
+            // Native reveal watchdog. The window starts hidden and the frontend
+            // shows it via `window_ready` once it can paint — but if the webview
+            // never gets that far (bundle load failure, crash before React
+            // mounts), nothing else would ever call show() and the app would run
+            // invisibly. The frontend's own backstops fire well before this.
+            if let Some(window) = app.get_webview_window("main") {
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(15));
+                    if !window.is_visible().unwrap_or(true) {
+                        tracing::warn!(
+                            "window_ready never arrived; revealing the window as a last resort"
+                        );
+                        let _ = window.show();
+                    }
+                });
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -97,6 +115,7 @@ pub fn run() {
             commands::logs::get_app_logs,
             commands::support::collect_diagnostics,
             commands::window_shell::get_window_shell_state,
+            commands::window_shell::window_ready,
         ]);
 
     #[cfg(target_os = "macos")]
@@ -104,8 +123,28 @@ pub fn run() {
         .menu(app_menu::build_app_menu)
         .on_menu_event(app_menu::handle_menu_event);
 
-    if let Err(error) = builder.run(tauri::generate_context!()) {
-        crate::services::observability::init_stderr_only();
-        tracing::error!("openloop: {error}");
-    }
+    let app = match builder.build(tauri::generate_context!()) {
+        Ok(app) => app,
+        Err(error) => {
+            crate::services::observability::init_stderr_only();
+            tracing::error!("openloop: {error}");
+            return;
+        }
+    };
+
+    app.run(|app_handle, event| {
+        // Stop the Python backend deterministically on shutdown. The `impl Drop
+        // for BackendManager` remains as a backstop, but the runtime may leak the
+        // managed state on exit, so terminate the child here first.
+        if matches!(
+            event,
+            tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+        ) {
+            if let Some(state) = app_handle.try_state::<AppState>() {
+                if let Ok(mut backend) = state.lock_backend() {
+                    let _ = backend.stop();
+                }
+            }
+        }
+    });
 }

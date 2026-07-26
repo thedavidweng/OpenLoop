@@ -8,6 +8,7 @@ mod tests;
 use std::{
     fs,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use chrono::Utc;
@@ -20,6 +21,31 @@ use crate::models::{
 };
 
 const LEGACY_SETTING_KEYS: &[&str] = &["backendCommandPath"];
+
+/// Whether `table` already has a column named `column`, via `PRAGMA table_info`.
+/// Used to keep ALTER TABLE ADD COLUMN migrations idempotent (SQLite has no
+/// IF NOT EXISTS for column adds). Rejects untrusted identifiers so the
+/// interpolated PRAGMA cannot be abused; all call sites pass literals.
+fn column_exists(connection: &Connection, table: &str, column: &str) -> AppResult<bool> {
+    if table.is_empty()
+        || table.chars().next().is_some_and(|c| c.is_ascii_digit())
+        || !table.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(AppError::db_read_failed(format!(
+            "invalid table identifier: {table}"
+        )));
+    }
+    let mut statement = connection
+        .prepare(&format!("PRAGMA table_info(\"{table}\")"))
+        .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+    let mut names = statement
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+    names.try_fold(false, |found, name| {
+        let name = name.map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        Ok(found || name == column)
+    })
+}
 
 #[derive(Debug, Clone)]
 pub struct Database {
@@ -40,7 +66,23 @@ impl Database {
     }
 
     pub(crate) fn connection(&self) -> AppResult<Connection> {
-        Connection::open(&self.path).map_err(|error| AppError::db_read_failed(error.to_string()))
+        let connection = Connection::open(&self.path)
+            .map_err(|error| AppError::db_read_failed(error.to_string()))?;
+        // WAL keeps the read-heavy history views from blocking writers; the busy
+        // timeout absorbs SQLITE_BUSY across the app's many short-lived
+        // connections; foreign_keys enforces the generations.project_id ->
+        // projects(id) FK from migration 006 (SQLite leaves enforcement off by
+        // default, per-connection).
+        connection
+            .pragma_update(None, "journal_mode", "WAL")
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        connection
+            .busy_timeout(Duration::from_secs(5))
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        connection
+            .pragma_update(None, "foreign_keys", "ON")
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        Ok(connection)
     }
 
     fn migrate(&self) -> AppResult<()> {
@@ -49,19 +91,57 @@ impl Database {
             .execute_batch(include_str!("../../../migrations/001_init.sql"))
             .map_err(|error| AppError::db_write_failed(error.to_string()))?;
 
-        // Apply 002+ migrations idempotently: ignore "duplicate column" errors
+        // Migrations 002-007 must stay idempotent: existing installs already
+        // applied them and there is no user_version stamp to gate on. ALTER TABLE
+        // ADD COLUMN has no IF NOT EXISTS in SQLite, so those steps are guarded by
+        // a column-existence check and real errors propagate with `?`. The
+        // remaining steps use only CREATE ... IF NOT EXISTS and are naturally
+        // re-runnable.
+
+        // 002: generations task cancel timestamp.
+        if !column_exists(
+            &connection,
+            "active_generation_tasks",
+            "cancel_requested_at",
+        )? {
+            connection
+                .execute_batch(include_str!(
+                    "../../../migrations/002_add_cancel_requested_at.sql"
+                ))
+                .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        }
+
+        // 003: favorite flag.
+        if !column_exists(&connection, "generations", "is_favorite")? {
+            connection
+                .execute_batch(include_str!("../../../migrations/003_add_favorite.sql"))
+                .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        }
+
+        // 004 + 005: table/index creation guarded by IF NOT EXISTS.
         for sql in [
-            include_str!("../../../migrations/002_add_cancel_requested_at.sql"),
-            include_str!("../../../migrations/003_add_favorite.sql"),
             include_str!("../../../migrations/004_add_failed_runs.sql"),
             include_str!("../../../migrations/005_history_indexes.sql"),
-            include_str!("../../../migrations/006_add_projects.sql"),
-            include_str!("../../../migrations/007_add_profiles.sql"),
         ] {
-            if let Err(e) = connection.execute_batch(sql) {
-                tracing::warn!("Migration step failed (may be idempotent): {e}");
-            }
+            connection
+                .execute_batch(sql)
+                .map_err(|error| AppError::db_write_failed(error.to_string()))?;
         }
+
+        // 006: creates the projects table/indexes and adds
+        // generations.project_id. The column add is the only non-idempotent
+        // statement, so gate the whole batch on its absence — on an already
+        // migrated DB the table and indexes exist alongside the column.
+        if !column_exists(&connection, "generations", "project_id")? {
+            connection
+                .execute_batch(include_str!("../../../migrations/006_add_projects.sql"))
+                .map_err(|error| AppError::db_write_failed(error.to_string()))?;
+        }
+
+        // 007: table/index creation guarded by IF NOT EXISTS.
+        connection
+            .execute_batch(include_str!("../../../migrations/007_add_profiles.sql"))
+            .map_err(|error| AppError::db_write_failed(error.to_string()))?;
 
         Ok(())
     }

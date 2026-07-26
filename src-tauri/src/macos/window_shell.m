@@ -1,5 +1,4 @@
 #import <AppKit/AppKit.h>
-#import <QuartzCore/QuartzCore.h>
 #import <dispatch/dispatch.h>
 #import <objc/runtime.h>
 #import <stdbool.h>
@@ -116,6 +115,22 @@ static BOOL openloop_layout_native_traffic_lights(
     return YES;
 }
 
+static void openloop_configure_traffic_light_zoom_action(NSWindow *window) {
+    NSButton *zoomButton = [window standardWindowButton:NSWindowZoomButton];
+    if (zoomButton == nil) {
+        return;
+    }
+
+    // RATIONALE: AppKit's true full-screen style intentionally stops drawing the
+    // titlebar, which takes the standard traffic lights with it. OpenLoop's
+    // workspace needs its top toolbar and native window controls to stay
+    // continuously available, so the green control zooms to the usable screen
+    // frame instead. `performZoom:` still provides AppKit's normal restore
+    // behavior on the next click without reparenting or imitating traffic lights.
+    [zoomButton setTarget:window];
+    [zoomButton setAction:@selector(performZoom:)];
+}
+
 void ok_window_shell_detect_profile(OKWindowShellProfile *profile_out) {
     if (profile_out == NULL) {
         return;
@@ -155,32 +170,20 @@ bool ok_window_shell_configure_main_window(
         window.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
         window.movableByWindowBackground = NO;
 
-        window.backgroundColor = [NSColor clearColor];
+        // RATIONALE: windowBackgroundColor is near-white under the Light system
+        // appearance (and clearColor exposes whatever is behind the webview),
+        // so either painted a bright frame behind the WKWebView before the
+        // document's own dark background composited — the flash seen at
+        // launch. Pin the native backing to the app shell's dark surface
+        // (#121212) so nothing brighter than the UI can ever be exposed.
+        window.backgroundColor = [NSColor colorWithSRGBRed:(18.0 / 255.0)
+                                                    green:(18.0 / 255.0)
+                                                     blue:(18.0 / 255.0)
+                                                    alpha:1.0];
 
         NSWindowStyleMask styleMask = [window styleMask];
         if ((styleMask & NSWindowStyleMaskFullSizeContentView) == 0) {
             [window setStyleMask:(styleMask | NSWindowStyleMaskFullSizeContentView)];
-        }
-
-        // Add NSVisualEffectView for native frosted glass background (once)
-        NSView *containerView = window.contentView.superview;
-        if (containerView != nil) {
-            BOOL alreadyAdded = NO;
-            for (NSView *subview in containerView.subviews) {
-                if ([subview isKindOfClass:[NSVisualEffectView class]]) {
-                    alreadyAdded = YES;
-                    break;
-                }
-            }
-            if (!alreadyAdded) {
-                NSVisualEffectView *effectView = [[NSVisualEffectView alloc] initWithFrame:containerView.bounds];
-                effectView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-                effectView.material = NSVisualEffectMaterialUnderWindowBackground;
-                effectView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
-                effectView.state = NSVisualEffectStateActive;
-                containerView.wantsLayer = YES;
-                [containerView addSubview:effectView positioned:NSWindowBelow relativeTo:window.contentView];
-            }
         }
 
         // Disable occlusion detection to prevent WebKit throttling when offscreen
@@ -201,6 +204,7 @@ bool ok_window_shell_configure_main_window(
         )) {
             return;
         }
+        openloop_configure_traffic_light_zoom_action(window);
 
         CGFloat resolvedToolbarHeight = toolbar_height;
 
@@ -217,31 +221,4 @@ bool ok_window_shell_configure_main_window(
     });
 
     return configured;
-}
-
-bool ok_window_shell_animate_resize(
-    void *ns_view_ptr,
-    double x, double y, double width, double height,
-    double duration
-) {
-    if (ns_view_ptr == NULL) return false;
-
-    __block BOOL result = NO;
-    openloop_run_on_main_thread_sync(^{
-        NSView *view = (__bridge NSView *)ns_view_ptr;
-        NSWindow *window = view.window;
-        if (window == nil) return;
-
-        NSRect newFrame = NSMakeRect(x, y, width, height);
-
-        [NSAnimationContext runAnimationGroup:^(NSAnimationContext *ctx) {
-            ctx.duration = duration;
-            ctx.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-            ctx.allowsImplicitAnimation = YES;
-            [window setFrame:newFrame display:YES];
-        } completionHandler:nil];
-
-        result = YES;
-    });
-    return result;
 }

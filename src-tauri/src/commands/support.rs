@@ -15,6 +15,10 @@ pub struct DiagnosticsBundle {
     pub is_apple_silicon: bool,
     pub total_memory_gb: u64,
     pub tauri_version: String,
+    /// Git short SHA embedded at build time, or "unknown" for non-git builds.
+    pub build_sha: String,
+    /// Absolute path to the app's structured log directory.
+    pub app_log_dir: String,
     pub backend_status: BackendStatus,
     /// Recent error events — currently not tracked; reserved for future use.
     pub recent_errors: Option<Vec<String>>,
@@ -33,13 +37,21 @@ pub fn collect_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsB
         .map_err(|_| crate::models::errors::AppError::internal("backend manager lock poisoned"))?
         .status();
 
+    let app_log_dir = crate::services::observability::app_log_dir(&state.app_data_dir)
+        .display()
+        .to_string();
+
     Ok(DiagnosticsBundle {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         os: std::env::consts::OS.to_string(),
         arch,
         is_apple_silicon,
         total_memory_gb,
-        tauri_version: "2.11.1".to_string(),
+        tauri_version: tauri::VERSION.to_string(),
+        build_sha: option_env!("GIT_BUILD_HASH")
+            .unwrap_or("unknown")
+            .to_string(),
+        app_log_dir,
         backend_status,
         recent_errors: None,
     })

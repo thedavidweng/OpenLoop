@@ -1,6 +1,6 @@
 [package]
 name = "openloop"
-version = "0.2.0"
+version = "0.2.1"
 description = "OpenLoop desktop shell"
 authors = ["OpenLoop contributors"]
 license = "Apache-2.0"
@@ -44,7 +44,8 @@ zip = "8"
 
 [profile.release]
 strip = true
-lto = "thin"
+lto = "fat"
+opt-level = "s"
 codegen-units = 1
 
 [dev-dependencies]

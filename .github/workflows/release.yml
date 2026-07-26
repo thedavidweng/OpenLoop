@@ -50,6 +50,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify package.json version matches release tag
+        run: |
+          TAG="${{ steps.release.outputs.tag }}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "v${PKG_VERSION}" != "${TAG%%-*}" ] && [ "v${PKG_VERSION}" != "${TAG}" ]; then
+            echo "::error::Release tag ${TAG} does not match package.json version ${PKG_VERSION}."
+            echo "::error::Bump package.json (and run pnpm version:sync), re-tag, and retry."
+            exit 1
+          fi
+
       - name: Audit dependencies
         run: pnpm audit --audit-level=high --ignore-registry-errors
 
@@ -77,12 +87,21 @@ jobs:
         uses: tauri-apps/tauri-action@action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Updater artifacts (latest.json + .sig) are only produced when the
+          # minisign private key is available. The public half lives in
+          # tauri.conf.json plugins.updater.pubkey — the two must be a pair.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ steps.release.outputs.tag }}
           releaseName: "OpenLoop ${{ steps.release.outputs.tag }}"
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
-          prerelease: true
+          # Prerelease only for suffixed tags (v0.3.0-alpha.1). GitHub's
+          # /releases/latest — where the in-app updater looks — skips
+          # prereleases, so plain-version tags must publish as full releases
+          # or the auto-updater never sees them.
+          prerelease: ${{ contains(steps.release.outputs.tag, '-') }}
           args: --target aarch64-apple-darwin
 
       - name: Upload DMG artifact

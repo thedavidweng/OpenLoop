@@ -8,6 +8,7 @@
     "beforeDevCommand": "pnpm prepare:sidecars && pnpm dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "pnpm prepare:sidecars && pnpm build",
+    "beforeBundleCommand": "node scripts/generate-macos-liquid-glass-icon.mjs",
     "frontendDist": "../dist"
   },
   "app": {
@@ -20,18 +21,25 @@
         "minWidth": 1100,
         "minHeight": 720,
         "backgroundColor": "#121212",
-        "resizable": true
+        "resizable": true,
+        "visible": false,
+        "center": true
       }
     ],
     "security": {
       "dangerousDisableAssetCspModification": false,
-      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: tauri:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:*; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob: tauri:; style-src 'self'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:*; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg"],
-    "externalBin": ["binaries/uv"],
+    "createUpdaterArtifacts": true,
+    "targets": [
+      "dmg"
+    ],
+    "externalBin": [
+      "binaries/uv"
+    ],
     "resources": {
       "icons/Assets.car": "Assets.car"
     },
@@ -44,6 +52,7 @@
     ],
     "publisher": "OpenMusic",
     "macOS": {
+      "signingIdentity": "-",
       "dmg": {
         "windowSize": {
           "width": 660,
@@ -57,10 +66,10 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://api.github.com/repos/openmusic/openloop/releases/latest"
+        "https://github.com/thedavidweng/OpenLoop/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc1NjQ0QkQzQTU3QzA4NDMKUldSR0tLS3M3YUtub3BJTjNBRUtCNUtMN0ROaTJFMFVTYjlqb0JYc1RrM2t6d0RXNWtWbDZ3aAo=",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMyOTUyNUE4NUM0M0JFREIKUldUYnZrTmNxQ1dWTWc5VTcvQjZNWHpqNVJtNTRxSmdXY3BMMnlVVHhVL0VaVnNjdFRnY0lwdCsK",
       "windows": {
         "installMode": "passive"
       }

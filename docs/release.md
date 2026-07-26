@@ -28,12 +28,40 @@ It runs on:
 The workflow:
 
 - installs dependencies with `pnpm install --frozen-lockfile`;
+- verifies the release tag matches the `package.json` version;
 - runs `pnpm release:check`;
 - builds the macOS Apple Silicon Tauri DMG;
 - creates a draft prerelease with `tauri-apps/tauri-action`;
-- uploads the DMG as a workflow artifact.
+- uploads the DMG as a workflow artifact and `latest.json` to the release.
 
 Keep GitHub releases as drafts until manual QA is complete.
+
+## Updater signing secrets
+
+The in-app updater checks
+`https://github.com/thedavidweng/OpenLoop/releases/latest/download/latest.json`
+and only installs updates signed by the minisign key pair whose public half
+lives in `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
+
+Because `bundle.createUpdaterArtifacts` is enabled, the release build **fails
+loudly** unless these repository secrets are configured:
+
+- `TAURI_SIGNING_PRIVATE_KEY` — the minisign private key matching the pubkey.
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty string if none).
+
+Generate a pair with `pnpm tauri signer generate` if the private key is lost —
+but note that rotating the key orphans existing installs (they will reject
+updates signed by the new key), so prefer recovering the original.
+
+## Prerelease semantics and the updater
+
+GitHub's `/releases/latest` — the URL the in-app updater polls — only resolves
+the newest release that is neither a draft nor a prerelease. The workflow
+therefore derives the prerelease flag from the tag: suffixed tags
+(`v0.3.0-alpha.1`, `v0.3.0-rc.1`) publish as prereleases the updater ignores;
+plain tags (`v0.3.0`) publish as full releases the updater picks up once the
+draft is published. Existing installs only auto-update after the first plain
+tag ships.
 
 ## Manual QA gate
 

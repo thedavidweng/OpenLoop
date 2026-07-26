@@ -109,9 +109,7 @@ function parseLcov(lcovPath) {
  * Uses --unified=0 so only changed lines appear (no context).
  */
 function getDiffAddedLines(baseCommit) {
-  const diff = git(
-    `git diff --no-color --unified=0 ${baseCommit}...HEAD`,
-  );
+  const diff = git(`git diff --no-color --unified=0 ${baseCommit}...HEAD`);
 
   const result = new Map();
   let currentFile = null;

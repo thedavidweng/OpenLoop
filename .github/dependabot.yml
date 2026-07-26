@@ -4,25 +4,50 @@ updates:
     directory: "/src-tauri"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "rust"
+    commit-message:
+      prefix: "chore(deps):"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      production-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "patch"
     labels:
       - "dependencies"
       - "javascript"
+    commit-message:
+      prefix: "chore(deps):"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "ci"
+    commit-message:
+      prefix: "ci(deps):"
+    cooldown:
+      default-days: 7

@@ -1,0 +1,47 @@
+pre-commit:
+  parallel: true
+  commands:
+    oxfmt:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,yml,yaml}"
+      # Paths oxfmt fully ignores (see .oxfmtrc.json ignorePatterns) must not
+      # reach oxfmt: given only ignored paths, oxfmt exits non-zero with
+      # "Expected at least one target file" and blocks the commit. lefthook v2
+      # matches `exclude` as glob patterns — a regex here silently matches
+      # nothing, so keep these as globs and let lefthook skip the command when
+      # nothing survives.
+      exclude:
+        - "pnpm-lock.yaml"
+        - "src-tauri/**"
+        - "docs/**"
+        - "dist/**"
+        - "coverage/**"
+      # sh -c with positional args sidesteps word-splitting differences
+      # between sh and zsh parents; zero args is a clean pass, which also
+      # covers any future ignore rule that empties the list.
+      run: 'sh -c ''[ $# -eq 0 ] || pnpm exec oxfmt "$@"'' -- {staged_files}'
+      stage_fixed: true
+    cargo-fmt:
+      glob: "*.rs"
+      run: cd src-tauri && cargo fmt
+      stage_fixed: true
+
+# Mirrors CI checks (ci.yml) so local pushes fail the same way CI would.
+# pre-commit only formats staged files; these checks verify the entire repo
+# to catch files that slipped through a prior --no-verify or partial staging.
+pre-push:
+  parallel: true
+  commands:
+    format-check:
+      run: node --run format:check
+    cargo-fmt-check:
+      run: cd src-tauri && cargo fmt --check
+    lint:
+      run: node --run lint
+    # Patch coverage mirrors the Codecov patch check (codecov.yml patch
+    # target 80%). Skip on the integration branches: there is no feature
+    # diff to measure against `main`, so the check has nothing to score.
+    patch-coverage:
+      skip:
+        - ref: main
+        - ref: master
+      run: pnpm coverage:patch

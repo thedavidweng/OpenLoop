@@ -70,9 +70,7 @@ function main() {
   }
 
   if (failures === 0) {
-    console.log(
-      `✓ ${files.length} release note(s) pass all Gatekeeper checks.`
-    );
+    console.log(`✓ ${files.length} release note(s) pass all Gatekeeper checks.`);
     process.exit(0);
   }
 
@@ -81,4 +79,3 @@ function main() {
 }
 
 main();
-

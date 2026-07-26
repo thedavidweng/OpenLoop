@@ -12,3 +12,11 @@ minimumReleaseAgeExclude:
   - react@19.2.7
   - vite@8.0.16
   - vitest@4.1.8
+
+onlyBuiltDependencies:
+  - esbuild
+  - lefthook
+
+allowBuilds:
+  esbuild: true
+  lefthook: true

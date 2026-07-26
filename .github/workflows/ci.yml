@@ -19,13 +19,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - name: Setup Node
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: pnpm
@@ -58,14 +58,14 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
       - name: Upload coverage report
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-report
           path: coverage/
@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: coverage
@@ -90,10 +90,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
         with:
           toolchain: 1.96.0
           components: rustfmt
@@ -107,20 +107,20 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node
-        uses: actions/setup-node@v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
         with:
           toolchain: 1.96.0
 
       - name: Cache Cargo registry
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index
@@ -131,7 +131,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Cache sidecar downloads
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: src-tauri/binaries/.cache
           key: ${{ runner.os }}-uv-sidecars-${{ hashFiles('scripts/prepare-sidecars.mjs') }}
@@ -159,10 +159,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v2
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           manifest-path: src-tauri/Cargo.toml
 
@@ -173,14 +173,38 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check PR title
-        uses: amannn/action-semantic-pull-request@v6
+        uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  workflow-lint:
+    name: Workflow lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      security-events: write # Needed by zizmor-action to upload SARIF results.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: actionlint
+        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
+        with:
+          actionlint_flags: ""
+
+      - name: zizmor
+        uses: zizmorcore/zizmor-action@6599ee8b7a49aef6a770f63d261d214911a7ce02 # v0.6.0
+        with:
+          persona: pedantic
+          min-severity: low
 
   validate:
     name: Validate
     runs-on: ubuntu-latest
-    needs: [frontend, rust-fmt-check, rust-test, cargo-deny, pr-lint]
+    needs: [frontend, rust-fmt-check, rust-test, cargo-deny, pr-lint, workflow-lint]
     if: ${{ always() }}
     timeout-minutes: 5
     steps:
@@ -191,10 +215,12 @@ jobs:
           echo "rust-test: ${{ needs['rust-test'].result }}"
           echo "cargo-deny: ${{ needs['cargo-deny'].result }}"
           echo "pr-lint: ${{ needs['pr-lint'].result }}"
+          echo "workflow-lint: ${{ needs['workflow-lint'].result }}"
           test "${{ needs.frontend.result }}" = "success"
           test "${{ needs['rust-fmt-check'].result }}" = "success"
           test "${{ needs['rust-test'].result }}" = "success"
           test "${{ needs['cargo-deny'].result }}" = "success"
+          test "${{ needs['workflow-lint'].result }}" = "success"
           # pr-lint only runs on PRs; skip on push
           if [ "${{ needs.pr-lint.result }}" != "skipped" ]; then
             test "${{ needs.pr-lint.result }}" = "success"

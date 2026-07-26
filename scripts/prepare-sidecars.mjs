@@ -1,11 +1,4 @@
-import {
-  createWriteStream,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { chmod, copyFile, mkdtemp, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { get } from "node:https";
@@ -102,9 +95,7 @@ function download(url, destination) {
 
       if (response.statusCode !== 200) {
         response.resume();
-        reject(
-          new Error(`Download failed: ${url} returned ${response.statusCode}`),
-        );
+        reject(new Error(`Download failed: ${url} returned ${response.statusCode}`));
         return;
       }
 

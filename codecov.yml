@@ -12,6 +12,19 @@ coverage:
   round: down
   range: "60...100"
 
+  ignore:
+    # Tauri IPC thin wrappers — single-line invoke() calls; testing them
+    # validates the Tauri framework, not our logic.
+    - src/app/lib/api.ts
+    # App entry point — bootstraps React + Tauri, not testable in jsdom.
+    - src/main.tsx
+    # i18next bootstrap — side-effectful init module, no branching logic.
+    - src/app/lib/i18n.ts
+    # Runtime hooks that require the real Tauri window/menu bridge; unit-test
+    # mocks would only exercise the mock, not meaningful behavior.
+    - src/app/runtime/app-ready-runtime.ts
+    - src/app/runtime/menu-runtime.ts
+
 flags:
   frontend:
     paths:

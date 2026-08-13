@@ -32,7 +32,7 @@
     "prepare": "lefthook install"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.7",
+    "@tanstack/react-virtual": "^3.14.9",
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-dialog": "^2.7.2",
@@ -42,8 +42,8 @@
     "@tauri-apps/plugin-updater": "^2.10.1",
     "i18next": "^26.3.6",
     "lucide-react": "^1.27.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-i18next": "^17.0.10",
     "zustand": "^5.0.14"
   },
@@ -53,8 +53,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.2",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^29.1.1",

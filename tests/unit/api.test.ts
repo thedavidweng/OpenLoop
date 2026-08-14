@@ -510,6 +510,18 @@ describe("listModelCatalog", () => {
   });
 });
 
+describe("listModelRegistry", () => {
+  it("calls 'list_model_registry' with no args", async () => {
+    const registry = { engines: [], packs: [], slots: [] };
+    mockInvoke.mockResolvedValue(registry);
+
+    const result = await api.listModelRegistry();
+
+    expect(mockInvoke).toHaveBeenCalledWith("list_model_registry");
+    expect(result).toBe(registry);
+  });
+});
+
 describe("getModelStatus", () => {
   it("calls 'get_model_status' with no args", async () => {
     const statuses = [{ variant: "turbo", state: "ready" }] as any;

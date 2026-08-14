@@ -7,6 +7,7 @@ pub mod file_store;
 pub mod generation_task;
 pub mod history;
 pub mod model_bootstrap;
+pub mod model_catalog;
 pub mod model_manager;
 pub mod network_log;
 pub mod observability;

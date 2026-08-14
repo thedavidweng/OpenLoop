@@ -6,6 +6,20 @@ export type BpmMode = "auto" | "manual";
 export type RecommendedProfile = "low-memory" | "standard" | "quality" | "unsupported";
 
 export type ModelVariant = "lite" | "turbo" | "pro";
+export type EngineId = "ace-step" | "minimax-music3";
+export type EngineRuntimeKind = "ace-step-http" | "unbound";
+export type PackInstallPolicy = "installable" | "announced";
+export type CatalogPackId =
+  | "ace-step/standard"
+  | "ace-step/xl"
+  | "minimax-music3/mlx-8bit"
+  | "minimax-music3/turbo";
+export type CatalogSlotId =
+  | "ace-step/lite"
+  | "ace-step/turbo"
+  | "ace-step/pro"
+  | "minimax-music3/mlx-8bit"
+  | "minimax-music3/turbo";
 export type TaskType = "text2music" | "cover" | "repaint" | "lego" | "extract" | "complete";
 export type LmBackend = "pt" | "vllm" | "mlx";
 
@@ -214,9 +228,55 @@ export type GenerationState = {
   progressPercent?: number;
 };
 
+export type PackCapabilities = {
+  supportsBpm: boolean;
+  supportsKey: boolean;
+  supportsTimeSignature: boolean;
+  supportsThinking: boolean;
+  supportsLyrics: boolean;
+  promptRole: "style-and-lyrics" | "caption-and-lyrics";
+  maxDurationSeconds: number;
+};
+
+export type EngineDescriptor = {
+  id: EngineId;
+  label: string;
+  description: string;
+  runtime: EngineRuntimeKind;
+};
+
+export type ModelPackDescriptor = {
+  id: CatalogPackId;
+  engine: EngineId;
+  label: string;
+  description: string;
+  installPolicy: PackInstallPolicy;
+  estimatedSizeBytes: number;
+  recommendedMemoryGb: number;
+  capabilities: PackCapabilities;
+  acePack: "standard" | "xl" | null;
+};
+
+export type ModelSlotDescriptor = {
+  id: CatalogSlotId;
+  packId: CatalogPackId;
+  engine: EngineId;
+  label: string;
+  description: string;
+  aceVariant: ModelVariant | null;
+  selectable: boolean;
+};
+
+export type ModelRegistry = {
+  engines: EngineDescriptor[];
+  packs: ModelPackDescriptor[];
+  slots: ModelSlotDescriptor[];
+};
+
 export type AppSettings = {
   profile: RecommendedProfile;
   modelVariant: ModelVariant | null;
+  selectedModelId?: CatalogSlotId | string | null;
   downloadedModels: ModelVariant[];
   outputDirectory: string | null;
   backendPort: number;

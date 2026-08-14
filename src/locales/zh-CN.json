@@ -57,7 +57,8 @@
     "title": "设置",
     "description": "管理语言、模型和默认生成参数。",
     "models": "模型",
-    "modelsDescription": "下载官方 ACE-Step 1.5 权重包，跟踪进度，并删除不再需要的副本。",
+    "modelsDescription": "下载、管理和切换引擎与模型包。当前已接入 ACE-Step 1.5；已登记的引擎会先出现在目录里，方便以后的 Turbo 包直接挂上。",
+    "aceEngineDescription": "本机 MLX 生成。Lite、Turbo、XL Turbo 是 Standard / XL 权重包上的运行槽位。",
     "modelPacks": "模型权重包",
     "runProfiles": "运行配置档",
     "defaults": "默认值",
@@ -191,7 +192,9 @@
     "chooseModel": "选择模型",
     "openSettings": "打开设置",
     "active": "正在使用",
-    "ready_short": "可用"
+    "ready_short": "可用",
+    "announced": "已登记",
+    "recommendedMemory": "建议 {{gb}} GB 内存"
   },
   "modelPacks": {
     "standard": {

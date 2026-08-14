@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsSectionCard } from "@/app/components/settings/SettingsSectionCard";
+import { CatalogPackCard } from "@/app/components/settings/SettingsOverlay/CatalogPackCard";
 import { ModelPackCard } from "@/app/components/settings/SettingsOverlay/ModelPackCard";
 import { ModelVariantCard } from "@/app/components/settings/SettingsOverlay/ModelVariantCard";
+import { DEFAULT_MODEL_REGISTRY, packsForEngine } from "@/app/lib/model-catalog";
 import {
   MODEL_PACKS,
   aggregatePackStatus,
@@ -16,6 +18,8 @@ import type { ModelVariant } from "@/app/lib/types";
 export function ModelsSection() {
   const { t } = useTranslation();
   const modelStatuses = useGenerationStore((state) => state.modelStatuses);
+  const modelRegistry =
+    useGenerationStore((state) => state.modelRegistry) ?? DEFAULT_MODEL_REGISTRY;
   const settings = useGenerationStore((state) => state.settings);
   const selectModelVariant = useGenerationStore((state) => state.selectModelVariant);
   const downloadModelVariant = useGenerationStore((state) => state.downloadModelVariant);
@@ -26,6 +30,8 @@ export function ModelsSection() {
   );
 
   const [busyVariant, setBusyVariant] = useState<ModelVariant | null>(null);
+  const acePacks = packsForEngine(modelRegistry, "ace-step");
+  const otherEngines = modelRegistry.engines.filter((engine) => engine.id !== "ace-step");
 
   return (
     <SettingsSectionCard
@@ -44,16 +50,24 @@ export function ModelsSection() {
         </button>
       }
     >
-      <div className="space-y-3">
+      <div className="space-y-2">
+        <p className="text-[12px] font-semibold text-[var(--color-text)]">ACE-Step 1.5</p>
+        <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
+          {t("settings.aceEngineDescription")}
+        </p>
+      </div>
+
+      <div className="mt-4 space-y-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-dim)]">
           {t("settings.modelPacks")}
         </p>
-        {(Object.keys(MODEL_PACKS) as ModelPackId[]).map((packId) => {
+        {acePacks.map((pack) => {
+          const packId = (pack.acePack ?? "standard") as ModelPackId;
           const packStatus = aggregatePackStatus(modelStatuses, packId);
           const primary = primaryVariantForPack(packId);
           return (
             <ModelPackCard
-              key={packId}
+              key={pack.id}
               packId={packId}
               state={packStatus.state}
               downloadedBytes={packStatus.downloadedBytes}
@@ -112,6 +126,20 @@ export function ModelsSection() {
           );
         })}
       </div>
+
+      {otherEngines.map((engine) => (
+        <div key={engine.id} className="mt-8 space-y-3">
+          <div className="space-y-2">
+            <p className="text-[12px] font-semibold text-[var(--color-text)]">{engine.label}</p>
+            <p className="text-[11px] leading-5 text-[var(--color-text-dim)]">
+              {engine.description}
+            </p>
+          </div>
+          {packsForEngine(modelRegistry, engine.id).map((pack) => (
+            <CatalogPackCard key={pack.id} pack={pack} />
+          ))}
+        </div>
+      ))}
     </SettingsSectionCard>
   );
 }

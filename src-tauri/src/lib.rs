@@ -132,6 +132,7 @@ pub fn run() {
             commands::settings::remove_cli_from_path,
             commands::settings::is_cli_in_path,
             commands::models::list_model_catalog,
+            commands::models::list_model_registry,
             commands::models::get_model_status,
             commands::models::download_model,
             commands::models::delete_model,

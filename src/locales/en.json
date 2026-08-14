@@ -57,7 +57,8 @@
     "title": "Settings",
     "description": "Manage language, models, and default generation preferences.",
     "models": "Models",
-    "modelsDescription": "Download official ACE-Step 1.5 weight packs, watch progress, and remove the ones you don't need.",
+    "modelsDescription": "Download, manage, and switch Engines and Model Packs. ACE-Step 1.5 is bound today; announced families appear so a future pack can attach without a Settings rewrite.",
+    "aceEngineDescription": "Local MLX generation. Lite, Turbo, and XL Turbo are Model Slots on the Standard and XL packs.",
     "modelPacks": "Model packs",
     "runProfiles": "Runtime profiles",
     "defaults": "Defaults",
@@ -191,7 +192,9 @@
     "chooseModel": "Choose model",
     "openSettings": "Open settings",
     "active": "Active",
-    "ready_short": "Ready"
+    "ready_short": "Ready",
+    "announced": "Announced",
+    "recommendedMemory": "{{gb}} GB recommended"
   },
   "modelPacks": {
     "standard": {

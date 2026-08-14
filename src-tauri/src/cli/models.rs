@@ -9,6 +9,7 @@ use crate::{
     models::{errors::AppResult, settings::ModelVariant},
     services::{
         model_bootstrap::{checkpoints_dir_for, descriptor_for},
+        model_catalog::{self, PackInstallPolicy},
         model_manager::{read_manifest, ModelManager, ACE_MODEL_DESCRIPTORS},
     },
 };
@@ -63,32 +64,58 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
         }
     }
 
+    let active_slot = model_catalog::selected_slot_id(&settings);
+
     if json {
         let mut items = Vec::new();
         for descriptor in ACE_MODEL_DESCRIPTORS {
             let is_downloaded = settings.downloaded_models.contains(&descriptor.variant);
-            let is_active = settings.model_variant == Some(descriptor.variant);
+            let slot = model_catalog::slot_for_ace_variant(descriptor.variant);
+            let is_active = active_slot.as_deref() == Some(slot.id);
 
             items.push(serde_json::json!({
+                "id": slot.id,
+                "engine": slot.engine.as_str(),
+                "pack": slot.pack_id,
                 "variant": descriptor.variant.as_str(),
                 "size_gb": descriptor.recommended_memory_gb,
                 "status": if is_downloaded { "downloaded" } else { "not_downloaded" },
                 "active": is_active,
+                "selectable": slot.selectable,
+            }));
+        }
+        for pack in model_catalog::CATALOG_PACKS {
+            if pack.ace_pack.is_some() {
+                continue;
+            }
+            items.push(serde_json::json!({
+                "id": pack.id,
+                "engine": pack.engine.as_str(),
+                "pack": pack.id,
+                "variant": serde_json::Value::Null,
+                "size_gb": pack.recommended_memory_gb,
+                "status": match pack.install_policy {
+                    PackInstallPolicy::Installable => "not_downloaded",
+                    PackInstallPolicy::Announced => "announced",
+                },
+                "active": active_slot.as_deref() == Some(pack.id),
+                "selectable": false,
             }));
         }
         let output = serde_json::to_string_pretty(&items).map_err(|e| cli_error(e.to_string()))?;
         super::json_output(&output);
     } else {
         println!(
-            "{:<10} {:<8} {:<12} Description",
-            r#"Variant"#, r#"Size"#, r#"Status"#
+            "{:<18} {:<24} {:<12} Description",
+            r#"Engine"#, r#"Slot"#, r#"Status"#
         );
-        let separator = "-".repeat(70);
+        let separator = "-".repeat(86);
         println!("{separator}");
 
         for descriptor in ACE_MODEL_DESCRIPTORS {
             let is_downloaded = settings.downloaded_models.contains(&descriptor.variant);
-            let is_active = settings.model_variant == Some(descriptor.variant);
+            let slot = model_catalog::slot_for_ace_variant(descriptor.variant);
+            let is_active = active_slot.as_deref() == Some(slot.id);
 
             let status = if is_active {
                 "● active"
@@ -98,14 +125,24 @@ fn execute_list(state: &AppState, json: bool) -> AppResult<()> {
                 "—"
             };
 
-            let size = format!("{}GB", descriptor.recommended_memory_gb);
-
             println!(
-                "{:<10} {:<8} {:<12} {}",
-                descriptor.variant.label(),
-                size,
+                "{:<18} {:<24} {:<12} {}",
+                slot.engine.as_str(),
+                slot.id,
                 status,
                 descriptor.description
+            );
+        }
+        for pack in model_catalog::CATALOG_PACKS {
+            if pack.ace_pack.is_some() {
+                continue;
+            }
+            println!(
+                "{:<18} {:<24} {:<12} {}",
+                pack.engine.as_str(),
+                pack.id,
+                "announced",
+                pack.description
             );
         }
     }

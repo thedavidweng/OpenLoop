@@ -49,6 +49,7 @@ impl std::fmt::Display for ModelVariant {
 pub struct AppSettings {
     pub profile: RecommendedProfile,
     pub model_variant: Option<ModelVariant>,
+    pub selected_model_id: Option<String>,
     pub downloaded_models: Vec<ModelVariant>,
     pub output_directory: Option<String>,
     pub backend_port: u16,
@@ -86,6 +87,7 @@ impl Default for AppSettings {
         Self {
             profile: RecommendedProfile::Standard,
             model_variant: None,
+            selected_model_id: None,
             downloaded_models: Vec::new(),
             output_directory: None,
             backend_port: 8001,
@@ -162,6 +164,7 @@ fn mirrors_to_setting_string(mirrors: &[String]) -> Result<String, serde_json::E
 pub enum SettingKey {
     Profile,
     ModelVariant,
+    SelectedModelId,
     DownloadedModels,
     OutputDirectory,
     BackendPort,
@@ -183,6 +186,7 @@ impl SettingKey {
         match key {
             "profile" => Ok(Self::Profile),
             "modelVariant" => Ok(Self::ModelVariant),
+            "selectedModelId" => Ok(Self::SelectedModelId),
             "downloadedModels" => Ok(Self::DownloadedModels),
             "outputDirectory" => Ok(Self::OutputDirectory),
             "backendPort" => Ok(Self::BackendPort),
@@ -207,6 +211,7 @@ impl SettingKey {
         match self {
             Self::Profile => "profile",
             Self::ModelVariant => "modelVariant",
+            Self::SelectedModelId => "selectedModelId",
             Self::DownloadedModels => "downloadedModels",
             Self::OutputDirectory => "outputDirectory",
             Self::BackendPort => "backendPort",
@@ -232,6 +237,7 @@ impl SettingKey {
                 | Self::BackendWorkingDirectory
                 | Self::LogDirectory
                 | Self::ModelVariant
+                | Self::SelectedModelId
                 | Self::ModelMirror
         )
     }
@@ -248,6 +254,11 @@ impl AppSettings {
             SettingKey::ModelVariant => {
                 self.model_variant = serde_json::from_value(value).map_err(|error| {
                     AppError::validation_failed(format!("invalid modelVariant value: {error}"))
+                })?;
+            }
+            SettingKey::SelectedModelId => {
+                self.selected_model_id = serde_json::from_value(value).map_err(|error| {
+                    AppError::validation_failed(format!("invalid selectedModelId value: {error}"))
                 })?;
             }
             SettingKey::DownloadedModels => {
@@ -335,6 +346,10 @@ impl AppSettings {
             ("profile", serde_json::to_string(&self.profile)),
             ("modelVariant", serde_json::to_string(&self.model_variant)),
             (
+                "selectedModelId",
+                serde_json::to_string(&self.selected_model_id),
+            ),
+            (
                 "downloadedModels",
                 serde_json::to_string(&self.downloaded_models),
             ),
@@ -407,6 +422,7 @@ mod tests {
         let keys = [
             "profile",
             "modelVariant",
+            "selectedModelId",
             "downloadedModels",
             "outputDirectory",
             "backendPort",
@@ -449,6 +465,7 @@ mod tests {
         assert!(SettingKey::BackendWorkingDirectory.impacts_backend_startup());
         assert!(SettingKey::LogDirectory.impacts_backend_startup());
         assert!(SettingKey::ModelVariant.impacts_backend_startup());
+        assert!(SettingKey::SelectedModelId.impacts_backend_startup());
         assert!(SettingKey::ModelMirror.impacts_backend_startup());
     }
 

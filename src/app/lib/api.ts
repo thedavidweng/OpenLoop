@@ -13,6 +13,7 @@ import type {
   GenerationRunResult,
   GenerationWaveform,
   ModelCatalogItem,
+  ModelRegistry,
   ModelStatusSnapshot,
   GenerationRecord,
   GenerationRequest,
@@ -175,6 +176,10 @@ export function listenToGenerationEvents(onEvent: (event: GenerationEvent) => vo
 
 export function listModelCatalog(): Promise<ModelCatalogItem[]> {
   return invoke<ModelCatalogItem[]>("list_model_catalog");
+}
+
+export function listModelRegistry(): Promise<ModelRegistry> {
+  return invoke<ModelRegistry>("list_model_registry");
 }
 
 export function getModelStatus(): Promise<ModelStatusSnapshot[]> {

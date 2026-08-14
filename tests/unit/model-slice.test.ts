@@ -20,6 +20,7 @@ const mockApi = {
   clearPartialDownloads: vi.fn(),
   deleteAllModels: vi.fn(),
   listModelCatalog: vi.fn(),
+  listModelRegistry: vi.fn(() => Promise.resolve({ engines: [], packs: [], slots: [] })),
   getModelStatus: vi.fn(),
   getBackendProvisionStatus: vi.fn(),
   provisionBackend: vi.fn(),
@@ -349,6 +350,7 @@ describe("downloadModelVariant", () => {
       await store.getState().downloadModelVariant("turbo");
 
       expect(mockApi.setSetting).toHaveBeenCalledWith("modelVariant", "turbo");
+      expect(mockApi.setSetting).toHaveBeenCalledWith("selectedModelId", "ace-step/turbo");
       expect(mockApi.setSetting).toHaveBeenCalledWith("profile", "standard");
       expect(mockApi.setSetting).toHaveBeenCalledWith("defaultThinking", expect.any(Boolean));
     });
@@ -658,6 +660,7 @@ describe("selectModelVariant", () => {
       await store.getState().selectModelVariant("pro");
 
       expect(mockApi.setSetting).toHaveBeenCalledWith("modelVariant", "pro");
+      expect(mockApi.setSetting).toHaveBeenCalledWith("selectedModelId", "ace-step/pro");
       expect(mockApi.setSetting).toHaveBeenCalledWith("profile", "quality");
       expect(mockApi.setSetting).toHaveBeenCalledWith("defaultThinking", expect.any(Boolean));
     });

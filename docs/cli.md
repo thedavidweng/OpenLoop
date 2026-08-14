@@ -80,16 +80,18 @@ openloop pull pro
 
 ### `openloop models`
 
-Manage model variants.
+List the first-party Engine / Model Pack catalog, and manage installable ACE-Step packs.
 
 ```bash
-openloop models                           # list models (default)
-openloop models download turbo            # download a variant
+openloop models                           # list engines, slots, and announced packs
+openloop models download turbo            # download an ACE-Step variant
 openloop models delete turbo              # delete a downloaded variant
 openloop models cancel turbo              # cancel an ongoing download
 openloop models clear-partial turbo       # remove partial download artifacts
 openloop models delete-all                # delete all downloaded models
 ```
+
+Announced families (for example `minimax-music3/turbo`) appear in the list so a future pack can keep a stable id. They are not downloadable until an Engine adapter is bound.
 
 | Flag     | Description                    |
 | -------- | ------------------------------ |

@@ -10,6 +10,7 @@ import type {
   GenerationRequest,
   GenerationState,
   ModelCatalogItem,
+  ModelRegistry,
   ModelStatusSnapshot,
   ModelVariant,
   ModelBootstrapStatus,
@@ -22,6 +23,7 @@ export interface GenerationStore {
   deviceInfo: DeviceInfo | null;
   bootstrapStatus: ModelBootstrapStatus;
   modelCatalog: ModelCatalogItem[];
+  modelRegistry: ModelRegistry;
   modelStatuses: ModelStatusSnapshot[];
   backendProvisionStatus: BackendProvisionStatus;
   isSettingsOpen: boolean;

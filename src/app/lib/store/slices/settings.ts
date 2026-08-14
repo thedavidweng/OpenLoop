@@ -11,6 +11,7 @@ import {
 import { computeValidationState } from "@/app/lib/validation-helpers";
 import { DEFAULT_APP_SETTINGS, resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 import { expandDownloadedVariantsFromStatuses } from "@/app/lib/model-packs";
+import { DEFAULT_MODEL_REGISTRY } from "@/app/lib/model-catalog";
 
 import i18next, { detectSystemLanguage, tr } from "@/app/lib/i18n";
 import {
@@ -127,6 +128,7 @@ export function createSettingsSlice(
           persistedHistory,
           deviceInfo,
           modelCatalog,
+          modelRegistry,
           rawModelStatuses,
           activeTasks,
           projects,
@@ -135,6 +137,7 @@ export function createSettingsSlice(
           api.listGenerations(),
           api.getDeviceInfo(),
           api.listModelCatalog(),
+          api.listModelRegistry().catch(() => DEFAULT_MODEL_REGISTRY),
           api.getModelStatus(),
           api.listActiveGenerationTasks(),
           api.listProjects(),
@@ -164,6 +167,7 @@ export function createSettingsSlice(
           hydrated: true,
           deviceInfo,
           modelCatalog,
+          modelRegistry,
           modelStatuses,
           settings: mergedSettings,
           form: nextForm,

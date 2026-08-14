@@ -18,6 +18,7 @@ import { computeValidationState } from "@/app/lib/validation-helpers";
 import { resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 import { tr } from "@/app/lib/i18n";
 import { MODEL_CATALOG } from "./model-catalog";
+import { DEFAULT_MODEL_REGISTRY, slotIdForVariant } from "@/app/lib/model-catalog";
 import { createBackendProvisionActions } from "./backend-provision-actions";
 import { computeModelStatusPatch } from "./model-status-apply";
 import { createModelSyncActions } from "./model-sync-actions";
@@ -32,6 +33,7 @@ export function createModelSlice(
       message: tr("status.chooseAndDownload"),
     } as const,
     modelCatalog: MODEL_CATALOG,
+    modelRegistry: DEFAULT_MODEL_REGISTRY,
     modelStatuses: [],
     backendProvisionStatus: {
       state: "not_installed",
@@ -57,6 +59,7 @@ export function createModelSlice(
         get().applyModelStatus(initialStatus);
         await Promise.all([
           api.setSetting("modelVariant", variant),
+          api.setSetting("selectedModelId", slotIdForVariant(variant)),
           api.setSetting("profile", profileForVariant(variant)),
           api.setSetting(
             "defaultThinking",
@@ -70,6 +73,7 @@ export function createModelSlice(
             ...state.settings,
             profile,
             modelVariant: variant,
+            selectedModelId: slotIdForVariant(variant),
             defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
           },
           form: nextForm,
@@ -85,6 +89,7 @@ export function createModelSlice(
         ...get().settings,
         profile: profileForVariant(variant),
         modelVariant: variant,
+        selectedModelId: slotIdForVariant(variant),
         downloadedModels: nextDownloadedModels,
       };
       const nextForm = applyModelVariantToForm(
@@ -162,6 +167,7 @@ export function createModelSlice(
       if (api.isTauriRuntime()) {
         await Promise.all([
           api.setSetting("modelVariant", variant),
+          api.setSetting("selectedModelId", slotIdForVariant(variant)),
           api.setSetting("profile", profile),
           api.setSetting("defaultThinking", PROFILE_FORM_PRESETS[profile].thinking),
         ]);
@@ -174,6 +180,7 @@ export function createModelSlice(
         profile,
         defaultThinking: PROFILE_FORM_PRESETS[profile].thinking,
         modelVariant: variant,
+        selectedModelId: slotIdForVariant(variant),
       };
       const nextForm = applyModelVariantToForm(applyProfilePreset(get().form, profile), variant);
       set({

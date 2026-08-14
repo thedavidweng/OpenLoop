@@ -25,6 +25,11 @@ This is a single-context repo:
 └── src/
 ```
 
+New **Engines**, **Model Packs**, and **Model Slots** are registered in
+`src-tauri/src/services/model_catalog/` (Rust source of truth) and mirrored in
+`src/app/lib/model-catalog.ts`. Do not hard-code a new family in commands, the
+CLI router, or Settings when listing or switching.
+
 ## Use the glossary's vocabulary
 
 When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.

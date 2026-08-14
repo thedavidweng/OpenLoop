@@ -3,6 +3,7 @@ import type { StoreApi } from "zustand";
 import type { AppSettings, BackendProvisionStatus } from "@/app/lib/types";
 import * as api from "@/app/lib/api";
 import { expandDownloadedVariantsFromStatuses } from "@/app/lib/model-packs";
+import { DEFAULT_MODEL_REGISTRY } from "@/app/lib/model-catalog";
 import { localizeModelStatuses } from "@/app/lib/errors";
 import { resolveModelBootstrapStatus } from "@/app/lib/model-bootstrap";
 
@@ -48,8 +49,9 @@ export function createModelSyncActions(
 
     refreshModelStatuses: async () => {
       if (!api.isTauriRuntime()) return;
-      const [modelCatalog, rawModelStatuses, backendProvision] = await Promise.all([
+      const [modelCatalog, modelRegistry, rawModelStatuses, backendProvision] = await Promise.all([
         api.listModelCatalog(),
+        api.listModelRegistry().catch(() => DEFAULT_MODEL_REGISTRY),
         api.getModelStatus(),
         api
           .getBackendProvisionStatus()
@@ -59,6 +61,7 @@ export function createModelSyncActions(
       const downloadedModels = expandDownloadedVariantsFromStatuses(modelStatuses);
       set((state) => ({
         modelCatalog,
+        modelRegistry,
         modelStatuses,
         backendProvisionStatus: backendProvision,
         settings: {

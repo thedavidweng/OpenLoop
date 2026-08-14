@@ -623,8 +623,14 @@ describe("ModelsSection", () => {
   it("renders variant cards for lite, turbo, and pro", () => {
     render(<ModelsSection />);
     expect(screen.getByText("Lite")).toBeTruthy();
-    expect(screen.getByText("Turbo")).toBeTruthy();
+    expect(screen.getAllByText("Turbo").length).toBeGreaterThan(0);
     expect(screen.getByText("XL Turbo")).toBeTruthy();
+  });
+
+  it("renders announced MiniMax Music 3 packs from the catalog", () => {
+    render(<ModelsSection />);
+    expect(screen.getByText("MiniMax Music 3")).toBeTruthy();
+    expect(screen.getAllByText("model.announced").length).toBeGreaterThan(0);
   });
 
   it("renders pack cards for standard and xl", () => {

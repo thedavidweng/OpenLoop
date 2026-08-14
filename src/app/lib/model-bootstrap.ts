@@ -18,6 +18,7 @@ import type {
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   profile: "standard",
   modelVariant: null,
+  selectedModelId: null,
   downloadedModels: [],
   outputDirectory: null,
   backendPort: 8001,

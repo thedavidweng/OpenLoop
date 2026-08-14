@@ -13,7 +13,10 @@ use crate::{
         errors::{AppError, AppResult},
         settings::{AppSettings, ModelVariant},
     },
-    services::model_manager::{AceModelDescriptor, ACE_MODEL_DESCRIPTORS},
+    services::{
+        model_catalog::{self, EngineRuntimeKind},
+        model_manager::{AceModelDescriptor, ACE_MODEL_DESCRIPTORS},
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -27,9 +30,7 @@ pub fn prepare_runtime_layout(
     app_data_dir: &Path,
     settings: &AppSettings,
 ) -> AppResult<RuntimeLayout> {
-    let selected_variant = settings.model_variant.ok_or_else(|| {
-        AppError::model_not_found("select and download a model before starting the backend")
-    })?;
+    let selected_variant = selected_ace_variant(settings)?;
     let descriptor = descriptor_for(selected_variant)?;
     let working_directory = runtime_dir_for(app_data_dir, settings);
     let checkpoints_directory = checkpoints_dir_for(app_data_dir, settings);
@@ -52,6 +53,32 @@ pub fn prepare_runtime_layout(
         descriptor,
         working_directory,
         checkpoints_directory,
+    })
+}
+
+pub fn selected_ace_variant(settings: &AppSettings) -> AppResult<ModelVariant> {
+    if let Some(slot_id) = model_catalog::selected_slot_id(settings) {
+        if let Some(slot) = model_catalog::resolve_slot_id(&slot_id) {
+            let runtime = model_catalog::engine(slot.engine)
+                .map(|engine| engine.runtime)
+                .unwrap_or(EngineRuntimeKind::Unbound);
+            if !runtime.is_bound() {
+                return Err(AppError::model_not_found(format!(
+                    "engine '{}' is in the catalog but has no Local Backend adapter yet",
+                    slot.engine.as_str()
+                )));
+            }
+            if let Some(variant) = slot.ace_variant {
+                return Ok(variant);
+            }
+        } else {
+            return Err(AppError::model_not_found(format!(
+                "unknown model slot {slot_id}"
+            )));
+        }
+    }
+    settings.model_variant.ok_or_else(|| {
+        AppError::model_not_found("select and download a model before starting the backend")
     })
 }
 
@@ -180,6 +207,7 @@ pub fn ensure_runtime_checkpoints_link(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::settings::ModelVariant;
 
     #[test]
     #[cfg(unix)]
@@ -217,5 +245,18 @@ mod tests {
         let error = prepare_runtime_layout(temp.path(), &settings).expect_err("model required");
 
         assert_eq!(error.code, "MODEL_NOT_FOUND");
+    }
+
+    #[test]
+    fn unbound_catalog_engine_cannot_prepare_runtime() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let mut settings = AppSettings::default();
+        settings.selected_model_id = Some("minimax-music3/turbo".to_owned());
+        settings.model_variant = Some(ModelVariant::Turbo);
+
+        let error = prepare_runtime_layout(temp.path(), &settings).expect_err("unbound engine");
+
+        assert_eq!(error.code, "MODEL_NOT_FOUND");
+        assert!(error.details.unwrap_or_default().contains("minimax-music3"));
     }
 }

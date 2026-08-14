@@ -27,6 +27,7 @@ vi.mock("@/app/lib/api", () => ({
   getDeviceInfo: vi.fn(() => Promise.resolve(null)),
   listGenerations: vi.fn(() => Promise.resolve([])),
   listModelCatalog: vi.fn(() => Promise.resolve([])),
+  listModelRegistry: vi.fn(() => Promise.resolve({ engines: [], packs: [], slots: [] })),
   getModelStatus: vi.fn(() => Promise.resolve([])),
   listActiveGenerationTasks: vi.fn(() => Promise.resolve([])),
   listProjects: vi.fn(() => Promise.resolve([])),

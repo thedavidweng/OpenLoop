@@ -1,6 +1,6 @@
 # OpenLoop Context
 
-OpenLoop is a local-first music generation tool for Apple Silicon, powered by a local ACE-Step backend. It has two interfaces — a desktop GUI and a command-line CLI — that share all state: settings, history, models, and the backend process.
+OpenLoop is a local-first music generation tool for Apple Silicon. ACE-Step 1.5 is the bound Engine today; additional Engines and Model Packs are registered in a first-party catalog so they can be downloaded and switched without rewriting Settings. It has two interfaces — a desktop GUI and a command-line CLI — that share all state: settings, history, models, and the backend process.
 
 ## Language
 
@@ -27,8 +27,20 @@ _Avoid_: History, Generation Record
 A configuration option intended for users who deliberately open advanced or diagnostic controls.
 _Avoid_: Primary workflow, beginner setting
 
+**Engine**:
+A generation family with its own Local Backend contract, capability schema, and Model Packs.
+_Avoid_: Model, Model Pack, Model Slot
+
+**Model Pack**:
+A downloadable (or announced) weight set owned by one Engine. Users install and delete Model Packs, not Engines.
+_Avoid_: Engine, Model Slot, Model Variant
+
+**Model Slot**:
+A selectable run configuration that points at one Model Pack. One Model Pack may back several Model Slots.
+_Avoid_: Engine, Model Pack, Model Variant
+
 **Local Backend**:
-The ACE-Step HTTP process managed by OpenLoop on the user's machine.
+The on-device HTTP process for the active Engine. ACE-Step is the only bound Local Backend in the current release.
 
 **Model Bootstrap**:
 The local readiness path that decides whether generation can run.
@@ -37,7 +49,7 @@ The local readiness path that decides whether generation can run.
 The OpenLoop-managed filesystem layout required by the Local Backend.
 
 **Settings**:
-Persisted local configuration for model selection, runtime directories, backend startup, output defaults, language, and first-run state.
+Persisted local configuration for Engine and Model Slot selection, runtime directories, backend startup, output defaults, language, and first-run state.
 
 ## Relationships
 
@@ -60,11 +72,14 @@ Persisted local configuration for model selection, runtime directories, backend 
 - Missing-file items can be cleared by deleting their **Generation Record** when no **Output File** remains.
 - **Backend Logs** are diagnostic artifacts with automatic retention, not user-managed history.
 - **Model Bootstrap** represents whether local generation is ready, not only whether a model is downloading.
-- **Model Bootstrap** includes the selected model, model files, **Runtime Layout**, and **Local Backend** health.
+- **Model Bootstrap** includes the selected **Model Slot**, its **Model Pack**, **Runtime Layout**, and **Local Backend** health.
 - **Runtime Layout** may repair OpenLoop-managed links, but must not silently reorganize unknown user-owned files.
-- **Settings** that affect **Local Backend** startup are `backendPort`, `modelDirectory`, `backendWorkingDirectory`, `logDirectory`, and `modelVariant`.
+- **Settings** that affect **Local Backend** startup are `backendPort`, `modelDirectory`, `backendWorkingDirectory`, `logDirectory`, `modelVariant`, and `selectedModelId`.
 - Backend-impacting **Settings** changes should tell users they affect the next **Local Backend** start; v1 does not automatically restart the backend.
 - `modelDirectory` means OpenLoop-managed model storage, not an arbitrary ACE-Step project directory.
+- The first-party catalog is the only place new **Engines**, **Model Packs**, and **Model Slots** are registered. Commands, the CLI, and the Settings UI must not hard-code family names when listing or switching.
+- An **Engine** without a bound **Local Backend** may appear in the catalog so a future pack (for example MiniMax Music 3 Turbo) can attach later. It must not run a **Generation Task**.
+- `modelVariant` is the ACE-Step **Model Slot** alias (`lite` / `turbo` / `pro`). `selectedModelId` is the canonical **Model Slot** id (`ace-step/turbo`, `minimax-music3/turbo`). When both are set, `selectedModelId` wins.
 - OpenLoop uses its bundled `uv` sidecar for the **Local Backend**; legacy external backend command settings are pruned, not migrated.
 - User-facing screens should present simple **Generation Task**, **History**, and **Settings** language; implementation details belong in **Advanced Settings** or diagnostics.
 - **Advanced Settings** are opt-in; beginner workflows should work without understanding **Runtime Layout**, sidecars, IPC commands, or backend internals.

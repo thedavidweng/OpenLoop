@@ -16,7 +16,9 @@ vi.mock("react-i18next", () => ({
 import { StateBadge } from "@/app/components/settings/SettingsOverlay/StateBadge";
 import { ModelVariantCard } from "@/app/components/settings/SettingsOverlay/ModelVariantCard";
 import { ModelPackCard } from "@/app/components/settings/SettingsOverlay/ModelPackCard";
+import { CatalogPackCard } from "@/app/components/settings/SettingsOverlay/CatalogPackCard";
 import { DirectoryPickerRow } from "@/app/components/settings/SettingsOverlay/DirectoryPickerRow";
+import type { ModelPackDescriptor } from "@/app/lib/types";
 
 // ---------------------------------------------------------------------------
 // StateBadge
@@ -329,5 +331,70 @@ describe("ModelPackCard", () => {
       />,
     );
     expect(screen.getByText(/50%/)).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CatalogPackCard
+// ---------------------------------------------------------------------------
+
+const announcedPack: ModelPackDescriptor = {
+  id: "minimax-music3/turbo",
+  engine: "minimax-music3",
+  label: "Turbo",
+  description: "Reserved distilled pack.",
+  installPolicy: "announced",
+  estimatedSizeBytes: 0,
+  recommendedMemoryGb: 16,
+  capabilities: {
+    supportsBpm: false,
+    supportsKey: false,
+    supportsTimeSignature: false,
+    supportsThinking: false,
+    supportsLyrics: true,
+    promptRole: "caption-and-lyrics",
+    maxDurationSeconds: 360,
+  },
+  acePack: null,
+};
+
+const installablePack: ModelPackDescriptor = {
+  ...announcedPack,
+  id: "ace-step/standard",
+  engine: "ace-step",
+  label: "Standard",
+  description: "Installable catalog pack.",
+  installPolicy: "installable",
+  estimatedSizeBytes: 8 * 1024 * 1024 * 1024,
+  recommendedMemoryGb: 16,
+  acePack: "standard",
+};
+
+describe("CatalogPackCard", () => {
+  it("shows an announced badge and recommended memory", () => {
+    render(<CatalogPackCard pack={announcedPack} />);
+    expect(screen.getByText("Turbo")).toBeTruthy();
+    expect(screen.getByText("Reserved distilled pack.")).toBeTruthy();
+    expect(screen.getByText("model.announced")).toBeTruthy();
+    expect(screen.getByText("model.recommendedMemory")).toBeTruthy();
+  });
+
+  it("shows download progress for an installable pack", () => {
+    render(
+      <CatalogPackCard
+        pack={installablePack}
+        state="downloading"
+        downloadedBytes={2 * 1024 * 1024 * 1024}
+        totalBytes={8 * 1024 * 1024 * 1024}
+      />,
+    );
+    expect(screen.getByText("model.downloading")).toBeTruthy();
+    expect(screen.getByText(/2\.0 GB/)).toBeTruthy();
+    expect(screen.getByText(/8\.0 GB/)).toBeTruthy();
+  });
+
+  it("renders an em dash when no bytes have been downloaded", () => {
+    render(<CatalogPackCard pack={installablePack} downloadedBytes={0} totalBytes={0} />);
+    expect(screen.getByText("— / —")).toBeTruthy();
   });
 });

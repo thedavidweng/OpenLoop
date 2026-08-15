@@ -165,10 +165,3 @@ export function slotsForPack(
 ): ModelSlotDescriptor[] {
   return registry.slots.filter((slot) => slot.packId === packId);
 }
-
-export function engineById(
-  registry: ModelRegistry,
-  engineId: EngineId,
-): EngineDescriptor | undefined {
-  return registry.engines.find((engine) => engine.id === engineId);
-}

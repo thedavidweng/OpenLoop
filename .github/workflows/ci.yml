@@ -168,7 +168,7 @@ jobs:
 
   pr-lint:
     name: PR Title
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: github.event_name == 'pull_request'
     timeout-minutes: 5
     steps:
@@ -179,7 +179,7 @@ jobs:
 
   workflow-lint:
     name: Workflow lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 5
     permissions:
       contents: read
@@ -203,7 +203,7 @@ jobs:
 
   validate:
     name: Validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     needs: [frontend, rust-fmt-check, rust-test, cargo-deny, pr-lint, workflow-lint]
     if: ${{ always() }}
     timeout-minutes: 5

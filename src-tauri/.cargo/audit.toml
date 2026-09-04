@@ -2,4 +2,11 @@
 ignore = [
     "RUSTSEC-2026-0194", # transitive via plist ^0.39; blocked until upstream bumps quick-xml
     "RUSTSEC-2026-0195", # transitive via plist ^0.39; blocked until upstream bumps quick-xml
+    "RUSTSEC-2025-0075", # transitive via unic
+    "RUSTSEC-2025-0080", # transitive via unic
+    "RUSTSEC-2025-0081", # transitive via unic
+    "RUSTSEC-2025-0098", # transitive via unic
+    "RUSTSEC-2025-0100", # transitive via unic
+    "RUSTSEC-2026-0221", # transitive via event-listener
+    "RUSTSEC-2024-0429", # transitive via glib
 ]

@@ -4,6 +4,13 @@ yanked = "warn"
 ignore = [
     { id = "RUSTSEC-2026-0194", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
     { id = "RUSTSEC-2026-0195", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
+    { id = "RUSTSEC-2025-0075", reason = "Transitive unmaintained unic-char-range" },
+    { id = "RUSTSEC-2025-0080", reason = "Transitive unmaintained unic-common" },
+    { id = "RUSTSEC-2025-0081", reason = "Transitive unmaintained unic-char-property" },
+    { id = "RUSTSEC-2025-0098", reason = "Transitive unmaintained unic-ucd-version" },
+    { id = "RUSTSEC-2025-0100", reason = "Transitive unmaintained unic-ucd-ident" },
+    { id = "RUSTSEC-2026-0221", reason = "Transitive unsound event-listener" },
+    { id = "RUSTSEC-2024-0429", reason = "Transitive unsound glib" },
 ]
 
 [licenses]

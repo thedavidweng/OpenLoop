@@ -32,7 +32,7 @@
     "prepare": "lefthook install"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.14.10",
+    "@tanstack/react-virtual": "^3.14.13",
     "@tauri-apps/api": "2.11.1",
     "@tauri-apps/plugin-clipboard-manager": "^2.3.3",
     "@tauri-apps/plugin-dialog": "^2.7.3",
@@ -44,7 +44,7 @@
     "lucide-react": "^1.40.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-i18next": "^17.0.13",
+    "react-i18next": "^17.0.14",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

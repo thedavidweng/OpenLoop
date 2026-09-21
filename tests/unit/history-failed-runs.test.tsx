@@ -119,7 +119,10 @@ describe("HistorySidebar failed runs", () => {
 
     const failedRunsSection = screen.getByText("history.failedRuns:1").closest(".shrink-0");
     expect(failedRunsSection).toBeTruthy();
-    const clearAllButton = failedRunsSection!.querySelector("svg.lucide-trash2")?.closest("button");
+    // lucide-react ≥1.45 emits canonical + alias classes (`lucide-trash lucide-trash-2`)
+    const clearAllButton = failedRunsSection!
+      .querySelector("svg.lucide-trash-2, svg.lucide-trash")
+      ?.closest("button");
     expect(clearAllButton).toBeTruthy();
     await user.click(clearAllButton!);
 

@@ -149,7 +149,10 @@ describe("FailedRunsDrawer", () => {
       expect(screen.getByText("history.failedRuns:1")).toBeInTheDocument();
     });
 
-    const clearAllButton = document.querySelector("svg.lucide-trash2")?.closest("button");
+    // lucide-react ≥1.45 emits canonical + alias classes (`lucide-trash lucide-trash-2`)
+    const clearAllButton = document
+      .querySelector("svg.lucide-trash-2, svg.lucide-trash")
+      ?.closest("button");
     expect(clearAllButton).toBeTruthy();
     await user.click(clearAllButton!);
 
@@ -169,7 +172,10 @@ describe("FailedRunsDrawer", () => {
       expect(screen.getByText("history.failedRuns:1")).toBeInTheDocument();
     });
 
-    const clearAllButton = document.querySelector("svg.lucide-trash2")?.closest("button");
+    const clearAllButton = document
+      .querySelector("svg.lucide-trash-2, svg.lucide-trash")
+      ?.closest("button");
+    expect(clearAllButton).toBeTruthy();
     await user.click(clearAllButton!);
 
     await waitFor(() => {

@@ -2,6 +2,8 @@
 unmaintained = "workspace"
 yanked = "warn"
 ignore = [
+    { id = "RUSTSEC-2026-0285", reason = "new unmaintained advisory; transitive, not a known vuln" },
+    { id = "RUSTSEC-2024-0370", reason = "proc-macro-error unmaintained; transitive" },
     { id = "RUSTSEC-2026-0194", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
     { id = "RUSTSEC-2026-0195", reason = "Transitive via plist ^0.39; blocked until upstream bumps quick-xml" },
     { id = "RUSTSEC-2025-0075", reason = "Transitive unmaintained unic-char-range" },

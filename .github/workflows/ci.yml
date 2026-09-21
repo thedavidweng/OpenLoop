@@ -148,7 +148,7 @@ jobs:
       - name: Rust audit
         run: |
           cargo install cargo-audit --locked
-          cd src-tauri && cargo audit
+          cd src-tauri && cargo audit --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2024-0370
 
       - name: Rust tests
         run: cargo test -q --manifest-path src-tauri/Cargo.toml
@@ -157,6 +157,9 @@ jobs:
     name: Cargo Deny
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # cargo-deny-action ships its own toolchain; rust-toolchain.toml must not override it
+      RUSTUP_TOOLCHAIN: stable
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

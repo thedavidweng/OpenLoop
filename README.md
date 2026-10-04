@@ -1,5 +1,7 @@
 [简体中文](./README_CN.md)
 
+> Native macOS rewrite #261: shared Swift core, CLI and an intentionally blank SwiftUI scaffold are in [native/](native/README.md). The existing app remains the migration reference until native UI and packaged parity are complete.
+
 <div align="center">
 
 <img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />

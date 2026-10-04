@@ -1,5 +1,7 @@
 [English](./README.md)
 
+> 原生 macOS 重写 #261：共享 Swift core、独立 CLI 和留待实现的空白 SwiftUI 脚手架见 [native/](native/README.md)。当前应用在原生 UI 与打包验收完成前保留为迁移参照。
+
 <div align="center">
 
 <img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop 应用图标" width="160" height="160" />

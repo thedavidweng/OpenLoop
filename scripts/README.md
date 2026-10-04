@@ -108,3 +108,14 @@ manual UI inspection.
 - **Run:** `node scripts/screenshot.mjs`
 - **When to run:** ad hoc, to refresh documentation screenshots or inspect the
   rendered UI
+
+## Native migration tools
+
+- `native/scripts/import-model-manifest.py` imports the retiring Rust file list into
+  `native/Sources/OpenLoopEngines/Resources/model-files.json`. This is a migration
+  generator, not a build-time dependency. The native manifest becomes authoritative
+  when the legacy stack is retired; remove the importer in that retirement change.
+- `native/scripts/package-app.py --uv PATH` builds an unsigned Apple Silicon
+  `native/dist/OpenLoop.app`, including the Swift CLI, model resource bundle,
+  existing icon, and verified uv sidecar. It generates `Contents/Info.plist` from
+  the root package version. A previous output must be removed explicitly.

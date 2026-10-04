@@ -20,6 +20,10 @@ pre-commit:
       # covers any future ignore rule that empties the list.
       run: 'sh -c ''[ $# -eq 0 ] || pnpm exec oxfmt "$@"'' -- {staged_files}'
       stage_fixed: true
+    swift-format:
+      glob: "native/**/*.swift"
+      run: swift format format --in-place {staged_files}
+      stage_fixed: true
     cargo-fmt:
       glob: "*.rs"
       run: cd src-tauri && cargo fmt

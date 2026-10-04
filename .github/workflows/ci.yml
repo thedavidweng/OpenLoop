@@ -84,6 +84,35 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm exec vite build
 
+  native:
+    name: Native Swift
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Native compile check
+        run: swift build --package-path native -Xswiftc -warnings-as-errors
+
+      - name: Native contracts
+        run: swift test --package-path native -Xswiftc -warnings-as-errors
+
+      - name: Setup Node for verified uv sidecar
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Prepare Apple Silicon sidecar
+        env:
+          TAURI_TARGET_TRIPLE: aarch64-apple-darwin
+        run: node scripts/prepare-sidecars.mjs
+
+      - name: Package unsigned native app
+        run: python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
+
   rust-fmt-check:
     name: Rust Format
     runs-on: ubuntu-latest
@@ -207,7 +236,7 @@ jobs:
   validate:
     name: Validate
     runs-on: ubuntu-slim
-    needs: [frontend, rust-fmt-check, rust-test, cargo-deny, pr-lint, workflow-lint]
+    needs: [frontend, native, rust-fmt-check, rust-test, cargo-deny, pr-lint, workflow-lint]
     if: ${{ always() }}
     timeout-minutes: 5
     steps:
@@ -220,6 +249,7 @@ jobs:
           echo "pr-lint: ${{ needs['pr-lint'].result }}"
           echo "workflow-lint: ${{ needs['workflow-lint'].result }}"
           test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs.native.result }}" = "success"
           test "${{ needs['rust-fmt-check'].result }}" = "success"
           test "${{ needs['rust-test'].result }}" = "success"
           test "${{ needs['cargo-deny'].result }}" = "success"

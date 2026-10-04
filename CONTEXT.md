@@ -1,6 +1,6 @@
 # OpenLoop Context
 
-OpenLoop is a local-first music generation tool for Apple Silicon. ACE-Step 1.5 is the bound Engine today; additional Engines and Model Packs are registered in a first-party catalog so they can be downloaded and switched without rewriting Settings. The #261 native migration lives in `native/`: a presentation-only SwiftUI scaffold and separate Swift CLI consume OpenLoopCore. The retiring Tauri app remains a behavior reference until native parity; native GUI/CLI share state with each other, with a one-time import of legacy state.
+OpenLoop is a local-first music generation tool for Apple Silicon. ACE-Step 1.5 is the bound Engine today; additional Engines and Model Packs are registered in a first-party catalog so they can be downloaded and switched without rewriting Settings. The #261 native migration lives in `native/`: a presentation-only SwiftUI app and separate Swift CLI consume OpenLoopCore. The retiring Tauri app remains a behavior reference until native parity; native GUI/CLI share state with each other, with a one-time import of legacy state.
 
 ## Language
 

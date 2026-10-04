@@ -14,8 +14,8 @@ pnpm install
 ## Development
 
 The native macOS replacement lives in `native/`; see `native/README.md` for its
-architecture, runtime setup and migration boundary. Its SwiftUI root is currently
-an intentionally empty scaffold awaiting UI implementation.
+architecture, runtime setup and migration boundary. The SwiftUI app awaits the
+Apple Silicon product smoke matrix before the Tauri app is retired.
 
 ```bash
 swift build --package-path native -Xswiftc -warnings-as-errors

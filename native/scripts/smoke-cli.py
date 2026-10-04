@@ -9,7 +9,8 @@ from pathlib import Path
 
 native = Path(__file__).resolve().parents[1]
 bundle = native / "dist/OpenLoop.app"
-cli = bundle / "Contents/MacOS/openloop"
+cli = bundle / "Contents/MacOS/openloop-cli"
+assert cli.is_file() and (bundle / "Contents/MacOS/OpenLoop").read_bytes() != cli.read_bytes()
 with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
     root = Path(directory)
     source = (native / "Tests/OpenLoopCoreTests/Fixtures/ace-server.py").read_text()

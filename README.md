@@ -1,6 +1,6 @@
 [简体中文](./README_CN.md)
 
-> Native macOS rewrite #261: shared Swift core, CLI and an intentionally blank SwiftUI scaffold are in [native/](native/README.md). The existing app remains the migration reference until native UI and packaged parity are complete.
+> Native macOS rewrite #261: shared Swift core, CLI and the SwiftUI creative workspace are in [native/](native/README.md). The existing app remains the migration reference until the native app passes real-model and packaged acceptance.
 
 <div align="center">
 

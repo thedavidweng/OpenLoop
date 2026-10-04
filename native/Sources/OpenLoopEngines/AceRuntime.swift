@@ -75,6 +75,12 @@ public actor AceRuntime {
     }
     try await emit(.lifecycle("Engine runtime installed"))
   }
+  public func isProvisioned() async throws -> Bool {
+    let destination = workingDirectory(try await settingsProvider())
+    return FileManager.default.fileExists(
+      atPath: destination.appendingPathComponent("pyproject.toml").path)
+  }
+  public var isRunningOwnedProcess: Bool { owned?.process.isRunning ?? false }
   private func workingDirectory(_ settings: Settings) -> URL {
     settings.runtimeDirectory ?? directory.appendingPathComponent("native-runtime/ace-step")
   }

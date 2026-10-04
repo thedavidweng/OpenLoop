@@ -21,11 +21,13 @@ output = args.output.resolve()
 output.mkdir(parents=True)
 macos = output / "Contents/MacOS"; macos.mkdir(parents=True)
 resources = output / "Contents/Resources"; resources.mkdir()
-shutil.copy2(bin_path / "OpenLoop", macos / "OpenLoop")
-shutil.copy2(bin_path / "openloop-cli", macos / "openloop")
-shutil.copy2(args.uv, macos / "uv")
+# macOS volumes are usually case-insensitive: a CLI named "openloop" would replace the GUI.
+executables = {"OpenLoop": bin_path / "OpenLoop", "openloop-cli": bin_path / "openloop-cli", "uv": args.uv}
+assert len({name.lower() for name in executables}) == len(executables)
+for name, source in executables.items(): shutil.copy2(source, macos / name)
 for executable in macos.iterdir(): executable.chmod(0o755)
 for bundle in bin_path.glob("*.bundle"):
+    if bundle.stem.endswith("Tests"): continue
     shutil.copytree(bundle, resources / bundle.name)
     (macos / bundle.name).symlink_to(Path("../Resources") / bundle.name)
 shutil.copy2(root / "src-tauri/icons/OpenLoop.icns", resources / "OpenLoop.icns")

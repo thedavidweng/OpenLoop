@@ -3,7 +3,7 @@
 The native Swift executable is separate from the SwiftUI app and calls the same
 OpenLoopCore. `openloop help` lists commands. The package product is named
 `openloop-cli` to avoid the case-insensitive collision with `OpenLoop`; packaging
-installs it as `OpenLoop.app/Contents/MacOS/openloop`.
+installs it under the same name as `OpenLoop.app/Contents/MacOS/openloop-cli`.
 
 `--json` emits one UTF-8 JSON object per stdout line:
 

@@ -16,9 +16,11 @@ let package = Package(
         .target(name: "OpenLoopCore", dependencies: ["CSQLite"]),
         .target(name: "OpenLoopEngines", dependencies: ["OpenLoopCore"], resources: [.process("Resources")]),
         .target(name: "OpenLoopAudio", dependencies: ["OpenLoopCore"]),
-        .executableTarget(name: "OpenLoopApp", dependencies: ["OpenLoopCore", "OpenLoopEngines", "OpenLoopAudio"]),
+        .target(name: "OpenLoopAppKit", dependencies: ["OpenLoopCore", "OpenLoopEngines", "OpenLoopAudio"]),
+        .executableTarget(name: "OpenLoopApp", dependencies: ["OpenLoopAppKit"]),
         .target(name: "OpenLoopCLIKit", dependencies: ["OpenLoopCore", "OpenLoopEngines"]),
         .executableTarget(name: "OpenLoopCLI", dependencies: ["OpenLoopCLIKit"]),
         .testTarget(name: "OpenLoopCoreTests", dependencies: ["OpenLoopCore", "OpenLoopEngines", "OpenLoopAudio", "OpenLoopCLIKit", "CSQLite"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "OpenLoopAppTests", dependencies: ["OpenLoopAppKit", "OpenLoopCore", "OpenLoopEngines"]),
     ]
 )

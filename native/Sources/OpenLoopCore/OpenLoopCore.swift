@@ -30,7 +30,9 @@ public actor OpenLoopCore {
           try persistence.save("task", id: task.id, value: task)
         }
       }
-    } catch CoreError.conflict { /* A live GUI/CLI still owns the running task. */  }
+    } catch CoreError.conflict {
+      // A live GUI/CLI still owns the running task.
+    }
   }
   public func workspace() throws -> Workspace {
     Workspace(
@@ -240,12 +242,15 @@ public actor OpenLoopCore {
   }
   public func cancel(taskID: String) async throws {
     var task = try store.get("task", id: taskID, as: GenerationTask.self)
-    guard [.queued, .running].contains(task.state) else { return }
-    let running = task.state == .running
-    task.state = .cancelled
-    try store.save("task", id: task.id, value: task)
-    workers[taskID]?.cancel()
-    if running { try await engine(task.request.selection.engineID).cancel(taskID: task.id) }
+    let worker = workers[taskID]
+    if [.queued, .running].contains(task.state) {
+      let running = task.state == .running
+      task.state = .cancelled
+      try store.save("task", id: task.id, value: task)
+      worker?.cancel()
+      if running { try await engine(task.request.selection.engineID).cancel(taskID: task.id) }
+    }
+    await worker?.value
   }
   public func setFavorite(generationID: String, favorite: Bool) throws {
     try store.transaction {

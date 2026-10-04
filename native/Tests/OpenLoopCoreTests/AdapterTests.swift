@@ -1,4 +1,5 @@
 import Foundation
+import OpenLoopCLIKit
 import OpenLoopCore
 import OpenLoopEngines
 import Testing
@@ -132,4 +133,26 @@ import Testing
   #expect(try await environment.core.workspace().history.first?.seed == 42)
   try await runtime.stop()
   await #expect(throws: (any Error).self) { _ = try await URLSession.shared.data(from: health) }
+  let requestFile = root.appendingPathComponent("cancel-startup.json")
+  try JSONEncoder().encode(
+    GenerationRequest(
+      selection: EngineCatalog.firstParty.selection(configurationID: "ace-step/lite"),
+      prompt: "cancel startup")
+  ).write(to: requestFile)
+  let cli = OpenLoopCLI(environment: environment)
+  let execution = Task {
+    try await cli.execute(arguments: ["run", "--request", requestFile.path]) { event in
+      if event.kind == "lifecycle", case .object(let data) = event.data,
+        data["message"] == .string("Starting local Engine")
+      {
+        withUnsafeCurrentTask { $0?.cancel() }
+      }
+    }
+  }
+  await #expect(throws: CancellationError.self) { try await execution.value }
+  await #expect(throws: (any Error).self) { _ = try await URLSession.shared.data(from: health) }
+  #expect(
+    try await environment.core.workspace().tasks.contains {
+      $0.request.prompt == "cancel startup" && $0.state == .cancelled
+    })
 }

@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **shell**: Adopt official plugins, stream audio via the asset protocol, and fix a macOS 26 launch abort
 - Add a first-party engine and model-pack catalog
 - **native**: Add shared Swift core and engine foundation for #261
+- **native**: Implement SwiftUI creative workspace for #261
 
 ### 🐛 Bug Fixes
 
@@ -118,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Add mise install step to contributing guide
 - Regenerate changelog for native foundation
 - Regenerate changelog after cancellation fix
+- Refresh generated native changelog
 
 ### 📦 Dependencies
 

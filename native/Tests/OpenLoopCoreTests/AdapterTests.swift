@@ -25,9 +25,11 @@ import Testing
   let port = try #require(Int(text))
   var settings = Settings()
   settings.backendPort = port
+  let runtimeSettings = settings
   let runtime = AceRuntime(
-    directory: root, bundledUV: root.appendingPathComponent("unused-uv"), settings: settings)
-  let adapter = AceStepEngine(runtime: runtime, port: port)
+    directory: root, bundledUV: root.appendingPathComponent("unused-uv"),
+    settingsProvider: { runtimeSettings })
+  let adapter = AceStepEngine(runtime: runtime)
   let core = try OpenLoopCore(directory: root, engines: [adapter])
   let selection = try EngineCatalog.firstParty.selection(configurationID: "ace-step/pro")
   let seed: Int64 = 9_007_199_254_740_993
@@ -44,6 +46,12 @@ import Testing
     try JSONSerialization.jsonObject(with: Data(contentsOf: metadata.url)) as? [[String: Any]]
   #expect(value?.first?["model"] as? String == "acestep-v15-xl-turbo")
   #expect(value?.first?["prompt"] as? String == "ambient piano")
+  let random = try await core.submit(.init(selection: selection, prompt: "random seed"))
+  for try await _ in try await core.run(taskID: random.id) {}
+  #expect(try await core.workspace().history.first(where: { $0.taskID == random.id })?.seed == 1234)
+  let unknown = try await core.submit(.init(selection: selection, prompt: "omit-seed", seed: 42))
+  for try await _ in try await core.run(taskID: unknown.id) {}
+  #expect(try await core.workspace().history.first(where: { $0.taskID == unknown.id })?.seed == nil)
 }
 @Test func unboundEnginesCannotBeSelectedOrInstalled() throws {
   let catalog = EngineCatalog.firstParty
@@ -55,7 +63,7 @@ import Testing
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }
   let adapter = AceStepEngine(
-    runtime: AceRuntime(directory: root, bundledUV: root, settings: Settings()), port: 8001)
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
   let selection = try EngineCatalog.firstParty.selection(configurationID: "ace-step/turbo")
   #expect(throws: CoreError.self) {
     try adapter.payload(
@@ -107,13 +115,21 @@ import Testing
   settings.backendPort = port
   settings.runtimeDirectory = working
   settings.modelDirectory = models
-  let runtime = AceRuntime(directory: root, bundledUV: uv, settings: settings)
+  let environment = try await OpenLoopEnvironment.open(directory: root, bundledUV: uv)
+  try await environment.core.updateSettings(settings)
+  let runtime = environment.runtime
   try await runtime.ensureReady(
     selection: EngineCatalog.firstParty.selection(configurationID: "ace-step/lite")
   ) { _ in }
   let health = URL(string: "http://127.0.0.1:\(port)/health")!
   let (_, response) = try await URLSession.shared.data(from: health)
   #expect((response as? HTTPURLResponse)?.statusCode == 200)
+  let task = try await environment.core.submit(
+    .init(
+      selection: EngineCatalog.firstParty.selection(configurationID: "ace-step/lite"),
+      prompt: "new settings", seed: 42))
+  for try await _ in try await environment.core.run(taskID: task.id) {}
+  #expect(try await environment.core.workspace().history.first?.seed == 42)
   try await runtime.stop()
   await #expect(throws: (any Error).self) { _ = try await URLSession.shared.data(from: health) }
 }

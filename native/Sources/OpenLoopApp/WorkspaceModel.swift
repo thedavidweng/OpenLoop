@@ -123,12 +123,24 @@ final class WorkspaceModel {
   }
   func installRuntime(licenseAccepted: Bool) async throws {
     guard let environment else { throw CoreError.conflict("Workspace is not connected") }
-    try await environment.runtime.provision(licenseAccepted: licenseAccepted) { _ in }
+    defer {
+      progress = nil
+      activity = nil
+    }
+    try await environment.runtime.provision(licenseAccepted: licenseAccepted) { event in
+      await self.apply(event)
+    }
     try await refresh()
   }
   func installModel(packID: String, licenseAccepted: Bool) async throws {
     guard let environment else { throw CoreError.conflict("Workspace is not connected") }
-    try await environment.installer.install(packID: packID, licenseAccepted: licenseAccepted) { _ in
+    defer {
+      progress = nil
+      activity = nil
+    }
+    try await environment.installer.install(packID: packID, licenseAccepted: licenseAccepted) {
+      event in
+      await self.apply(event)
     }
     try await refresh()
   }
@@ -138,6 +150,14 @@ final class WorkspaceModel {
     try await refresh()
   }
   func shutdown() async throws { try await core().shutdown() }
+  private func apply(_ event: EngineEvent) {
+    switch event {
+    case .lifecycle(let message): activity = message
+    case .progress(let fraction, let label):
+      progress = fraction
+      activity = label
+    }
+  }
   private func core() throws -> OpenLoopCore {
     guard let core = environment?.core else {
       throw CoreError.conflict("Workspace is not connected")

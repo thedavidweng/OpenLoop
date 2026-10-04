@@ -4,16 +4,22 @@ import OpenLoopCore
 public actor AceRuntime {
   private let directory: URL
   private let uv: URL
-  private let settings: Settings
+  private let settingsProvider: @Sendable () async throws -> Settings
   private let catalog: EngineCatalog
-  private var child: Process?
-  private var logHandle: FileHandle?
+  private struct OwnedRuntime {
+    let process: Process
+    let settings: Settings
+    let logHandle: FileHandle
+  }
+  private var owned: OwnedRuntime?
   public init(
-    directory: URL, bundledUV: URL, settings: Settings, catalog: EngineCatalog = .firstParty
+    directory: URL, bundledUV: URL,
+    settingsProvider: @escaping @Sendable () async throws -> Settings,
+    catalog: EngineCatalog = .firstParty
   ) {
     self.directory = directory
     self.uv = bundledUV
-    self.settings = settings
+    self.settingsProvider = settingsProvider
     self.catalog = catalog
   }
   public func provision(licenseAccepted: Bool, emit: EngineEventSink) async throws {
@@ -31,7 +37,8 @@ public actor AceRuntime {
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
     let lock = try RuntimeLock(root.appendingPathComponent("runtime.lock"))
     defer { withExtendedLifetime(lock) {} }
-    let destination = workingDirectory
+    let settings = try await settingsProvider()
+    let destination = workingDirectory(settings)
     guard !FileManager.default.fileExists(atPath: destination.path) else {
       guard
         FileManager.default.fileExists(
@@ -68,7 +75,7 @@ public actor AceRuntime {
     }
     try await emit(.lifecycle("Engine runtime installed"))
   }
-  private var workingDirectory: URL {
+  private func workingDirectory(_ settings: Settings) -> URL {
     settings.runtimeDirectory ?? directory.appendingPathComponent("native-runtime/ace-step")
   }
   private func descriptor() throws -> RuntimeDescriptor {
@@ -96,15 +103,24 @@ public actor AceRuntime {
       throw error
     }
   }
-  public func ensureReady(selection: Selection, emit: EngineEventSink) async throws {
+  @discardableResult
+  public func ensureReady(selection: Selection, emit: EngineEventSink) async throws -> Int {
+    let settings: Settings
+    if let owned, owned.process.isRunning {
+      settings = owned.settings
+    } else {
+      settings = try await settingsProvider()
+    }
+    let workingDirectory = workingDirectory(settings)
     let config = try catalog.configuration(selection)
     guard try descriptor().supportsCurrentMachine() else {
       throw CoreError.invalid("Runtime requires Apple Silicon macOS")
     }
     let http = try LocalHTTP(port: settings.backendPort)
     if await healthy(http) {
+      try await validateInventory(http, configuration: config)
       try await emit(.lifecycle("Using running local Engine"))
-      return
+      return settings.backendPort
     }
     let lockRoot = directory.appendingPathComponent("native-runtime")
     try FileManager.default.createDirectory(at: lockRoot, withIntermediateDirectories: true)
@@ -117,7 +133,7 @@ public actor AceRuntime {
       throw CoreError.engine(
         "Engine runtime is not installed. Run openloop setup --accept-license.")
     }
-    if let child, child.isRunning {
+    if let owned, owned.process.isRunning {
       throw CoreError.conflict("Owned runtime is unhealthy; stop it before restarting")
     }
     let modelRoot = settings.modelDirectory ?? directory.appendingPathComponent("models")
@@ -154,16 +170,15 @@ public actor AceRuntime {
       "ACESTEP_CONFIG_PATH": config.model, "ACESTEP_DEVICE": "mps",
       "ACESTEP_INIT_LLM": config.languageModel == nil ? "false" : "true",
       "ACESTEP_LM_MODEL_PATH": config.languageModel ?? "", "ACESTEP_LM_BACKEND": "mlx",
-      "ACESTEP_OFFLOAD_TO_CPU": "true",
+      "ACESTEP_OFFLOAD_TO_CPU": "true", "HF_HUB_DISABLE_TELEMETRY": "1", "DO_NOT_TRACK": "1",
     ]) { _, new in new }
     process.environment = environment
     process.standardOutput = handle
     process.standardError = handle
     try process.run()
-    child = process
-    logHandle = handle
-    try await emit(.lifecycle("Starting local Engine"))
+    owned = OwnedRuntime(process: process, settings: settings, logHandle: handle)
     do {
+      try await emit(.lifecycle("Starting local Engine"))
       let deadline = Date().addingTimeInterval(300)
       while Date() < deadline {
         try Task.checkCancellation()
@@ -172,15 +187,40 @@ public actor AceRuntime {
             "Engine exited with status \(process.terminationStatus). See \(logURL.path)")
         }
         if await healthy(http) {
+          try await validateInventory(http, configuration: config)
           try await emit(.lifecycle("Local Engine ready"))
-          return
+          return settings.backendPort
         }
         try await Task.sleep(for: .seconds(1))
       }
       throw CoreError.engine("Engine readiness timed out. See \(logURL.path)")
     } catch {
-      try await stop()
+      try await Task.detached { try await self.stop() }.value
       throw error
+    }
+  }
+  private func validateInventory(_ http: LocalHTTP, configuration: Configuration) async throws {
+    let value = try JSONDecoder().decode(
+      JSONValue.self, from: await http.data("/v1/models", timeout: 30))
+    guard let models = value["data"]?["models"]?.array,
+      models.contains(where: {
+        $0["name"]?.string == configuration.model && $0["is_loaded"] == .bool(true)
+      })
+    else {
+      throw CoreError.engine(
+        "The running Engine has not loaded the selected Model Pack; stop it before switching configurations."
+      )
+    }
+    if let languageModel = configuration.languageModel {
+      guard let models = value["data"]?["lm_models"]?.array,
+        models.contains(where: {
+          $0["name"]?.string == languageModel && $0["is_loaded"] == .bool(true)
+        })
+      else {
+        throw CoreError.engine(
+          "The running Engine has not loaded the selected language model; stop it before switching configurations."
+        )
+      }
     }
   }
   private func healthy(_ http: LocalHTTP) async -> Bool {
@@ -190,14 +230,14 @@ public actor AceRuntime {
     } catch { return false }
   }
   public func stop() async throws {
-    if let child, child.isRunning {
+    if let owned, owned.process.isRunning {
+      let child = owned.process
       child.terminate()
       let deadline = Date().addingTimeInterval(5)
       while child.isRunning && Date() < deadline { try await Task.sleep(for: .milliseconds(100)) }
       if child.isRunning { throw CoreError.engine("Runtime did not stop after termination") }
     }
-    child = nil
-    try logHandle?.close()
-    logHandle = nil
+    try owned?.logHandle.close()
+    owned = nil
   }
 }

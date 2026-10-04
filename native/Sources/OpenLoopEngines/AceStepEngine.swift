@@ -16,10 +16,8 @@ public struct AceStepEngine: Engine {
   public let id = "ace-step"
   private let runtime: AceRuntime
   private let catalog: EngineCatalog
-  private let port: Int
-  public init(runtime: AceRuntime, port: Int, catalog: EngineCatalog = .firstParty) {
+  public init(runtime: AceRuntime, catalog: EngineCatalog = .firstParty) {
     self.runtime = runtime
-    self.port = port
     self.catalog = catalog
   }
   public func capabilities(for selection: Selection) throws -> Capabilities {
@@ -29,6 +27,10 @@ public struct AceStepEngine: Engine {
   public func payload(for request: GenerationRequest) throws -> JSONValue {
     let config = try catalog.configuration(request.selection)
     try request.validate(capabilities: config.capabilities)
+    if let seed = request.seed, seed < 0 {
+      throw CoreError.invalid(
+        "ACE-Step deterministic seed must be nonnegative; omit seed for random generation")
+    }
     guard request.engineOptions.version == 1 else {
       throw CoreError.invalid("Unsupported ACE-Step options version")
     }
@@ -94,7 +96,7 @@ public struct AceStepEngine: Engine {
     _ request: GenerationRequest, taskID: String, outputDirectory: URL, emit: EngineEventSink
   ) async throws -> EngineResult {
     let body = try payload(for: request)
-    try await runtime.ensureReady(selection: request.selection, emit: emit)
+    let port = try await runtime.ensureReady(selection: request.selection, emit: emit)
     let http = try LocalHTTP(port: port)
     let submitted = try await http.envelope("/release_task", body: body)
     // Both response shapes are documented in the existing adapter contract.
@@ -144,13 +146,20 @@ public struct AceStepEngine: Engine {
             .init(kind: .audio, url: audio, mediaType: "audio/" + request.audioFormat),
             .init(kind: .metadata, url: metadata, mediaType: "application/json"),
           ],
-          seed: primary["seed"]?.integer ?? request.seed, metadata: ["engineResult": result])
+          seed: try actualSeed(primary), metadata: ["engineResult": result])
       case 2: throw CoreError.engine(item["error"]?.string ?? "ACE-Step reported task failure")
       default: throw CoreError.engine("Unknown Engine status: \(status)")
       }
       try await Task.sleep(for: .seconds(1))
     }
     throw CoreError.engine("Generation Task timed out")
+  }
+  private func actualSeed(_ result: JSONValue) throws -> Int64? {
+    guard let value = result["seed_value"]?.string, !value.isEmpty else { return nil }
+    guard let seed = Int64(value) else {
+      throw CoreError.engine("Invalid actual seed in Engine result")
+    }
+    return seed
   }
   // This runtime has no server-side cancel endpoint. Core cancels polling/download
   // and discards late results; it never kills another client's shared runtime.

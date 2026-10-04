@@ -13,6 +13,18 @@ pnpm install
 
 ## Development
 
+The native macOS replacement lives in `native/`; see `native/README.md` for its
+architecture, runtime setup and migration boundary. Its SwiftUI root is currently
+an intentionally empty scaffold awaiting UI implementation.
+
+```bash
+swift build --package-path native -Xswiftc -warnings-as-errors
+swift test --package-path native -Xswiftc -warnings-as-errors
+swift run --package-path native openloop-cli help
+```
+
+The following commands apply to the legacy app retained until native parity:
+
 ```bash
 # Start dev server (hot-reload)
 pnpm tauri dev

@@ -8,13 +8,36 @@ actor EventLog {
   var events: [CLIEvent] = []
   func append(_ event: CLIEvent) { events.append(event) }
 }
+
+@Test func cancellingCLIExecutionCancelsItsGenerationAndRetainsRequest() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [WaitingEngine()])
+  let environment = OpenLoopEnvironment(
+    core: core, catalog: .firstParty,
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
+  let cli = OpenLoopCLI(environment: environment)
+  let request = GenerationRequest(selection: testSelection, prompt: "cancel this")
+  let file = root.appendingPathComponent("request.json")
+  try JSONEncoder().encode(request).write(to: file)
+  let execution = Task {
+    try await cli.execute(arguments: ["run", "--request", file.path]) { event in
+      if event.kind == "progress" { withUnsafeCurrentTask { $0?.cancel() } }
+    }
+  }
+  await #expect(throws: CancellationError.self) { try await execution.value }
+  let workspace = try await core.workspace()
+  #expect(workspace.tasks.first?.state == .cancelled)
+  #expect(workspace.tasks.first?.request.prompt == "cancel this")
+  #expect(workspace.history.isEmpty)
+}
 @Test func cliStreamsVersionedCoreResultsAndSharesProjectsWithGUI() async throws {
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }
   let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
   let environment = OpenLoopEnvironment(
     core: core, catalog: .firstParty,
-    runtime: AceRuntime(directory: root, bundledUV: root, settings: Settings()))
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
   let cli = OpenLoopCLI(environment: environment)
   let log = EventLog()
   try await cli.execute(arguments: ["project", "create", "CLI idea"]) { await log.append($0) }

@@ -22,32 +22,29 @@ struct OpenLoopCommand {
         ?? executable.deletingLastPathComponent().appendingPathComponent("uv")
       let environment = try await openEnvironment(directory: directory, uv: uv)
       let cli = OpenLoopCLI(environment: environment)
+      let execution = Task {
+        try await cli.execute(arguments: arguments) { event in
+          if json {
+            let data = try JSONEncoder().encode(event)
+            let output =
+              event.kind == "error" ? FileHandle.standardError : FileHandle.standardOutput
+            output.write(data + Data([10]))
+          } else if event.kind == "result" {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            FileHandle.standardOutput.write(try encoder.encode(event.data) + Data([10]))
+          } else {
+            FileHandle.standardError.write(try JSONEncoder().encode(event.data) + Data([10]))
+          }
+        }
+        try Task.checkCancellation()
+      }
       signal(SIGINT, SIG_IGN)
       let interrupt = DispatchSource.makeSignalSource(signal: SIGINT, queue: .global())
-      interrupt.setEventHandler {
-        Task {
-          do {
-            for task in try await environment.core.workspace().tasks where task.state == .running {
-              try await environment.core.cancel(taskID: task.id)
-            }
-          } catch { FileHandle.standardError.write(Data((error.localizedDescription + "\n").utf8)) }
-        }
-      }
+      interrupt.setEventHandler { execution.cancel() }
       interrupt.resume()
       defer { interrupt.cancel() }
-      try await cli.execute(arguments: arguments) { event in
-        if json {
-          let data = try JSONEncoder().encode(event)
-          let output = event.kind == "error" ? FileHandle.standardError : FileHandle.standardOutput
-          output.write(data + Data([10]))
-        } else if event.kind == "result" {
-          let encoder = JSONEncoder()
-          encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-          FileHandle.standardOutput.write(try encoder.encode(event.data) + Data([10]))
-        } else {
-          FileHandle.standardError.write(try JSONEncoder().encode(event.data) + Data([10]))
-        }
-      }
+      try await execution.value
     } catch {
       let data: Data
       do {
@@ -59,7 +56,7 @@ struct OpenLoopCommand {
         exit(1)
       }
       FileHandle.standardError.write(data + Data([10]))
-      exit(1)
+      exit(error is CancellationError ? 130 : 1)
     }
   }
   private static func removeFlag(_ name: String, from args: inout [String]) -> Bool {

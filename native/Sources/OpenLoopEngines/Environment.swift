@@ -16,10 +16,11 @@ public struct OpenLoopEnvironment: Sendable {
     async throws -> OpenLoopEnvironment
   {
     let catalog = EngineCatalog.firstParty
-    let settings = try await OpenLoopCore(directory: directory, engines: []).settings()
+    let sharedState = try OpenLoopCore(directory: directory, engines: [])
     let runtime = AceRuntime(
-      directory: directory, bundledUV: bundledUV, settings: settings, catalog: catalog)
-    let adapter = AceStepEngine(runtime: runtime, port: settings.backendPort, catalog: catalog)
+      directory: directory, bundledUV: bundledUV,
+      settingsProvider: { try await sharedState.settings() }, catalog: catalog)
+    let adapter = AceStepEngine(runtime: runtime, catalog: catalog)
     let core = try OpenLoopCore(directory: directory, engines: [adapter])
     return OpenLoopEnvironment(core: core, catalog: catalog, runtime: runtime)
   }

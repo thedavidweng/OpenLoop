@@ -81,18 +81,19 @@ extension Persistence {
           let selection = legacySelection(configuration)
           var request = GenerationRequest(
             selection: selection, prompt: row["prompt"] ?? "", lyrics: row["lyrics"] ?? "",
-            duration: Double(row["duration_seconds"] ?? "30") ?? 30, projectID: row["project_id"],
+            duration: try legacyNumber(row["duration_seconds"], parse: Double.init) ?? 30,
+            projectID: row["project_id"],
             audioFormat: row["audio_format"] ?? "wav")
           // Preserve the original adapter settings and provenance without promoting them into core fields.
-          request.bpm = row["bpm"].flatMap(Int.init)
+          request.bpm = try legacyNumber(row["bpm"], parse: Int.init)
           request.key = row["key_scale"]
           request.timeSignature = row["time_signature"]
-          request.seed = row["seed"].flatMap(Int64.init)
+          request.seed = try legacyNumber(row["seed"], parse: Int64.init)
           var options: [String: JSONValue] = [:]
-          if let steps = row["inference_steps"].flatMap(Int64.init) {
+          if let steps = try legacyNumber(row["inference_steps"], parse: Int64.init) {
             options["inferenceSteps"] = .integer(steps)
           }
-          if let scale = row["guidance_scale"].flatMap(Double.init) {
+          if let scale = try legacyNumber(row["guidance_scale"], parse: Double.init) {
             options["guidanceScale"] = .number(scale)
           }
           if let thinking = row["thinking"] { options["thinking"] = .bool(thinking == "1") }
@@ -107,7 +108,7 @@ extension Persistence {
                   id: id + "/audio", kind: .audio, url: URL(fileURLWithPath: path),
                   mediaType: "audio/" + request.audioFormat)
               ],
-            seed: row["seed"].flatMap(Int64.init),
+            seed: try legacyNumber(row["seed"], parse: Int64.init),
             metadata: [
               "migration": .string("tauri-v1"),
               "legacyRecord": .object(row.reduce(into: [:]) { $0[$1.key] = .string($1.value) }),
@@ -121,6 +122,13 @@ extension Persistence {
       // Legacy tables/files are left intact until packaged native parity; import is idempotent.
       try execute("INSERT INTO native_metadata(key,value) VALUES('schema','1')")
     }
+  }
+  private func legacyNumber<T>(_ value: String?, parse: (String) -> T?) throws -> T? {
+    guard let value else { return nil }
+    guard let number = parse(value) else {
+      throw CoreError.persistence("Invalid legacy numeric value: \(value)")
+    }
+    return number
   }
   private func legacySelection(_ configuration: String) -> Selection {
     if configuration.hasPrefix("ace-step/") {

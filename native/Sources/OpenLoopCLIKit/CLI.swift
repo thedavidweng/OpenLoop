@@ -75,19 +75,7 @@ public struct OpenLoopCLI: Sendable {
     var args = Arguments(values: arguments)
     let command = try args.positional()
     let core = environment.core
-    let engineEvents: EngineEventSink = { event in
-      switch event {
-      case .lifecycle(let message):
-        try await emit(.init(kind: "lifecycle", data: .object(["message": .string(message)])))
-      case .progress(let fraction, let label):
-        try await emit(
-          .init(
-            kind: "progress",
-            data: .object([
-              "fraction": fraction.map(JSONValue.number) ?? .null, "label": .string(label),
-            ])))
-      }
-    }
+    let engineEvents: EngineEventSink = { event in try await emit(CLIEvent(engineEvent: event)) }
     switch command {
     case "help", "--help":
       try args.finish()
@@ -270,25 +258,24 @@ public struct OpenLoopCLI: Sendable {
     try await emit(.init(kind: "result", data: data))
   }
   private func generate(_ task: GenerationTask, emit: CLIEventSink) async throws {
-    try await result(task, emit)
-    for try await event in try await environment.core.run(taskID: task.id) {
-      switch event {
-      case .task(let task): try await result(task, emit)
-      case .completed(let generation, let take):
-        let value = try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(generation))
-        let takeValue = try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(take))
-        try await emit(
-          .init(kind: "result", data: .object(["generation": value, "take": takeValue])))
-      case .engine(.lifecycle(let message)):
-        try await emit(.init(kind: "lifecycle", data: .object(["message": .string(message)])))
-      case .engine(.progress(let fraction, let label)):
-        try await emit(
-          .init(
-            kind: "progress",
-            data: .object([
-              "fraction": fraction.map(JSONValue.number) ?? .null, "label": .string(label),
-            ])))
+    do {
+      try await result(task, emit)
+      for try await event in try await environment.core.run(taskID: task.id) {
+        switch event {
+        case .task(let task): try await result(task, emit)
+        case .completed(let generation, let take):
+          let value = try JSONDecoder().decode(
+            JSONValue.self, from: JSONEncoder().encode(generation))
+          let takeValue = try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(take))
+          try await emit(
+            .init(kind: "result", data: .object(["generation": value, "take": takeValue])))
+        case .engine(let event): try await emit(CLIEvent(engineEvent: event))
+        }
       }
+      try Task.checkCancellation()
+    } catch is CancellationError {
+      try await environment.core.cancel(taskID: task.id)
+      throw CancellationError()
     }
   }
 }
@@ -296,4 +283,19 @@ public struct OpenLoopCLI: Sendable {
 public func openEnvironment(directory: URL?, uv: URL) async throws -> OpenLoopEnvironment {
   try await OpenLoopEnvironment.open(
     directory: directory ?? OpenLoopCore.defaultDirectory, bundledUV: uv)
+}
+
+extension CLIEvent {
+  fileprivate init(engineEvent: EngineEvent) {
+    switch engineEvent {
+    case .lifecycle(let message):
+      self.init(kind: "lifecycle", data: .object(["message": .string(message)]))
+    case .progress(let fraction, let label):
+      self.init(
+        kind: "progress",
+        data: .object([
+          "fraction": fraction.map(JSONValue.number) ?? .null, "label": .string(label),
+        ]))
+    }
+  }
 }

@@ -48,3 +48,15 @@ func legacyDatabase(root: URL, sql: String) throws {
   #expect(try await reopened.workspace().history.count == 1)
   #expect(FileManager.default.fileExists(atPath: audio.path))
 }
+
+@Test func invalidPresentLegacyDurationFailsMigrationWithoutReplacingIt() throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  try legacyDatabase(
+    root: root,
+    sql: """
+      CREATE TABLE generations(id TEXT,created_at TEXT,status TEXT,output_path TEXT,duration_seconds TEXT);
+      INSERT INTO generations VALUES('music','2026-01-01T00:00:00Z','completed','/tmp/music.wav','broken-duration');
+      """)
+  #expect(throws: CoreError.self) { try OpenLoopCore(directory: root, engines: []) }
+}

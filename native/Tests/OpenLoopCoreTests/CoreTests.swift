@@ -9,7 +9,7 @@ let testSelection = Selection(
 struct FakeEngine: Engine {
   let id = "test"
   func capabilities(for selection: Selection) throws -> Capabilities {
-    .init([.lyrics, .reproducibility], maximumDuration: 60)
+    .init([.lyrics, .reproducibility, .referenceAudio, .cover, .repaint], maximumDuration: 60)
   }
   func generate(
     _ request: GenerationRequest, taskID: String, outputDirectory: URL, emit: EngineEventSink
@@ -164,4 +164,23 @@ actor WaitingEngine: Engine {
   let reopened = try OpenLoopCore(directory: root, engines: [FakeEngine()])
   #expect(try await reopened.workspace().tasks.first?.state == .failed)
   #expect(try await reopened.retry(taskID: task.id).request.prompt == "idea survives crash")
+}
+
+@Test func reproductionPreservesEditOperationAndSourceTake() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let first = try await core.submit(.init(selection: testSelection, prompt: "original"))
+  for try await _ in try await core.run(taskID: first.id) {}
+  let parent = try #require(try await core.workspace().takes.first)
+  let source = try #require(try await core.workspace().history.first?.artifacts.first)
+  let request = GenerationRequest(
+    selection: testSelection, prompt: "edit", seed: 42,
+    parentTakeID: parent.id, operation: .repaint, references: [source.url])
+  let edited = try await core.submit(request)
+  for try await _ in try await core.run(taskID: edited.id) {}
+  let take = try #require(
+    try await core.workspace().takes.first(where: { $0.parentTakeID == parent.id }))
+  let reproduction = try await core.requestForTake(id: take.id, reproduce: true)
+  #expect(reproduction == request)
 }

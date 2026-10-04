@@ -225,8 +225,9 @@ public actor OpenLoopCore {
       continuation.yield(.task(current))
       continuation.finish()
     } catch {
-      current.state = error is CancellationError ? .cancelled : .failed
-      current.error = error is CancellationError ? nil : error.localizedDescription
+      let cancelled = Task.isCancelled || error is CancellationError
+      current.state = cancelled ? .cancelled : .failed
+      current.error = cancelled ? nil : error.localizedDescription
       do {
         try store.save("task", id: current.id, value: current)
         continuation.yield(.task(current))

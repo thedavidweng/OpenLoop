@@ -113,6 +113,9 @@ jobs:
       - name: Package unsigned native app
         run: python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
 
+      - name: Packaged headless CLI smoke
+        run: python3 native/scripts/smoke-cli.py
+
   rust-fmt-check:
     name: Rust Format
     runs-on: ubuntu-latest

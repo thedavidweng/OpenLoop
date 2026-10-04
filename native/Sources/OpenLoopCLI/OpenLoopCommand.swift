@@ -40,7 +40,7 @@ struct OpenLoopCommand {
         try Task.checkCancellation()
       }
       signal(SIGINT, SIG_IGN)
-      let interrupt = DispatchSource.makeSignalSource(signal: SIGINT, queue: .global())
+      let interrupt = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
       interrupt.setEventHandler { execution.cancel() }
       interrupt.resume()
       defer { interrupt.cancel() }

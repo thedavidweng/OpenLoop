@@ -119,6 +119,9 @@ manual UI inspection.
   `native/dist/OpenLoop.app`, including the Swift CLI, model resource bundle,
   existing icon, and verified uv sidecar. It generates `Contents/Info.plist` from
   the root package version. A previous output must be removed explicitly.
+- `native/scripts/smoke-cli.py` exercises that packaged CLI against a temporary
+  local HTTP fixture, including SIGINT exit status and persisted cancellation.
+  It writes no repository artifacts and does not download or run real models.
 
 ## Generated changelog
 

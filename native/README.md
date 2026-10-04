@@ -13,6 +13,7 @@ swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native
 swift run --package-path native openloop-cli help
 python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
+python3 native/scripts/smoke-cli.py
 ```
 
 Use `--data-dir /tmp/openloop-native-test` while evaluating migration/builds.

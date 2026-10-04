@@ -106,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Satisfy knip and cover announced catalog cards
 - **native**: Preserve runtime settings, seeds and cancellation semantics
 - **native**: Await cancelled generation cleanup before CLI exit
+- **native**: Validate packaged CLI signal cancellation
 
 ### 📝 Documentation
 
@@ -116,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Remove completed plans and stale docs
 - Add mise install step to contributing guide
 - Regenerate changelog for native foundation
+- Regenerate changelog after cancellation fix
 
 ### 📦 Dependencies
 

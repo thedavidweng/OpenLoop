@@ -105,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Anchor regex in validate-readme to prevent URL host bypass (CodeQL #2)
 - Satisfy knip and cover announced catalog cards
 - **native**: Preserve runtime settings, seeds and cancellation semantics
+- **native**: Await cancelled generation cleanup before CLI exit
 
 ### 📝 Documentation
 
@@ -114,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Add NDJSON event schema specification (#80)
 - Remove completed plans and stale docs
 - Add mise install step to contributing guide
+- Regenerate changelog for native foundation
 
 ### 📦 Dependencies
 

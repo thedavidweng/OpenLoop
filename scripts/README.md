@@ -119,3 +119,9 @@ manual UI inspection.
   `native/dist/OpenLoop.app`, including the Swift CLI, model resource bundle,
   existing icon, and verified uv sidecar. It generates `Contents/Info.plist` from
   the root package version. A previous output must be removed explicitly.
+
+## Generated changelog
+
+`pnpm changelog` runs `git-cliff` with `cliff.toml` and writes `CHANGELOG.md`
+from Conventional Commits. Regenerate it after commits; do not edit the output
+by hand.

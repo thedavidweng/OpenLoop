@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **native**: Preserve runtime settings, seeds and cancellation semantics
 - **native**: Await cancelled generation cleanup before CLI exit
 - **native**: Validate packaged CLI signal cancellation
+- **native**: Size main window minimum to fit all workspace columns
 
 ### 📝 Documentation
 
@@ -122,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog after cancellation fix
 - Refresh generated native changelog
 - Regenerate changelog for native workspace UI
+- Regenerate changelog for native region edits
 
 ### 📦 Dependencies
 

@@ -18,7 +18,9 @@ public struct OpenLoopScenes: Scene {
       RootView()
         .environment(model)
         .environment(playback)
-        .frame(minWidth: 960, minHeight: 600)
+        // Must cover the sidebar, Compose, Takes and inspector minimum widths;
+        // a smaller window makes the split view overflow and clip both edges.
+        .frame(minWidth: 1160, minHeight: 600)
         .task {
           delegate.model = model
           model.onTakeCompleted = { Notifications.takeCompleted($0) }

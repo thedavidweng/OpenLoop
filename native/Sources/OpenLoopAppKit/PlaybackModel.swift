@@ -114,6 +114,16 @@ public final class PlaybackModel {
     loopSelection = false
   }
 
+  public func editSelection(for recordID: String) -> EditRegion? {
+    guard loadedRecordID == recordID, let selection else { return nil }
+    return EditRegion(start: selection.start, end: selection.end)
+  }
+  public func audioDuration(of record: GenerationRecord) async -> Double? {
+    if loadedRecordID == record.id, duration > 0 { return duration }
+    guard let audio = record.artifacts.first(where: { $0.kind == .audio }) else { return nil }
+    return await waveform(for: audio)?.duration
+  }
+
   public func waveform(for artifact: Artifact) async -> Waveform? {
     if let cached = waveforms[artifact.id] { return cached }
     let url = artifact.url

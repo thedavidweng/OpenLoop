@@ -11,7 +11,10 @@ catalog; GUI and CLI consume the same descriptors without metadata mirrors.
 OpenLoopCore knows only `Engine`: capabilities, generation events/results,
 cancellation and shutdown. Creative requests remain engine-neutral. Advanced
 settings have an adapter-owned versioned payload; ACE-Step fields never become
-common request fields. Python runtimes use bundled uv; a future MLX Swift runtime
+common request fields. Repaint and Extend share one common `EditRegion` (seconds
+on the source audio timeline; Extend's end is the output duration). Core validates
+it and requires source audio; adapters map it to their own protocol. ACE-Step maps
+it to repaint and does not claim Extend, which its API does not offer. Python runtimes use bundled uv; a future MLX Swift runtime
 can implement the same protocol. No public plugin SDK is promised.
 
 The Engine writes local artifacts into the Core-provided output directory; Core

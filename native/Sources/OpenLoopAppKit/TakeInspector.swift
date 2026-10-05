@@ -42,6 +42,13 @@ struct RecordDetails: View {
           .disabled(model.activity == .generating)
           .help("Load these settings into Compose as a new variation of this Take")
         }
+        if model.canEdit(item, .repaint) || model.canEdit(item, .extend) {
+          HStack { RegionEditActions(item: item, showsIcons: true) }
+          if model.canEdit(item, .repaint), playback.editSelection(for: record.id) == nil {
+            Text("To repaint, play this Take and drag across the waveform to select a part.")
+              .font(.caption).foregroundStyle(.secondary)
+          }
+        }
         if !model.canReproduce(record) {
           Text("Exact reproduction is unavailable because the actual seed was not recorded.")
             .font(.caption).foregroundStyle(.secondary)
@@ -77,6 +84,11 @@ struct RecordDetails: View {
         LabeledContent("Model", value: model.configurationName(request.selection))
         LabeledContent("Duration", value: formatTime(request.duration))
         LabeledContent("Seed", value: record.seed.map { String($0) } ?? "Not reported")
+        if let region = request.editRegion {
+          LabeledContent(
+            request.operation == .extend ? "Extended" : "Repainted",
+            value: "\(formatTime(region.start))–\(formatTime(region.end))")
+        }
         if let bpm = request.bpm { LabeledContent("Tempo", value: "\(bpm) BPM") }
         if let key = request.key { LabeledContent("Key", value: key) }
         if let signature = request.timeSignature {

@@ -90,6 +90,18 @@ public struct EngineOptions: Codable, Sendable, Equatable {
     self.values = values
   }
 }
+// Seconds on the source audio timeline. Repaint regenerates [start, end) inside the
+// source; Extend generates new material from `start` (usually the source's end)
+// until `end`, which is also the output duration.
+public struct EditRegion: Codable, Sendable, Equatable {
+  public var start: Double
+  public var end: Double
+  public init(start: Double, end: Double) {
+    self.start = start
+    self.end = end
+  }
+  public var length: Double { end - start }
+}
 public struct GenerationRequest: Codable, Sendable, Equatable {
   public var selection: Selection
   public var projectID: String?
@@ -106,13 +118,14 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
   public var timeSignature: String?
   public var audioFormat: String
   public var engineOptions: EngineOptions
+  public var editRegion: EditRegion?
   public init(
     selection: Selection, prompt: String, lyrics: String = "", duration: Double = 30,
     seed: Int64? = nil, takeCount: Int = 1, projectID: String? = nil,
     parentTakeID: String? = nil, operation: Operation = .generate,
     references: [URL] = [], bpm: Int? = nil, key: String? = nil,
     timeSignature: String? = nil, audioFormat: String = "wav",
-    engineOptions: EngineOptions = .init()
+    engineOptions: EngineOptions = .init(), editRegion: EditRegion? = nil
   ) {
     self.selection = selection
     self.prompt = prompt
@@ -129,7 +142,9 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     self.timeSignature = timeSignature
     self.audioFormat = audioFormat
     self.engineOptions = engineOptions
+    self.editRegion = editRegion
   }
+  public var isRegionEdit: Bool { [.repaint, .extend].contains(operation) }
   public func validate(capabilities: Capabilities) throws {
     guard !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
       duration.isFinite, duration > 0, duration <= capabilities.maximumDuration,
@@ -159,6 +174,16 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     if let bpm, bpm <= 0 { throw CoreError.invalid("BPM must be positive.") }
     if operation != .generate && parentTakeID == nil {
       throw CoreError.invalid("Iteration requires a parent Take.")
+    }
+    if isRegionEdit {
+      guard let region = editRegion, region.start.isFinite, region.end.isFinite,
+        region.start >= 0, region.end > region.start, region.end <= duration
+      else { throw CoreError.invalid("Repaint and Extend require a valid edit region.") }
+      guard !references.isEmpty else {
+        throw CoreError.invalid("Repaint and Extend require source audio.")
+      }
+    } else if editRegion != nil {
+      throw CoreError.invalid("Only Repaint and Extend accept an edit region.")
     }
   }
 }

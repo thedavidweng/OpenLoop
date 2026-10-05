@@ -30,6 +30,12 @@ public enum Activity: Equatable, Sendable {
   case idle, generating, installing
 }
 
+// Region edits a Take can start from the inspector or a Take's context menu.
+public enum RegionEdit: Sendable, CaseIterable {
+  case repaint, extend
+  public var capability: Capability { self == .repaint ? .repaint : .extend }
+}
+
 public struct TakeItem: Identifiable, Equatable, Sendable {
   public var take: Take
   public var record: GenerationRecord
@@ -304,9 +310,40 @@ public final class WorkspaceModel {
       self.draft = request
     }
   }
+  public func canEdit(_ item: TakeItem, _ edit: RegionEdit) -> Bool {
+    configuration(for: item.record.request.selection)?.capabilities.supported.contains(
+      edit.capability) ?? false
+  }
+  // `selection` is the waveform region for Repaint; Extend continues from the end.
+  public func edit(
+    takeID: String, _ edit: RegionEdit, sourceDuration: Double, selection: EditRegion? = nil
+  ) async {
+    await perform {
+      guard let item = self.item(takeID: takeID), let audio = item.audio, audio.exists,
+        let capabilities = self.configuration(for: item.record.request.selection)?.capabilities
+      else { throw CoreError.invalid("This Take has no audio to edit.") }
+      let base = try await self.core().requestForTake(id: takeID, reproduce: false)
+      guard
+        let request = ComposeRules.regionEdit(
+          base, edit, source: audio.url, sourceDuration: sourceDuration, selection: selection,
+          capabilities: capabilities)
+      else {
+        throw CoreError.invalid(
+          edit == .repaint
+            ? "Select part of the Take on the waveform to repaint it."
+            : "This Take is already at the longest length the Engine supports.")
+      }
+      self.select(item.take.projectID.map(SidebarItem.project) ?? .unfiled)
+      self.draft = request
+    }
+  }
   public func clearIteration() {
-    draft?.parentTakeID = nil
-    draft?.operation = .generate
+    guard var request = draft else { return }
+    if request.isRegionEdit || request.operation == .cover { request.references = [] }
+    request.parentTakeID = nil
+    request.operation = .generate
+    request.editRegion = nil
+    draft = request
   }
   private func consume(_ task: GenerationTask) async throws {
     activeTaskID = task.id
@@ -505,7 +542,49 @@ public enum ComposeRules {
     if !supported.contains(.key) { request.key = nil }
     if !supported.contains(.timeSignature) { request.timeSignature = nil }
     if !supported.contains(.referenceAudio) { request.references = [] }
+    let editCapability: Capability? =
+      switch request.operation {
+      case .cover: .cover
+      case .repaint: .repaint
+      case .extend: .extend
+      case .generate, .variation: nil
+      }
+    if let editCapability, !supported.contains(editCapability) {
+      request.operation = request.parentTakeID == nil ? .generate : .variation
+      request.references = []
+      request.editRegion = nil
+    }
     request.duration = min(request.duration, capabilities.maximumDuration)
+    return request
+  }
+  // Extend continues from the source's end with a default 30 seconds of new material.
+  public static func regionEdit(
+    _ base: GenerationRequest, _ edit: RegionEdit, source: URL, sourceDuration: Double,
+    selection: EditRegion?, capabilities: Capabilities
+  ) -> GenerationRequest? {
+    guard capabilities.supported.contains(edit.capability), sourceDuration.isFinite,
+      sourceDuration > 0
+    else { return nil }
+    var request = base
+    request.seed = nil
+    request.takeCount = 1
+    request.references = [source]
+    switch edit {
+    case .repaint:
+      guard let selection, sourceDuration <= capabilities.maximumDuration else { return nil }
+      let region = EditRegion(
+        start: max(0, selection.start), end: min(selection.end, sourceDuration))
+      guard region.length > 0 else { return nil }
+      request.operation = .repaint
+      request.editRegion = region
+      request.duration = sourceDuration
+    case .extend:
+      let end = min(capabilities.maximumDuration, sourceDuration + 30)
+      guard end > sourceDuration else { return nil }
+      request.operation = .extend
+      request.editRegion = EditRegion(start: sourceDuration, end: end)
+      request.duration = end
+    }
     return request
   }
 }

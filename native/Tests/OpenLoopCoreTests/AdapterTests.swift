@@ -76,6 +76,39 @@ import Testing
         selection: selection, prompt: "piano",
         engineOptions: .init(values: ["imaginedOption": .bool(true)])))
   }
+  #expect(throws: CoreError.self) {
+    try adapter.payload(
+      for: .init(
+        selection: selection, prompt: "piano",
+        engineOptions: .init(values: ["repaintStart": .number(1)])))
+  }
+}
+@Test func aceAdapterMapsTheEngineNeutralEditRegionToRepaint() throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let adapter = AceStepEngine(
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
+  let selection = try EngineCatalog.firstParty.selection(configurationID: "ace-step/turbo")
+  let source = root.appendingPathComponent("source.wav")
+  let value = try adapter.payload(
+    for: .init(
+      selection: selection, prompt: "brighter chorus", duration: 40, parentTakeID: "parent",
+      operation: .repaint, references: [source], editRegion: .init(start: 12.5, end: 20)))
+  guard case .object(let payload) = value else {
+    Issue.record("ACE-Step payload must be an object")
+    return
+  }
+  #expect(payload["task_type"] == .string("repaint"))
+  #expect(payload["src_audio_path"] == .string(source.path))
+  #expect(payload["repainting_start"] == .number(12.5))
+  #expect(payload["repainting_end"] == .number(20))
+  #expect(payload["audio_duration"] == .number(40))
+  #expect(throws: CoreError.self) {
+    try adapter.payload(
+      for: .init(
+        selection: selection, prompt: "longer", duration: 60, parentTakeID: "parent",
+        operation: .extend, references: [source], editRegion: .init(start: 40, end: 60)))
+  }
 }
 
 @Test func ownedRuntimeLaunchesWithBundledUVAndStopsItsChild() async throws {

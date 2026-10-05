@@ -93,7 +93,8 @@ CLI v2 events, ACE-Step submit/poll/download and seed mapping, and deterministic
 native waveform/selection behavior. An unsigned app bundle is buildable. This is
 not yet a signed/notarized production release. App tests drive `WorkspaceModel`
 through a scripted Engine (capability gating, setup gating, retry, reproduction,
-deletion). Real-model bootstrap/generation, audio hardware playback/seek/A-B,
+region edits, deletion). Repaint uses the waveform selection on the loaded Take;
+Extend appears only for Engines that claim it, which ACE-Step 1.5 does not. Real-model bootstrap/generation, audio hardware playback/seek/A-B,
 Finder/DAW drag, notifications, VoiceOver, and packaged relaunch/coexistence
 still require the Apple Silicon smoke matrix. Only then retire React/Tauri/Rust, their mirrored
 catalog and obsolete build/release dependencies.

@@ -112,10 +112,11 @@ struct TakeRow: View {
         HStack(spacing: 6) {
           Text("Take \(number)").font(.headline)
           if item.take.parentTakeID != nil {
-            Image(systemName: "arrow.triangle.branch")
+            let lineage = Lineage(item.record.request)
+            Image(systemName: lineage.icon)
               .foregroundStyle(.secondary)
-              .help("Variation of another Take")
-              .accessibilityLabel("Variation")
+              .help(lineage.help)
+              .accessibilityLabel(lineage.label)
           }
           if item.record.isFavorite {
             Image(systemName: "star.fill").foregroundStyle(.yellow).accessibilityLabel("Favorite")
@@ -146,6 +147,21 @@ struct TakeRow: View {
     .padding(.vertical, 3)
     .accessibilityElement(children: .combine)
     .accessibilityAction(named: "Play or Pause") { playback.toggle(item.record) }
+  }
+}
+
+private struct Lineage {
+  let icon: String
+  let help: String
+  let label: String
+  init(_ request: GenerationRequest) {
+    switch request.operation {
+    case .repaint: (icon, help, label) = ("paintbrush", "Repainted from another Take", "Repaint")
+    case .extend:
+      (icon, help, label) = ("arrow.right.to.line", "Extended from another Take", "Extension")
+    default:
+      (icon, help, label) = ("arrow.triangle.branch", "Variation of another Take", "Variation")
+    }
   }
 }
 
@@ -196,6 +212,49 @@ struct AttemptRow: View {
   }
 }
 
+// Repaint and Extend appear only when the Take's Engine supports them.
+struct RegionEditActions: View {
+  let item: TakeItem
+  var showsIcons = false
+  @Environment(WorkspaceModel.self) private var model
+  @Environment(PlaybackModel.self) private var playback
+
+  var body: some View {
+    if model.canEdit(item, .repaint) {
+      let selection = playback.editSelection(for: item.record.id)
+      button("Repaint Selection", icon: "paintbrush") {
+        await model.edit(
+          takeID: item.id, .repaint, sourceDuration: playback.duration, selection: selection)
+      }
+      .disabled(selection == nil || item.isMissing || model.activity == .generating)
+      .help(
+        selection == nil
+          ? "Play this Take, then drag across the waveform to choose the part to repaint"
+          : "Regenerate only the selected part of this Take")
+    }
+    if model.canEdit(item, .extend) {
+      button("Extend", icon: "arrow.right.to.line") {
+        guard let duration = await playback.audioDuration(of: item.record) else {
+          model.error = "The Take’s audio could not be read."
+          return
+        }
+        await model.edit(takeID: item.id, .extend, sourceDuration: duration)
+      }
+      .disabled(item.isMissing || model.activity == .generating)
+      .help("Continue this Take with new music after its end")
+    }
+  }
+  @ViewBuilder private func button(
+    _ title: String, icon: String, action: @escaping @MainActor () async -> Void
+  ) -> some View {
+    if showsIcons {
+      Button(title, systemImage: icon) { Task { await action() } }
+    } else {
+      Button(title) { Task { await action() } }
+    }
+  }
+}
+
 // Shared actions for Take rows, the inspector, and History.
 struct TakeActions: View {
   let item: TakeItem
@@ -215,6 +274,7 @@ struct TakeActions: View {
       .disabled(!model.canReproduce(item.record) || model.activity == .generating)
     Button("New Variation") { Task { await model.iterate(takeID: item.id, reproduce: false) } }
       .disabled(model.activity == .generating)
+    RegionEditActions(item: item)
     Divider()
     Button(item.record.isFavorite ? "Remove from Favorites" : "Add to Favorites") {
       Task { await model.setFavorite(id: item.record.id, favorite: !item.record.isFavorite) }

@@ -7,8 +7,6 @@ public struct AceAdvancedSettings: Codable, Sendable {
   public var thinking: Bool?
   public var inferenceSteps: Int = 8
   public var guidanceScale: Double = 7
-  public var repaintStart: Double?
-  public var repaintEnd: Double?
   public var coverStrength: Double?
   public init() {}
 }
@@ -36,7 +34,7 @@ public struct AceStepEngine: Engine {
     }
     let supported: Set<String> = [
       "negativePrompt", "vocalLanguage", "thinking", "inferenceSteps", "guidanceScale",
-      "repaintStart", "repaintEnd", "coverStrength",
+      "coverStrength",
     ]
     guard Set(request.engineOptions.values.keys).isSubset(of: supported) else {
       throw CoreError.invalid("Unknown ACE-Step advanced setting")
@@ -51,11 +49,6 @@ public struct AceStepEngine: Engine {
     guard (1...200).contains(options.inferenceSteps), options.guidanceScale.isFinite,
       options.guidanceScale >= 0
     else { throw CoreError.invalid("Invalid ACE-Step inference settings") }
-    if request.operation == .repaint {
-      guard let start = options.repaintStart, let end = options.repaintEnd, start.isFinite,
-        end.isFinite, start >= 0, end > start, end <= request.duration
-      else { throw CoreError.invalid("Repaint requires a valid start/end interval") }
-    }
     if [.cover, .repaint].contains(request.operation) && request.references.isEmpty {
       throw CoreError.invalid("Cover/repaint requires source audio")
     }
@@ -87,8 +80,12 @@ public struct AceStepEngine: Engine {
       payload[request.operation == .generate ? "reference_audio_path" : "src_audio_path"] = .string(
         audio.path)
     }
-    if let start = options.repaintStart { payload["repainting_start"] = .number(start) }
-    if let end = options.repaintEnd { payload["repainting_end"] = .number(end) }
+    // Core validated the region; ACE-Step has no extend task, so the catalog never
+    // claims `.extend` and only repaint reaches this mapping.
+    if request.operation == .repaint, let region = request.editRegion {
+      payload["repainting_start"] = .number(region.start)
+      payload["repainting_end"] = .number(region.end)
+    }
     if let strength = options.coverStrength { payload["audio_cover_strength"] = .number(strength) }
     return .object(payload)
   }

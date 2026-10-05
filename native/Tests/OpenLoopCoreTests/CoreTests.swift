@@ -176,11 +176,42 @@ actor WaitingEngine: Engine {
   let source = try #require(try await core.workspace().history.first?.artifacts.first)
   let request = GenerationRequest(
     selection: testSelection, prompt: "edit", seed: 42,
-    parentTakeID: parent.id, operation: .repaint, references: [source.url])
+    parentTakeID: parent.id, operation: .repaint, references: [source.url],
+    editRegion: .init(start: 4, end: 8))
   let edited = try await core.submit(request)
   for try await _ in try await core.run(taskID: edited.id) {}
   let take = try #require(
     try await core.workspace().takes.first(where: { $0.parentTakeID == parent.id }))
   let reproduction = try await core.requestForTake(id: take.id, reproduce: true)
   #expect(reproduction == request)
+}
+
+@Test func regionEditsNeedAValidRegionAndSourceAudio() throws {
+  let capabilities = Capabilities([.referenceAudio, .repaint, .extend], maximumDuration: 60)
+  let source = URL(fileURLWithPath: "/tmp/source.wav")
+  func repaint(_ region: EditRegion?, references: [URL] = [source]) -> GenerationRequest {
+    .init(
+      selection: testSelection, prompt: "edit", duration: 30, parentTakeID: "parent",
+      operation: .repaint, references: references, editRegion: region)
+  }
+  func extend(_ region: EditRegion) -> GenerationRequest {
+    var request = repaint(region)
+    request.operation = .extend
+    return request
+  }
+  var variation = repaint(.init(start: 2, end: 6))
+  variation.operation = .variation
+  try repaint(.init(start: 2, end: 6)).validate(capabilities: capabilities)
+  try extend(.init(start: 20, end: 30)).validate(capabilities: capabilities)
+  for invalid in [
+    repaint(nil), repaint(.init(start: 6, end: 2)), repaint(.init(start: -1, end: 2)),
+    repaint(.init(start: 2, end: .infinity)), repaint(.init(start: 2, end: 6), references: []),
+    extend(.init(start: 20, end: 31)), variation,
+  ] {
+    #expect(throws: CoreError.self) { try invalid.validate(capabilities: capabilities) }
+  }
+  #expect(throws: CoreError.self) {
+    try extend(.init(start: 20, end: 30)).validate(
+      capabilities: Capabilities([.referenceAudio, .repaint], maximumDuration: 60))
+  }
 }

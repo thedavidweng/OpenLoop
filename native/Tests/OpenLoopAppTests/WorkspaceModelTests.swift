@@ -31,7 +31,9 @@ private let catalog = EngineCatalog(
   configurations: [
     .init(
       id: "test/default", name: "Default", selection: selection,
-      capabilities: .init([.lyrics, .reproducibility], maximumDuration: 60), model: "fake",
+      capabilities: .init(
+        [.lyrics, .reproducibility, .referenceAudio, .repaint, .extend], maximumDuration: 60),
+      model: "fake",
       languageModel: nil,
       thinking: false, recommendedMemoryGB: 1)
   ])
@@ -197,4 +199,68 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   await model.chooseConfiguration(id: "future/turbo")
   #expect(model.error != nil)
   #expect(model.draft?.selection == selection)
+}
+
+@Test func regionEditsAreBuiltFromTheSourceTakeAndRespectCapabilities() throws {
+  let capabilities = Capabilities([.referenceAudio, .repaint, .extend], maximumDuration: 60)
+  let source = URL(fileURLWithPath: "/tmp/source.wav")
+  var base = GenerationRequest(selection: selection, prompt: "x", seed: 3, takeCount: 4)
+  base.parentTakeID = "parent"
+  #expect(
+    ComposeRules.regionEdit(
+      base, .repaint, source: source, sourceDuration: 20, selection: nil,
+      capabilities: capabilities) == nil)
+  let repaint = try #require(
+    ComposeRules.regionEdit(
+      base, .repaint, source: source, sourceDuration: 20,
+      selection: .init(start: 4, end: 25), capabilities: capabilities))
+  #expect(repaint.operation == .repaint && repaint.duration == 20)
+  #expect(repaint.editRegion == .init(start: 4, end: 20))
+  #expect(repaint.references == [source] && repaint.seed == nil && repaint.takeCount == 1)
+  let extend = try #require(
+    ComposeRules.regionEdit(
+      base, .extend, source: source, sourceDuration: 45, selection: nil,
+      capabilities: capabilities))
+  #expect(extend.editRegion == .init(start: 45, end: 60) && extend.duration == 60)
+  #expect(
+    ComposeRules.regionEdit(
+      base, .extend, source: source, sourceDuration: 60, selection: nil,
+      capabilities: capabilities) == nil)
+  #expect(
+    ComposeRules.regionEdit(
+      base, .extend, source: source, sourceDuration: 20, selection: nil,
+      capabilities: .init([.referenceAudio, .repaint], maximumDuration: 60)) == nil)
+  let sanitized = ComposeRules.sanitized(
+    extend, for: .init([.referenceAudio, .repaint], maximumDuration: 60))
+  #expect(sanitized.operation == .variation && sanitized.editRegion == nil)
+  #expect(sanitized.references.isEmpty)
+}
+
+@MainActor @Test func repaintingASelectionCreatesALinkedTake() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  await model.createProject(name: "Song")
+  model.draft?.prompt = "verse"
+  await model.generate()
+  let source = try #require(model.takes(projectID: model.selectedProjectID).first)
+  #expect(model.canEdit(source, .repaint) && model.canEdit(source, .extend))
+  await model.edit(
+    takeID: source.id, .repaint, sourceDuration: 30, selection: .init(start: 8, end: 12))
+  #expect(model.error == nil)
+  #expect(model.draft?.operation == .repaint)
+  #expect(model.draft?.editRegion == .init(start: 8, end: 12))
+  #expect(model.draft?.references == [try #require(source.audio).url])
+  #expect(model.canGenerate)
+  await model.generate()
+  let edited = try #require(
+    model.takes(projectID: model.selectedProjectID).first { $0.take.parentTakeID == source.id })
+  #expect(edited.record.request.editRegion == .init(start: 8, end: 12))
+
+  await model.edit(takeID: source.id, .repaint, sourceDuration: 30)
+  #expect(model.error != nil)
+  await model.edit(takeID: source.id, .extend, sourceDuration: 30)
+  #expect(model.draft?.operation == .extend && model.draft?.duration == 60)
+  model.clearIteration()
+  #expect(model.draft?.operation == .generate && model.draft?.editRegion == nil)
+  #expect(model.draft?.references.isEmpty == true)
 }

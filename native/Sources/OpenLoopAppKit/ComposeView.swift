@@ -19,10 +19,11 @@ struct ComposeView: View {
         engineSection
         if model.draft != nil {
           iterationBanner
+          if isRegionEdit { editRegionSection }
           ideaSection
           shapeSection
           if shows(.bpm) || shows(.key) || shows(.timeSignature) { musicSection }
-          if shows(.reproducibility) || shows(.referenceAudio) { sourceSection }
+          if shows(.reproducibility) || shows(.referenceAudio) && !isRegionEdit { sourceSection }
           EngineAdvancedSection()
         }
       }
@@ -40,6 +41,7 @@ struct ComposeView: View {
     }
   }
 
+  private var isRegionEdit: Bool { model.draft?.isRegionEdit ?? false }
   private func shows(_ capability: Capability) -> Bool {
     ComposeRules.shows(capability, in: model.capabilities)
   }
@@ -92,10 +94,7 @@ struct ComposeView: View {
     if let parent = model.draft?.parentTakeID {
       Section {
         HStack {
-          Label(
-            model.draft?.operation == .variation
-              ? "New variation of a Take" : "Iterating on a Take",
-            systemImage: "arrow.triangle.branch")
+          Label(bannerTitle, systemImage: bannerIcon)
           Spacer()
           if let item = model.item(takeID: parent) {
             Button("Show") { model.selectedTakeID = item.id }
@@ -106,6 +105,92 @@ struct ComposeView: View {
             .help("Generate independently instead of as a variation")
         }
       }
+    }
+  }
+  private var bannerTitle: String {
+    switch model.draft?.operation {
+    case .variation: "New variation of a Take"
+    case .repaint: "Repainting part of a Take"
+    case .extend: "Extending a Take"
+    case .cover: "Covering a Take"
+    case .generate, nil: "Iterating on a Take"
+    }
+  }
+  private var bannerIcon: String {
+    switch model.draft?.operation {
+    case .repaint: "paintbrush"
+    case .extend: "arrow.right.to.line"
+    default: "arrow.triangle.branch"
+    }
+  }
+
+  private func regionBinding(_ keyPath: WritableKeyPath<EditRegion, Double>) -> Binding<Double> {
+    Binding(
+      get: { model.draft?.editRegion?[keyPath: keyPath] ?? 0 },
+      set: { model.draft?.editRegion?[keyPath: keyPath] = $0 })
+  }
+
+  @ViewBuilder private var editRegionSection: some View {
+    let duration = model.draft?.duration ?? 0
+    let region = model.draft?.editRegion
+    Section {
+      if model.draft?.operation == .repaint {
+        LabeledContent("Start") {
+          TextField(
+            "Start", value: regionBinding(\.start),
+            format: .number.precision(.fractionLength(0...2))
+          )
+          .labelsHidden()
+          .multilineTextAlignment(.trailing)
+          .frame(width: 80)
+          .accessibilityLabel("Repaint start, seconds")
+        }
+        LabeledContent("End") {
+          TextField(
+            "End", value: regionBinding(\.end), format: .number.precision(.fractionLength(0...2))
+          )
+          .labelsHidden()
+          .multilineTextAlignment(.trailing)
+          .frame(width: 80)
+          .accessibilityLabel("Repaint end, seconds")
+        }
+        Text(
+          "Only \(formatTime(region?.start ?? 0))–\(formatTime(region?.end ?? 0)) of the \(formatTime(duration)) Take is regenerated. The rest stays as it is."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      } else {
+        let start = region?.start ?? 0
+        let maximum = model.capabilities?.maximumDuration ?? start
+        LabeledContent("Continue from", value: formatTime(start))
+        if maximum > start + 1 {
+          LabeledContent("New length") {
+            HStack {
+              Slider(
+                value: Binding(
+                  get: { region?.end ?? start },
+                  set: {
+                    model.draft?.editRegion?.end = $0
+                    model.draft?.duration = $0
+                  }),
+                in: min(start + 1, maximum)...maximum
+              )
+              .accessibilityValue("\(Int(region?.end ?? start)) seconds")
+              Text(formatTime(region?.end ?? start))
+                .monospacedDigit()
+                .frame(width: 44, alignment: .trailing)
+            }
+          }
+        }
+        Text("Adds \(formatTime(region?.length ?? 0)) of new music after the end of the Take.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      if let source = model.draft?.references.first {
+        LabeledContent("Source", value: source.lastPathComponent)
+      }
+    } header: {
+      Text(model.draft?.operation == .repaint ? "Repaint Region" : "Extension")
     }
   }
 
@@ -143,13 +228,15 @@ struct ComposeView: View {
   @ViewBuilder private var shapeSection: some View {
     let maximum = model.capabilities?.maximumDuration ?? 600
     Section("Takes") {
-      LabeledContent("Duration") {
-        HStack {
-          Slider(value: bind(\.duration, 30), in: 5...max(5, maximum), step: 5)
-            .accessibilityValue("\(Int(model.draft?.duration ?? 30)) seconds")
-          Text(formatTime(model.draft?.duration ?? 30))
-            .monospacedDigit()
-            .frame(width: 44, alignment: .trailing)
+      if !isRegionEdit {
+        LabeledContent("Duration") {
+          HStack {
+            Slider(value: bind(\.duration, 30), in: 5...max(5, maximum), step: 5)
+              .accessibilityValue("\(Int(model.draft?.duration ?? 30)) seconds")
+            Text(formatTime(model.draft?.duration ?? 30))
+              .monospacedDigit()
+              .frame(width: 44, alignment: .trailing)
+          }
         }
       }
       Stepper(value: bind(\.takeCount, 1), in: 1...8) {
@@ -200,7 +287,7 @@ struct ComposeView: View {
           TextField("Seed", value: bind(\.seed, nil), format: .number.grouping(.never))
         }
       }
-      if shows(.referenceAudio) {
+      if shows(.referenceAudio) && !isRegionEdit {
         LabeledContent("Reference audio") {
           if let reference = model.draft?.references.first {
             HStack {

@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Add a first-party engine and model-pack catalog
 - **native**: Add shared Swift core and engine foundation for #261
 - **native**: Implement SwiftUI creative workspace for #261
+- **native**: Add engine-neutral edit region with Repaint and Extend UI
 
 ### 🐛 Bug Fixes
 
@@ -120,6 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog for native foundation
 - Regenerate changelog after cancellation fix
 - Refresh generated native changelog
+- Regenerate changelog for native workspace UI
 
 ### 📦 Dependencies
 

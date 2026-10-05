@@ -12,7 +12,7 @@
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
 ![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
@@ -296,6 +296,10 @@ OpenLoop 不提供生成音乐的法律许可。
 
 ## 许可证
 
-OpenLoop 应用代码采用 [Apache License 2.0](LICENSE)。
+OpenLoop 应用代码采用 [GNU AGPL v3.0 only](LICENSE)。
 
 第三方模型、库和工具保留各自的许可证。尤其是 ACE-Step、MLX、FFmpeg、Tauri 和其他依赖，在再分发前应按上游许可条款进行审查。
+
+历史授权与第三方许可见 [LICENSING.md](LICENSING.md)。外部贡献者需签署
+[CLA 1.0](CLA.md)：在 PR 回复机器人要求的声明即可，无需额外授权。
+贡献者保留版权，并许可 David Weng 将贡献用于商业及闭源版本。

@@ -61,7 +61,7 @@ Compares the locale key sets between `en.json` and `zh-CN.json`.
 ## `validate-readme.mjs`
 
 Validates `README.md` and `README_CN.md` for license and status consistency
-(Apache-2.0 badges, status line, Tauri v2 CSP reference).
+(AGPL-3.0-only badges, status line, Tauri v2 CSP reference).
 
 - **Input:** `README.md`, `README_CN.md`, and the CSP ADR
 - **Output:** a pass/fail report on stdout

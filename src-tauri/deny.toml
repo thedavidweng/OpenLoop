@@ -36,6 +36,10 @@ allow = [
     "CDLA-Permissive-2.0",
 ]
 
+[[licenses.exceptions]]
+name = "openloop"
+allow = ["AGPL-3.0-only"]
+
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"

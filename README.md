@@ -12,7 +12,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
 ![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
@@ -295,9 +295,14 @@ Before opening a large PR, please open an issue describing the proposed change.
 
 ## License
 
-OpenLoop application code is released under the [Apache License 2.0](LICENSE).
+OpenLoop application code is released under the [GNU AGPL v3.0 only](LICENSE).
 
 Third-party models, libraries, and tools retain their own licenses. In particular, ACE-Step, MLX, FFmpeg, Tauri, and other dependencies should be reviewed according to their upstream license terms before redistribution.
+
+See [LICENSING.md](LICENSING.md) for historical and third-party licenses.
+External contributions require [CLA version 1.0](CLA.md), signed by replying
+to the bot in your PR. Contributors retain copyright and permit commercial
+and proprietary licensing of accepted contributions.
 
 ---
 

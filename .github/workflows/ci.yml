@@ -139,28 +139,20 @@ jobs:
       - name: Prepare sidecars
         run: node scripts/prepare-sidecars.mjs
 
-      # Advisory download does not write src-tauri/target. Hide it behind
-      # the compile, which must stay serial so check, clippy, and test share
-      # one target directory instead of rebuilding it three times.
-      - name: Rust audit
-        id: rust-audit
-        run: |
-          cargo install cargo-audit --locked
-          cd src-tauri && cargo audit --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2024-0370
-        background: true
+      # cargo-audit does not write src-tauri/target. check, clippy, and
+      # test stay in one script so they share that directory. `wait` is not
+      # accepted by the workflow parser here, so the overlap is a parallel group.
+      - parallel:
+          - name: Rust audit
+            run: |
+              cargo install cargo-audit --locked
+              cd src-tauri && cargo audit --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2024-0370
 
-      - name: Rust compile check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
-
-      - name: Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
-
-      - name: Rust tests
-        run: cargo test -q --manifest-path src-tauri/Cargo.toml
-
-      - name: Wait for Rust audit
-        if: ${{ !cancelled() }}
-        wait: rust-audit
+          - name: Rust compile, clippy, and tests
+            run: |
+              cargo check --manifest-path src-tauri/Cargo.toml
+              cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+              cargo test -q --manifest-path src-tauri/Cargo.toml
 
   cargo-deny:
     name: Cargo Deny

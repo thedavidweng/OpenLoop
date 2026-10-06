@@ -34,23 +34,23 @@ jobs:
         id: install
         run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=high --ignore-registry-errors
+      # Read-only checks share node_modules and do not write the Vite or
+      # coverage outputs. One runner, overlapped, instead of five serial steps.
+      - parallel:
+          - name: Audit dependencies
+            run: pnpm audit --audit-level=high --ignore-registry-errors
 
-      - name: Typecheck
-        run: pnpm typecheck
+          - name: Typecheck
+            run: pnpm typecheck
 
-      - name: Format check
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm format:check
+          - name: Format check
+            run: pnpm format:check
 
-      - name: Lint
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm lint
+          - name: Lint
+            run: pnpm lint
 
-      - name: knip (unused exports / dependencies)
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm knip --no-progress
+          - name: knip (unused exports / dependencies)
+            run: pnpm knip --no-progress
 
       - name: Frontend tests with coverage
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -171,19 +171,28 @@ jobs:
       - name: Prepare sidecars
         run: node scripts/prepare-sidecars.mjs
 
+      # Advisory download does not write src-tauri/target. Hide it behind
+      # the compile, which must stay serial so check, clippy, and test share
+      # one target directory instead of rebuilding it three times.
+      - name: Rust audit
+        id: rust-audit
+        run: |
+          cargo install cargo-audit --locked
+          cd src-tauri && cargo audit --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2024-0370
+        background: true
+
       - name: Rust compile check
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
 
-      - name: Rust audit
-        run: |
-          cargo install cargo-audit --locked
-          cd src-tauri && cargo audit --ignore RUSTSEC-2026-0285 --ignore RUSTSEC-2024-0370
-
       - name: Rust tests
         run: cargo test -q --manifest-path src-tauri/Cargo.toml
+
+      - name: Wait for Rust audit
+        if: ${{ !cancelled() }}
+        wait: rust-audit
 
   cargo-deny:
     name: Cargo Deny
@@ -228,7 +237,8 @@ jobs:
       - name: actionlint
         uses: reviewdog/action-actionlint@2085657ab2c7f48c58edcc767fba576f63bea76b # v1.77.0
         with:
-          actionlint_flags: ""
+          # actionlint 1.7.x does not know the 2026-06 step concurrency keys yet.
+          actionlint_flags: '-ignore ''unexpected key "(background|parallel|wait|wait-all|cancel)"'' -ignore ''step must run script with "run" section or run action with "uses" section'''
 
       - name: zizmor
         uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4

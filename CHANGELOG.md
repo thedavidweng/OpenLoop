@@ -133,6 +133,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Refresh native acceptance regression evidence
 - Regenerate native security changelog
 - Record activated native and CLA merge gates
+- Regenerate main protection changelog
+- Replace legacy PR checklist with native checks
 
 ### 📦 Dependencies
 

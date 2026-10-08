@@ -1,9 +1,34 @@
 import Foundation
-import OpenLoopAppKit
+import OpenLoopAudio
 import OpenLoopCore
 import Testing
 
+@testable import OpenLoopAppKit
 @testable import OpenLoopEngines
+
+@MainActor @Test func retryOpeningALibraryKeepsProcessEnvironmentOverrides() async throws {
+  let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+  defer { try? FileManager.default.removeItem(at: root) }
+  try Data("not a directory".utf8).write(to: root)
+  let model = WorkspaceModel(
+    defaults: UserDefaults(suiteName: UUID().uuidString)!,
+    processEnvironment: ["OPENLOOP_DATA_DIR": root.path, "OPENLOOP_UV": "/tmp/isolated-uv"])
+  await model.connect()
+  #expect(model.connectionError != nil)
+  try FileManager.default.removeItem(at: root)
+  await model.connect()
+  #expect(model.connectionError == nil)
+  #expect(model.isConnected)
+  #expect(
+    FileManager.default.fileExists(atPath: root.appendingPathComponent("openloop.sqlite3").path))
+}
+
+@Test func loopRestartsWhenNativePlaybackFinishesAndResetsItsPosition() throws {
+  let selection = try AudioSelection(start: 2, end: 10, duration: 10)
+  #expect(PlaybackModel.loopEnded(selection, currentTime: 0, isPlaying: false))
+  #expect(PlaybackModel.loopEnded(selection, currentTime: 10, isPlaying: true))
+  #expect(!PlaybackModel.loopEnded(selection, currentTime: 5, isPlaying: true))
+}
 
 private let selection = Selection(
   engineID: "test", runtimeID: "test/local", modelPackID: "test/pack",
@@ -105,6 +130,20 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   await model.generate()
   #expect(model.setupConfigurationID == configuration.id)
   #expect(model.history.isEmpty)
+}
+
+@MainActor @Test func failedSettingsSaveKeepsThePersistedSettingsForRetry() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let saved = try #require(model.settings)
+  var pending = saved
+  pending.backendPort = 0
+  await model.saveSettings(pending)
+  #expect(model.error != nil)
+  #expect(model.settings == saved)
+  pending.backendPort = 45678
+  await model.saveSettings(pending)
+  #expect(model.settings == pending)
 }
 
 @MainActor @Test func generatedTakesLandInTheSelectedProjectAndHistory() async throws {
@@ -266,6 +305,9 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
 
   await model.edit(takeID: source.id, .repaint, sourceDuration: 30)
   #expect(model.error != nil)
+  await model.edit(
+    takeID: source.id, .repaint, sourceDuration: 60.01, selection: .init(start: 8, end: 12))
+  #expect(model.error == "This Take is longer than the Engine's maximum repaint duration.")
   await model.edit(takeID: source.id, .extend, sourceDuration: 30)
   #expect(model.draft?.operation == .extend && model.draft?.duration == 60)
   model.clearIteration()

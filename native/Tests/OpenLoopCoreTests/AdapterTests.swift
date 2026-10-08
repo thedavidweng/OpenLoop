@@ -55,11 +55,26 @@ import Testing
   #expect(try await core.workspace().history.first(where: { $0.taskID == unknown.id })?.seed == nil)
 }
 @Test func unboundEnginesCannotBeSelectedOrInstalled() throws {
-  let catalog = EngineCatalog.firstParty
+  var catalog = EngineCatalog.firstParty
   #expect(throws: CoreError.self) { try catalog.selection(configurationID: "minimax-music3/turbo") }
-  #expect(catalog.packs.first(where: { $0.id == "minimax-music3/turbo" })?.installable == false)
+  let announced = Selection(
+    engineID: "minimax-music3", runtimeID: "unbound", modelPackID: "minimax-music3/turbo",
+    configurationID: "minimax-music3/turbo")
+  var configuration = try #require(catalog.configurations.first)
+  configuration.selection = announced
+  catalog.configurations.append(configuration)
+  #expect(throws: CoreError.self) { try catalog.configuration(announced) }
+  let announcedPack = try #require(catalog.packs.firstIndex { $0.id == announced.modelPackID })
+  catalog.packs[announcedPack].runtimeIDs = [announced.runtimeID]
+  catalog.packs[announcedPack].installable = true
+  #expect(throws: CoreError.self) {
+    try catalog.configuration(announced)
+  }
+  #expect(
+    EngineCatalog.firstParty.packs.first(where: { $0.id == "minimax-music3/turbo" })?.installable
+      == false)
   #expect(catalog.runtimes.first?.supportsCurrentMachine() == true)
-  for pack in catalog.packs where pack.installable {
+  for pack in EngineCatalog.firstParty.packs where pack.installable {
     let files = try EngineCatalog.modelFiles(packID: pack.id)
     for component in ["acestep-v15-turbo", "vae", "Qwen3-Embedding-0.6B", "acestep-5Hz-lm-1.7B"] {
       #expect(

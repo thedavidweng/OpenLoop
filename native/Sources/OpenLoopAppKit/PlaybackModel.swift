@@ -147,11 +147,22 @@ public final class PlaybackModel {
     ticker = nil
   }
   private func tick() {
-    if loopSelection, let selection, player.currentTime >= selection.end {
-      try? player.seek(to: selection.start)
+    if loopSelection, let selection,
+      Self.loopEnded(selection, currentTime: player.currentTime, isPlaying: player.isPlaying)
+    {
+      do {
+        try player.seek(to: selection.start)
+        if !player.isPlaying { try player.play() }
+      } catch { self.error = error.localizedDescription }
     }
     sync()
     if !player.isPlaying { stopTicking() }
+  }
+  // AVAudioPlayer stops and resets currentTime at EOF, including a selection ending at EOF.
+  nonisolated static func loopEnded(
+    _ selection: AudioSelection, currentTime: Double, isPlaying: Bool
+  ) -> Bool {
+    !isPlaying || currentTime >= selection.end
   }
   private func sync() {
     isPlaying = player.isPlaying

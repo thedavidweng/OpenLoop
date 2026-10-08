@@ -56,3 +56,24 @@ actor EventLog {
   }
   #expect(try await gui.workspace().history.count == 1)
 }
+
+@Test func failedCLIOutputCancelsItsQueuedGeneration() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let environment = OpenLoopEnvironment(
+    core: core, catalog: .firstParty,
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
+  let cli = OpenLoopCLI(environment: environment)
+  let request = GenerationRequest(selection: testSelection, prompt: "failed output")
+  let file = root.appendingPathComponent("request.json")
+  try JSONEncoder().encode(request).write(to: file)
+  await #expect(throws: CoreError.self) {
+    try await cli.execute(arguments: ["run", "--request", file.path]) { _ in
+      throw CoreError.invalid("Output unavailable")
+    }
+  }
+  let state = try await core.workspace()
+  #expect(state.tasks.first?.state == .cancelled)
+  #expect(state.history.isEmpty)
+}

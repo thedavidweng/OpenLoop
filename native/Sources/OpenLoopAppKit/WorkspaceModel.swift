@@ -72,17 +72,29 @@ public final class WorkspaceModel {
   @ObservationIgnored private var environment: OpenLoopEnvironment?
   @ObservationIgnored private var installTask: Task<Void, Never>?
   @ObservationIgnored private let defaults: UserDefaults
+  @ObservationIgnored private let processEnvironment: [String: String]
   private static let dismissedKey = "dismissedGenerationTaskIDs"
 
-  public init(defaults: UserDefaults = .standard) {
+  public init(
+    defaults: UserDefaults = .standard,
+    processEnvironment: [String: String] = ProcessInfo.processInfo.environment
+  ) {
     self.defaults = defaults
+    self.processEnvironment = processEnvironment
     dismissedTaskIDs = Set(defaults.stringArray(forKey: Self.dismissedKey) ?? [])
   }
 
   // MARK: Connection
 
-  public func connect(directory: URL = OpenLoopCore.defaultDirectory, bundledUV: URL? = nil) async {
-    let uv = bundledUV ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/uv")
+  public func connect(directory: URL? = nil, bundledUV: URL? = nil) async {
+    let directory =
+      directory
+      ?? processEnvironment["OPENLOOP_DATA_DIR"].map { URL(fileURLWithPath: $0) }
+      ?? OpenLoopCore.defaultDirectory
+    let uv =
+      bundledUV
+      ?? processEnvironment["OPENLOOP_UV"].map { URL(fileURLWithPath: $0) }
+      ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/uv")
     do {
       try await connect(environment: OpenLoopEnvironment.open(directory: directory, bundledUV: uv))
     } catch {
@@ -327,6 +339,9 @@ public final class WorkspaceModel {
         let capabilities = self.configuration(for: item.record.request.selection)?.capabilities
       else { throw CoreError.invalid("This Take has no audio to edit.") }
       let base = try await self.core().requestForTake(id: takeID, reproduce: false)
+      if edit == .repaint, sourceDuration > capabilities.maximumDuration {
+        throw CoreError.invalid("This Take is longer than the Engine's maximum repaint duration.")
+      }
       guard
         let request = ComposeRules.regionEdit(
           base, edit, source: audio.url, sourceDuration: sourceDuration, selection: selection,

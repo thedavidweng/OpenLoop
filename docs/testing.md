@@ -15,7 +15,7 @@ mockups; see the READMEs. Main-window captures are 2320 × 1304 Retina pixels
 | Check | Result | Evidence / boundary |
 | --- | --- | --- |
 | Native compilation | PASS | `swift build --package-path native -Xswiftc -warnings-as-errors` |
-| Core, adapter, CLI, audio and presentation tests | PASS | `swift test --package-path native`: 22 core tests and 11 app tests |
+| Core, adapter, CLI, audio and presentation tests | PASS | `swift test --package-path native`: 26 core tests and 14 app tests |
 | Release packaging | PASS | `python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --output /tmp/openloop-acceptance-20261007/OpenLoop.app` |
 | Packaged CLI smoke | PASS | Existing `smoke-cli.py`, pointed at the fresh bundle: project/settings persistence, NDJSON v2, deletion without confirmation rejected, SIGINT exit 130, persisted cancellation, resources and uv present |
 | First-run workspace and setup | PASS | Empty states, disabled empty-prompt generation, nonempty-prompt generation routes to setup, compatibility/memory/download/license text, Install disabled before review, Not Now dismisses |
@@ -47,7 +47,10 @@ clears its override when switching configuration. CLI exit stops its owned
 runtime, and PATH symlinks resolve to the bundle's uv. Reproduction links the new task to the
 surviving source Take, so a retained variation remains reproducible after its
 parent is deleted. Runtime memory metadata describes a recommendation, not an
-enforced minimum.
+enforced minimum. Review regressions also cover stale tasks after a CLI crash while
+the GUI remains open, Cover/Repaint variations, SQLite automatic rollback,
+failed CLI output, isolated-library retry, failed settings saves and EOF loop
+boundaries. Packaged CLI help is NDJSON in JSON mode.
 
 The signed DMG installation copy was relaunched against the isolated fixture
 library: project, both Takes and favorite state persisted. Native waveform drag

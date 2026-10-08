@@ -33,8 +33,12 @@ private struct SettingsEditor<Content: View>: View {
           Spacer()
           Button("Revert") { draft = nil }.disabled(draft == nil || draft == saved)
           Button("Save") {
-            if let draft { Task { await model.saveSettings(draft) } }
-            draft = nil
+            if let pending = draft {
+              Task {
+                await model.saveSettings(pending)
+                if model.settings == pending, draft == pending { draft = nil }
+              }
+            }
           }
           .keyboardShortcut(.defaultAction)
           .disabled(draft == nil || draft == saved)

@@ -25,11 +25,7 @@ public struct OpenLoopScenes: Scene {
           delegate.model = model
           model.onTakeCompleted = { Notifications.takeCompleted($0) }
           Notifications.requestAuthorization()
-          let environment = ProcessInfo.processInfo.environment
-          await model.connect(
-            directory: environment["OPENLOOP_DATA_DIR"].map { URL(fileURLWithPath: $0) }
-              ?? OpenLoopCore.defaultDirectory,
-            bundledUV: environment["OPENLOOP_UV"].map { URL(fileURLWithPath: $0) })
+          await model.connect()
         }
     }
     .defaultSize(width: 1240, height: 780)

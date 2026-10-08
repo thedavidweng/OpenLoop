@@ -13,15 +13,15 @@ final class LoopbackRedirects: NSObject, URLSessionTaskDelegate, Sendable {
 }
 struct LocalHTTP: Sendable {
   let port: Int
-  private let session: URLSession
-  init(port: Int) throws {
-    guard (1024...65535).contains(port) else { throw CoreError.invalid("Invalid local port") }
-    self.port = port
+  private static let session: URLSession = {
     let config = URLSessionConfiguration.ephemeral
     config.connectionProxyDictionary = [:]
     config.timeoutIntervalForRequest = 900
-    self.session = URLSession(
-      configuration: config, delegate: LoopbackRedirects(), delegateQueue: nil)
+    return URLSession(configuration: config, delegate: LoopbackRedirects(), delegateQueue: nil)
+  }()
+  init(port: Int) throws {
+    guard (1024...65535).contains(port) else { throw CoreError.invalid("Invalid local port") }
+    self.port = port
   }
   func data(
     _ path: String, body: JSONValue? = nil, query: [URLQueryItem] = [], timeout: Double = 900
@@ -40,7 +40,7 @@ struct LocalHTTP: Sendable {
       request.httpBody = try JSONEncoder().encode(body)
       request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     }
-    let (data, response) = try await session.data(for: request)
+    let (data, response) = try await Self.session.data(for: request)
     guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
       throw CoreError.engine("Local Engine HTTP request failed: \(path)")
     }

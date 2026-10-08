@@ -273,9 +273,9 @@ public struct OpenLoopCLI: Sendable {
         }
       }
       try Task.checkCancellation()
-    } catch is CancellationError {
+    } catch {
       try await environment.core.cancel(taskID: task.id)
-      throw CancellationError()
+      throw error
     }
   }
 }

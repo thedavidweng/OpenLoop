@@ -166,6 +166,74 @@ actor WaitingEngine: Engine {
   #expect(try await reopened.retry(taskID: task.id).request.prompt == "idea survives crash")
 }
 
+@Test func liveCoreRecoversTasksAfterAnotherExecutorLosesItsLease() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let persistence = try Persistence(directory: root)
+  var interrupted = try await core.submit(.init(selection: testSelection, prompt: "CLI crash"))
+  interrupted.state = .running
+  var owner: GenerationLease? = try GenerationLease(directory: root)
+  try persistence.save("task", id: interrupted.id, value: interrupted)
+  #expect(try await core.workspace().tasks.first?.state == .running)
+  withExtendedLifetime(owner) {}
+  owner = nil
+  #expect(try await core.workspace().tasks.first?.state == .failed)
+  // Also recover on run when no workspace refresh happened after the crash.
+  try persistence.save("task", id: interrupted.id, value: interrupted)
+  let next = try await core.submit(.init(selection: testSelection, prompt: "GUI continues"))
+  for try await _ in try await core.run(taskID: next.id) {}
+  let state = try await core.workspace()
+  #expect(state.tasks.first { $0.id == interrupted.id }?.state == .failed)
+  #expect(state.tasks.first { $0.id == next.id }?.state == .completed)
+}
+
+@Test func variationsOfEditsPreserveEditIntentAndRemainSubmittable() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let first = try await core.submit(.init(selection: testSelection, prompt: "original"))
+  for try await _ in try await core.run(taskID: first.id) {}
+  let parent = try #require(try await core.workspace().takes.first)
+  let source = try #require(try await core.workspace().history.first?.artifacts.first)
+  for operation in [Operation.cover, .repaint] {
+    let request = GenerationRequest(
+      selection: testSelection, prompt: "edit", seed: 12, parentTakeID: parent.id,
+      operation: operation, references: [source.url],
+      editRegion: operation == .repaint ? .init(start: 4, end: 8) : nil)
+    let edit = try await core.submit(request)
+    for try await _ in try await core.run(taskID: edit.id) {}
+    let state = try await core.workspace()
+    let record = try #require(state.history.first { $0.taskID == edit.id })
+    let take = try #require(state.takes.first { $0.generationID == record.id })
+    let variation = try await core.requestForTake(id: take.id, reproduce: false)
+    var expected = request
+    expected.seed = nil
+    expected.parentTakeID = take.id
+    #expect(variation == expected)
+    _ = try await core.submit(variation)
+  }
+}
+
+@Test func automaticSQLiteRollbackPreservesTheOriginalFailure() throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let persistence = try Persistence(directory: root)
+  try persistence.execute("CREATE TABLE unique_values (value TEXT UNIQUE)")
+  try persistence.execute("INSERT INTO unique_values VALUES ('same')")
+  do {
+    try persistence.transaction {
+      try persistence.execute("INSERT OR ROLLBACK INTO unique_values VALUES ('same')")
+    }
+    Issue.record("Expected UNIQUE constraint failure")
+  } catch {
+    #expect(error.localizedDescription.contains("UNIQUE constraint failed"))
+  }
+  try persistence.transaction {
+    try persistence.execute("INSERT INTO unique_values VALUES ('different')")
+  }
+}
+
 @Test func retainedVariationCanBeReproducedAfterItsParentIsDeleted() async throws {
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }

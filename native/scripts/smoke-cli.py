@@ -25,6 +25,9 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
     fixture.write_text(source.replace("'status': 1", "'status': 0"))
     server = subprocess.Popen(["/usr/bin/python3", str(fixture)], stdout=subprocess.PIPE, text=True)
     try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(server.stdout, selectors.EVENT_READ)
+            assert selector.select(10), "Fixture did not publish its startup port"
         port = int(server.stdout.readline())
 
         def run(*args, success=True):
@@ -35,6 +38,8 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
             assert all(event["v"] == 2 for event in events)
             return events
 
+        for args in ((), ("help",), ("--help",)):
+            assert run(*args)[0]["data"].startswith("OpenLoop")
         assert run("catalog")[0]["kind"] == "result"
         # A PATH symlink must still locate the uv bundled next to the real CLI.
         linked_cli = root / "openloop"

@@ -76,8 +76,15 @@ final class Persistence {
       try execute("COMMIT")
       return value
     } catch {
-      try execute("ROLLBACK")
+      if sqlite3_get_autocommit(db) == 0 { try execute("ROLLBACK") }
       throw error
+    }
+  }
+  func recoverInterruptedTasks() throws {
+    for var task in try all("task", as: GenerationTask.self) where task.state == .running {
+      task.state = .failed
+      task.error = "OpenLoop exited before this Generation Task completed. Retry to generate again."
+      try save("task", id: task.id, value: task)
     }
   }
   func save<T: Encodable>(_ kind: String, id: String, value: T) throws {

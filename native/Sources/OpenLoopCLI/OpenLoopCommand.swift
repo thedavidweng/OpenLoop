@@ -13,7 +13,12 @@ struct OpenLoopCommand {
       }
       let uvPath = try removeOption("--uv", from: &arguments)
       if arguments.isEmpty || arguments == ["--help"] || arguments == ["help"] {
-        print(OpenLoopCLI.usage)
+        if json {
+          let event = CLIEvent(kind: "result", data: .string(OpenLoopCLI.usage))
+          FileHandle.standardOutput.write(try JSONEncoder().encode(event) + Data([10]))
+        } else {
+          print(OpenLoopCLI.usage)
+        }
         return
       }
       let executable = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()

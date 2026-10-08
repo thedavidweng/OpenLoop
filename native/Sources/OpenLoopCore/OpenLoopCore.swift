@@ -18,24 +18,20 @@ public actor OpenLoopCore {
     self.directory = directory
     self.store = persistence
     self.engines = Dictionary(uniqueKeysWithValues: engines.map { ($0.id, $0) })
+    try Self.recoverInterruptedTasks(store: persistence, directory: directory)
+  }
+  private static func recoverInterruptedTasks(store: Persistence, directory: URL) throws {
     do {
       let recoveryLease = try GenerationLease(directory: directory)
       defer { withExtendedLifetime(recoveryLease) {} }
-      try persistence.transaction {
-        for var task in try persistence.all("task", as: GenerationTask.self)
-        where task.state == .running {
-          task.state = .failed
-          task.error =
-            "OpenLoop exited before this Generation Task completed. Retry to generate again."
-          try persistence.save("task", id: task.id, value: task)
-        }
-      }
+      try store.transaction { try store.recoverInterruptedTasks() }
     } catch CoreError.conflict {
       // A live GUI/CLI still owns the running task.
     }
   }
   public func workspace() throws -> Workspace {
-    Workspace(
+    try Self.recoverInterruptedTasks(store: store, directory: directory)
+    return Workspace(
       projects: try store.all("project", as: Project.self),
       takes: try store.all("take", as: Take.self),
       history: try store.all("generation", as: GenerationRecord.self).sorted {
@@ -132,7 +128,7 @@ public actor OpenLoopCore {
     } else {
       request.seed = nil
       request.parentTakeID = id
-      request.operation = .variation
+      if [.generate, .variation].contains(request.operation) { request.operation = .variation }
     }
     return request
   }
@@ -141,8 +137,8 @@ public actor OpenLoopCore {
     let task: GenerationTask = try store.transaction {
       var task = try store.get("task", id: taskID, as: GenerationTask.self)
       guard task.state == .queued else { throw CoreError.conflict("Generation Task is not queued") }
-      guard try store.all("task", as: GenerationTask.self).allSatisfy({ $0.state != .running })
-      else { throw CoreError.conflict("A Generation Task is already running") }
+      // Acquiring the lease proves no executor still owns persisted running tasks.
+      try store.recoverInterruptedTasks()
       task.state = .running
       try store.save("task", id: taskID, value: task)
       return task

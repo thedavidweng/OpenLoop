@@ -5,7 +5,8 @@ OpenLoopCore. `openloop help` lists commands. The package product is named
 `openloop-cli` to avoid the case-insensitive collision with `OpenLoop`; packaging
 installs it under the same name as `OpenLoop.app/Contents/MacOS/openloop-cli`.
 
-`--json` emits one UTF-8 JSON object per stdout line:
+`--json` emits one UTF-8 JSON object per line. Non-error events go to stdout;
+error events go to stderr. Consumers must read both streams:
 
 ```json
 {"v":2,"ts":"2026-10-04T00:00:00Z","kind":"progress","data":{"fraction":0.5,"label":"Generating Take"}}

@@ -1,0 +1,285 @@
+import Foundation
+import OpenLoopCore
+
+public actor AceRuntime {
+  private let directory: URL
+  private let uv: URL
+  private let settingsProvider: @Sendable () async throws -> Settings
+  private let catalog: EngineCatalog
+  private struct OwnedRuntime {
+    let process: Process
+    let settings: Settings
+    let logHandle: FileHandle
+  }
+  private var owned: OwnedRuntime?
+  public init(
+    directory: URL, bundledUV: URL,
+    settingsProvider: @escaping @Sendable () async throws -> Settings,
+    catalog: EngineCatalog = .firstParty
+  ) {
+    self.directory = directory
+    self.uv = bundledUV
+    self.settingsProvider = settingsProvider
+    self.catalog = catalog
+  }
+  public func provision(licenseAccepted: Bool, emit: EngineEventSink) async throws {
+    guard licenseAccepted else {
+      throw CoreError.invalid("Review and accept the Engine runtime license before installation")
+    }
+    let runtime = try descriptor()
+    guard runtime.supportsCurrentMachine() else {
+      throw CoreError.invalid("Runtime requires Apple Silicon macOS")
+    }
+    guard FileManager.default.isExecutableFile(atPath: uv.path) else {
+      throw CoreError.engine("Bundled uv is missing: \(uv.path)")
+    }
+    let root = directory.appendingPathComponent("native-runtime")
+    try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    let lock = try RuntimeLock(root.appendingPathComponent("runtime.lock"))
+    defer { withExtendedLifetime(lock) {} }
+    let settings = try await settingsProvider()
+    let destination = workingDirectory(settings)
+    guard !FileManager.default.fileExists(atPath: destination.path) else {
+      guard
+        FileManager.default.fileExists(
+          atPath: destination.appendingPathComponent("pyproject.toml").path)
+      else {
+        throw CoreError.engine(
+          "Existing runtime directory is incomplete; remove it explicitly before reinstalling")
+      }
+      try await syncDependencies(at: destination)
+      return
+    }
+    try await emit(.lifecycle("Installing Engine runtime"))
+    let (archive, response) = try await URLSession.shared.download(from: runtime.sourceURL)
+    defer { try? FileManager.default.removeItem(at: archive) }
+    guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+      throw CoreError.engine("Runtime source download failed")
+    }
+    let staging = root.appendingPathComponent(UUID().uuidString)
+    try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+    defer {
+      if FileManager.default.fileExists(atPath: staging.path) {
+        try? FileManager.default.removeItem(at: staging)
+      }
+    }
+    try await command(
+      executable: URL(fileURLWithPath: "/usr/bin/tar"),
+      arguments: ["-xzf", archive.path, "--strip-components=1", "-C", staging.path],
+      working: staging)
+    try FileManager.default.createDirectory(
+      at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try FileManager.default.moveItem(at: staging, to: destination)
+    do { try await syncDependencies(at: destination) } catch {
+      try FileManager.default.removeItem(at: destination)
+      throw error
+    }
+    try await emit(.lifecycle("Engine runtime installed"))
+  }
+  public func isProvisioned() async throws -> Bool {
+    let destination = workingDirectory(try await settingsProvider())
+    return FileManager.default.fileExists(
+      atPath: destination.appendingPathComponent("pyproject.toml").path)
+  }
+  public var isRunningOwnedProcess: Bool { owned?.process.isRunning ?? false }
+  private func syncDependencies(at working: URL) async throws {
+    let project = working.appendingPathComponent("pyproject.toml")
+    let source = try String(contentsOf: project, encoding: .utf8)
+    let constraint = "constraint-dependencies = [\"mlx==0.31.1\"]"
+    if source.contains(constraint) { return }
+    guard source.contains("[tool.uv]\n"), !source.contains("constraint-dependencies") else {
+      throw CoreError.engine("Runtime dependency configuration differs from the pinned source")
+    }
+    // MLX 0.31.2 changed stream ownership; this pinned API loads on a different thread.
+    try source.replacingOccurrences(of: "[tool.uv]\n", with: "[tool.uv]\n" + constraint + "\n")
+      .write(to: project, atomically: true, encoding: .utf8)
+    do {
+      try await command(executable: uv, arguments: ["sync"], working: working)
+    } catch {
+      try source.write(to: project, atomically: true, encoding: .utf8)
+      throw error
+    }
+  }
+  private func workingDirectory(_ settings: Settings) -> URL {
+    settings.runtimeDirectory ?? directory.appendingPathComponent("native-runtime/ace-step")
+  }
+  private func descriptor() throws -> RuntimeDescriptor {
+    guard let runtime = catalog.runtimes.first(where: { $0.id == "ace-step/uv" }) else {
+      throw CoreError.invalid("ACE-Step Runtime descriptor missing")
+    }
+    return runtime
+  }
+  private func command(executable: URL, arguments: [String], working: URL) async throws {
+    let process = Process()
+    process.executableURL = executable
+    process.arguments = arguments
+    process.currentDirectoryURL = working
+    process.standardOutput = FileHandle.standardError
+    process.standardError = FileHandle.standardError
+    try process.run()
+    do {
+      while process.isRunning { try await Task.sleep(for: .milliseconds(100)) }
+      guard process.terminationStatus == 0 else {
+        throw CoreError.engine(
+          "Runtime command failed: \(arguments.first ?? executable.lastPathComponent)")
+      }
+    } catch {
+      if process.isRunning { process.terminate() }
+      throw error
+    }
+  }
+  @discardableResult
+  public func ensureReady(selection: Selection, emit: EngineEventSink) async throws -> Int {
+    let settings: Settings
+    if let owned, owned.process.isRunning {
+      settings = owned.settings
+    } else {
+      settings = try await settingsProvider()
+    }
+    let workingDirectory = workingDirectory(settings)
+    let config = try catalog.configuration(selection)
+    guard try descriptor().supportsCurrentMachine() else {
+      throw CoreError.invalid("Runtime requires Apple Silicon macOS")
+    }
+    let http = try LocalHTTP(port: settings.backendPort)
+    if await healthy(http) {
+      try await validateInventory(http, configuration: config)
+      try await emit(.lifecycle("Using running local Engine"))
+      return settings.backendPort
+    }
+    let lockRoot = directory.appendingPathComponent("native-runtime")
+    try FileManager.default.createDirectory(at: lockRoot, withIntermediateDirectories: true)
+    let lock = try RuntimeLock(lockRoot.appendingPathComponent("runtime.lock"))
+    defer { withExtendedLifetime(lock) {} }
+    guard FileManager.default.isExecutableFile(atPath: uv.path),
+      FileManager.default.fileExists(
+        atPath: workingDirectory.appendingPathComponent("pyproject.toml").path)
+    else {
+      throw CoreError.engine(
+        "Engine runtime is not installed. Run openloop setup --accept-license.")
+    }
+    if let owned, owned.process.isRunning {
+      throw CoreError.conflict("Owned runtime is unhealthy; stop it before restarting")
+    }
+    try await syncDependencies(at: workingDirectory)
+    let modelRoot = settings.modelDirectory ?? directory.appendingPathComponent("models")
+    for file in try EngineCatalog.modelFiles(packID: selection.modelPackID) {
+      let url = modelRoot.appendingPathComponent(file.localPath)
+      guard FileManager.default.fileExists(atPath: url.path),
+        (try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.int64Value
+          == file.size
+      else {
+        throw CoreError.engine(
+          "Selected Model Pack is incomplete. Run openloop models install \(selection.modelPackID) --accept-license."
+        )
+      }
+    }
+    // ACE-Step startup passes this path explicitly, bypassing CHECKPOINTS_DIR.
+    let checkpoints = workingDirectory.appendingPathComponent("checkpoints")
+    if let target = try? FileManager.default.destinationOfSymbolicLink(atPath: checkpoints.path) {
+      if URL(fileURLWithPath: target).standardizedFileURL != modelRoot.standardizedFileURL {
+        try FileManager.default.removeItem(at: checkpoints)
+        try FileManager.default.createSymbolicLink(at: checkpoints, withDestinationURL: modelRoot)
+      }
+    } else {
+      guard !FileManager.default.fileExists(atPath: checkpoints.path) else {
+        throw CoreError.conflict(
+          "Runtime checkpoints is not a managed link; move it explicitly before starting the Engine."
+        )
+      }
+      try FileManager.default.createSymbolicLink(at: checkpoints, withDestinationURL: modelRoot)
+    }
+    let logs = settings.logDirectory ?? directory.appendingPathComponent("logs/backend")
+    try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+    let logURL = logs.appendingPathComponent("native-ace-step-\(UUID().uuidString).log")
+    FileManager.default.createFile(atPath: logURL.path, contents: nil)
+    let handle = try FileHandle(forWritingTo: logURL)
+    let process = Process()
+    process.executableURL = uv
+    process.currentDirectoryURL = workingDirectory
+    process.arguments = [
+      "run", "acestep-api", "--host", "127.0.0.1", "--port", String(settings.backendPort),
+    ]
+    if let lm = config.languageModel {
+      process.arguments! += ["--init-llm", "--lm-model-path", lm]
+    }
+    var environment = ProcessInfo.processInfo.environment
+    environment.merge([
+      "ACESTEP_API_HOST": "127.0.0.1", "ACESTEP_API_PORT": String(settings.backendPort),
+      "ACE_STEP_PORT": String(settings.backendPort),
+      "ACESTEP_CHECKPOINTS_DIR": modelRoot.path, "ACESTEP_PROJECT_ROOT": workingDirectory.path,
+      "ACESTEP_CONFIG_PATH": config.model, "ACESTEP_DEVICE": "mps",
+      "ACESTEP_NO_INIT": "false",
+      "ACESTEP_INIT_LLM": config.languageModel == nil ? "false" : "true",
+      "ACESTEP_LM_MODEL_PATH": config.languageModel ?? "", "ACESTEP_LM_BACKEND": "mlx",
+      "ACESTEP_OFFLOAD_TO_CPU": "true", "HF_HUB_DISABLE_TELEMETRY": "1", "DO_NOT_TRACK": "1",
+    ]) { _, new in new }
+    process.environment = environment
+    process.standardOutput = handle
+    process.standardError = handle
+    try process.run()
+    owned = OwnedRuntime(process: process, settings: settings, logHandle: handle)
+    do {
+      try await emit(.lifecycle("Starting local Engine"))
+      let deadline = Date().addingTimeInterval(300)
+      while Date() < deadline {
+        try Task.checkCancellation()
+        guard process.isRunning else {
+          throw CoreError.engine(
+            "Engine exited with status \(process.terminationStatus). See \(logURL.path)")
+        }
+        if await healthy(http) {
+          try await validateInventory(http, configuration: config)
+          try await emit(.lifecycle("Local Engine ready"))
+          return settings.backendPort
+        }
+        try await Task.sleep(for: .seconds(1))
+      }
+      throw CoreError.engine("Engine readiness timed out. See \(logURL.path)")
+    } catch {
+      try await Task.detached { try await self.stop() }.value
+      throw error
+    }
+  }
+  private func validateInventory(_ http: LocalHTTP, configuration: Configuration) async throws {
+    let value = try JSONDecoder().decode(
+      JSONValue.self, from: await http.data("/v1/model_inventory", timeout: 30))
+    guard let models = value["data"]?["models"]?.array,
+      models.contains(where: {
+        $0["name"]?.string == configuration.model && $0["is_loaded"] == .bool(true)
+      })
+    else {
+      throw CoreError.engine(
+        "The running Engine has not loaded \(configuration.model); stop it before switching configurations."
+      )
+    }
+    if let languageModel = configuration.languageModel {
+      guard let models = value["data"]?["lm_models"]?.array,
+        models.contains(where: {
+          $0["name"]?.string == languageModel && $0["is_loaded"] == .bool(true)
+        })
+      else {
+        throw CoreError.engine(
+          "The running Engine has not loaded the selected language model; stop it before switching configurations."
+        )
+      }
+    }
+  }
+  private func healthy(_ http: LocalHTTP) async -> Bool {
+    do {
+      _ = try await http.data("/health", timeout: 2)
+      return true
+    } catch { return false }
+  }
+  public func stop() async throws {
+    if let owned, owned.process.isRunning {
+      let child = owned.process
+      child.terminate()
+      let deadline = Date().addingTimeInterval(5)
+      while child.isRunning && Date() < deadline { try await Task.sleep(for: .milliseconds(100)) }
+      if child.isRunning { throw CoreError.engine("Runtime did not stop after termination") }
+    }
+    try owned?.logHandle.close()
+    owned = nil
+  }
+}

@@ -103,3 +103,18 @@ The application makes outbound connections only in these scenarios:
 - `src-tauri/tauri.conf.json` — `app.security.csp` and `app.security.dangerousDisableAssetCspModification`
 - `src-tauri/tauri.conf.json` — `plugins.updater.endpoints`
 - Settings model — model download URL configuration
+
+## Native architecture (#261)
+
+The privacy boundary survives WebView retirement. Native generation HTTP is
+constructed from an integer port at `127.0.0.1`; its ephemeral URLSession disables
+proxy configuration and rejects redirects. Prompts, lyrics and audio never enter
+the download client. Runtime source downloads use the catalog-pinned GitHub
+codeload URL; uv downloads Python/dependencies from its project/package sources.
+Model downloads use the Settings HTTPS base (Hugging Face by default) and may
+follow the model host's storage/CDN redirects. These connections carry no
+creative request data. No telemetry/accounts/cloud inference is added.
+
+Native update delivery is not implemented by this foundation; signing,
+notarization and updater policy must be validated before production release.
+CSP is solely legacy enforcement and is not represented as native protection.

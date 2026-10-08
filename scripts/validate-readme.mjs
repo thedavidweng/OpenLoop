@@ -4,13 +4,13 @@
  * Validates README.md and README_CN.md for license/status consistency.
  *
  * Behavioral criteria:
- *  1. README.md license badge says Apache-2.0, not MIT
- *  2. README_CN.md license badge says Apache-2.0, not MIT
+ *  1. README.md license badge says AGPL-3.0-only, not MIT
+ *  2. README_CN.md license badge says AGPL-3.0-only, not MIT
  *  3. README.md contains status line with v0.1 Alpha
  *  4. README_CN.md contains status line with v0.1 Alpha (Chinese)
  *  5. README_CN.md has Release badge
  *  6. CSP ADR references Tauri v2 security docs, not v1
- *  7. License section text in both READMEs says Apache-2.0
+ *  7. License section text in both READMEs says AGPL-3.0-only
  */
 
 import { readFileSync } from "node:fs";
@@ -43,18 +43,18 @@ const readme = readFile("README.md");
 const readmeCN = readFile("README_CN.md");
 const cspAdr = readFile("docs/adr/0003-content-security-policy.md");
 
-// 1. README.md license badge says Apache-2.0
+// 1. README.md license badge says AGPL-3.0-only
 check(
-  "1. README.md license badge is Apache-2.0",
-  /License-MIT/.test(readme) === false && /Apache--2\.0|License-Apache/.test(readme) === true,
-  "badge still says MIT or missing Apache-2.0",
+  "1. README.md license badge is AGPL-3.0-only",
+  /License-MIT/.test(readme) === false && /License-AGPL--3\.0--only/.test(readme) === true,
+  "badge still says MIT or missing AGPL-3.0-only",
 );
 
-// 2. README_CN.md license badge says Apache-2.0
+// 2. README_CN.md license badge says AGPL-3.0-only
 check(
-  "2. README_CN.md license badge is Apache-2.0",
-  /License-MIT/.test(readmeCN) === false && /Apache--2\.0|License-Apache/.test(readmeCN) === true,
-  "badge still says MIT or missing Apache-2.0",
+  "2. README_CN.md license badge is AGPL-3.0-only",
+  /License-MIT/.test(readmeCN) === false && /License-AGPL--3\.0--only/.test(readmeCN) === true,
+  "badge still says MIT or missing AGPL-3.0-only",
 );
 
 // 3. README.md contains status line with an Alpha version tag
@@ -85,18 +85,18 @@ check(
   "still references tauri.app/v1",
 );
 
-// 7. License section text says Apache-2.0 (accept "Apache License 2.0" or "Apache-2.0")
+// 7. License sections identify AGPL-3.0-only
 check(
-  "7a. README.md License section says Apache-2.0",
-  /## License[\s\S]*?Apache(?: License)?[- ]2\.0/i.test(readme) &&
+  "7a. README.md License section says AGPL-3.0-only",
+  /## License[\s\S]*?GNU AGPL-3\.0-only/i.test(readme) &&
     /## License[\s\S]*?MIT/.test(readme) === false,
-  "License section missing Apache-2.0 or still mentions MIT",
+  "License section missing AGPL-3.0-only or still mentions MIT",
 );
 check(
-  "7b. README_CN.md License section says Apache-2.0",
-  /## 许可证[\s\S]*?Apache(?: License)?[- ]2\.0/i.test(readmeCN) &&
+  "7b. README_CN.md License section says AGPL-3.0-only",
+  /## 许可证[\s\S]*?GNU AGPL-3\.0-only/i.test(readmeCN) &&
     /## 许可证[\s\S]*?MIT/.test(readmeCN) === false,
-  "License section missing Apache-2.0 or still mentions MIT",
+  "License section missing AGPL-3.0-only or still mentions MIT",
 );
 
 // Report

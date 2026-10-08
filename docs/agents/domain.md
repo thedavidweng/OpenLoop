@@ -25,9 +25,9 @@ This is a single-context repo:
 └── src/
 ```
 
-New **Engines**, **Model Packs**, and **Model Slots** are registered in
-`src-tauri/src/services/model_catalog/` (Rust source of truth) and mirrored in
-`src/app/lib/model-catalog.ts`. Do not hard-code a new family in commands, the
+New native **Engines**, **Engine Runtimes**, **Model Packs**, and configurations
+are registered in `native/Sources/OpenLoopEngines/Catalog.swift`, consumed directly
+by GUI and CLI. The retiring Rust/React registry is a migration reference only. Do not hard-code a new family in commands, the
 CLI router, or Settings when listing or switching.
 
 ## Use the glossary's vocabulary

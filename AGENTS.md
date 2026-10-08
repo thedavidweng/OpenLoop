@@ -16,7 +16,7 @@ Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/do
 
 ## Formatting
 
-Formatting is automated. The `lefthook` pre-commit hook runs `oxfmt` on staged JavaScript, TypeScript, JSON, CSS, HTML, and YAML files, and `cargo fmt` on staged Rust files, then re-stages the fixes. Run `pnpm install` once so `lefthook install` sets up the hooks. You do not need to format by hand. If a hook fails, fix the reported issue before you commit.
+Formatting is automated. The `lefthook` pre-commit hook runs `oxfmt` on staged JavaScript, TypeScript, JSON, CSS, HTML, and YAML files, and `cargo fmt` on staged Rust files, then re-stages the fixes. Run `pnpm install` once so `lefthook install` sets up the hooks. Native Swift files are formatted by `swift format` in the same hook. You do not need to format by hand. If a hook fails, fix the reported issue before you commit.
 
 Easy-to-miss hotspots: `.github/workflows/*.yml`, root config files, and any JSON, CSS, HTML, or YAML that a change touches. `oxfmt` ignores `docs/`, `src-tauri/`, Markdown, and TOML (see `.oxfmtrc.json`).
 

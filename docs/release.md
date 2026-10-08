@@ -1,99 +1,85 @@
-# OpenLoop Release Checklist
+# Native OpenLoop Release
 
-OpenLoop targets macOS Apple Silicon DMG builds, distributed via Homebrew Cask and direct download.
+The release artifact is a SwiftUI app and a separate Swift CLI sharing
+OpenLoopCore, packaged as an Apple Silicon DMG for macOS 15 or later.
+React/Tauri/Rust remain migration references and are not the release target.
 
-## Release readiness
+## Build and verify
 
-A release candidate must pass:
+Use Xcode with Swift 6.2 or later and Node.js 24 or later. Rust, pnpm and the
+legacy frontend build are not required for native release packaging.
 
-```bash
-pnpm install --frozen-lockfile
-pnpm release:check
-pnpm release:build
+```sh
+swift build --package-path native -Xswiftc -warnings-as-errors
+swift test --package-path native -Xswiftc -warnings-as-errors
+TAURI_TARGET_TRIPLE=aarch64-apple-darwin node scripts/prepare-sidecars.mjs
+python3 native/scripts/package-app.py \
+  --uv src-tauri/binaries/uv-aarch64-apple-darwin \
+  --output native/dist/OpenLoop.app \
+  --dmg native/dist/OpenLoop_0.2.1_aarch64.dmg
+python3 native/scripts/smoke-cli.py
+node scripts/validate-readme.mjs
+node scripts/validate-release-notes.mjs
 ```
 
-`pnpm release:check` runs the frontend typecheck, frontend unit tests, frontend production build, Rust format check, Rust compile check, and Rust tests.
+`pnpm release:check` runs the native code/document gates, and
+`pnpm release:build` builds a local `native/dist/OpenLoop.dmg` and packaged smoke.
+The explicit commands above let you name a versioned candidate.
 
-`pnpm release:build` prepares the bundled `uv` sidecar and runs `tauri build`.
+Use the current `package.json` version in the DMG filename. Packaging refuses to
+replace an existing app or disk image; choose a new output path for each local
+candidate. The packager signs `openloop-cli` and `uv` first, then seals the app's
+resources, and runs `codesign --verify --deep --strict`. The CLI smoke verifies
+signatures, bundled uv execution, resources, shared state, NDJSON v2 and SIGINT
+cancellation. It uses a local HTTP fixture, not real model inference.
 
-## GitHub release workflow
+Mount the DMG read-only, copy OpenLoop.app to a fresh location, and repeat the
+CLI smoke with `--bundle /path/to/OpenLoop.app` before testing the GUI. The DMG
+contains the app and an Applications shortcut. Test with an isolated
+`OPENLOOP_DATA_DIR`; see [testing.md](testing.md).
 
-The release workflow lives in `.github/workflows/release.yml`.
+## GitHub workflow
 
-It runs on:
+`.github/workflows/release.yml` runs on pushed `v*` tags or a manually supplied
+release tag. It checks out that tag, verifies its version against package.json,
+runs native compile/tests and documentation validation, prepares the verified
+uv sidecar, builds and verifies the native app/DMG, and runs the packaged smoke.
+It uploads the DMG as a workflow artifact and creates a **draft** GitHub release
+with [native release notes](release-notes/native.md). Tags with a suffix are
+prereleases. Review the notes and hardware acceptance before publishing.
 
-- `workflow_dispatch` with a required tag input, for example `v0.1.0-alpha.1`.
-- pushed tags matching `v*`.
+The workflow uses `GITHUB_TOKEN` to create the draft and upload its asset. It
+needs no Tauri updater signing secret. The native app does not implement the
+legacy Tauri updater or produce `latest.json`; existing Tauri installs must
+upgrade manually to the native app. Homebrew's cask and CLI binary link must
+point to the native release asset and `Contents/MacOS/openloop-cli` when that
+release is published. This repository does not update the external tap.
 
-The workflow:
+## Signing and Gatekeeper
 
-- installs dependencies with `pnpm install --frozen-lockfile`;
-- verifies the release tag matches the `package.json` version;
-- runs `pnpm release:check`;
-- builds the macOS Apple Silicon Tauri DMG;
-- creates a draft prerelease with `tauri-apps/tauri-action`;
-- uploads the DMG as a workflow artifact and `latest.json` to the release.
+The Alpha distribution uses **ad-hoc signing**, explicitly `--sign -`. This is
+a valid integrity signature, not a Developer ID signature or notarization.
+Gatekeeper may block a quarantined download. Right-click Open if macOS permits,
+or remove quarantine from your own downloaded copy:
 
-Keep GitHub releases as drafts until manual QA is complete.
+```sh
+xattr -cr /Applications/OpenLoop.app
+```
 
-## Updater signing secrets
+Homebrew installation remains an alternative once the cask targets the native
+release; verify the published asset before using `brew install --cask openloop`.
 
-The in-app updater checks
-`https://github.com/thedavidweng/OpenLoop/releases/latest/download/latest.json`
-and only installs updates signed by the minisign key pair whose public half
-lives in `src-tauri/tauri.conf.json` under `plugins.updater.pubkey`.
+For Developer ID distribution, pass `--sign 'Developer ID Application: …'`.
+The packager uses a secure timestamp and hardened runtime for that identity.
+Notarization and stapling are separate release steps and require an actual
+Developer ID certificate and Apple notarization credentials. Do not claim
+notarization based on a passing local signature check. See Apple's
+[distribution signing guide](https://developer.apple.com/documentation/xcode/creating-distribution-signed-code-for-the-mac/).
 
-Because `bundle.createUpdaterArtifacts` is enabled, the release build **fails
-loudly** unless these repository secrets are configured:
+## Publication gate
 
-- `TAURI_SIGNING_PRIVATE_KEY` — the minisign private key matching the pubkey.
-- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password (empty string if none).
-
-Generate a pair with `pnpm tauri signer generate` if the private key is lost —
-but note that rotating the key orphans existing installs (they will reject
-updates signed by the new key), so prefer recovering the original.
-
-## Prerelease semantics and the updater
-
-GitHub's `/releases/latest` — the URL the in-app updater polls — only resolves
-the newest release that is neither a draft nor a prerelease. The workflow
-therefore derives the prerelease flag from the tag: suffixed tags
-(`v0.3.0-alpha.1`, `v0.3.0-rc.1`) publish as prereleases the updater ignores;
-plain tags (`v0.3.0`) publish as full releases the updater picks up once the
-draft is published. Existing installs only auto-update after the first plain
-tag ships.
-
-## Manual QA gate
-
-Before publishing a release, install the generated DMG and verify:
-
-- the app launches outside development mode;
-- first-run setup completes;
-- model bootstrap can reach a ready state;
-- generation creates a playable output file;
-- failed and cancelled generations are handled correctly (failed recorded for debugging, cancelled not in history);
-- single-item delete removes the history row and local audio file;
-- clear history removes generated audio files and leaves history empty;
-- Reveal in Finder and export copy work for generated files;
-- backend logs are created and old logs are pruned automatically (keeps last 20);
-- CLI `openloop run` generates headlessly and saves to disk;
-- CLI `openloop list --json` outputs valid JSON matching GUI history.
-
-## Gatekeeper and code signing
-
-OpenLoop uses **Ad-hoc code signing** (no Apple Developer ID required). This means macOS Gatekeeper will show a security warning on first launch for DMG installs.
-
-**Bypass options:**
-
-- **Homebrew** (recommended): `brew tap thedavidweng/tap && brew install --cask openloop` — automatically clears quarantine.
-- **Manual**: Right-click the app → **Open** on the first launch.
-- **Terminal**: `xattr -cr /Applications/OpenLoop.app`
-
-> Apple Developer ID signing and notarization will be added before a stable public release. Until then, Ad-hoc signing is the intentional distribution strategy for the open-source Alpha phase.
-
-## GitHub release workflow prerequisites
-
-Before publishing a release, ensure:
-
-- The `TAURI_SIGNING_PRIVATE_KEY` GitHub Secret is set (for updater signature verification).
-- `latest.json` is published alongside the DMG so the in-app updater can detect new versions.
+Review the current [acceptance results](testing.md#native-macos-acceptance--2026-10-07).
+Require real runtime/model installation, a completed playable Take, GUI/CLI
+persistence, failure/cancellation behavior, export, confirmed deletion, packaged
+relaunch, and the remaining audio/accessibility/distribution checks. Keep the
+release as a draft while any required check is unverified.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded for the native architecture by ADR-0005. Applies to the retiring Tauri implementation until native parity.
 
 ## Context
 

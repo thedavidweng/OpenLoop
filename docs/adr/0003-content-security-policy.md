@@ -1,5 +1,7 @@
 # ADR-0003: Content Security Policy
 
+**Native migration status:** Superseded for the native architecture by ADR-0005 and the native enforcement section in ADR-0004; remains applicable to the retiring WebView.
+
 **Status:** Accepted
 **Date:** 2026-05-14
 **Author:** OpenLoop engineering

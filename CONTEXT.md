@@ -1,8 +1,21 @@
 # OpenLoop Context
 
-OpenLoop is a local-first music generation tool for Apple Silicon. ACE-Step 1.5 is the bound Engine today; additional Engines and Model Packs are registered in a first-party catalog so they can be downloaded and switched without rewriting Settings. It has two interfaces — a desktop GUI and a command-line CLI — that share all state: settings, history, models, and the backend process.
+OpenLoop is a local-first music generation tool for Apple Silicon. ACE-Step 1.5 is the bound Engine today; additional Engines and Model Packs are registered in a first-party catalog so they can be downloaded and switched without rewriting Settings. The #261 native migration lives in `native/`: a presentation-only SwiftUI app and separate Swift CLI consume OpenLoopCore. The retiring Tauri app remains a behavior reference until native parity; native GUI/CLI share state with each other, with a one-time import of legacy state.
 
 ## Language
+
+**Project**:
+A musical idea grouping related Takes and iterations.
+
+**Take**:
+A completed generated alternative within a Project, optionally linked to a parent Take.
+
+**Artifact**:
+A local output belonging to a completed Generation Record: audio, timed lyrics, MIDI, score, stem, or metadata.
+
+**Engine Runtime**:
+An Engine implementation with explicit platform/accelerator support and installation requirements. Distinct from Engine identity.
+
 
 **Generation Task**:
 The lifecycle for one user generation request from validation through backend execution, recovery, cancellation, and completion.
@@ -57,7 +70,7 @@ Persisted local configuration for Engine and Model Slot selection, runtime direc
 - **Settings** changed via the CLI are immediately visible in the GUI, and vice versa.
 - The CLI supports agent workflows: it can run headlessly, output machine-readable JSON, and auto-bootstrap the **Local Backend** and **Model Bootstrap** on first use.
 - A **Generation Task** produces exactly one **Generation Record** per variation.
-- A **Generation Record** has exactly one **Output File** when created.
+- A native **Generation Record** owns one or more **Artifacts**, including primary audio; its audio artifact is its **Output File**. Legacy records are imported with their original paths.
 - A failed **Generation Task** produces no **Generation Record**; the form remains available for correction and retry.
 - A failed **Generation Task** may also create a diagnostic `failed_runs` entry for retry/support workflows; this entry is not **History** and is not a **Generation Record**.
 - A cancelled **Generation Task** produces no **Generation Record**; the form remains on the submitted settings because generation controls are not editable while running.
@@ -77,9 +90,9 @@ Persisted local configuration for Engine and Model Slot selection, runtime direc
 - **Settings** that affect **Local Backend** startup are `backendPort`, `modelDirectory`, `backendWorkingDirectory`, `logDirectory`, `modelVariant`, and `selectedModelId`.
 - Backend-impacting **Settings** changes should tell users they affect the next **Local Backend** start; v1 does not automatically restart the backend.
 - `modelDirectory` means OpenLoop-managed model storage, not an arbitrary ACE-Step project directory.
-- The first-party catalog is the only place new **Engines**, **Model Packs**, and **Model Slots** are registered. Commands, the CLI, and the Settings UI must not hard-code family names when listing or switching.
+- The native first-party catalog in `native/Sources/OpenLoopEngines/` is the only place new **Engines**, **Engine Runtimes**, **Model Packs**, and configurations are registered. Commands, the CLI, and the Settings UI must not hard-code family names when listing or switching.
 - An **Engine** without a bound **Local Backend** may appear in the catalog so a future pack (for example MiniMax Music 3 Turbo) can attach later. It must not run a **Generation Task**.
-- `modelVariant` is the ACE-Step **Model Slot** alias (`lite` / `turbo` / `pro`). `selectedModelId` is the canonical **Model Slot** id (`ace-step/turbo`, `minimax-music3/turbo`). When both are set, `selectedModelId` wins.
+- In the retiring implementation, `modelVariant` is the ACE-Step **Model Slot** alias (`lite` / `turbo` / `pro`). `selectedModelId` is the canonical **Model Slot** id (`ace-step/turbo`, `minimax-music3/turbo`). When both are set, `selectedModelId` wins.
 - OpenLoop uses its bundled `uv` sidecar for the **Local Backend**; legacy external backend command settings are pruned, not migrated.
 - User-facing screens should present simple **Generation Task**, **History**, and **Settings** language; implementation details belong in **Advanced Settings** or diagnostics.
 - **Advanced Settings** are opt-in; beginner workflows should work without understanding **Runtime Layout**, sidecars, IPC commands, or backend internals.

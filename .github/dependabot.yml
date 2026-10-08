@@ -1,21 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "/src-tauri"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "rust"
-    commit-message:
-      prefix: "chore(deps):"
-    cooldown:
-      default-days: 5
-      semver-major-days: 7
-      semver-minor-days: 5
-      semver-patch-days: 3
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -32,10 +16,6 @@ updates:
         dependency-type: "development"
         update-types:
           - "minor"
-          - "patch"
-      production-dependencies:
-        dependency-type: "production"
-        update-types:
           - "patch"
     cooldown:
       default-days: 7

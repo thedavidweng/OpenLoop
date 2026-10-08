@@ -1,8 +1,7 @@
 # Native Implementation Status
 
 Updated October 7, 2026. The active product is the SwiftUI application and
-separate Swift CLI in `native/`, sharing OpenLoopCore. React/Tauri/Rust are
-retained only as migration references.
+separate Swift CLI in `native/`, sharing OpenLoopCore. React/Tauri/Rust have been removed from main; historical source remains in Git.
 
 Implemented: Projects, Compose, multiple Takes, A/B listening, waveform selection
 and looping, Repaint requests, seed reproduction/variation, Artifacts/export,

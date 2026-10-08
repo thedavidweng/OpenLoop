@@ -2,7 +2,7 @@
 
 The release artifact is a SwiftUI app and a separate Swift CLI sharing
 OpenLoopCore, packaged as an Apple Silicon DMG for macOS 15 or later.
-React/Tauri/Rust remain migration references and are not the release target.
+React/Tauri/Rust are retired from main. Native Swift is the only application build.
 
 ## Build and verify
 
@@ -12,9 +12,9 @@ legacy frontend build are not required for native release packaging.
 ```sh
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native -Xswiftc -warnings-as-errors
-TAURI_TARGET_TRIPLE=aarch64-apple-darwin node scripts/prepare-sidecars.mjs
+node scripts/prepare-sidecars.mjs
 python3 native/scripts/package-app.py \
-  --uv src-tauri/binaries/uv-aarch64-apple-darwin \
+  --uv native/binaries/uv-aarch64-apple-darwin \
   --output native/dist/OpenLoop.app \
   --dmg native/dist/OpenLoop_0.2.1_aarch64.dmg
 python3 native/scripts/smoke-cli.py

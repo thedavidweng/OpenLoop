@@ -130,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog for native region edits
 - Regenerate changelog for native window minimum fix
 - Regenerate changelog for native integration
+- Refresh native acceptance regression evidence
 
 ### 📦 Dependencies
 
@@ -278,6 +279,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Consolidate pending updates and fix dependency audit
 - **license**: Adopt AGPL-3.0-only and comment-signed CLA
 - **license**: Integrate AGPL and contributor agreement
+
+### 🚨 Breaking Changes
+
+- Retire React Tauri and Rust application stack
 
 ### 🧪 Tests
 

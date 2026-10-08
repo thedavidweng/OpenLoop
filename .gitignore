@@ -46,21 +46,14 @@ coverage
 .env.local
 .env.*.local
 
-# Rust / Tauri
-src-tauri/target/
-src-tauri/binaries/*
-!src-tauri/binaries/.gitkeep
-
 # Other
 reference
 
 # Local AI tooling configuration
 config.json
 
-# Ephemeral macOS Liquid Glass icon compile staging (actool output)
-src-tauri/icons/.liquid-glass-staging/
-
 # Native Swift build artifacts
 native/.build/
 native/.swiftpm/
 native/dist/
+native/binaries/

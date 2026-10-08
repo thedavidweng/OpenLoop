@@ -18,8 +18,8 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ${{ matrix.language == 'swift' && 'macos-latest' || 'ubuntu-latest' }}
-    timeout-minutes: ${{ matrix.language == 'swift' && 120 || 360 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       security-events: write # Upload code scanning results.
       actions: read # Retrieve analysis workflow metadata.
@@ -29,8 +29,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - language: rust
-            build-mode: autobuild
           - language: javascript-typescript
             build-mode: none
 
@@ -45,10 +43,6 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
-        if: matrix.build-mode == 'autobuild'
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2

@@ -27,7 +27,7 @@ This is a single-context repo:
 
 New native **Engines**, **Engine Runtimes**, **Model Packs**, and configurations
 are registered in `native/Sources/OpenLoopEngines/Catalog.swift`, consumed directly
-by GUI and CLI. The retiring Rust/React registry is a migration reference only. Do not hard-code a new family in commands, the
+by GUI and CLI. The native catalog and model-files.json manifest are authoritative; the Rust/React registry is retired. Do not hard-code a new family in commands, the
 CLI router, or Settings when listing or switching.
 
 ## Use the glossary's vocabulary

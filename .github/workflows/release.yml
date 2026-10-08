@@ -27,7 +27,6 @@ jobs:
       contents: write # Creates the draft release and uploads its DMG.
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-      TAURI_TARGET_TRIPLE: aarch64-apple-darwin
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -60,7 +59,7 @@ jobs:
         run: node scripts/prepare-sidecars.mjs
 
       - name: Package and verify signed native app and DMG
-        run: python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --dmg "$DMG_PATH"
+        run: python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --dmg "$DMG_PATH"
 
       - name: Packaged headless CLI and signature smoke
         run: python3 native/scripts/smoke-cli.py

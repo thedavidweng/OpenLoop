@@ -9,7 +9,7 @@
  *  3. README.md contains status line with v0.1 Alpha
  *  4. README_CN.md contains status line with v0.1 Alpha (Chinese)
  *  5. README_CN.md has Release badge
- *  6. CSP ADR references Tauri v2 security docs, not v1
+ *  6. Native ADR identifies SwiftUI and OpenLoopCore
  *  7. License section text in both READMEs says AGPL-3.0-only
  */
 
@@ -41,7 +41,7 @@ function check(name, ok, detail) {
 // Load files
 const readme = readFile("README.md");
 const readmeCN = readFile("README_CN.md");
-const cspAdr = readFile("docs/adr/0003-content-security-policy.md");
+const nativeAdr = readFile("docs/adr/0005-native-macos-shared-swift-core.md");
 
 // 1. README.md license badge says AGPL-3.0-only
 check(
@@ -78,11 +78,11 @@ check(
   "missing Release badge",
 );
 
-// 6. CSP ADR references Tauri v2 security docs
+// Native architecture is the current implementation.
 check(
-  "6. CSP ADR references Tauri v2 (not v1)",
-  /tauri\.app\/v1/.test(cspAdr) === false && /tauri\.app.*v2|v2\.tauri\.app/.test(cspAdr) === true,
-  "still references tauri.app/v1",
+  "6. Native architecture is documented",
+  /OpenLoopCore/.test(nativeAdr) && /SwiftUI/.test(nativeAdr),
+  "native ADR must describe SwiftUI and the shared core",
 );
 
 // 7. License sections identify AGPL-3.0-only

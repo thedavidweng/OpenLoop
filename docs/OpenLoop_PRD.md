@@ -1,3 +1,6 @@
+> Historical product specification for the retired React/Tauri implementation.
+> Current architecture and behavior: [CONTEXT.md](../CONTEXT.md), [native/README.md](../native/README.md).
+
 # OpenLoop Product Requirements Document
 
 **版本**: 1.0  

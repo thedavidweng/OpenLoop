@@ -4,9 +4,8 @@ The #261 native architecture lives in this Swift package. It targets macOS 15+
 Apple Silicon, Swift 6.2+. The catalog recommends 24 GB memory for the
 pinned inference runtime; the 16 GB acceptance host swaps heavily. The SwiftUI app implements the creative workflow:
 Project → Compose → Takes → listen / A-B compare → reproduce or vary → Export,
-plus cross-project History. The existing Tauri app remains a
-behavioral reference until native product parity is verified, not a second
-long-term architecture.
+plus cross-project History. React/Tauri/Rust have been retired from main. Git history preserves the old app;
+the native import still supports existing user libraries.
 
 ## Build and test
 
@@ -14,7 +13,7 @@ long-term architecture.
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native
 swift run --package-path native openloop-cli help
-python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
+python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
 python3 native/scripts/smoke-cli.py
 ```
 
@@ -28,7 +27,7 @@ Stop the legacy app before first native launch and back up its database. Native
 GUI and CLI share `~/Library/Application Support/com.openmusic.openloop/openloop.sqlite3`.
 Legacy state is imported once into `native_objects` in one transaction, without
 moving Output Files or destroying the legacy tables. There is no bidirectional
-synchronization with the retiring Rust application. Native events use explicit
+synchronization with the historical Rust application. Native events use explicit
 NDJSON **v2**; existing v1 scripts must migrate to the new envelope described in
 `docs/specs/native-cli.md`.
 
@@ -69,7 +68,7 @@ runs can specify `--uv PATH`. No system uv/Python lookup is used for inference.
 
 ```sh
 swift run --package-path native openloop-cli catalog --json
-swift run --package-path native openloop-cli --uv src-tauri/binaries/uv-aarch64-apple-darwin \
+swift run --package-path native openloop-cli --uv native/binaries/uv-aarch64-apple-darwin \
   --data-dir /tmp/openloop-native-test run --configuration ace-step/lite \
   --prompt 'gentle piano' --duration 10 --accept-license --json
 ```
@@ -109,8 +108,9 @@ through a scripted Engine (capability gating, setup gating, retry, reproduction,
 region edits, deletion). Repaint uses the waveform selection on the loaded Take;
 Extend appears only for Engines that claim it, which ACE-Step 1.5 does not. Real-model bootstrap/generation, audio hardware playback/seek/A-B,
 Finder/DAW drag, notifications, VoiceOver, and packaged relaunch/coexistence
-still require the Apple Silicon smoke matrix. Only then retire React/Tauri/Rust, their mirrored
-catalog and obsolete build/release dependencies.
+still require the Apple Silicon smoke matrix before public release. The owner
+authorized old-stack retirement after native integration; these remaining
+manual publication gates are not marked passed.
 
 Current packaged visual, integration and real-model acceptance results are recorded
 in [testing.md](../docs/testing.md#native-macos-acceptance--2026-10-07).

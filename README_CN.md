@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop 图标" width="160" height="160" />
+<img src="./native/Assets/1024x1024.png" alt="OpenLoop 图标" width="160" height="160" />
 
 # OpenLoop
 
@@ -70,11 +70,11 @@ CLI=/Applications/OpenLoop.app/Contents/MacOS/openloop-cli
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native -Xswiftc -warnings-as-errors
 node scripts/prepare-sidecars.mjs
-python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
+python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
 python3 native/scripts/smoke-cli.py
 ```
 
-[原生架构与开发](native/README.md) · [发布打包](docs/release.md)。React/Tauri/Rust 保留为迁移参考，不再是原生发布目标。
+[原生架构与开发](native/README.md) · [发布打包](docs/release.md)。main 已移除 React/Tauri/Rust；旧实现保留在 Git 历史中。
 
 ## OpenMusic 系列
 

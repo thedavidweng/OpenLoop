@@ -4,7 +4,7 @@
 
 <div align="center">
 
-<img src="./src-tauri/icons/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />
+<img src="./native/Assets/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />
 
 # OpenLoop
 
@@ -61,7 +61,7 @@ These are actual packaged-app screenshots from an isolated test library. Workspa
 The native release workflow builds an Apple Silicon DMG and creates a draft release.
 Download the **native** DMG when published in [Releases](https://github.com/thedavidweng/OpenLoop/releases),
 then drag OpenLoop to Applications. Older release assets and the Homebrew cask may
-still install the retiring Tauri app; verify the asset before upgrading.
+still install the historical Tauri app; verify the asset before upgrading.
 
 This Alpha is ad-hoc signed, not Developer ID signed or notarized. If Gatekeeper
 blocks your downloaded copy, use the release instructions in [docs/release.md](docs/release.md).
@@ -69,7 +69,7 @@ The native app has no built-in updater.
 
 Before upgrading, stop the legacy app and back up its library. Native imports
 legacy state once without moving original audio. Native GUI and CLI share their
-library; changes do not synchronize back to the retiring app. Use
+library; changes do not synchronize back to the old app. Use
 `OPENLOOP_DATA_DIR=/tmp/openloop-native-test` to isolate GUI evaluation, and
 `--data-dir /tmp/openloop-native-test` for CLI evaluation.
 
@@ -99,12 +99,12 @@ Requires Apple Silicon, macOS 15+, Swift 6.2+ and Node.js 24+ for sidecar prepar
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native -Xswiftc -warnings-as-errors
 node scripts/prepare-sidecars.mjs
-python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
+python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
 python3 native/scripts/smoke-cli.py
 ```
 
 [Native architecture and development](native/README.md) · [Release packaging](docs/release.md).
-React/Tauri/Rust remain migration references, not the native release target.
+React/Tauri/Rust have been removed from main; Git history preserves the old implementation.
 
 ## OpenMusic Series
 

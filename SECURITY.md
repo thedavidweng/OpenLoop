@@ -36,11 +36,11 @@ OpenLoop is a local-first desktop application. The attack surface is limited:
 
 Relevant security concerns include:
 
-- WebView injection or CSP bypass in the Tauri shell
+- Native GUI/CLI trust-boundary violations
 - Path traversal in file operations (output directory, model storage)
 - Command injection in backend process management
 - Unsafe deserialization of user input
-- Dependency vulnerabilities in Rust or npm packages
+- Dependency vulnerabilities in the inference runtime or repository tooling
 
 ## Acknowledgments
 

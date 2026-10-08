@@ -130,6 +130,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog for native region edits
 - Regenerate changelog for native window minimum fix
 - Regenerate changelog for native integration
+- Refresh native acceptance regression evidence
+- Regenerate native security changelog
+- Record activated native and CLA merge gates
+- Regenerate main protection changelog
+- Replace legacy PR checklist with native checks
+- Regenerate native contribution changelog
 
 ### 📦 Dependencies
 
@@ -170,6 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Bump reviewdog/action-actionlint from 1.75.0 to 1.77.0 (#260)
 - Overlap independent checks in one job
 - Overlap cargo-audit without a wait step
+- Scan native Swift and retire default Rust analysis
+- Name the native pipeline independently of retired jobs
 
 ### 🔧 Chores
 
@@ -278,6 +286,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Consolidate pending updates and fix dependency audit
 - **license**: Adopt AGPL-3.0-only and comment-signed CLA
 - **license**: Integrate AGPL and contributor agreement
+
+### 🚨 Breaking Changes
+
+- Retire React Tauri and Rust application stack
 
 ### 🧪 Tests
 

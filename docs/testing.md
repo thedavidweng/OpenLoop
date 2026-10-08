@@ -16,7 +16,7 @@ mockups; see the READMEs. Main-window captures are 2320 × 1304 Retina pixels
 | --- | --- | --- |
 | Native compilation | PASS | `swift build --package-path native -Xswiftc -warnings-as-errors` |
 | Core, adapter, CLI, audio and presentation tests | PASS | `swift test --package-path native`: 26 core tests and 14 app tests |
-| Release packaging | PASS | `python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --output /tmp/openloop-acceptance-20261007/OpenLoop.app` |
+| Release packaging | PASS | `python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --output /tmp/openloop-acceptance-20261007/OpenLoop.app` |
 | Packaged CLI smoke | PASS | Existing `smoke-cli.py`, pointed at the fresh bundle: project/settings persistence, NDJSON v2, deletion without confirmation rejected, SIGINT exit 130, persisted cancellation, resources and uv present |
 | First-run workspace and setup | PASS | Empty states, disabled empty-prompt generation, nonempty-prompt generation routes to setup, compatibility/memory/download/license text, Install disabled before review, Not Now dismisses |
 | Settings | PASS | General, Models and Advanced inspected; duration changed from 30 to 35 seconds via GUI, persisted to CLI and applied to new Compose after relaunch; announced model unavailable; Settings Install opens setup |
@@ -68,7 +68,7 @@ screenshot now shows that real Take; workspace screenshots retain synthetic audi
 ```sh
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native -Xswiftc -warnings-as-errors
-python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin \
+python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin \
   --output /tmp/openloop-candidate/OpenLoop.app \
   --dmg /tmp/openloop-candidate/OpenLoop_0.2.1_aarch64.dmg
 python3 native/scripts/smoke-cli.py --bundle /tmp/openloop-candidate/OpenLoop.app
@@ -100,19 +100,22 @@ The remaining hardware/distribution checks above remain publication gates.
 No Developer ID certificate/notarization credentials are configured here.
 Screenshots demonstrate inspected UI states, not release certification.
 
-## Retiring implementation checks
+## Main-only retirement
 
-Legacy frontend/Rust tests remain useful for migration comparisons and still run
-in CI. They are not release packaging commands:
+The owner authorized retirement after #283 merged. React/Tauri/Rust source,
+the duplicated catalog, legacy tests, and build dependencies are removed.
+The native model manifest is authoritative. Historical acceptance runs above
+remain evidence of the migration, not commands supported by current main.
 
-```sh
-pnpm typecheck
-pnpm test:run
-pnpm build
-cargo test --manifest-path src-tauri/Cargo.toml
-```
-
-`pnpm release:check` now runs the native compile/tests and documentation gates.
-`pnpm release:build` prepares uv, packages the signed native app and
+`pnpm release:check` runs native compile/tests, documentation and CLA contracts.
+`pnpm release:build` prepares verified uv, packages the signed native app and
 `native/dist/OpenLoop.dmg`, and runs packaged smoke. Existing outputs are never
 overwritten; remove a previous local candidate explicitly before rebuilding.
+Manual hardware/distribution publication gates above remain open.
+
+Retirement candidate: all 40 Swift tests, README/release-note validators and CLA
+contracts passed. Verified uv preparation, a fresh signed bundle/DMG and packaged
+headless CLI/SIGINT smoke passed without any Rust or frontend build.
+
+CodeQL uses the committed advanced workflow for native Swift, repository
+JavaScript and GitHub Actions; the previous default Rust configuration is retired.

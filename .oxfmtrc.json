@@ -4,11 +4,12 @@
   "trailingComma": "all",
   "printWidth": 100,
   "ignorePatterns": [
-    "dist",
     "node_modules",
-    "coverage",
-    "src-tauri",
     "docs",
+    "native/.build",
+    "native/dist",
+    "native/binaries",
+    "native/Assets",
     "**/*.toml",
     "**/*.md"
   ]

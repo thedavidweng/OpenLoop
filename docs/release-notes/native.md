@@ -15,7 +15,7 @@ one shared Swift core. Requires Apple Silicon and macOS 15 or later.
 
 Stop the legacy app and back up its library before the first native launch.
 The native core imports legacy state once without moving original audio files.
-The retiring Tauri app does not synchronize back from the native library.
+The historical Tauri app does not synchronize back from the native library.
 The native UI is currently English-only and has no built-in updater.
 The pinned backend can exceed 16 GB memory in Lite and cause heavy swapping;
 review the measured acceptance results before installing on a low-memory Mac.

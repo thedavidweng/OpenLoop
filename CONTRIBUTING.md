@@ -13,40 +13,24 @@ pnpm install
 
 ## Development
 
-The native macOS replacement lives in `native/`; see `native/README.md` for its
-architecture, runtime setup and migration boundary. The SwiftUI app awaits the
-Apple Silicon product smoke matrix before the Tauri app is retired.
+The app and CLI live in `native/` and share OpenLoopCore. See
+[native/README.md](native/README.md) for architecture and runtime setup.
 
 ```bash
 swift build --package-path native -Xswiftc -warnings-as-errors
 swift test --package-path native -Xswiftc -warnings-as-errors
 swift run --package-path native openloop-cli help
+pnpm release:check
 ```
 
-The following commands apply to the legacy app retained until native parity:
-
-```bash
-# Start dev server (hot-reload)
-pnpm tauri dev
-
-# Build release binary
-pnpm tauri build
-
-# Run Rust linter
-cargo clippy
-
-# Format code
-cargo fmt
-
-# Run tests
-cargo test
-```
+Node/pnpm are repository tooling only; no React, Tauri, or Rust app is built.
+The root `package.json` version drives the native bundle version.
 
 ## Pull Requests
 
 1. Fork the repository and create a feature branch.
 2. Make your changes with tests if applicable.
-3. Run `cargo clippy` and `cargo fmt` before committing.
+3. Run `pnpm release:check` and `pnpm format:check` before committing.
 4. Open a pull request against `main`.
 
 ## Commit Messages
@@ -88,11 +72,11 @@ or direct write to protected `main` is required. Keep that PR's discussion
 unlocked and retain its registration comments. The former signature JSON was
 empty when this storage migration was made.
 
-Require the **`CLA` commit status** from GitHub Actions (app ID 15368) in main's
-protection after activation. Do not require `CLA Assistant`: comment-triggered
+Main protection requires **`CLA`**, **`Native Swift`**, **`Tooling`**, and
+**`Validate`** from GitHub Actions (app ID 15368). Do not require `CLA Assistant`: comment-triggered
 runs belong to main, while `CLA` targets the actual checked PR commit.
-This requirement still needs repository administration access to configure;
-the workflow alone does not enforce merge protection.
+The required checks are configured in repository protection; the workflow alone
+does not enforce merge protection.
 
 Each changed agreement version needs a new pinned document URL and a new
 signature-record marker. Do not treat existing version 1 signatures as consent to

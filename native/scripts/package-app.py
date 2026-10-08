@@ -33,7 +33,7 @@ for bundle in bin_path.glob("*.bundle"):
     if bundle.stem.endswith("Tests"): continue
     shutil.copytree(bundle, resources / bundle.name)
     (macos / bundle.name).symlink_to(Path("../Resources") / bundle.name)
-shutil.copy2(root / "src-tauri/icons/OpenLoop.icns", resources / "OpenLoop.icns")
+shutil.copy2(root / "native/Assets/OpenLoop.icns", resources / "OpenLoop.icns")
 version = json.loads((root / "package.json").read_text())["version"]
 info = {
     "CFBundleIdentifier": "com.openmusic.openloop",

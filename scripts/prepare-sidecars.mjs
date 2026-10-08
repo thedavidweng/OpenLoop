@@ -5,38 +5,18 @@ import { get } from "node:https";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFile, execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
 
 const UV_VERSION = process.env.OPENLOOP_UV_VERSION ?? "0.11.7";
 const ROOT_DIR = fileURLToPath(new URL("..", import.meta.url));
-const BINARIES_DIR = join(ROOT_DIR, "src-tauri", "binaries");
+const BINARIES_DIR = join(ROOT_DIR, "native", "binaries");
 const CACHE_DIR = join(BINARIES_DIR, ".cache");
 
-const TARGETS = {
-  "aarch64-apple-darwin": {
-    archive: "uv-aarch64-apple-darwin.tar.gz",
-    binary: "uv",
-  },
-  "x86_64-apple-darwin": {
-    archive: "uv-x86_64-apple-darwin.tar.gz",
-    binary: "uv",
-  },
-  "aarch64-unknown-linux-gnu": {
-    archive: "uv-aarch64-unknown-linux-gnu.tar.gz",
-    binary: "uv",
-  },
-  "x86_64-unknown-linux-gnu": {
-    archive: "uv-x86_64-unknown-linux-gnu.tar.gz",
-    binary: "uv",
-  },
-};
-
-const targetTriple = process.env.TAURI_TARGET_TRIPLE ?? rustHostTriple();
-const target = TARGETS[targetTriple];
-
-if (!target) {
-  throw new Error(`Unsupported OpenLoop sidecar target: ${targetTriple}`);
+if (process.platform !== "darwin" || process.arch !== "arm64") {
+  throw new Error("OpenLoop packaging requires Apple Silicon macOS.");
 }
+const targetTriple = "aarch64-apple-darwin";
+const target = { archive: `uv-${targetTriple}.tar.gz`, binary: "uv" };
 
 mkdirSync(CACHE_DIR, { recursive: true });
 
@@ -64,19 +44,6 @@ try {
   console.log(`Prepared ${basename(sidecarPath)} from uv ${UV_VERSION}`);
 } finally {
   rmSync(extractDir, { recursive: true, force: true });
-}
-
-function rustHostTriple() {
-  const output = execFileSync("rustc", ["-vV"], { encoding: "utf8" });
-  const host = output
-    .split("\n")
-    .find((line) => line.startsWith("host: "))
-    ?.slice("host: ".length)
-    .trim();
-  if (!host) {
-    throw new Error("Could not detect Rust host triple from `rustc -vV`.");
-  }
-  return host;
 }
 
 function download(url, destination) {

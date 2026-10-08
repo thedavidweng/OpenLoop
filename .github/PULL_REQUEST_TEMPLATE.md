@@ -1,22 +1,19 @@
 ## Summary
 
-Brief description of the changes.
+Describe the problem and resulting behavior. Include a small diagram or diff sketch when it helps.
 
-## Changes
+## Evidence
 
-- 
+- [ ] `pnpm release:check` passes (Swift compile/tests, documentation, CLA contracts)
+- [ ] `pnpm format:check` passes
+- [ ] New/changed CLI commands tested with NDJSON v2 `--json` output
+- [ ] Packaged app/CLI smoke and visual checks completed when affected
+- [ ] Remaining manual acceptance limits stated explicitly
 
-## Test plan
+## Merge Danger
 
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm lint` passes
-- [ ] `pnpm test:run` passes
-- [ ] `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings` clean
-- [ ] `cargo fmt --manifest-path src-tauri/Cargo.toml --check` clean
-- [ ] `cargo test --manifest-path src-tauri/Cargo.toml` passes
-- [ ] New/changed CLI commands tested with `--json` output
-- [ ] i18n keys added to both `en.json` and `zh-CN.json` *(if applicable)*
+Describe reversibility and affected user data, workflows or build tooling.
 
 ## Related issues
 
-Closes #
+Link issues; use `Closes #` only when their acceptance criteria are complete.

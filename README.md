@@ -14,7 +14,7 @@ An open-source desktop AI music generator powered by local inference, built for 
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
 
 ![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
@@ -114,12 +114,15 @@ locally. Both favor local processing and user ownership.
 
 ## Contributing
 
+Contributors sign the versioned [CLA](CLA.md) through a GitHub PR comment;
+see [contribution instructions](CONTRIBUTING.md) and [licensing details](LICENSING.md).
 Open an issue before a large change. See [GitHub issues](https://github.com/thedavidweng/OpenLoop/issues)
 for the roadmap and [testing.md](docs/testing.md) for acceptance coverage.
 
 ## License
 
-OpenLoop application code uses the [Apache License 2.0](LICENSE).
+OpenLoop application code uses the [GNU AGPL-3.0-only](LICENSE). Historical
+Apache-2.0 grants remain valid; see [LICENSING.md](LICENSING.md).
 Third-party runtimes, models and tools retain their own license terms. Generated
 content is not guaranteed copyright-free; review the model and content terms
 before distribution.

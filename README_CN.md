@@ -10,7 +10,7 @@
 
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](./LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 
 **v0.2.1 Alpha · 原生 macOS · Apple Silicon · macOS 15+**
 
@@ -86,7 +86,7 @@ python3 native/scripts/smoke-cli.py
 
 ## 许可证
 
-OpenLoop 应用代码使用 [Apache License 2.0](LICENSE)。第三方运行时、模型和工具遵循各自条款。生成内容不保证无版权限制，发布前请审阅相应条款。
+OpenLoop 应用代码使用 [GNU AGPL-3.0-only](LICENSE)。历史 Apache-2.0 授权仍然有效，详见 [LICENSING.md](LICENSING.md)。贡献者通过 GitHub PR 评论签署版本化 [CLA](CLA.md)，详见[贡献说明](CONTRIBUTING.md)。第三方运行时、模型和工具遵循各自条款。生成内容不保证无版权限制，发布前请审阅相应条款。
 
 ## 致谢
 

@@ -110,6 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **native**: Await cancelled generation cleanup before CLI exit
 - **native**: Validate packaged CLI signal cancellation
 - **native**: Size main window minimum to fit all workspace columns
+- **native**: Validate real inference and native release packaging
+- **native**: Reproduce surviving variations after parent deletion
+- Verify native reproduction and store CLA signatures without branches
 
 ### 📝 Documentation
 
@@ -124,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Refresh generated native changelog
 - Regenerate changelog for native workspace UI
 - Regenerate changelog for native region edits
+- Regenerate changelog for native window minimum fix
 
 ### 📦 Dependencies
 
@@ -162,6 +166,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Bump dtolnay/rust-toolchain (#246)
 - **deps**: Bump the codeql-action group with 3 updates (#259)
 - **deps**: Bump reviewdog/action-actionlint from 1.75.0 to 1.77.0 (#260)
+- Overlap independent checks in one job
+- Overlap cargo-audit without a wait step
 
 ### 🔧 Chores
 
@@ -266,6 +272,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Bump cc from 1.4.6 to 1.4.7 in /src-tauri (#254)
 - **deps**: Bump tauri from 2.11.5 to 2.11.6 in /src-tauri (#252)
 - **deps**: Bump react-i18next in the production-dependencies group (#256)
+- **deps**: Bump the dev-dependencies group across 1 directory with 9 updates (#280)
+- **deps**: Consolidate pending updates and fix dependency audit
+- **license**: Adopt AGPL-3.0-only and comment-signed CLA
+- **license**: Integrate AGPL and contributor agreement
 
 ### 🧪 Tests
 

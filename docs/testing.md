@@ -116,3 +116,6 @@ Manual hardware/distribution publication gates above remain open.
 Retirement candidate: all 40 Swift tests, README/release-note validators and CLA
 contracts passed. Verified uv preparation, a fresh signed bundle/DMG and packaged
 headless CLI/SIGINT smoke passed without any Rust or frontend build.
+
+CodeQL uses the committed advanced workflow for native Swift, repository
+JavaScript and GitHub Actions; the previous default Rust configuration is retired.

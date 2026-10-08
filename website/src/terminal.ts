@@ -23,7 +23,11 @@ const SCRIPT: Line[] = [
   {
     kind: "json",
     delay: 420,
-    text: event(19, "result", '{"generation":{"seed":1847,…},"take":{…}}'),
+    text: event(
+      19,
+      "result",
+      '{"generation":{"id":"gen_8f3a","seed":1847},"take":{"generationID":"gen_8f3a","index":0}}',
+    ),
   },
 ];
 

@@ -177,16 +177,15 @@ export function mountMock(root: HTMLElement): void {
   function tick(): void {
     if (!synth.playing) return;
     position = synth.position();
-    if (position >= DURATION) {
+    // Check the region first: a selection can end exactly at DURATION.
+    if (region && position >= region[1] * DURATION) {
+      position = region[0] * DURATION;
+      startAudio();
+    } else if (position >= DURATION) {
       stop();
       position = 0;
       renderProgress();
       return;
-    }
-    if (region && position >= region[1] * DURATION) {
-      // A selected region loops, mirroring the app's loop playback.
-      position = region[0] * DURATION;
-      startAudio();
     }
     renderProgress();
     frame = requestAnimationFrame(tick);

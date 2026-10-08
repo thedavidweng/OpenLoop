@@ -1,8 +1,9 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  // GitHub Pages project subpath: thedavidweng.github.io/OpenLoop/
-  base: "/OpenLoop/",
+  // Relative so one build works at thedavidweng.github.io/OpenLoop/
+  // and at the openloop.blahaj.uk root.
+  base: "./",
   build: {
     outDir: "dist",
     emptyOutDir: true,

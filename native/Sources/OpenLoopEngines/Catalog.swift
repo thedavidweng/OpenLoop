@@ -12,7 +12,7 @@ public struct RuntimeDescriptor: Codable, Sendable, Identifiable {
   public var operatingSystems: [String]
   public var architectures: [String]
   public var accelerators: [String]
-  public var minimumMemoryGB: Int
+  public var recommendedMemoryGB: Int
   public var implementation: String
   public var sourceURL: URL
   public var revision: String
@@ -121,7 +121,7 @@ public struct EngineCatalog: Codable, Sendable {
       runtimes: [
         .init(
           id: "ace-step/uv", engineID: "ace-step", operatingSystems: ["macOS"],
-          architectures: ["arm64"], accelerators: ["MLX", "MPS"], minimumMemoryGB: 24,
+          architectures: ["arm64"], accelerators: ["MLX", "MPS"], recommendedMemoryGB: 24,
           implementation: "bundled-uv-python",
           sourceURL: URL(
             string:

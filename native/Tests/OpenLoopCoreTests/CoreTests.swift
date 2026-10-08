@@ -166,6 +166,24 @@ actor WaitingEngine: Engine {
   #expect(try await reopened.retry(taskID: task.id).request.prompt == "idea survives crash")
 }
 
+@Test func retainedVariationCanBeReproducedAfterItsParentIsDeleted() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let first = try await core.submit(.init(selection: testSelection, prompt: "piano"))
+  for try await _ in try await core.run(taskID: first.id) {}
+  let parent = try #require(try await core.workspace().takes.first)
+  let variation = try await core.submit(core.requestForTake(id: parent.id, reproduce: false))
+  for try await _ in try await core.run(taskID: variation.id) {}
+  let take = try #require(try await core.workspace().takes.first { $0.parentTakeID == parent.id })
+  try await core.deleteGenerations(ids: [parent.generationID], confirmed: true)
+  let request = try await core.requestForTake(id: take.id, reproduce: true)
+  #expect(request.parentTakeID == nil)
+  #expect(request.seed == 42)
+  let reproduction = try await core.submit(request)
+  for try await _ in try await core.run(taskID: reproduction.id) {}
+}
+
 @Test func reproductionPreservesEditOperationAndSourceTake() async throws {
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }

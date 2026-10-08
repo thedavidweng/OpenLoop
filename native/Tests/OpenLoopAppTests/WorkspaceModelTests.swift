@@ -18,7 +18,7 @@ private let catalog = EngineCatalog(
   runtimes: [
     .init(
       id: "test/local", engineID: "test", operatingSystems: ["macOS"], architectures: ["arm64"],
-      accelerators: [], minimumMemoryGB: 1, implementation: "fake",
+      accelerators: [], recommendedMemoryGB: 1, implementation: "fake",
       sourceURL: URL(string: "https://example.com")!,
       revision: "0", license: license)
   ],

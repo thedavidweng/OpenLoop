@@ -66,6 +66,21 @@ Checks that DMG release notes document the Gatekeeper bypass (right-click Open,
   local HTTP fixture, including SIGINT exit status and persisted cancellation.
   It writes no repository artifacts and does not download or run real models.
 
+## Website
+
+The landing page lives in `website/` (Vite + TypeScript, no framework) and
+deploys to GitHub Pages at `thedavidweng.github.io/OpenLoop/`.
+
+- **Run:** `pnpm website:dev` for local development, `pnpm website:build` to
+  typecheck and build
+- **Output:** `website/dist/` (git-ignored)
+- **Deploy:** `.github/workflows/pages.yml` builds and publishes on pushes to
+  `main` that touch `website/**`. GitHub Pages must use "GitHub Actions" as its
+  source.
+- **Icons:** `website/public/img/*` are resized from `native/Assets/1024x1024.png`
+  with `sips -Z` (256, 180, 96) and `magick -resize 32x32` for `favicon.ico`.
+  Regenerate them after the app icon changes.
+
 ## Generated changelog
 
 `pnpm changelog` runs `git-cliff` with `cliff.toml` and writes `CHANGELOG.md`

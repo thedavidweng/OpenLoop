@@ -1,134 +1,112 @@
-[简体中文](./README_CN.md)
-
-> Native macOS Alpha: SwiftUI app, separate Swift CLI, and shared Swift core. Requires Apple Silicon and macOS 15+.
-
 <div align="center">
 
-<img src="./native/Assets/1024x1024.png" alt="OpenLoop app icon" width="160" height="160" />
+<img src="./native/Assets/1024x1024.png" alt="OpenLoop app icon" width="128" height="128" />
 
 # OpenLoop
 
 **Generate music locally on your Mac.**
 
-An open-source desktop AI music generator powered by local inference, built for the OpenMusic series.
-
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
-![Platform](https://img.shields.io/badge/platform-macOS%20%28Apple%20Silicon%29-lightgrey)
+![Platform](https://img.shields.io/badge/platform-macOS%2015%2B%20%C2%B7%20Apple%20Silicon-lightgrey)
 
-![Status](https://img.shields.io/badge/Status-v0.2.1%20Alpha-orange)
-![OpenMusic](https://img.shields.io/badge/OpenMusic-Series-purple)
+[Website](https://openloop.blahaj.uk) · [Download](https://github.com/thedavidweng/OpenLoop/releases) · [CLI](docs/cli.md) · [简体中文](./README_CN.md)
+
+<img src="docs/screenshots/workspace-dark.png" alt="OpenLoop workspace with a project, two generated Takes, and the Take inspector" width="900" />
 
 </div>
 
----
+OpenLoop is a native macOS app for AI music generation. It runs open models such as
+[ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) entirely on your machine:
+no account, no upload, and the generated files stay on your Mac.
 
-## Native workspace
+> [!NOTE]
+> **v0.2.2 Alpha.** The app is ad-hoc signed and not yet notarized. The pinned
+> ACE-Step runtime can use more than 16 GB of memory even with the Lite model, so
+> Macs with 16 GB or less may swap heavily. 24 GB or more is recommended.
 
-**v0.2.1 Alpha**
+## Features
 
-Organize music into Projects, generate Takes from prompts and lyrics, compare A/B,
-reproduce a seed or create variations, select a waveform region for loop playback
-or Repaint, and export Artifacts. History supports search and favorites across
-Projects. Settings installs the pinned ACE-Step runtime and Model Packs locally.
-MiniMax Music 3 is announced but unavailable. The UI is currently English-only.
-The current pinned backend can exceed 16 GB memory even in Lite; limited-memory
-Macs may swap heavily. See the measured acceptance results before installing.
-
-These are actual packaged-app screenshots from an isolated test library. Workspace Takes use synthetic WAV test audio. The History capture shows a real
-10-second Lite generation with seed 42; screenshots do not assess listening quality. See [acceptance results](docs/testing.md#native-macos-acceptance--2026-10-07).
-
-**Compose, Takes, and inspector — dark appearance**
-
-![Native OpenLoop workspace with two test Takes and A/B comparison](docs/screenshots/native-workspace.jpg)
+- **Projects and Takes.** Write a prompt and optional lyrics, then generate one or
+  more Takes per idea.
+- **Compare and iterate.** Switch between two Takes with A/B playback, reproduce a
+  Take from its seed, or create variations.
+- **Loop and Repaint.** Select part of a waveform to loop it, or regenerate only
+  that region.
+- **History.** Search and favorite every generation across Projects.
+- **Local model management.** Install the runtime and Model Packs from Settings,
+  with download sizes and licenses shown up front.
+- **Scriptable CLI.** A headless `openloop-cli` shares the same library and emits
+  NDJSON for automation.
 
 <details>
-<summary>Light appearance, History, model catalog, and first-time setup</summary>
+<summary>More screenshots</summary>
+<br />
 
-![Native OpenLoop workspace in light appearance](docs/screenshots/native-workspace-light.jpg)
+| Light appearance | History |
+| --- | --- |
+| ![Workspace in light appearance](docs/screenshots/workspace-light.png) | ![History with search and favorites](docs/screenshots/history.png) |
 
-![Native History with a real generated Take, seed 42, and audio transport](docs/screenshots/native-history.jpg)
-
-![Native model catalog with download sizes and unavailable models](docs/screenshots/native-models.jpg)
-
-![Native first-time setup with compatibility checks and license review](docs/screenshots/native-setup.jpg)
+| Models | First-time setup |
+| --- | --- |
+| ![Model catalog with download sizes and licenses](docs/screenshots/models.png) | ![First-time setup with compatibility checks and license review](docs/screenshots/setup.png) |
 
 </details>
 
-## Installation
+## Install
 
-The native release workflow builds an Apple Silicon DMG and creates a draft release.
-Download the **native** DMG when published in [Releases](https://github.com/thedavidweng/OpenLoop/releases),
-then drag OpenLoop to Applications. Older release assets and the Homebrew cask may
-still install the historical Tauri app; verify the asset before upgrading.
+1. Download the native Alpha DMG from [Releases](https://github.com/thedavidweng/OpenLoop/releases/tag/v0.2.2-alpha.1).
+2. Drag OpenLoop to Applications.
+3. Open the app and follow the first-time setup to install the engine and a model.
 
-This Alpha is ad-hoc signed, not Developer ID signed or notarized. If Gatekeeper
-blocks your downloaded copy, use the release instructions in [docs/release.md](docs/release.md).
-The native app has no built-in updater.
+If Gatekeeper blocks the app, see [docs/release.md](docs/release.md). Upgrading from
+the earlier Tauri version? Back up your library first; the native app imports it once
+and leaves your original audio in place.
 
-Before upgrading, stop the legacy app and back up its library. Native imports
-legacy state once without moving original audio. Native GUI and CLI share their
-library; changes do not synchronize back to the old app. Use
-`OPENLOOP_DATA_DIR=/tmp/openloop-native-test` to isolate GUI evaluation, and
-`--data-dir /tmp/openloop-native-test` for CLI evaluation.
+## Command line
 
-## CLI
-
-The headless executable is separate from the GUI:
+The CLI ships inside the app bundle:
 
 ```sh
 CLI=/Applications/OpenLoop.app/Contents/MacOS/openloop-cli
-"$CLI" catalog --json
 "$CLI" setup --accept-license
 "$CLI" models install ace-step/standard --accept-license
-"$CLI" run --configuration ace-step/lite --prompt 'gentle piano' --duration 10 --json
+"$CLI" run --configuration ace-step/lite --prompt 'gentle piano' --duration 10
 "$CLI" list --json
 ```
 
-Read the catalog licenses before accepting them. Setup downloads a Python runtime
-and dependencies; Model Packs download several GB. Generation runs locally.
-Native `--json` emits **NDJSON v2**; legacy v1 scripts must migrate.
-[CLI guide](docs/cli.md) · [v2 contract](docs/specs/native-cli.md).
+See the [CLI guide](docs/cli.md) and the [NDJSON v2 contract](docs/specs/native-cli.md).
 
 ## Build from source
 
-Requires Apple Silicon, macOS 15+, Swift 6.2+ and Node.js 24+ for sidecar preparation.
+Requires Apple Silicon, macOS 15+, Swift 6.2+, and Node.js 24+.
 
 ```sh
-swift build --package-path native -Xswiftc -warnings-as-errors
-swift test --package-path native -Xswiftc -warnings-as-errors
+swift build --package-path native
+swift test --package-path native
 node scripts/prepare-sidecars.mjs
 python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
-python3 native/scripts/smoke-cli.py
 ```
 
-[Native architecture and development](native/README.md) · [Release packaging](docs/release.md).
-React/Tauri/Rust have been removed from main; Git history preserves the old implementation.
-
-## OpenMusic Series
-
-[OpenKara](https://github.com/thedavidweng/OpenKara) turns local songs into karaoke
-with on-device stem separation and synced lyrics. OpenLoop generates new music
-locally. Both favor local processing and user ownership.
+The app is written to `native/dist/OpenLoop.app`. See [native/README.md](native/README.md)
+for the architecture and [docs/release.md](docs/release.md) for packaging.
 
 ## Contributing
 
-Contributors sign the versioned [CLA](CLA.md) through a GitHub PR comment;
-see [contribution instructions](CONTRIBUTING.md) and [licensing details](LICENSING.md).
-Open an issue before a large change. See [GitHub issues](https://github.com/thedavidweng/OpenLoop/issues)
-for the roadmap and [testing.md](docs/testing.md) for acceptance coverage.
+Issues and pull requests are welcome. Please open an issue before a large change.
+Contributors sign the [CLA](CLA.md) with a PR comment; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-OpenLoop application code uses the [GNU AGPL-3.0-only](LICENSE). Historical
-Apache-2.0 grants remain valid; see [LICENSING.md](LICENSING.md).
-Third-party runtimes, models and tools retain their own license terms. Generated
-content is not guaranteed copyright-free; review the model and content terms
-before distribution.
+OpenLoop is licensed under the [GNU AGPL-3.0-only](LICENSE). Earlier Apache-2.0
+grants remain valid; see [LICENSING.md](LICENSING.md). Models and runtimes keep their
+own licenses, and generated audio is not guaranteed to be free of copyright claims.
+Review the model terms before you distribute what you make.
 
 ## Acknowledgements
 
-Built on [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5),
-[MLX](https://github.com/ml-explore/mlx), and open-source audio tooling.
-Part of the OpenMusic series by [David Weng](https://github.com/thedavidweng).
+Built on [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) and
+[MLX](https://github.com/ml-explore/mlx). OpenLoop is part of the OpenMusic series
+with [OpenKara](https://github.com/thedavidweng/OpenKara), by
+[David Weng](https://github.com/thedavidweng).

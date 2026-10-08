@@ -1,8 +1,6 @@
-[English](./README.md)
-
 <div align="center">
 
-<img src="./native/Assets/1024x1024.png" alt="OpenLoop 图标" width="160" height="160" />
+<img src="./native/Assets/1024x1024.png" alt="OpenLoop 图标" width="128" height="128" />
 
 # OpenLoop
 
@@ -11,83 +9,86 @@
 [![CI](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml/badge.svg)](https://github.com/thedavidweng/OpenLoop/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/thedavidweng/OpenLoop?include_prereleases&label=release)](https://github.com/thedavidweng/OpenLoop/releases)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/License-AGPL--3.0--only-blue.svg)](./LICENSE)
+![Platform](https://img.shields.io/badge/platform-macOS%2015%2B%20%C2%B7%20Apple%20Silicon-lightgrey)
 
-**v0.2.1 Alpha · 原生 macOS · Apple Silicon · macOS 15+**
+[官网](https://openloop.blahaj.uk) · [下载](https://github.com/thedavidweng/OpenLoop/releases) · [CLI](docs/cli.md) · [English](./README.md)
+
+<img src="docs/screenshots/workspace-dark.png" alt="OpenLoop 工作区：项目、两个生成的 Take 和检查器" width="900" />
 
 </div>
 
-## 原生工作区
+OpenLoop 是一款原生 macOS AI 音乐生成应用。它在本机运行
+[ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 等开放模型：无需账号，不上传提示词或音频，生成的文件保存在本机。
 
-SwiftUI 应用与独立 Swift CLI 共用 Swift 核心。用项目整理音乐想法，通过提示词和歌词生成 Takes，进行 A/B 对比、复用种子或生成变体，在波形上选择区域循环播放或 Repaint，并导出产物。跨项目历史支持搜索和收藏。设置可在本地安装固定版本的 ACE-Step 运行时和模型包。MiniMax Music 3 尚未开放安装，当前界面仅支持英语。固定后端即使使用 Lite 也可能超过 16 GB 内存，低内存设备会明显换页；安装前请查看实测验收记录。
+> [!NOTE]
+> **v0.2.2 Alpha。** 应用使用 ad-hoc 签名，尚未公证。固定版本的 ACE-Step 运行时即使使用 Lite 模型也可能占用超过 16 GB 内存，16 GB 及以下的 Mac 可能频繁换页，建议 24 GB 或以上。
 
-以下为隔离测试库中的真实原生应用截图。工作区 Takes 使用合成 WAV 测试音频；历史截图展示真实生成的 10 秒 Lite 音频，seed 为 42。截图不代表听感质量验收。详细验证范围见[验收记录](docs/testing.md#native-macos-acceptance--2026-10-07)。
+## 功能
 
-**创作、Takes 和检查器——深色外观**
-
-![Native OpenLoop workspace with two test Takes and A/B comparison](docs/screenshots/native-workspace.jpg)
+- **项目与 Take。** 输入提示词和可选歌词，为每个想法生成一个或多个 Take。
+- **对比与迭代。** 用 A/B 播放在两个 Take 之间切换，按种子复现，或生成变体。
+- **循环与 Repaint。** 在波形上选取片段循环播放，或只重新生成这一段。
+- **历史。** 跨项目搜索和收藏所有生成记录。
+- **本地模型管理。** 在设置中安装运行时和模型包，下载大小和许可证一目了然。
+- **可脚本化 CLI。** 无界面的 `openloop-cli` 与应用共用资料库，并输出 NDJSON 便于自动化。
 
 <details>
-<summary>浅色外观、历史、模型目录和首次设置</summary>
+<summary>更多截图</summary>
+<br />
 
-![Native OpenLoop workspace in light appearance](docs/screenshots/native-workspace-light.jpg)
+| 浅色外观 | 历史 |
+| --- | --- |
+| ![浅色外观的工作区](docs/screenshots/workspace-light.png) | ![支持搜索和收藏的历史](docs/screenshots/history.png) |
 
-![Native History with a real generated Take, seed 42, and audio transport](docs/screenshots/native-history.jpg)
-
-![Native model catalog with download sizes and unavailable models](docs/screenshots/native-models.jpg)
-
-![Native first-time setup with compatibility checks and license review](docs/screenshots/native-setup.jpg)
+| 模型 | 首次设置 |
+| --- | --- |
+| ![显示下载大小和许可证的模型目录](docs/screenshots/models.png) | ![包含兼容性检查和许可证确认的首次设置](docs/screenshots/setup.png) |
 
 </details>
 
 ## 安装
 
-原生发布流程构建 Apple Silicon DMG 并创建草稿发布。原生版本发布后，从 [Releases](https://github.com/thedavidweng/OpenLoop/releases) 下载对应 DMG，将 OpenLoop 拖入 Applications。旧发布资产和 Homebrew cask 可能仍指向 Tauri 应用，升级前请确认下载的是原生版本。
+1. 从 [Releases](https://github.com/thedavidweng/OpenLoop/releases/tag/v0.2.2-alpha.1) 下载原生 Alpha DMG。
+2. 将 OpenLoop 拖入“应用程序”。
+3. 打开应用，按首次设置安装引擎和模型。
 
-此 Alpha 使用 ad-hoc 签名，尚未进行 Developer ID 签名或公证。下载副本若被 Gatekeeper 拦截，请参阅[发布指南](docs/release.md)。原生应用没有内置自动更新。
+如果被 Gatekeeper 拦截，请参阅 [docs/release.md](docs/release.md)。从旧版 Tauri 应用升级前请先备份资料库；原生版本只导入一次，且不会移动原始音频。
 
-升级前退出旧版并备份资料库。原生核心只导入旧数据一次，不移动原始音频。原生 GUI 与 CLI 共用资料库，但修改不会同步回旧版应用。测试 GUI 可设置 `OPENLOOP_DATA_DIR=/tmp/openloop-native-test`，CLI 使用 `--data-dir /tmp/openloop-native-test` 隔离数据。
+## 命令行
 
-## CLI
-
-无界面命令由独立可执行文件提供：
+CLI 随应用一起提供：
 
 ```sh
 CLI=/Applications/OpenLoop.app/Contents/MacOS/openloop-cli
-"$CLI" catalog --json
 "$CLI" setup --accept-license
 "$CLI" models install ace-step/standard --accept-license
-"$CLI" run --configuration ace-step/lite --prompt 'gentle piano' --duration 10 --json
+"$CLI" run --configuration ace-step/lite --prompt 'gentle piano' --duration 10
 "$CLI" list --json
 ```
 
-接受前请阅读目录中的许可条款。首次设置会下载 Python 运行时和依赖，模型包还需下载数 GB；音乐推理在本地运行。原生 `--json` 使用 **NDJSON v2**，旧 v1 脚本需要迁移。[CLI 指南](docs/cli.md) · [v2 协议](docs/specs/native-cli.md)。
+详见 [CLI 指南](docs/cli.md) 和 [NDJSON v2 协议](docs/specs/native-cli.md)。
 
 ## 从源码构建
 
-需要 Apple Silicon、macOS 15+、Swift 6.2+，以及准备 sidecar 所需的 Node.js 24+。
+需要 Apple Silicon、macOS 15+、Swift 6.2+ 和 Node.js 24+。
 
 ```sh
-swift build --package-path native -Xswiftc -warnings-as-errors
-swift test --package-path native -Xswiftc -warnings-as-errors
+swift build --package-path native
+swift test --package-path native
 node scripts/prepare-sidecars.mjs
 python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
-python3 native/scripts/smoke-cli.py
 ```
 
-[原生架构与开发](native/README.md) · [发布打包](docs/release.md)。main 已移除 React/Tauri/Rust；旧实现保留在 Git 历史中。
-
-## OpenMusic 系列
-
-[OpenKara](https://github.com/thedavidweng/OpenKara) 使用本地 AI 分离伴奏并同步歌词；OpenLoop 根据创作意图生成音乐。二者都重视本地处理和用户对内容的掌控。
+应用输出到 `native/dist/OpenLoop.app`。架构说明见 [native/README.md](native/README.md)，打包说明见 [docs/release.md](docs/release.md)。
 
 ## 贡献
 
-大型变更请先开 issue。路线图见 [GitHub Issues](https://github.com/thedavidweng/OpenLoop/issues)，测试范围见[验收指南](docs/testing.md)。
+欢迎提交 issue 和 PR。大型变更请先开 issue 讨论。贡献者需通过 PR 评论签署 [CLA](CLA.md)，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 
-OpenLoop 应用代码使用 [GNU AGPL-3.0-only](LICENSE)。历史 Apache-2.0 授权仍然有效，详见 [LICENSING.md](LICENSING.md)。贡献者通过 GitHub PR 评论签署版本化 [CLA](CLA.md)，详见[贡献说明](CONTRIBUTING.md)。第三方运行时、模型和工具遵循各自条款。生成内容不保证无版权限制，发布前请审阅相应条款。
+OpenLoop 使用 [GNU AGPL-3.0-only](LICENSE) 许可证。此前的 Apache-2.0 授权仍然有效，详见 [LICENSING.md](LICENSING.md)。模型和运行时遵循各自的许可证，生成的音频不保证不受版权主张约束，发布前请查阅模型条款。
 
 ## 致谢
 
-基于 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5)、[MLX](https://github.com/ml-explore/mlx) 和开源音频工具构建。由 [David Weng](https://github.com/thedavidweng) 发起，属于 OpenMusic 系列。
+基于 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 和 [MLX](https://github.com/ml-explore/mlx) 构建。OpenLoop 与 [OpenKara](https://github.com/thedavidweng/OpenKara) 同属 OpenMusic 系列，由 [David Weng](https://github.com/thedavidweng) 发起。

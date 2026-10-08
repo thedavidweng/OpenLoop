@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.2-alpha.1] - 2026-10-08
 
 
 ### ♻️ Refactoring
@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **native**: Add shared Swift core and engine foundation for #261
 - **native**: Implement SwiftUI creative workspace for #261
 - **native**: Add engine-neutral edit region with Repaint and Extend UI
+- **website**: Add OpenLoop landing page with GitHub Pages deploy
+- **website**: Serve the site at openloop.blahaj.uk
 
 ### 🐛 Bug Fixes
 
@@ -114,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **native**: Reproduce surviving variations after parent deletion
 - Verify native reproduction and store CLA signatures without branches
 - **native**: Address task recovery audio loops and CLI review regressions
+- **website**: Loop regions ending at track end and emit valid NDJSON
 
 ### 📝 Documentation
 
@@ -136,6 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate main protection changelog
 - Replace legacy PR checklist with native checks
 - Regenerate native contribution changelog
+- Regenerate native pipeline changelog
 
 ### 📦 Dependencies
 
@@ -178,6 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Overlap cargo-audit without a wait step
 - Scan native Swift and retire default Rust analysis
 - Name the native pipeline independently of retired jobs
+- **deps**: Bump reviewdog/action-actionlint from 1.77.0 to 1.78.1 (#287)
+- **deps**: Bump actions/github-script from 8.0.0 to 9.0.0
 
 ### 🔧 Chores
 
@@ -286,6 +292,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Consolidate pending updates and fix dependency audit
 - **license**: Adopt AGPL-3.0-only and comment-signed CLA
 - **license**: Integrate AGPL and contributor agreement
+- **release**: Prepare native macOS v0.2.2 alpha
 
 ### 🚨 Breaking Changes
 

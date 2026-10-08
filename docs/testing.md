@@ -100,6 +100,15 @@ The remaining hardware/distribution checks above remain publication gates.
 No Developer ID certificate/notarization credentials are configured here.
 Screenshots demonstrate inspected UI states, not release certification.
 
+## README captures — 2026-10-08
+
+The current PNG screenshots in `docs/screenshots/` use native window capture:
+`screencapture -x -o -a -l <window-id> <output.png>`. The cursor is excluded,
+window shadows are omitted, and rounded corners retain transparency. Workspace
+and History now show real Lite generations from an isolated library, including
+two 15-second Takes with seeds 7 and 8. Setup uses a separate empty library.
+These screenshots document UI states, not auditory quality or release acceptance.
+
 ## Main-only retirement
 
 The owner authorized retirement after #283 merged. React/Tauri/Rust source,

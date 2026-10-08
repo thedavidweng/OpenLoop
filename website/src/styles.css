@@ -19,7 +19,7 @@
   --mock-shadow: rgba(0, 0, 0, 0.6);
   --mock-edge: rgba(255, 255, 255, 0.1);
 
-  /* Native mock colors sampled from docs/screenshots/native-workspace.jpg. */
+  /* Native mock colors sampled from the native workspace. */
   --m-sidebar: #494949;
   --m-header: #3c3a3b;
   --m-pane: #343233;
@@ -472,7 +472,7 @@ i[data-icon] svg {
   text-wrap: balance;
 }
 
-/* Native app mock. Measured in points from docs/screenshots/native-workspace.jpg
+/* Native app mock. Measured in points from the native workspace
    (2320×1304 @2x → 1160×652): sidebar 179, header 52, compose 322, Takes 380. */
 
 .mock {

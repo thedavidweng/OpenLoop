@@ -171,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **deps**: Bump reviewdog/action-actionlint from 1.75.0 to 1.77.0 (#260)
 - Overlap independent checks in one job
 - Overlap cargo-audit without a wait step
+- Scan native Swift and retire default Rust analysis
 
 ### 🔧 Chores
 

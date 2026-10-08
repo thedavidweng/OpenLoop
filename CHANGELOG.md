@@ -131,6 +131,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog for native window minimum fix
 - Regenerate changelog for native integration
 - Refresh native acceptance regression evidence
+- Regenerate native security changelog
+- Record activated native and CLA merge gates
 
 ### 📦 Dependencies
 

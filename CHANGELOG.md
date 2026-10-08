@@ -113,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **native**: Validate real inference and native release packaging
 - **native**: Reproduce surviving variations after parent deletion
 - Verify native reproduction and store CLA signatures without branches
+- **native**: Address task recovery audio loops and CLI review regressions
 
 ### 📝 Documentation
 
@@ -128,6 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Regenerate changelog for native workspace UI
 - Regenerate changelog for native region edits
 - Regenerate changelog for native window minimum fix
+- Regenerate changelog for native integration
 
 ### 📦 Dependencies
 

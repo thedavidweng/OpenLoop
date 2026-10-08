@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "prepare:sidecars": "node scripts/prepare-sidecars.mjs",
+    "website:dev": "pnpm --filter openloop-website dev",
+    "website:build": "pnpm --filter openloop-website build",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "release:check": "swift build --package-path native -Xswiftc -warnings-as-errors && swift test --package-path native -Xswiftc -warnings-as-errors && node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs",

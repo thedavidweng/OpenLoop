@@ -128,7 +128,7 @@ public actor OpenLoopCore {
         let seed = record.seed
       else { throw CoreError.invalid("This Take cannot be reproduced") }
       request.seed = seed
-      request.parentTakeID = take.parentTakeID
+      request.parentTakeID = id
     } else {
       request.seed = nil
       request.parentTakeID = id

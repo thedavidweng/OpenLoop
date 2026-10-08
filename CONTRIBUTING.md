@@ -82,23 +82,28 @@ See [LICENSING.md](LICENSING.md) for historical grants and third-party licenses.
 
 ### Maintainer setup
 
-Publish `cla-signatures` before publishing this workflow. This separate,
-unprotected branch contains the versioned agreement and the signature JSON;
-records start empty. Require the **`CLA` commit status** from GitHub Actions
-(app ID 15368) in the default branch's protection after the workflow is live.
-Do not require `CLA Assistant`: comment-triggered runs belong to the default
-branch; the `CLA` status explicitly targets the checked PR commit.
+CLA v1 signatures are append-only GitHub Actions bot comments on the licensing
+PR [#262](https://github.com/thedavidweng/OpenLoop/pull/262). No signature branch
+or direct write to protected `main` is required. Keep that PR's discussion
+unlocked and retain its registration comments. The former signature JSON was
+empty when this storage migration was made.
+
+Require the **`CLA` commit status** from GitHub Actions (app ID 15368) in main's
+protection after activation. Do not require `CLA Assistant`: comment-triggered
+runs belong to main, while `CLA` targets the actual checked PR commit.
+This requirement still needs repository administration access to configure;
+the workflow alone does not enforce merge protection.
 
 Each changed agreement version needs a new pinned document URL and a new
-signature-file path. Do not treat existing version 1 signatures as consent to
+signature-record marker. Do not treat existing version 1 signatures as consent to
 a changed agreement. Historical contributions are not automatically signed.
 
-The workflow never checks out or executes PR code. The upstream action is
-pinned to Vapourfly's version 2.6.1, whose repository is now archived. It checks
-at most 100 commits, reads the first page of PR comments, and does not parse
-coauthor trailers. An external PR opener must also be a GitHub-linked commit
-author; mismatched identity fails the check. Split larger PRs, sign before the
-thread grows long, and
-verify any additional coauthors' acceptance during the normal rights review.
-A bot exemption is not evidence of ownership; third-party and employer rights
-still need to be respected.
+The workflow checks out only its trusted base/default-branch revision and never
+executes PR code. It checks all linked commit authors and paginates commits and
+signature comments. Unlinked identities fail explicitly. Registration requires
+an exact consent comment after the versioned bot prompt and is read back before
+publishing success. A prior grant covers the signing PR and PRs submitted after
+signing. A stale PR head fails the checked commit's status.
+
+Coauthor trailers still require manual rights review. Maintainer and explicitly
+allowlisted bot exemptions are not evidence of third-party or employer rights.

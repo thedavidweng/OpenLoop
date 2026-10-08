@@ -142,8 +142,25 @@ manual UI inspection.
   local HTTP fixture, including SIGINT exit status and persisted cancellation.
   It writes no repository artifacts and does not download or run real models.
 
+## Generated legacy schemas
+
+`tauri-build`, invoked by `cargo build` or `cargo test` in `src-tauri/`, regenerates
+`src-tauri/gen/schemas/acl-manifests.json`, `desktop-schema.json` and
+`macOS-schema.json` from the locked Tauri plugin permissions. These are migration
+reference outputs for the legacy app.
+
 ## Generated changelog
 
 `pnpm changelog` runs `git-cliff` with `cliff.toml` and writes `CHANGELOG.md`
 from Conventional Commits. Regenerate it after commits; do not edit the output
 by hand.
+
+## `check-cla.cjs`
+
+The CLA workflow runs this script from its trusted base/default-branch revision.
+It records versioned signatures as GitHub Actions bot comments on licensing PR
+#262 and publishes the `CLA` status on the checked PR head; it generates no
+repository files and requires no additional branch. `node scripts/check-cla.test.cjs`
+checks identity, forged/wrong-version records, persistence failure, all authors,
+stale heads and reuse without sending GitHub messages. Protect main with the
+`CLA` status after activation; workflow installation alone is not merge enforcement.

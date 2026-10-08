@@ -178,7 +178,7 @@ actor WaitingEngine: Engine {
   let take = try #require(try await core.workspace().takes.first { $0.parentTakeID == parent.id })
   try await core.deleteGenerations(ids: [parent.generationID], confirmed: true)
   let request = try await core.requestForTake(id: take.id, reproduce: true)
-  #expect(request.parentTakeID == nil)
+  #expect(request.parentTakeID == take.id)
   #expect(request.seed == 42)
   let reproduction = try await core.submit(request)
   for try await _ in try await core.run(taskID: reproduction.id) {}
@@ -201,7 +201,9 @@ actor WaitingEngine: Engine {
   let take = try #require(
     try await core.workspace().takes.first(where: { $0.parentTakeID == parent.id }))
   let reproduction = try await core.requestForTake(id: take.id, reproduce: true)
-  #expect(reproduction == request)
+  var expected = request
+  expected.parentTakeID = take.id
+  #expect(reproduction == expected)
 }
 
 @Test func regionEditsNeedAValidRegionAndSourceAudio() throws {

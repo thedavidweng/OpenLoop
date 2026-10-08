@@ -44,8 +44,8 @@ Lite requests now disable format/CoT features together with Planning, instead
 of requiring a language model that Lite does not load. Turning Planning on for
 Lite is rejected by the adapter; the UI hides that unavailable control and
 clears its override when switching configuration. CLI exit stops its owned
-runtime, and PATH symlinks resolve to the bundle's uv. Reproduction uses the
-surviving Take's lineage, so a retained variation remains reproducible after its
+runtime, and PATH symlinks resolve to the bundle's uv. Reproduction links the new task to the
+surviving source Take, so a retained variation remains reproducible after its
 parent is deleted. Runtime memory metadata describes a recommendation, not an
 enforced minimum.
 

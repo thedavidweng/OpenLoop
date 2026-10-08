@@ -156,7 +156,7 @@ pub fn execute(state: &AppState, json: bool, mut args: RunArgs) -> AppResult<()>
         human_output("♫ Generating music…");
         human_output(&format!(
             "  Prompt: \"{}\" | Duration: {}s | Format: {}",
-            &request.prompt, request.duration_seconds as i64, request.audio_format
+            request.prompt, request.duration_seconds as i64, request.audio_format
         ));
     }
 

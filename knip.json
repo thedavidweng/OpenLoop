@@ -13,6 +13,6 @@
   ],
   "project": ["src/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}"],
   "ignoreDependencies": ["playwright", "tailwindcss"],
-  "ignoreBinaries": ["rustc"],
+  "ignoreBinaries": ["rustc", "swift"],
   "exclude": ["duplicates"]
 }

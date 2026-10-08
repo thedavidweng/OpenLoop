@@ -19,7 +19,7 @@
     "coverage:patch": "node scripts/check-patch-coverage.mjs",
     "typecheck": "tsc --noEmit",
     "tauri": "pnpm version:sync && tauri",
-    "release:check": "swift build --package-path native -Xswiftc -warnings-as-errors && swift test --package-path native -Xswiftc -warnings-as-errors && node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs",
+    "release:check": "swift build --package-path native -Xswiftc -warnings-as-errors && swift test --package-path native -Xswiftc -warnings-as-errors && node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs",
     "release:build": "pnpm prepare:sidecars && python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --dmg native/dist/OpenLoop.dmg && python3 native/scripts/smoke-cli.py",
     "rust:fmt": "cargo fmt --manifest-path src-tauri/Cargo.toml",
     "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml",

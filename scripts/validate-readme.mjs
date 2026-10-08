@@ -88,13 +88,13 @@ check(
 // 7. License sections identify AGPL-3.0-only
 check(
   "7a. README.md License section says AGPL-3.0-only",
-  /## License[\s\S]*?GNU AGPL v3\.0 only/i.test(readme) &&
+  /## License[\s\S]*?GNU AGPL-3\.0-only/i.test(readme) &&
     /## License[\s\S]*?MIT/.test(readme) === false,
   "License section missing AGPL-3.0-only or still mentions MIT",
 );
 check(
   "7b. README_CN.md License section says AGPL-3.0-only",
-  /## 许可证[\s\S]*?GNU AGPL v3\.0 only/i.test(readmeCN) &&
+  /## 许可证[\s\S]*?GNU AGPL-3\.0-only/i.test(readmeCN) &&
     /## 许可证[\s\S]*?MIT/.test(readmeCN) === false,
   "License section missing AGPL-3.0-only or still mentions MIT",
 );

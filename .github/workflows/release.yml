@@ -48,7 +48,7 @@ jobs:
           echo "DMG_PATH=native/dist/OpenLoop_${PKG_VERSION}_aarch64.dmg" >> "$GITHUB_ENV"
 
       - name: Validate documentation
-        run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs
+        run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs
 
       - name: Native compile check
         run: swift build --package-path native -Xswiftc -warnings-as-errors

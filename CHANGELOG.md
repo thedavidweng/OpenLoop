@@ -135,6 +135,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Record activated native and CLA merge gates
 - Regenerate main protection changelog
 - Replace legacy PR checklist with native checks
+- Regenerate native contribution changelog
 
 ### 📦 Dependencies
 
@@ -176,6 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Overlap independent checks in one job
 - Overlap cargo-audit without a wait step
 - Scan native Swift and retire default Rust analysis
+- Name the native pipeline independently of retired jobs
 
 ### 🔧 Chores
 

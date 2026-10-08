@@ -15,10 +15,15 @@ for name, body in re.findall(r"const (\w+): &\[ModelFileSpec\] = &\[(.*?)\n\];",
         )
     ]
 shared = lists["SHARED_VAE_FILES"] + lists["SHARED_TEXT_EMBED_FILES"]
+# The pinned API checks the base DiT and 1.7B LM even for Lite/XL selections.
+base = lists["ACESTEP_V15_TURBO_FILES"] + lists["ACESTEP_LM_17B_FILES"] + shared
 manifest = {
-    "ace-step/standard": lists["ACESTEP_V15_TURBO_FILES"] + lists["ACESTEP_LM_06B_FILES"] + shared,
-    "ace-step/xl": lists["ACESTEP_V15_XL_TURBO_FILES"] + lists["ACESTEP_LM_17B_FILES"] + shared,
+    "ace-step/standard": base + lists["ACESTEP_LM_06B_FILES"],
+    "ace-step/xl": base + lists["ACESTEP_V15_XL_TURBO_FILES"],
 }
+# Model-side Python comes from the pinned runtime, which synchronizes it on load.
+manifest = {pack: [file for file in files if not file["localPath"].endswith(".py")]
+            for pack, files in manifest.items()}
 output = root / "native/Sources/OpenLoopEngines/Resources/model-files.json"
 output.write_text(json.dumps(manifest, indent=2) + "\n")
 print(output)

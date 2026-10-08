@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the packaged headless CLI and real SIGINT with a local HTTP fixture."""
+import argparse
 import json
 import selectors
 import signal
@@ -8,9 +9,15 @@ import tempfile
 from pathlib import Path
 
 native = Path(__file__).resolve().parents[1]
-bundle = native / "dist/OpenLoop.app"
+parser = argparse.ArgumentParser()
+parser.add_argument("--bundle", type=Path, default=native / "dist/OpenLoop.app")
+bundle = parser.parse_args().bundle.resolve()
 cli = bundle / "Contents/MacOS/openloop-cli"
 assert cli.is_file() and (bundle / "Contents/MacOS/OpenLoop").read_bytes() != cli.read_bytes()
+subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
+for name in ("openloop-cli", "uv"):
+    subprocess.run(["codesign", "--verify", "--strict", str(bundle / "Contents/MacOS" / name)], check=True)
+subprocess.run([str(bundle / "Contents/MacOS/uv"), "--version"], check=True)
 with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
     root = Path(directory)
     source = (native / "Tests/OpenLoopCoreTests/Fixtures/ace-server.py").read_text()
@@ -29,6 +36,14 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
             return events
 
         assert run("catalog")[0]["kind"] == "result"
+        # A PATH symlink must still locate the uv bundled next to the real CLI.
+        linked_cli = root / "openloop"
+        linked_cli.symlink_to(cli)
+        runtime = root / "native-runtime/ace-step"
+        runtime.mkdir(parents=True)
+        (runtime / "pyproject.toml").write_text('[project]\n[tool.uv]\nconstraint-dependencies = ["mlx==0.31.1"]\n')
+        subprocess.run([str(linked_cli), "--data-dir", directory, "setup", "--accept-license"],
+                       check=True, capture_output=True, text=True, timeout=15)
         run("project", "create", "Packaged idea")
         assert run("project", "list")[0]["data"][0]["name"] == "Packaged idea"
         settings = run("settings", "get")[0]["data"]

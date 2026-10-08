@@ -16,7 +16,7 @@ struct OpenLoopCommand {
         print(OpenLoopCLI.usage)
         return
       }
-      let executable = URL(fileURLWithPath: CommandLine.arguments[0]).standardizedFileURL
+      let executable = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
       let uv =
         uvPath.map { URL(fileURLWithPath: $0) }
         ?? executable.deletingLastPathComponent().appendingPathComponent("uv")
@@ -44,7 +44,13 @@ struct OpenLoopCommand {
       interrupt.setEventHandler { execution.cancel() }
       interrupt.resume()
       defer { interrupt.cancel() }
-      try await execution.value
+      do {
+        try await execution.value
+      } catch {
+        try await environment.runtime.stop()
+        throw error
+      }
+      try await environment.runtime.stop()
     } catch {
       let data: Data
       do {

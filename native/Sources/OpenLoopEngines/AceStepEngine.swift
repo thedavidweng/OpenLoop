@@ -55,6 +55,10 @@ public struct AceStepEngine: Engine {
     if let strength = options.coverStrength, !strength.isFinite || !(0...1).contains(strength) {
       throw CoreError.invalid("Cover strength must be between zero and one")
     }
+    let thinking = options.thinking ?? config.thinking
+    guard !thinking || config.languageModel != nil else {
+      throw CoreError.invalid("Planning requires a configuration with a language model")
+    }
     var payload: [String: JSONValue] = [
       "prompt": .string(request.prompt), "lyrics": .string(request.lyrics),
       "vocal_language": .string(options.vocalLanguage),
@@ -63,13 +67,14 @@ public struct AceStepEngine: Engine {
       "task_type": .string(
         request.operation == .cover
           ? "cover" : request.operation == .repaint ? "repaint" : "text2music"),
-      "thinking": .bool(options.thinking ?? config.thinking),
+      "thinking": .bool(thinking),
       "inference_steps": .number(Double(options.inferenceSteps)),
       "guidance_scale": .number(options.guidanceScale),
       "use_random_seed": .bool(request.seed == nil), "seed": .integer(request.seed ?? -1),
       "batch_size": .number(1), "lm_backend": .string("mlx"),
       "time_signature": .string(request.timeSignature ?? "4"),
-      "use_format": .bool(true), "use_cot_caption": .bool(true), "use_cot_language": .bool(true),
+      "use_format": .bool(thinking), "use_cot_caption": .bool(thinking),
+      "use_cot_language": .bool(thinking),
       "constrained_decoding": .bool(true),
     ]
     if let lm = config.languageModel { payload["lm_model_path"] = .string(lm) }

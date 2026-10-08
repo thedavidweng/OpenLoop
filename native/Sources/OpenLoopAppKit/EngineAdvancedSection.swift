@@ -33,12 +33,14 @@ private struct AceStepAdvancedSection: View {
         Picker("Vocal language", selection: stringValue("vocalLanguage", default: "unknown")) {
           ForEach(Self.languages, id: \.0) { Text($0.1).tag($0.0) }
         }
-        Picker("Planning (language model)", selection: thinking) {
-          Text("Model default").tag(Bool?.none)
-          Text("On").tag(Bool?.some(true))
-          Text("Off").tag(Bool?.some(false))
+        if model.currentConfiguration?.languageModel != nil {
+          Picker("Planning (language model)", selection: thinking) {
+            Text("Model default").tag(Bool?.none)
+            Text("On").tag(Bool?.some(true))
+            Text("Off").tag(Bool?.some(false))
+          }
+          .help("Lets ACE-Step’s language model plan structure before generating audio")
         }
-        .help("Lets ACE-Step’s language model plan structure before generating audio")
         LabeledContent("Inference steps") {
           Stepper(
             "\(Int(number("inferenceSteps", default: 8)))",

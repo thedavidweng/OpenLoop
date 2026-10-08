@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, for example v0.1.0-alpha.1"
+        description: "Release tag, for example v0.3.0-alpha.1"
         required: true
         type: string
   push:
@@ -12,116 +12,74 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: native-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   build-macos-dmg:
-    name: Build macOS DMG
-    runs-on: macos-14
-    outputs:
-      tag: ${{ steps.release.outputs.tag }}
+    name: Build native macOS DMG
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write # Creates the draft release and uploads its DMG.
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      TAURI_TARGET_TRIPLE: aarch64-apple-darwin
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
 
-      - name: Resolve release tag
-        id: release
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-
-      - name: Setup Node
+      - name: Setup Node for verified uv sidecar
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           package-manager-cache: false
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
-        with:
-          toolchain: 1.96.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify package.json version matches release tag
+      - name: Verify release version
         run: |
-          TAG="${{ steps.release.outputs.tag }}"
           PKG_VERSION=$(node -p "require('./package.json').version")
-          if [ "v${PKG_VERSION}" != "${TAG%%-*}" ] && [ "v${PKG_VERSION}" != "${TAG}" ]; then
-            echo "::error::Release tag ${TAG} does not match package.json version ${PKG_VERSION}."
-            echo "::error::Bump package.json (and run pnpm version:sync), re-tag, and retry."
-            exit 1
-          fi
+          test "v${PKG_VERSION}" = "${RELEASE_TAG%%-*}"
+          echo "DMG_PATH=native/dist/OpenLoop_${PKG_VERSION}_aarch64.dmg" >> "$GITHUB_ENV"
 
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=high --ignore-registry-errors
+      - name: Validate documentation
+        run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs
 
-      - name: Prepare sidecars
-        run: pnpm prepare:sidecars
+      - name: Native compile check
+        run: swift build --package-path native -Xswiftc -warnings-as-errors
 
-      - name: Run release checks
-        run: pnpm release:check
+      - name: Native contracts
+        run: swift test --package-path native -Xswiftc -warnings-as-errors
 
-      - name: Read release notes
-        id: notes
-        run: |
-          TAG="${{ steps.release.outputs.tag }}"
-          NOTES_FILE="docs/release-notes/${TAG}.md"
-          if [ -f "$NOTES_FILE" ]; then
-            NOTES=$(cat "$NOTES_FILE")
-          else
-            NOTES="Release ${TAG}"
-          fi
-          echo "body<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$NOTES" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+      - name: Prepare Apple Silicon sidecar
+        run: node scripts/prepare-sidecars.mjs
 
-      - name: Build and draft GitHub release
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Updater artifacts (latest.json + .sig) are only produced when the
-          # minisign private key is available. The public half lives in
-          # tauri.conf.json plugins.updater.pubkey — the two must be a pair.
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          tagName: ${{ steps.release.outputs.tag }}
-          releaseName: "OpenLoop ${{ steps.release.outputs.tag }}"
-          releaseBody: ${{ steps.notes.outputs.body }}
-          releaseDraft: true
-          # Prerelease only for suffixed tags (v0.3.0-alpha.1). GitHub's
-          # /releases/latest — where the in-app updater looks — skips
-          # prereleases, so plain-version tags must publish as full releases
-          # or the auto-updater never sees them.
-          prerelease: ${{ contains(steps.release.outputs.tag, '-') }}
-          args: --target aarch64-apple-darwin
+      - name: Package and verify signed native app and DMG
+        run: python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --dmg "$DMG_PATH"
+
+      - name: Packaged headless CLI and signature smoke
+        run: python3 native/scripts/smoke-cli.py
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: openloop-${{ steps.release.outputs.tag }}-macos-dmg
-          path: |
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          name: openloop-${{ env.RELEASE_TAG }}-macos-dmg
+          path: ${{ env.DMG_PATH }}
           if-no-files-found: error
 
-      - name: Upload latest.json to release
+      - name: Create draft GitHub release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ steps.release.outputs.tag }}"
-          LATEST_JSON=$(find src-tauri/target -name "latest.json" -path "*/bundle/*" | head -1)
-          if [ -n "$LATEST_JSON" ]; then
-            gh release upload "$TAG" "$LATEST_JSON" --clobber
-            echo "Uploaded latest.json to release $TAG"
-          else
-            echo "::warning::latest.json not found in build output — updater may not detect this release"
+          RELEASE_FLAGS=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            RELEASE_FLAGS+=(--prerelease)
           fi
+          gh release create "$RELEASE_TAG" "$DMG_PATH" --verify-tag --draft \
+            --title "OpenLoop $RELEASE_TAG" --notes-file docs/release-notes/native.md \
+            "${RELEASE_FLAGS[@]}"

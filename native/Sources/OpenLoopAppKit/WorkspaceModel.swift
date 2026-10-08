@@ -170,9 +170,13 @@ public final class WorkspaceModel {
   public func chooseConfiguration(id: String) async {
     do {
       let selection = try catalog.selection(configurationID: id)
-      let capabilities = try catalog.configuration(selection).capabilities
+      let configuration = try catalog.configuration(selection)
+      let capabilities = configuration.capabilities
       if var request = draft {
         if request.selection.engineID != selection.engineID { request.engineOptions = .init() }
+        if configuration.languageModel == nil {
+          request.engineOptions.values.removeValue(forKey: "thinking")
+        }
         request.selection = selection
         draft = ComposeRules.sanitized(request, for: capabilities)
       } else {

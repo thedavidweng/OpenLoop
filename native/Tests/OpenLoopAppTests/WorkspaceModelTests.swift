@@ -201,6 +201,14 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   #expect(model.draft?.selection == selection)
 }
 
+@MainActor @Test func selectingAConfigurationWithoutALanguageModelClearsPlanning() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  model.draft?.engineOptions.values["thinking"] = .bool(true)
+  await model.chooseConfiguration(id: selection.configurationID)
+  #expect(model.draft?.engineOptions.values["thinking"] == nil)
+}
+
 @Test func regionEditsAreBuiltFromTheSourceTakeAndRespectCapabilities() throws {
   let capabilities = Capabilities([.referenceAudio, .repaint, .extend], maximumDuration: 60)
   let source = URL(fileURLWithPath: "/tmp/source.wav")

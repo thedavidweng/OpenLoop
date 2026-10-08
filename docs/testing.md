@@ -1,170 +1,112 @@
 # OpenLoop Testing Guide
 
-## Test Pyramid
+## Native macOS acceptance — 2026-10-07
 
+**Decision: visual checks passed for the inspected states; native release is not approved.**
+Baseline commit `586d8a5`, followed by the local release fixes described below, tested on Apple Silicon, 16 GB memory, macOS 27.0.1.
+The release app was built into `/tmp/openloop-acceptance-20261007/OpenLoop.app`
+with its own `OPENLOOP_DATA_DIR`. The fixed candidate is
+`/tmp/openloop-final-20261007/OpenLoop.app`; its DMG was mounted
+read-only and copied to `/tmp/openloop-final-installed-20261007/OpenLoop.app`. The existing user library was not used for
+the interaction tests. Screenshots are native window captures, not browser
+mockups; see the READMEs. Main-window captures are 2320 × 1304 Retina pixels
+(1160 × 652 points, the configured minimum width).
+
+| Check | Result | Evidence / boundary |
+| --- | --- | --- |
+| Native compilation | PASS | `swift build --package-path native -Xswiftc -warnings-as-errors` |
+| Core, adapter, CLI, audio and presentation tests | PASS | `swift test --package-path native`: 21 core tests and 11 app tests |
+| Release packaging | PASS | `python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin --output /tmp/openloop-acceptance-20261007/OpenLoop.app` |
+| Packaged CLI smoke | PASS | Existing `smoke-cli.py`, pointed at the fresh bundle: project/settings persistence, NDJSON v2, deletion without confirmation rejected, SIGINT exit 130, persisted cancellation, resources and uv present |
+| First-run workspace and setup | PASS | Empty states, disabled empty-prompt generation, nonempty-prompt generation routes to setup, compatibility/memory/download/license text, Install disabled before review, Not Now dismisses |
+| Settings | PASS | General, Models and Advanced inspected; duration changed from 30 to 35 seconds via GUI, persisted to CLI and applied to new Compose after relaunch; announced model unavailable; Settings Install opens setup |
+| Project and GUI/CLI shared state | PASS | GUI created Midnight Sketches; CLI produced two Takes through local HTTP fixture; both appeared in GUI without relaunch |
+| Take inspector and transport | PASS | Selection loads a 10-second WAV and waveform; Play/Pause state changes; adjustable waveform seeks to 0:05; A/B picker and Shift-Command-B switch loaded Take; reproduction loads recorded prompt, model, duration and seed 43 |
+| History | PASS | Empty state, completed rows, favorite toggle, favorites filter, no-results search, clearing search, inspector hiding; all columns visible with inspector hidden |
+| Export | PASS | Command-E opens native Save panel; exported WAV in the isolated directory is byte-identical to source (SHA-256 `5dd10f6699da11b1d9a0e1bf039d94c8ddf6e858d3f143d853ae8335f01e3a33`) |
+| Deletion confirmation | PASS | Command-Delete states record and Artifact deletion is irreversible; Cancel preserves both Takes; actual deletion covered by automated tests |
+| Light/dark layout and relaunch | PASS | Inspected empty/populated workspace, History, setup and settings in dark appearance, empty/populated workspace in light appearance; columns and pinned transport fit; project, Takes, favorite and saved default retained after packaged relaunch |
+| Bundle signature | PASS | Original resource-seal failure fixed by signing nested CLI/uv before the complete app. Strict deep verification passes on the app and DMG installation copy; modifying a bundled manifest invalidates the seal. Ad-hoc signing is not Developer ID signing or notarization |
+| Native release workflow | PASS (local validation) | Replaced Tauri publishing with native compile/tests, signed bundle/DMG, packaged smoke and draft release. `actionlint` and offline `zizmor` pass. No remote release was triggered or published |
+| Real-model installation | PASS | Isolated `/tmp/openloop-real-acceptance-20261007`: official pinned runtime provisioned with bundled uv and the complete Standard pack installed after explicit CLI license acceptance. Manifest now includes backend-required base checkpoints; Standard 11.46 GB, XL 30.05 GB. Python model code comes from the pinned runtime |
+| Real-model inference | PASS (Lite) | Installed Standard pack, MLX 0.31.1, duration 10 and seed 42, with `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`. Generated 48 kHz stereo WAV: 480,000 frames, finite samples, RMS 0.15148, peak 0.89127. Export is byte-identical; owned backend exited with CLI. Turbo/XL and real Repaint are not covered |
+| Remaining hardware/distribution acceptance | NOT VERIFIED | Auditory quality, real Repaint submission, Finder/DAW drag, notifications, VoiceOver, macOS 15 minimum-OS behavior, clean-machine/quarantined DMG install, notarization/Gatekeeper, and legacy/native coexistence |
+
+### Release fixes and reproducible checks
+
+Fixed native runtime eager loading (`ACESTEP_NO_INIT=false`), the startup
+`checkpoints` link to the installed model directory, and readiness inventory
+(`GET /v1/model_inventory`). The pinned backend registers an OpenRouter list at
+`/v1/models`, which does not include loading state. The fixture now follows the
+actual inventory endpoint. Model Python files are excluded from downloads and
+integrity-size checks because the pinned runtime synchronizes them on loading.
+Lite requests now disable format/CoT features together with Planning, instead
+of requiring a language model that Lite does not load. Turning Planning on for
+Lite is rejected by the adapter; the UI hides that unavailable control and
+clears its override when switching configuration. CLI exit stops its owned
+runtime, and PATH symlinks resolve to the bundle's uv.
+
+The signed DMG installation copy was relaunched against the isolated fixture
+library: project, both Takes and favorite state persisted. Native waveform drag
+selected 1.51–7.38 seconds; loop state turned on and playback remained active.
+Repaint loaded that region, source WAV and recorded prompt into Compose. These
+checks verify interaction and request construction, not real Repaint output.
+Final Models/setup screenshots show the corrected download sizes and 24 GB
+memory recommendation. The last DMG installation copy was relaunched with the
+real-generation library: History displayed the generated 10-second Take and seed
+42, double-click loaded its waveform and advanced playback position, and playback
+returned to idle at the end. Reproduce restored the prompt, duration and seed 42
+in Compose. Expanded Lite advanced settings correctly omit Planning. The History
+screenshot now shows that real Take; workspace screenshots retain synthetic audio.
+
+```sh
+swift build --package-path native -Xswiftc -warnings-as-errors
+swift test --package-path native -Xswiftc -warnings-as-errors
+python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin \
+  --output /tmp/openloop-candidate/OpenLoop.app \
+  --dmg /tmp/openloop-candidate/OpenLoop_0.2.1_aarch64.dmg
+python3 native/scripts/smoke-cli.py --bundle /tmp/openloop-candidate/OpenLoop.app
+node scripts/validate-readme.mjs
+node scripts/validate-release-notes.mjs
+actionlint .github/workflows/ci.yml .github/workflows/release.yml
+zizmor --offline .github/workflows/release.yml
 ```
-        ┌─────────────┐
-        │  E2E / Smoke │  ← Manual (desktop app constraint)
-        ├─────────────┤
-        │  Component   │  ← @testing-library/react + mocked store
-        ├─────────────┤
-        │  Unit /      │  ← Vitest, pure logic, fast feedback
-        │  Contract    │
-        └─────────────┘
+
+The first real diffusion attempt exposed MLX 0.32.3's cross-thread stream
+failure. The backend attempted to fall back to PyTorch; that run was cancelled
+and is not a passing MLX result. Runtime setup/startup now constrains MLX to
+0.31.1 using uv project constraints. See the [upstream root cause](https://github.com/ml-explore/mlx-lm/issues/1181)
+and [uv constraint documentation](https://docs.astral.sh/uv/reference/settings/#constraint-dependencies).
+Both the failed attempt and MLX-pinned rerun peaked at 20.7 GB physical footprint on this 16 GB Mac;
+low-memory performance is not accepted based on a memory recommendation alone.
+The native catalog now recommends 24 GB instead of the unverified 8/16 GB
+recommendations. More memory is a recommendation, not a tested performance guarantee.
+
+The pinned MLX rerun completed successfully in about 13 minutes 20 seconds,
+including cold model loading; the backend reported 451.11 seconds for generation.
+Generation `84FEAAD1-2CFD-4574-A3B2-C3693E67BF36` recorded seed 42 and a
+10-second WAV. Its source and exported copy both have SHA-256
+`42af987a377e46b0118bf717c30ed6c1afda894fdb691ad8041696a02c17c835`.
+These checks establish real inference and file integrity, not listening quality
+or acceptable interactive latency on a 16 GB machine.
+
+The remaining hardware/distribution checks above remain publication gates.
+No Developer ID certificate/notarization credentials are configured here.
+Screenshots demonstrate inspected UI states, not release certification.
+
+## Retiring implementation checks
+
+Legacy frontend/Rust tests remain useful for migration comparisons and still run
+in CI. They are not release packaging commands:
+
+```sh
+pnpm typecheck
+pnpm test:run
+pnpm build
+cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
-| Layer | Count | Location | Run |
-|-------|-------|----------|-----|
-| Unit (frontend) | 232+ | `tests/unit/**/*.test.{ts,tsx}` | `pnpm test:run` |
-| Contract (Rust) | 566 lines | `src-tauri/tests/cli_contract.rs` | `cargo test` |
-| Component | included above | `tests/unit/*.test.tsx` | `pnpm test:run` |
-| Coverage | — | `coverage/` | `pnpm test:coverage` |
-
-## Automated Checks
-
-Run before opening a PR or cutting a release candidate:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm release:check
-```
-
-This runs: typecheck → frontend tests → frontend build → rust fmt → rust check → rust test.
-
-### Coverage
-
-```bash
-pnpm test:coverage
-```
-
-Generates reports in `coverage/` (lcov, text, json-summary). Minimum threshold: 20% line coverage (ramp target: 60%).
-
-### CI Pipeline
-
-Every push/PR runs:
-1. Frontend: install → audit → typecheck → test with coverage → build
-2. Rust format check
-3. Rust: compile check → audit → test
-4. Validate gate: all three must pass
-
----
-
-## Manual QA Checklist
-
-Check items relevant to the change. Sign off at the bottom.
-
-### Startup and Setup
-
-- [ ] Fresh app launch opens the setup wizard
-- [ ] Existing install opens the main app shell
-- [ ] Device check shows architecture, memory, and recommended profile
-- [ ] Settings can reopen setup after completion
-
-### Backend
-
-- [ ] Backend status can be refreshed from Settings
-- [ ] Start backend reports a healthy state or an actionable error
-- [ ] Restart backend is available after backend-impacting setting changes
-- [ ] Open logs reveals the current log file path
-
-### Generation
-
-- [ ] Empty prompt + lyrics are blocked inline
-- [ ] Browser-only preview mode still supports mock generation
-- [ ] Tauri runtime sends progress events and finishes with a persisted record
-- [ ] Failed generation exposes error details and supports copy-error
-- [ ] Cancelled generation returns form to editable state
-
-### History and Files
-
-- [ ] Generated items appear in the history sidebar
-- [ ] Search filters by prompt or lyrics text
-- [ ] Selecting a history row updates the preview panel
-- [ ] Existing audio renders in the built-in audio player
-- [ ] Reveal in Finder works for the selected output file
-- [ ] Export copy writes to the requested destination
-- [ ] Delete file and record removes both the file and the persisted row
-- [ ] Clear history asks for confirmation, removes generated audio files, and leaves the sidebar empty
-- [ ] Cancelled generations are not saved to history; failed generations are recorded for debugging
-
-### Packaged App Smoke Test
-
-- [ ] `pnpm release:build` creates a `.dmg` under `src-tauri/target/release/bundle/dmg/` on Apple Silicon
-- [ ] The installed app launches outside `pnpm tauri dev`
-- [ ] The bundled `uv` sidecar is present and executable
-- [ ] First-run setup can complete from a fresh app data directory
-- [ ] Backend logs rotate automatically (keeps last 20 log files)
-
-### CLI
-
-- [ ] `openloop run` generates music headlessly and saves to disk
-- [ ] `openloop setup` interactive wizard works in a terminal
-- [ ] `openloop setup model turbo` sets key-value immediately
-- [ ] `openloop list --json` outputs valid JSON
-- [ ] `openloop models` shows all three variants with download status
-- [ ] `openloop ps` shows backend health and active tasks
-- [ ] `openloop delete <id>` removes record and file
-- [ ] `openloop clear --yes` removes all records and files
-- [ ] `openloop stop` cancels an ongoing generation. Use `openloop backend stop` to stop the backend process
-
-### Privacy
-
-- [ ] Prompts, lyrics, and outputs stay local
-- [ ] No telemetry is emitted
-- [ ] User-facing logs and status surfaces avoid dumping full lyrics by default
-
----
-
-## Regression Triggers
-
-Re-run specific test categories after these changes:
-
-| Change area | Re-test |
-|-------------|---------|
-| Form validation logic | `validation.test.ts`, `generation-panel.test.tsx` |
-| Store slice changes | `store.test.ts`, `store-slices.test.ts` |
-| Model pack/status logic | `model-packs.test.ts`, `model-bootstrap.test.ts` |
-| History operations | `history-workflow.test.ts`, `history-sidebar.test.tsx` |
-| Error handling | `errors.test.ts`, `error-help.test.ts` |
-| Tauri IPC commands | Rust contract tests (`cargo test`) |
-| UI component changes | Component test for that component + `generation-panel.test.tsx` |
-| i18n / translations | `pnpm i18n:audit` + all tests (i18n mock may mask issues) |
-| Release build | Full `pnpm release:check` + packaged app smoke test |
-
----
-
-## Test Metrics
-
-Captured per CI run:
-
-| Metric | Source | Target |
-|--------|--------|--------|
-| Test count | Vitest reporter | Track growth |
-| Test execution time | Vitest reporter | < 15s frontend |
-| Line coverage | `pnpm test:coverage` | ≥ 20% (ramp to 60%) |
-| Pass rate | CI | 100% |
-| Rust test count | `cargo test` | Track growth |
-
----
-
-## Release Sign-Off
-
-Before tagging a release:
-
-- [ ] `pnpm release:check` passes locally
-- [ ] All CI checks green on the release branch
-- [ ] Packaged app smoke test passes (see above)
-- [ ] CLI smoke test passes (see above)
-- [ ] No regressions in manual QA checklist items relevant to the release
-- [ ] Coverage threshold met (`pnpm test:coverage`)
-
-**Tested by:** _________________ **Date:** _________________
-**Release:** v___.___.___ **Commit:** _________________
-
----
-
-## Notes
-
-- `pnpm tauri dev` is intentionally long-running. Automation timeouts after the Rust binary starts are not considered startup failures.
-- v0.2 targets macOS Apple Silicon first. Intel support remains experimental.
-- The full CLI test suite also validates the shared service layer used by the GUI.
+`pnpm release:check` now runs the native compile/tests and documentation gates.
+`pnpm release:build` prepares uv, packages the signed native app and
+`native/dist/OpenLoop.dmg`, and runs packaged smoke. Existing outputs are never
+overwritten; remove a previous local candidate explicitly before rebuilding.

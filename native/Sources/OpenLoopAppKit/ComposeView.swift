@@ -232,6 +232,7 @@ struct ComposeView: View {
         LabeledContent("Duration") {
           HStack {
             Slider(value: bind(\.duration, 30), in: 5...max(5, maximum), step: 5)
+              .accessibilityLabel("Duration")
               .accessibilityValue("\(Int(model.draft?.duration ?? 30)) seconds")
             Text(formatTime(model.draft?.duration ?? 30))
               .monospacedDigit()

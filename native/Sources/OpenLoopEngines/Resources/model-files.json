@@ -8,202 +8,14 @@
     },
     {
       "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "acestep-v15-turbo/configuration_acestep_v15.py",
-      "localPath": "acestep-v15-turbo/configuration_acestep_v15.py",
-      "size": 13130
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
       "remotePath": "acestep-v15-turbo/model.safetensors",
       "localPath": "acestep-v15-turbo/model.safetensors",
       "size": 4787825604
     },
     {
       "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "acestep-v15-turbo/modeling_acestep_v15_turbo.py",
-      "localPath": "acestep-v15-turbo/modeling_acestep_v15_turbo.py",
-      "size": 96036
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
       "remotePath": "acestep-v15-turbo/silence_latent.pt",
       "localPath": "acestep-v15-turbo/silence_latent.pt",
-      "size": 3841215
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "config.json",
-      "localPath": "acestep-5Hz-lm-0.6B/config.json",
-      "size": 1386
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "model.safetensors",
-      "localPath": "acestep-5Hz-lm-0.6B/model.safetensors",
-      "size": 1325804024
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "tokenizer.json",
-      "localPath": "acestep-5Hz-lm-0.6B/tokenizer.json",
-      "size": 24321939
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "tokenizer_config.json",
-      "localPath": "acestep-5Hz-lm-0.6B/tokenizer_config.json",
-      "size": 14072925
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "added_tokens.json",
-      "localPath": "acestep-5Hz-lm-0.6B/added_tokens.json",
-      "size": 2217787
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "merges.txt",
-      "localPath": "acestep-5Hz-lm-0.6B/merges.txt",
-      "size": 1671853
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "vocab.json",
-      "localPath": "acestep-5Hz-lm-0.6B/vocab.json",
-      "size": 2776833
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "special_tokens_map.json",
-      "localPath": "acestep-5Hz-lm-0.6B/special_tokens_map.json",
-      "size": 1824199
-    },
-    {
-      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
-      "remotePath": "chat_template.jinja",
-      "localPath": "acestep-5Hz-lm-0.6B/chat_template.jinja",
-      "size": 4168
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "vae/config.json",
-      "localPath": "vae/config.json",
-      "size": 425
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "vae/diffusion_pytorch_model.safetensors",
-      "localPath": "vae/diffusion_pytorch_model.safetensors",
-      "size": 337431388
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/config.json",
-      "localPath": "Qwen3-Embedding-0.6B/config.json",
-      "size": 1359
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/model.safetensors",
-      "localPath": "Qwen3-Embedding-0.6B/model.safetensors",
-      "size": 1191586416
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/tokenizer.json",
-      "localPath": "Qwen3-Embedding-0.6B/tokenizer.json",
-      "size": 11423705
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/tokenizer_config.json",
-      "localPath": "Qwen3-Embedding-0.6B/tokenizer_config.json",
-      "size": 5404
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/added_tokens.json",
-      "localPath": "Qwen3-Embedding-0.6B/added_tokens.json",
-      "size": 707
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/merges.txt",
-      "localPath": "Qwen3-Embedding-0.6B/merges.txt",
-      "size": 1671853
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/vocab.json",
-      "localPath": "Qwen3-Embedding-0.6B/vocab.json",
-      "size": 2776833
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/special_tokens_map.json",
-      "localPath": "Qwen3-Embedding-0.6B/special_tokens_map.json",
-      "size": 613
-    },
-    {
-      "repo": "ACE-Step/Ace-Step1.5",
-      "remotePath": "Qwen3-Embedding-0.6B/chat_template.jinja",
-      "localPath": "Qwen3-Embedding-0.6B/chat_template.jinja",
-      "size": 4116
-    }
-  ],
-  "ace-step/xl": [
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "config.json",
-      "localPath": "acestep-v15-xl-turbo/config.json",
-      "size": 2407
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "configuration_acestep_v15.py",
-      "localPath": "acestep-v15-xl-turbo/configuration_acestep_v15.py",
-      "size": 13225
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "modeling_acestep_v15_xl_turbo.py",
-      "localPath": "acestep-v15-xl-turbo/modeling_acestep_v15_xl_turbo.py",
-      "size": 103821
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "model.safetensors.index.json",
-      "localPath": "acestep-v15-xl-turbo/model.safetensors.index.json",
-      "size": 71471
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "model-00001-of-00004.safetensors",
-      "localPath": "acestep-v15-xl-turbo/model-00001-of-00004.safetensors",
-      "size": 4986971456
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "model-00002-of-00004.safetensors",
-      "localPath": "acestep-v15-xl-turbo/model-00002-of-00004.safetensors",
-      "size": 4986942776
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "model-00003-of-00004.safetensors",
-      "localPath": "acestep-v15-xl-turbo/model-00003-of-00004.safetensors",
-      "size": 4986942808
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "model-00004-of-00004.safetensors",
-      "localPath": "acestep-v15-xl-turbo/model-00004-of-00004.safetensors",
-      "size": 4988483464
-    },
-    {
-      "repo": "ACE-Step/acestep-v15-xl-turbo",
-      "remotePath": "silence_latent.pt",
-      "localPath": "acestep-v15-xl-turbo/silence_latent.pt",
       "size": 3841215
     },
     {
@@ -325,6 +137,242 @@
       "remotePath": "Qwen3-Embedding-0.6B/chat_template.jinja",
       "localPath": "Qwen3-Embedding-0.6B/chat_template.jinja",
       "size": 4116
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "config.json",
+      "localPath": "acestep-5Hz-lm-0.6B/config.json",
+      "size": 1386
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "model.safetensors",
+      "localPath": "acestep-5Hz-lm-0.6B/model.safetensors",
+      "size": 1325804024
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "tokenizer.json",
+      "localPath": "acestep-5Hz-lm-0.6B/tokenizer.json",
+      "size": 24321939
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "tokenizer_config.json",
+      "localPath": "acestep-5Hz-lm-0.6B/tokenizer_config.json",
+      "size": 14072925
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "added_tokens.json",
+      "localPath": "acestep-5Hz-lm-0.6B/added_tokens.json",
+      "size": 2217787
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "merges.txt",
+      "localPath": "acestep-5Hz-lm-0.6B/merges.txt",
+      "size": 1671853
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "vocab.json",
+      "localPath": "acestep-5Hz-lm-0.6B/vocab.json",
+      "size": 2776833
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "special_tokens_map.json",
+      "localPath": "acestep-5Hz-lm-0.6B/special_tokens_map.json",
+      "size": 1824199
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "remotePath": "chat_template.jinja",
+      "localPath": "acestep-5Hz-lm-0.6B/chat_template.jinja",
+      "size": 4168
+    }
+  ],
+  "ace-step/xl": [
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-v15-turbo/config.json",
+      "localPath": "acestep-v15-turbo/config.json",
+      "size": 1968
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-v15-turbo/model.safetensors",
+      "localPath": "acestep-v15-turbo/model.safetensors",
+      "size": 4787825604
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-v15-turbo/silence_latent.pt",
+      "localPath": "acestep-v15-turbo/silence_latent.pt",
+      "size": 3841215
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/config.json",
+      "localPath": "acestep-5Hz-lm-1.7B/config.json",
+      "size": 1385
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/model.safetensors",
+      "localPath": "acestep-5Hz-lm-1.7B/model.safetensors",
+      "size": 3708521528
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/tokenizer.json",
+      "localPath": "acestep-5Hz-lm-1.7B/tokenizer.json",
+      "size": 24321939
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/tokenizer_config.json",
+      "localPath": "acestep-5Hz-lm-1.7B/tokenizer_config.json",
+      "size": 14072925
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/added_tokens.json",
+      "localPath": "acestep-5Hz-lm-1.7B/added_tokens.json",
+      "size": 2217787
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/merges.txt",
+      "localPath": "acestep-5Hz-lm-1.7B/merges.txt",
+      "size": 1671853
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/vocab.json",
+      "localPath": "acestep-5Hz-lm-1.7B/vocab.json",
+      "size": 2776833
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/special_tokens_map.json",
+      "localPath": "acestep-5Hz-lm-1.7B/special_tokens_map.json",
+      "size": 1824199
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "acestep-5Hz-lm-1.7B/chat_template.jinja",
+      "localPath": "acestep-5Hz-lm-1.7B/chat_template.jinja",
+      "size": 4168
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "vae/config.json",
+      "localPath": "vae/config.json",
+      "size": 425
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "vae/diffusion_pytorch_model.safetensors",
+      "localPath": "vae/diffusion_pytorch_model.safetensors",
+      "size": 337431388
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/config.json",
+      "localPath": "Qwen3-Embedding-0.6B/config.json",
+      "size": 1359
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/model.safetensors",
+      "localPath": "Qwen3-Embedding-0.6B/model.safetensors",
+      "size": 1191586416
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/tokenizer.json",
+      "localPath": "Qwen3-Embedding-0.6B/tokenizer.json",
+      "size": 11423705
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/tokenizer_config.json",
+      "localPath": "Qwen3-Embedding-0.6B/tokenizer_config.json",
+      "size": 5404
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/added_tokens.json",
+      "localPath": "Qwen3-Embedding-0.6B/added_tokens.json",
+      "size": 707
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/merges.txt",
+      "localPath": "Qwen3-Embedding-0.6B/merges.txt",
+      "size": 1671853
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/vocab.json",
+      "localPath": "Qwen3-Embedding-0.6B/vocab.json",
+      "size": 2776833
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/special_tokens_map.json",
+      "localPath": "Qwen3-Embedding-0.6B/special_tokens_map.json",
+      "size": 613
+    },
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "remotePath": "Qwen3-Embedding-0.6B/chat_template.jinja",
+      "localPath": "Qwen3-Embedding-0.6B/chat_template.jinja",
+      "size": 4116
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "config.json",
+      "localPath": "acestep-v15-xl-turbo/config.json",
+      "size": 2407
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "model.safetensors.index.json",
+      "localPath": "acestep-v15-xl-turbo/model.safetensors.index.json",
+      "size": 71471
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "model-00001-of-00004.safetensors",
+      "localPath": "acestep-v15-xl-turbo/model-00001-of-00004.safetensors",
+      "size": 4986971456
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "model-00002-of-00004.safetensors",
+      "localPath": "acestep-v15-xl-turbo/model-00002-of-00004.safetensors",
+      "size": 4986942776
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "model-00003-of-00004.safetensors",
+      "localPath": "acestep-v15-xl-turbo/model-00003-of-00004.safetensors",
+      "size": 4986942808
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "model-00004-of-00004.safetensors",
+      "localPath": "acestep-v15-xl-turbo/model-00004-of-00004.safetensors",
+      "size": 4988483464
+    },
+    {
+      "repo": "ACE-Step/acestep-v15-xl-turbo",
+      "remotePath": "silence_latent.pt",
+      "localPath": "acestep-v15-xl-turbo/silence_latent.pt",
+      "size": 3841215
     }
   ]
 }

@@ -111,15 +111,34 @@ manual UI inspection.
 
 ## Native migration tools
 
+- Native documentation screenshots are captured with the `unified-computer-use`
+  plugin's `cua_repl`: `app.getScreenshot({ emit: false })`, saved without image
+  edits using Node's `fs.writeFile`. Outputs are
+  `docs/screenshots/native-{workspace,workspace-light,history,models,setup}.jpg`,
+  embedded in both READMEs. The October 7, 2026 captures use an isolated library
+  for workspace captures with synthetic WAV responses from a temporary variant of
+  `native/Tests/OpenLoopCoreTests/Fixtures/ace-server.py`. The History capture shows
+  the real Lite generation (10 seconds, seed 42). Final Models/setup captures show
+  Standard 11.46 GB, XL 30.05 GB and 24 GB memory recommendations. Capture the packaged
+  native app, not the legacy browser preview. Light appearance was selected only
+  for the test process with `-NSRequiresAquaSystemAppearance YES`.
 - `native/scripts/import-model-manifest.py` imports the retiring Rust file list into
   `native/Sources/OpenLoopEngines/Resources/model-files.json`. This is a migration
-  generator, not a build-time dependency. The native manifest becomes authoritative
+  generator, not a build-time dependency. It includes the pinned API
+  base-checkpoint requirements and excludes Python files synchronized from the
+  pinned runtime. The native manifest becomes authoritative
   when the legacy stack is retired; remove the importer in that retirement change.
-- `native/scripts/package-app.py --uv PATH` builds an unsigned Apple Silicon
+- `native/scripts/package-app.py --uv PATH` builds an ad-hoc signed Apple Silicon
   `native/dist/OpenLoop.app`, including the Swift CLI, model resource bundle,
   existing icon, and verified uv sidecar. It generates `Contents/Info.plist` from
-  the root package version. A previous output must be removed explicitly.
-- `native/scripts/smoke-cli.py` exercises that packaged CLI against a temporary
+  the root package version. It signs nested executables before sealing the app
+  and verifies the result. `--sign IDENTITY` selects Developer ID signing;
+  `--dmg PATH` generates an installable DMG containing an Applications shortcut.
+  Existing outputs must be removed explicitly.
+  `pnpm release:build` selects `native/dist/OpenLoop.dmg` for local builds; the
+  GitHub workflow names the DMG using package.json version and architecture.
+- `native/scripts/smoke-cli.py` accepts `--bundle PATH`, verifies app/helper signatures and bundled uv
+  execution, then exercises that packaged CLI against a temporary
   local HTTP fixture, including SIGINT exit status and persisted cancellation.
   It writes no repository artifacts and does not download or run real models.
 

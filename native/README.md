@@ -1,7 +1,8 @@
 # Native OpenLoop
 
 The #261 native architecture lives in this Swift package. It targets macOS 15+
-Apple Silicon, Swift 6.2+. The SwiftUI app implements the creative workflow:
+Apple Silicon, Swift 6.2+. The catalog recommends 24 GB memory for the
+pinned inference runtime; the 16 GB acceptance host swaps heavily. The SwiftUI app implements the creative workflow:
 Project → Compose → Takes → listen / A-B compare → reproduce or vary → Export,
 plus cross-project History. The existing Tauri app remains a
 behavioral reference until native product parity is verified, not a second
@@ -75,10 +76,21 @@ swift run --package-path native openloop-cli --uv src-tauri/binaries/uv-aarch64-
 
 `--accept-license` installs the selected runtime/model if needed before submission
 and can download several GB. The UI should present the catalog's licenses before
-calling install. Models use the configured HTTPS download base, defaulting to
+calling install. The pinned backend validates a base DiT and 1.7B language-model
+checkpoint even for Lite/XL selections, so Standard downloads about 11.46 GB and
+XL about 30.05 GB. The Lite configuration leaves the language model unloaded and disables
+format/CoT requests; Planning On requires a configuration with a language model.
+Model Python code is synchronized from the pinned runtime, not downloaded as
+mutable model assets. Startup explicitly loads models and queries
+`/v1/model_inventory`; `/v1/models` is the OpenRouter compatibility list.
+Models use the configured HTTPS download base, defaulting to
 Hugging Face. Runtime source is pinned to a full commit; uv manages Python and
-project dependencies. Swift never loads inference weights into the app process.
+project dependencies. OpenLoop constrains MLX to 0.31.1: newer MLX changed
+stream ownership and fails when this pinned API loads on one thread and generates
+on another ([upstream issue](https://github.com/ml-explore/mlx-lm/issues/1181)).
+Setup upgrades an existing managed runtime's constraint; startup checks it too. Swift never loads inference weights into the app process.
 
+CLI exit stops its owned runtime; an attached runtime is left running.
 Owned runtime startup/shutdown and health/readiness deadlines live behind the
 Engine adapter. An attached process is never terminated by another client.
 ACE-Step has no server cancellation endpoint: cancellation stops waiting and
@@ -90,11 +102,15 @@ before using new runtime settings. No automatic restart is implied.
 
 Automated tests exercise the fake Engine lifecycle, SQLite migration/persistence,
 CLI v2 events, ACE-Step submit/poll/download and seed mapping, and deterministic
-native waveform/selection behavior. An unsigned app bundle is buildable. This is
-not yet a signed/notarized production release. App tests drive `WorkspaceModel`
+native waveform/selection behavior. The packager produces an ad-hoc signed app and optional DMG, verified by
+`codesign --verify --deep --strict`. This is not Developer ID signing or
+notarization; see [release.md](../docs/release.md). App tests drive `WorkspaceModel`
 through a scripted Engine (capability gating, setup gating, retry, reproduction,
 region edits, deletion). Repaint uses the waveform selection on the loaded Take;
 Extend appears only for Engines that claim it, which ACE-Step 1.5 does not. Real-model bootstrap/generation, audio hardware playback/seek/A-B,
 Finder/DAW drag, notifications, VoiceOver, and packaged relaunch/coexistence
 still require the Apple Silicon smoke matrix. Only then retire React/Tauri/Rust, their mirrored
 catalog and obsolete build/release dependencies.
+
+Current packaged visual, integration and real-model acceptance results are recorded
+in [testing.md](../docs/testing.md#native-macos-acceptance--2026-10-07).

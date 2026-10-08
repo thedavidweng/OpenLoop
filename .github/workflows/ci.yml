@@ -110,10 +110,10 @@ jobs:
           TAURI_TARGET_TRIPLE: aarch64-apple-darwin
         run: node scripts/prepare-sidecars.mjs
 
-      - name: Package unsigned native app
+      - name: Package and verify signed native app
         run: python3 native/scripts/package-app.py --uv src-tauri/binaries/uv-aarch64-apple-darwin
 
-      - name: Packaged headless CLI smoke
+      - name: Packaged headless CLI and signature smoke
         run: python3 native/scripts/smoke-cli.py
 
   rust-fmt-check:

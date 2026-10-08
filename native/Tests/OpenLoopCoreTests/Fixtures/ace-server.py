@@ -9,7 +9,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code); self.end_headers(); self.wfile.write(body)
     def do_GET(self):
         if self.path == '/health': self.respond({'status': 'ok'})
-        elif self.path == '/v1/models': self.respond({'code': 200, 'data': {'models': [{'name': os.environ.get('ACESTEP_CONFIG_PATH', 'acestep-v15-xl-turbo'), 'is_loaded': True}], 'lm_models': [{'name': os.environ.get('ACESTEP_LM_MODEL_PATH', 'acestep-5Hz-lm-1.7B'), 'is_loaded': True}]}, 'error': None})
+        elif self.path == '/v1/model_inventory': self.respond({'code': 200, 'data': {'models': [{'name': os.environ.get('ACESTEP_CONFIG_PATH', 'acestep-v15-xl-turbo'), 'is_loaded': True}], 'lm_models': [{'name': os.environ.get('ACESTEP_LM_MODEL_PATH', 'acestep-5Hz-lm-1.7B'), 'is_loaded': True}]}, 'error': None})
         elif self.path.startswith('/v1/audio?'):
             self.send_response(200); self.end_headers(); self.wfile.write(b'local audio')
         else: self.respond({'error': 'unknown endpoint'}, 404)

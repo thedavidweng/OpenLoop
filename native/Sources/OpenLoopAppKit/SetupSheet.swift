@@ -50,7 +50,7 @@ struct SetupSheet: View {
             enough, "\(model.physicalMemoryGB) GB memory",
             detail: enough
               ? "Recommended: \(configuration.recommendedMemoryGB) GB or more."
-              : "Recommended: \(configuration.recommendedMemoryGB) GB. Generation may be slow or fail; consider a lighter model.",
+              : "Recommended: \(configuration.recommendedMemoryGB) GB. Generation may be slow or fail.",
             warningOnly: true)
         }
         Section("Downloads") {

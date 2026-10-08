@@ -111,7 +111,7 @@ public struct EngineCatalog: Codable, Sendable {
         selection: .init(
           engineID: "ace-step", runtimeID: "ace-step/uv", modelPackID: "ace-step/" + pack,
           configurationID: id), capabilities: caps, model: model, languageModel: lm,
-        thinking: thinking, recommendedMemoryGB: slot == "lite" ? 8 : slot == "turbo" ? 16 : 24)
+        thinking: thinking, recommendedMemoryGB: 24)
     }
     return EngineCatalog(
       engines: [
@@ -121,7 +121,7 @@ public struct EngineCatalog: Codable, Sendable {
       runtimes: [
         .init(
           id: "ace-step/uv", engineID: "ace-step", operatingSystems: ["macOS"],
-          architectures: ["arm64"], accelerators: ["MLX", "MPS"], minimumMemoryGB: 8,
+          architectures: ["arm64"], accelerators: ["MLX", "MPS"], minimumMemoryGB: 24,
           implementation: "bundled-uv-python",
           sourceURL: URL(
             string:
@@ -131,7 +131,7 @@ public struct EngineCatalog: Codable, Sendable {
       packs: [
         .init(
           id: "ace-step/standard", engineID: "ace-step", name: "Standard",
-          runtimeIDs: ["ace-step/uv"], recommendedMemoryGB: 8, installable: true, license: license),
+          runtimeIDs: ["ace-step/uv"], recommendedMemoryGB: 24, installable: true, license: license),
         .init(
           id: "ace-step/xl", engineID: "ace-step", name: "XL", runtimeIDs: ["ace-step/uv"],
           recommendedMemoryGB: 24, installable: true, license: license),

@@ -59,6 +59,16 @@ import Testing
   #expect(throws: CoreError.self) { try catalog.selection(configurationID: "minimax-music3/turbo") }
   #expect(catalog.packs.first(where: { $0.id == "minimax-music3/turbo" })?.installable == false)
   #expect(catalog.runtimes.first?.supportsCurrentMachine() == true)
+  for pack in catalog.packs where pack.installable {
+    let files = try EngineCatalog.modelFiles(packID: pack.id)
+    for component in ["acestep-v15-turbo", "vae", "Qwen3-Embedding-0.6B", "acestep-5Hz-lm-1.7B"] {
+      #expect(
+        files.contains {
+          $0.localPath.hasPrefix(component + "/") && $0.localPath.hasSuffix(".safetensors")
+        })
+    }
+    #expect(!files.contains { $0.localPath.hasSuffix(".py") })
+  }
 }
 @Test func adapterRejectsUnknownOrUnversionedExpertOptions() throws {
   let root = try temporaryDirectory()
@@ -81,6 +91,25 @@ import Testing
       for: .init(
         selection: selection, prompt: "piano",
         engineOptions: .init(values: ["repaintStart": .number(1)])))
+  }
+}
+@Test func liteRequestsDoNotRequireAnUnloadedLanguageModel() throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let adapter = AceStepEngine(
+    runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() }))
+  let selection = try EngineCatalog.firstParty.selection(configurationID: "ace-step/lite")
+  let payload = try adapter.payload(for: .init(selection: selection, prompt: "piano"))
+  let values = try JSONDecoder().decode(
+    [String: JSONValue].self, from: JSONEncoder().encode(payload))
+  for flag in ["thinking", "use_format", "use_cot_caption", "use_cot_language"] {
+    #expect(values[flag] == .bool(false))
+  }
+  #expect(throws: CoreError.self) {
+    try adapter.payload(
+      for: .init(
+        selection: selection, prompt: "piano",
+        engineOptions: .init(values: ["thinking": .bool(true)])))
   }
 }
 @Test func aceAdapterMapsTheEngineNeutralEditRegionToRepaint() throws {
@@ -130,11 +159,15 @@ import Testing
   reservation.terminate()
   reservation.waitUntilExit()
   let uv = root.appendingPathComponent("uv")
-  try Data("#!/bin/sh\nexec /usr/bin/python3 '\(fixture.path)'\n".utf8).write(to: uv)
+  try Data(
+    "#!/bin/sh\n[ \"$ACESTEP_NO_INIT\" = false ] || exit 42\n[ \"$(readlink \"$ACESTEP_PROJECT_ROOT/checkpoints\")\" = \"$ACESTEP_CHECKPOINTS_DIR\" ] || exit 43\nexec /usr/bin/python3 '\(fixture.path)'\n"
+      .utf8
+  ).write(to: uv)
   try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: uv.path)
   let working = root.appendingPathComponent("runtime")
   try FileManager.default.createDirectory(at: working, withIntermediateDirectories: true)
-  try Data("[project]".utf8).write(to: working.appendingPathComponent("pyproject.toml"))
+  try Data("[project]\n[tool.uv]\nconstraint-dependencies = [\"mlx==0.31.1\"]\n".utf8)
+    .write(to: working.appendingPathComponent("pyproject.toml"))
   let models = root.appendingPathComponent("models")
   for file in try EngineCatalog.modelFiles(packID: "ace-step/standard") {
     let path = models.appendingPathComponent(file.localPath)
@@ -188,4 +221,26 @@ import Testing
     try await environment.core.workspace().tasks.contains {
       $0.request.prompt == "cancel startup" && $0.state == .cancelled
     })
+}
+
+@Test func existingRuntimePinsCompatibleMLXBeforeSync() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let working = root.appendingPathComponent("native-runtime/ace-step")
+  try FileManager.default.createDirectory(at: working, withIntermediateDirectories: true)
+  let project = working.appendingPathComponent("pyproject.toml")
+  try "[project]\n[tool.uv]\n".write(to: project, atomically: true, encoding: .utf8)
+  let uv = root.appendingPathComponent("uv")
+  try
+    "#!/bin/sh\n[ \"$1\" = sync ] || exit 1\ngrep -q 'mlx==0.31.1' pyproject.toml || exit 2\ntouch synced\n"
+    .write(to: uv, atomically: true, encoding: .utf8)
+  try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: uv.path)
+  let runtime = AceRuntime(directory: root, bundledUV: uv, settingsProvider: { Settings() })
+  try await runtime.provision(licenseAccepted: true) { _ in }
+  #expect(FileManager.default.fileExists(atPath: working.appendingPathComponent("synced").path))
+  try await runtime.provision(licenseAccepted: true) { _ in }
+  #expect(
+    try String(contentsOf: project, encoding: .utf8).components(
+      separatedBy: "constraint-dependencies"
+    ).count == 2)
 }

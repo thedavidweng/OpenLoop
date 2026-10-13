@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "lefthook": "^2.1.16",
-    "oxfmt": "^0.71.0"
+    "oxfmt": "^0.72.0"
   },
   "engines": {
     "node": ">=24"

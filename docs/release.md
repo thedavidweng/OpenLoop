@@ -45,7 +45,7 @@ release tag. It checks out that tag, verifies its version against package.json,
 runs native compile/tests and documentation validation, prepares the verified
 uv sidecar, builds and verifies the native app/DMG, and runs the packaged smoke.
 It uploads the DMG as a workflow artifact and creates a **draft** GitHub release
-with [native release notes](release-notes/native.md). Tags with a suffix are
+with [signed native release notes](release-notes/signed-native.md). Tags with a suffix are
 prereleases. Review the notes and hardware acceptance before publishing.
 
 The workflow uses `GITHUB_TOKEN` to create the draft and upload its asset. It
@@ -57,7 +57,8 @@ release is published. This repository does not update the external tap.
 
 ## Signing and Gatekeeper
 
-The Alpha distribution uses **ad-hoc signing**, explicitly `--sign -`. This is
+Local development builds and the historical v0.2.2-alpha.1 distribution use
+**ad-hoc signing**, explicitly `--sign -`. This is
 a valid integrity signature, not a Developer ID signature or notarization.
 Gatekeeper may block a quarantined download. Right-click Open if macOS permits,
 or remove quarantine from your own downloaded copy:
@@ -69,11 +70,10 @@ xattr -cr /Applications/OpenLoop.app
 Homebrew installation remains an alternative once the cask targets the native
 release; verify the published asset before using `brew install --cask openloop`.
 
-For Developer ID distribution, pass `--sign 'Developer ID Application: …'`.
-The packager uses a secure timestamp and hardened runtime for that identity.
-Notarization and stapling are separate release steps and require an actual
-Developer ID certificate and Apple notarization credentials. Do not claim
-notarization based on a passing local signature check. See Apple's
+For Developer ID distribution, use `--sign "$APPLE_SIGNING_IDENTITY" --notarize`.
+The packager signs both nested executables with a secure timestamp and hardened
+runtime, then requires Apple acceptance and stapled tickets for the app and DMG.
+Do not claim notarization based on a passing local signature check. See Apple's
 [distribution signing guide](https://developer.apple.com/documentation/xcode/creating-distribution-signed-code-for-the-mac/).
 
 ## Publication gate
@@ -83,3 +83,23 @@ Require real runtime/model installation, a completed playable Take, GUI/CLI
 persistence, failure/cancellation behavior, export, confirmed deletion, packaged
 relaunch, and the remaining audio/accessibility/distribution checks. Keep the
 release as a draft while any required check is unverified.
+
+## Developer ID releases
+
+The release workflow imports a Developer ID Application identity into a temporary
+keychain, then signs/notarizes the app and DMG before creating a draft release.
+Configure these GitHub Actions secrets:
+
+- `APPLE_CERTIFICATE_P12_BASE64`: Developer ID Application certificate and private key
+- `APPLE_CERTIFICATE_PASSWORD`: P12 password
+- `APPLE_API_KEY_BASE64`: base64-encoded App Store Connect `.p8` key
+- `APPLE_API_KEY_ID` and `APPLE_API_ISSUER`: matching API credentials
+
+The workflow sets team `NCFNX3LJ83` and the MOE AI LLC Developer ID identity.
+Missing credentials or any signing/notarization failure stop publication. Local
+`release:build` remains an ad-hoc development build; to reproduce a signed release,
+provide the signing environment documented in `scripts/README.md` and add
+`--sign "$APPLE_SIGNING_IDENTITY" --notarize` to `native/scripts/package-app.py`.
+The draft uses `docs/release-notes/signed-native.md`; historical release notes keep
+their original unsigned status. Inspect the signed release before publishing the
+draft and updating the Homebrew cask.

@@ -2,8 +2,8 @@
 
 /**
  * validate-release-notes — Check that DMG release notes contain a Gatekeeper
- * bypass section with both methods (right-click Open and xattr -cr) and a
- * Homebrew alternative.
+ * installation section and a Homebrew alternative. Historical unsigned releases
+ * retain their original instructions; signed releases need no bypass.
  *
  * Exit codes:
  *   0 — all checked release notes pass
@@ -23,16 +23,6 @@ const CHECKS = [
     id: "gatekeeper-heading",
     desc: "Gatekeeper section heading present",
     test: (content) => /#{1,4}\s*[Gg]atekeeper/.test(content),
-  },
-  {
-    id: "right-click-open",
-    desc: "Right-click Open bypass method present",
-    test: (content) => /[Rr]ight-?[Cc]lick.*[Oo]pen/.test(content),
-  },
-  {
-    id: "xattr-cr",
-    desc: "xattr -cr bypass method present",
-    test: (content) => /xattr\s+-cr/.test(content),
   },
   {
     id: "homebrew-mention",

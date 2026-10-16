@@ -29,8 +29,8 @@ Validates `README.md` and `README_CN.md` for license and status consistency
 
 ## `validate-release-notes.mjs`
 
-Checks that DMG release notes document the Gatekeeper bypass (right-click Open,
-`xattr -cr`) and a Homebrew alternative.
+Checks that DMG release notes document Gatekeeper installation and a Homebrew
+alternative. Historical unsigned release notes retain their original instructions.
 
 - **Input:** Markdown files under `docs/release-notes/`
 - **Output:** a pass/fail report on stdout
@@ -58,9 +58,19 @@ Checks that DMG release notes document the Gatekeeper bypass (right-click Open,
   the root package version. It signs nested executables before sealing the app
   and verifies the result. `--sign IDENTITY` selects Developer ID signing;
   `--dmg PATH` generates an installable DMG containing an Applications shortcut.
-  Existing outputs must be removed explicitly.
+  `--notarize --sign "$APPLE_SIGNING_IDENTITY"` requires the release signing
+  environment, signs both nested tools using its keychain, notarizes/staples the app
+  before packaging, then signs/notarizes/staples the DMG. Existing outputs must be
+  removed explicitly. The release workflow requires this mode and fails on missing
+  credentials or rejected artifacts.
   `pnpm release:build` selects `native/dist/OpenLoop.dmg` for local builds; the
   GitHub workflow names the DMG using package.json version and architecture.
+- `native/scripts/sign-and-notarize.sh PATH` signs an app or DMG, checks its
+  signature/team, waits for Apple acceptance, staples/validates its ticket, and
+  assesses Gatekeeper. It requires `APPLE_SIGNING_IDENTITY`, `APPLE_SIGNING_KEYCHAIN`,
+  `APPLE_TEAM_ID`, `APPLE_API_KEY_PATH`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`.
+  `native/scripts/test-notarization.py` and `native/scripts/test-package-app.py`
+  exercise failures and packaging order with controlled external tools; CI runs both.
 - `native/scripts/smoke-cli.py` accepts `--bundle PATH`, verifies app/helper signatures and bundled uv
   execution, then exercises that packaged CLI against a temporary
   local HTTP fixture, including SIGINT exit status and persisted cancellation.

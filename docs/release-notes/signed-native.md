@@ -1,4 +1,4 @@
-# OpenLoop — Signed native macOS Alpha
+# OpenLoop 0.2.2 — Signed native macOS release
 
 OpenLoop now uses a native SwiftUI workspace and a separate Swift CLI backed by
 one shared Swift core. Requires Apple Silicon and macOS 15 or later.
@@ -34,7 +34,7 @@ Native compilation with warnings treated as errors, all 40 Swift tests,
 documentation/CLA checks, bundle integrity and packaged CLI smoke pass.
 Real Lite inference has completed on the owner's Apple Silicon Mac.
 
-This is an experimental Alpha. Auditory quality, real Repaint output, Finder/DAW
+Auditory quality, real Repaint output, Finder/DAW
 drag, notifications, VoiceOver, macOS 15 behavior, clean-machine/quarantined
 installation and legacy/native coexistence have not been fully verified.
 The release workflow verifies Developer ID signatures, Apple notarization

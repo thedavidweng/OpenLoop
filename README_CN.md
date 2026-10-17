@@ -21,7 +21,7 @@ OpenLoop 是一款原生 macOS AI 音乐生成应用。它在本机运行
 [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) 等开放模型：无需账号，不上传提示词或音频，生成的文件保存在本机。
 
 > [!NOTE]
-> **v0.2.2 Alpha。** 应用使用 ad-hoc 签名，尚未公证。固定版本的 ACE-Step 运行时即使使用 Lite 模型也可能占用超过 16 GB 内存，16 GB 及以下的 Mac 可能频繁换页，建议 24 GB 或以上。
+> **v0.2.2 Alpha。** macOS 正式发行版使用 Developer ID 签名并通过 Apple 公证。固定版本的 ACE-Step 运行时即使使用 Lite 模型也可能占用超过 16 GB 内存，16 GB 及以下的 Mac 可能频繁换页，建议 24 GB 或以上。
 
 ## 功能
 

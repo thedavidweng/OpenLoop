@@ -22,8 +22,8 @@ OpenLoop is a native macOS app for AI music generation. It runs open models such
 no account, no upload, and the generated files stay on your Mac.
 
 > [!NOTE]
-> **v0.2.2 Alpha.** The app is ad-hoc signed and not yet notarized. The pinned
-> ACE-Step runtime can use more than 16 GB of memory even with the Lite model, so
+> **v0.2.2 Alpha.** Official macOS releases use Developer ID signing and Apple
+> notarization. The pinned ACE-Step runtime can use more than 16 GB of memory even with the Lite model, so
 > Macs with 16 GB or less may swap heavily. 24 GB or more is recommended.
 
 ## Features

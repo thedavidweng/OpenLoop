@@ -16,7 +16,7 @@ node scripts/prepare-sidecars.mjs
 python3 native/scripts/package-app.py \
   --uv native/binaries/uv-aarch64-apple-darwin \
   --output native/dist/OpenLoop.app \
-  --dmg native/dist/OpenLoop_0.2.1_aarch64.dmg
+  --dmg native/dist/OpenLoop_0.2.2_aarch64.dmg
 python3 native/scripts/smoke-cli.py
 node scripts/validate-readme.mjs
 node scripts/validate-release-notes.mjs
@@ -57,18 +57,14 @@ release is published. This repository does not update the external tap.
 
 ## Signing and Gatekeeper
 
-Local development builds and the historical v0.2.2-alpha.1 distribution use
-**ad-hoc signing**, explicitly `--sign -`. This is
-a valid integrity signature, not a Developer ID signature or notarization.
-Gatekeeper may block a quarantined download. Right-click Open if macOS permits,
-or remove quarantine from your own downloaded copy:
+Published releases require Developer ID signing and Apple notarization in CI.
+The app and DMG carry stapled tickets and do not require removing quarantine.
+Homebrew installation uses the verified stable release asset:
+`brew install --cask openloop`.
 
-```sh
-xattr -cr /Applications/OpenLoop.app
-```
-
-Homebrew installation remains an alternative once the cask targets the native
-release; verify the published asset before using `brew install --cask openloop`.
+Local development builds use **ad-hoc signing**, explicitly `--sign -`. This
+provides an integrity signature without Developer ID distribution or notarization.
+Historical release notes describe the signing status of those older downloads.
 
 For Developer ID distribution, use `--sign "$APPLE_SIGNING_IDENTITY" --notarize`.
 The packager signs both nested executables with a secure timestamp and hardened

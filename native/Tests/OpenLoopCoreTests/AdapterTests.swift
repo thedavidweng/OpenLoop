@@ -4,6 +4,45 @@ import OpenLoopCore
 import OpenLoopEngines
 import Testing
 
+@Test func profilesValidateEngineOptionsWithoutStartingTheRuntime() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let runtime = AceRuntime(
+    directory: root, bundledUV: root.appendingPathComponent("absent-uv"),
+    settingsProvider: { Settings() })
+  let core = try OpenLoopCore(directory: root, engines: [AceStepEngine(runtime: runtime)])
+  let selection = try EngineCatalog.firstParty.selection(configurationID: "ace-step/lite")
+  let options = EngineOptions(values: [
+    "negativePrompt": .string("noise"), "inferenceSteps": .integer(24),
+    "guidanceScale": .number(4.5),
+  ])
+  let profile = try await core.createProfile(
+    name: "Detailed", selection: selection, duration: 10, audioFormat: "wav",
+    engineOptions: options)
+  #expect(try await core.profile(matching: profile.id).engineOptions == options)
+  for invalid in [
+    EngineOptions(version: 2), EngineOptions(values: ["unknown": .bool(true)]),
+    EngineOptions(values: ["inferenceSteps": .integer(0)]),
+    EngineOptions(values: ["thinking": .bool(true)]),
+  ] {
+    await #expect(throws: (any Error).self) {
+      try await core.createProfile(
+        name: "Invalid", selection: selection, duration: 10, audioFormat: "wav",
+        engineOptions: invalid)
+    }
+  }
+  #expect(try await core.workspace().profiles == [profile])
+  #expect(try await core.workspace().tasks.isEmpty)
+
+  var legacy = try #require(
+    JSONSerialization.jsonObject(with: JSONEncoder().encode(profile)) as? [String: Any])
+  legacy.removeValue(forKey: "engineOptions")
+  let decoded = try JSONDecoder().decode(
+    GenerationProfile.self, from: JSONSerialization.data(withJSONObject: legacy))
+  #expect(decoded.id == profile.id)
+  #expect(decoded.engineOptions == EngineOptions())
+}
+
 @Test func aceAdapterMapsRequestAndDownloadsLocalArtifactsThroughHTTPContract() async throws {
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }

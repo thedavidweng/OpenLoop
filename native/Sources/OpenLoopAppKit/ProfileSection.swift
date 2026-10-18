@@ -46,7 +46,7 @@ struct ProfileSection: View {
         }
         .disabled(model.profiles.isEmpty)
       }
-      Text("Saves model, duration and audio format. Prompts and advanced options stay in Compose.")
+      Text("Saves model, duration, audio format and advanced options. Prompts stay in Compose.")
         .font(.caption)
         .foregroundStyle(.secondary)
       if model.draft?.isRegionEdit == true {

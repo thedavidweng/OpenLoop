@@ -133,8 +133,11 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   defer { try? FileManager.default.removeItem(at: root) }
   model.draft?.duration = 12
   model.draft?.audioFormat = "flac"
+  model.draft?.engineOptions.values["inferenceSteps"] = .integer(24)
   await model.createProfile(name: "Draft")
   let first = try #require(model.selectedProfile)
+  model.draft?.engineOptions.values["inferenceSteps"] = .integer(8)
+  #expect(model.selectedProfile == nil)
   model.draft?.duration = 22
   model.draft?.audioFormat = "wav"
   #expect(model.selectedProfile == nil)
@@ -147,6 +150,7 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   #expect(model.error == nil)
   #expect(model.draft?.duration == 12)
   #expect(model.draft?.audioFormat == "flac")
+  #expect(model.draft?.engineOptions.values["inferenceSteps"] == .integer(24))
   #expect(model.draft?.prompt == "Keep my idea")
   #expect(model.draft?.lyrics == "Keep my lyrics")
   #expect(model.draft?.seed == 42)

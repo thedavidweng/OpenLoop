@@ -125,8 +125,12 @@ actor EventLog {
       core: core, catalog: .firstParty,
       runtime: AceRuntime(directory: root, bundledUV: root, settingsProvider: { Settings() })))
   let createLog = EventLog()
+  let options = EngineOptions(values: ["inferenceSteps": .integer(24)])
+  let optionsFile = root.appendingPathComponent("options.json")
+  try JSONEncoder().encode(options).write(to: optionsFile)
   try await cli.execute(arguments: [
     "profiles", "create", "Fast Draft", "--duration", "17", "--format", "flac",
+    "--engine-options", optionsFile.path,
   ]) { await createLog.append($0) }
   let profileEvent = try #require(await createLog.events.first)
   let profile = try JSONDecoder().decode(
@@ -147,6 +151,13 @@ actor EventLog {
   #expect(record.request.profileName == profile.name)
   #expect(record.request.duration == 17)
   #expect(record.request.audioFormat == "flac")
+  #expect(record.request.engineOptions == options)
+  #expect(profile.engineOptions == options)
+  await #expect(throws: CoreError.self) {
+    try await cli.execute(arguments: [
+      "run", "--profile", profile.id, "--configuration", "ace-step/lite", "--prompt", "invalid",
+    ]) { _ in }
+  }
 
   try await cli.execute(arguments: ["profiles", "rename", profile.name, "Production"]) { _ in }
   var renamed = profile

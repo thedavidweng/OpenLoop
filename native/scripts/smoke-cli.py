@@ -91,16 +91,15 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
             server.terminate()
         server.wait(timeout=5)
         missing_models = subprocess.run(
-            [str(linked_cli), "--data-dir", directory, "--json", "run",
+            [str(cli), "--data-dir", directory, "--json", "run",
              "--configuration", "ace-step/pro", "--prompt", "missing models"],
             capture_output=True, text=True, timeout=15)
         assert missing_models.returncode == 1, missing_models
         error = json.loads(missing_models.stderr)
         assert error["kind"] == "error" and "Model Pack is incomplete" in str(error["data"]), error
-        probe = root / "ResourceProbe.app/Contents"
+        probe = root / "ResourceProbeFixture.app/Contents"
         (probe / "MacOS").mkdir(parents=True)
         shutil.copy2(cli, probe / "MacOS/openloop-cli")
-        shutil.copy2(bundle / "Contents/MacOS/OpenLoop", probe / "MacOS/OpenLoop")
         shutil.copy2(bundle / "Contents/Info.plist", probe / "Info.plist")
         missing_resources = subprocess.run(
             [str(probe / "MacOS/openloop-cli"), "--uv", str(bundle / "Contents/MacOS/uv"),

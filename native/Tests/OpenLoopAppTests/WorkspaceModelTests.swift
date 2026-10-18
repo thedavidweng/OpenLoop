@@ -180,6 +180,26 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   #expect(model.attempts(projectID: nil).isEmpty)
 }
 
+@MainActor @Test func historyAssignmentUpdatesProjectTakesAndUnfilesThem() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  model.draft?.prompt = "move this idea"
+  await model.generate()
+  let record = try #require(model.history.first)
+  await model.createProject(name: "Selected")
+  let projectID = try #require(model.selectedProjectID)
+  model.select(.history)
+  await model.assignGenerations(ids: [record.id], projectID: projectID)
+  #expect(model.error == nil)
+  #expect(model.takes(projectID: projectID).count == 1)
+  #expect(model.takes(projectID: nil).isEmpty)
+  #expect(model.record(id: record.id)?.request.projectID == projectID)
+  await model.assignGenerations(ids: [record.id], projectID: nil)
+  #expect(model.takes(projectID: projectID).isEmpty)
+  #expect(model.takes(projectID: nil).count == 1)
+  #expect(model.record(id: record.id)?.artifacts == record.artifacts)
+}
+
 @MainActor @Test func exactReproductionRequiresTheActualSeed() async throws {
   let (model, root) = try await makeModel(seed: nil)
   defer { try? FileManager.default.removeItem(at: root) }

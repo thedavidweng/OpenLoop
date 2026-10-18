@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import OpenLoopCore
 import OpenLoopEngines
@@ -56,13 +57,17 @@ public struct OpenLoopCLI: Sendable {
   public init(environment: OpenLoopEnvironment) { self.environment = environment }
   public static let usage = """
     OpenLoop native CLI (NDJSON v2 with --json)
-      status | catalog | list | ps
+      status | catalog | list [--project ID_OR_NAME] | ps
       project list | create NAME | rename ID NAME | delete ID
+      profiles list | create NAME [--configuration ID] [--duration SECONDS] [--format FORMAT]
+          | delete ID_OR_NAME
       settings get | set FILE.json
       setup --accept-license
       models list | install PACK --accept-license | delete PACK --yes
       run --prompt TEXT [--configuration ID] [--lyrics TEXT] [--duration SECONDS]
-          [--seed INTEGER] [--takes COUNT] [--project ID] [--format wav|mp3|flac] [--accept-license]
+          [--profile ID_OR_NAME] [--seed INTEGER] [--takes COUNT] [--project ID_OR_NAME]
+          [--format wav|mp3|flac] [--accept-license]
+          [--repaint FILE --start SECONDS --end SECONDS]
       run --request FILE.json
       retry TASK_ID | stop TASK_ID
       reproduce TAKE_ID | vary TAKE_ID
@@ -87,8 +92,11 @@ public struct OpenLoopCLI: Sendable {
       try args.finish()
       try await result(await core.settings(), emit)
     case "list":
+      let projectID = try await projectID(matching: args.option("--project"))
       try args.finish()
-      try await result(await core.workspace().history, emit)
+      let history = try await core.workspace().history
+      try await result(
+        history.filter { projectID == nil || $0.request.projectID == projectID }, emit)
     case "ps":
       try args.finish()
       try await result(await core.workspace().tasks, emit)
@@ -114,6 +122,37 @@ public struct OpenLoopCLI: Sendable {
         try await core.deleteProject(id: id)
         try await result("Project deleted; Takes retained in History", emit)
       default: throw CoreError.invalid("Unknown project command")
+      }
+    case "profiles":
+      switch try args.positional() {
+      case "list":
+        try args.finish()
+        try await result(await core.workspace().profiles, emit)
+      case "create":
+        let name = try args.positional()
+        let settings = try await core.settings()
+        let selection: Selection
+        if let configuration = try args.option("--configuration") {
+          selection = try environment.catalog.selection(configurationID: configuration)
+        } else if let selected = settings.selection {
+          selection = selected
+        } else {
+          throw CoreError.invalid("Choose a configuration with --configuration or Settings")
+        }
+        let duration = try numericOption(
+          &args, "--duration", default: settings.defaultDuration, parse: Double.init)
+        let format = try args.option("--format") ?? settings.defaultAudioFormat
+        try args.finish()
+        try await result(
+          await core.createProfile(
+            name: name, selection: selection, duration: duration, audioFormat: format), emit)
+      case "delete":
+        let value = try args.positional()
+        try args.finish()
+        let profile = try await core.profile(matching: value)
+        try await core.deleteProfile(id: profile.id)
+        try await result("Profile deleted", emit)
+      default: throw CoreError.invalid("Unknown profiles command")
       }
     case "settings":
       switch try args.positional() {
@@ -164,10 +203,18 @@ public struct OpenLoopCLI: Sendable {
         request = try JSONDecoder().decode(
           GenerationRequest.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
       } else {
+        let profile: GenerationProfile?
+        if let value = try args.option("--profile") {
+          profile = try await core.profile(matching: value)
+        } else {
+          profile = nil
+        }
         let settings = try await core.settings()
         let selection: Selection
         if let config = try args.option("--configuration") {
           selection = try environment.catalog.selection(configurationID: config)
+        } else if let profile {
+          selection = profile.selection
         } else if let selected = settings.selection {
           selection = selected
         } else {
@@ -177,8 +224,26 @@ public struct OpenLoopCLI: Sendable {
           throw CoreError.invalid("--prompt is required")
         }
         let lyrics = try args.option("--lyrics") ?? ""
-        let duration = try numericOption(
-          &args, "--duration", default: settings.defaultDuration, parse: Double.init)
+        let repaint = try args.option("--repaint")
+        let duration: Double
+        let references: [URL]
+        let region: EditRegion?
+        if let repaint {
+          let source = URL(fileURLWithPath: repaint)
+          let audio = try AVAudioFile(forReading: source)
+          duration = Double(audio.length) / audio.processingFormat.sampleRate
+          guard let startText = try args.option("--start"), let start = Double(startText),
+            let endText = try args.option("--end"), let end = Double(endText)
+          else { throw CoreError.invalid("--repaint requires numeric --start and --end") }
+          references = [source]
+          region = EditRegion(start: start, end: end)
+        } else {
+          duration = try numericOption(
+            &args, "--duration", default: profile?.duration ?? settings.defaultDuration,
+            parse: Double.init)
+          references = []
+          region = nil
+        }
         let takes = try numericOption(&args, "--takes", default: 1, parse: Int.init)
         let seed: Int64?
         if let text = try args.option("--seed") {
@@ -190,8 +255,11 @@ public struct OpenLoopCLI: Sendable {
         request = try GenerationRequest(
           selection: selection, prompt: prompt, lyrics: lyrics, duration: duration, seed: seed,
           takeCount: takes,
-          projectID: args.option("--project"),
-          audioFormat: args.option("--format") ?? settings.defaultAudioFormat)
+          projectID: await projectID(matching: args.option("--project")),
+          operation: repaint == nil ? .generate : .repaint, references: references,
+          audioFormat: args.option("--format") ?? profile?.audioFormat
+            ?? settings.defaultAudioFormat,
+          editRegion: region, profileID: profile?.id, profileName: profile?.name)
       }
       try args.finish()
       if accepted {
@@ -245,6 +313,16 @@ public struct OpenLoopCLI: Sendable {
       try await result(destination, emit)
     default: throw CoreError.invalid("Unknown command: \(command). Run openloop help.")
     }
+  }
+  private func projectID(matching value: String?) async throws -> String? {
+    guard let value else { return nil }
+    let projects = try await environment.core.workspace().projects
+    if let project = projects.first(where: { $0.id == value }) { return project.id }
+    let matches = projects.filter { $0.name == value }
+    guard matches.count == 1, let project = matches.first else {
+      throw CoreError.invalid("Project not found or name is ambiguous; use a Project ID: \(value)")
+    }
+    return project.id
   }
   private func numericOption<T>(
     _ args: inout Arguments, _ name: String, default value: T, parse: (String) -> T?

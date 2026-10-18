@@ -150,6 +150,54 @@ actor WaitingEngine: Engine {
   #expect(try await gui.settings().language == "zh-CN")
 }
 
+@Test func projectAssignmentPersistsAtomicallyAndPreservesAudio() async throws {
+  let root = try temporaryDirectory()
+  defer { try? FileManager.default.removeItem(at: root) }
+  let core = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let project = try await core.createProject(name: "Drafts")
+  let task = try await core.submit(.init(selection: testSelection, prompt: "piano", takeCount: 2))
+  for try await _ in try await core.run(taskID: task.id) {}
+  let original = try await core.workspace()
+  let ids = Set(original.history.map(\.id))
+  let firstTake = try #require(original.takes.first)
+  let staleRetry = try await core.submit(
+    core.requestForTake(id: firstTake.id, reproduce: false))
+  try await core.cancel(taskID: staleRetry.id)
+  try await core.assignGenerations(ids: ids, projectID: project.id)
+  let reopened = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  let assigned = try await reopened.workspace()
+  #expect(assigned.takes.allSatisfy { $0.projectID == project.id })
+  #expect(assigned.history.allSatisfy { $0.request.projectID == project.id })
+  #expect(assigned.history.flatMap(\.artifacts) == original.history.flatMap(\.artifacts))
+  #expect(assigned.history.flatMap(\.artifacts).allSatisfy { $0.exists })
+  await #expect(throws: CoreError.self) {
+    try await core.assignGenerations(ids: ids.union(["missing"]), projectID: nil)
+  }
+  #expect(try await reopened.workspace().takes.allSatisfy { $0.projectID == project.id })
+  #expect(try await reopened.workspace().history.allSatisfy { $0.request.projectID == project.id })
+  await #expect(throws: CoreError.self) {
+    try await core.assignGenerations(ids: ids, projectID: "missing")
+  }
+  #expect(
+    try await reopened.workspace().tasks.first(where: { $0.id == staleRetry.id })?.request.projectID
+      == project.id)
+  let take = try #require(assigned.takes.first)
+  let variation = try await core.submit(core.requestForTake(id: take.id, reproduce: false))
+  await #expect(throws: CoreError.self) {
+    try await reopened.assignGenerations(ids: ids, projectID: nil)
+  }
+  try await core.cancel(taskID: variation.id)
+  try await core.assignGenerations(ids: ids, projectID: nil)
+  #expect(try await reopened.workspace().takes.allSatisfy { $0.projectID == nil })
+  #expect(try await reopened.workspace().history.allSatisfy { $0.request.projectID == nil })
+  try await core.renameProject(id: project.id, name: "Final")
+  #expect(try await reopened.workspace().projects.first?.name == "Final")
+  try await core.assignGenerations(ids: ids, projectID: project.id)
+  try await core.deleteProject(id: project.id)
+  #expect(try await reopened.workspace().takes.allSatisfy { $0.projectID == nil })
+  #expect(try await reopened.workspace().history.count == 2)
+}
+
 @Test func interruptedNativeTasksRecoverAsRetryableFailures() async throws {
   let root = try temporaryDirectory()
   defer { try? FileManager.default.removeItem(at: root) }

@@ -154,5 +154,17 @@ struct HistoryActions: View {
       }
       Button("Delete \(ids.count) Takes…", role: .destructive) { model.pendingDeletion = ids }
     }
+    if !ids.isEmpty {
+      Menu("Move to Project") {
+        Button("Unfiled Takes") {
+          Task { await model.assignGenerations(ids: ids, projectID: nil) }
+        }
+        ForEach(model.projects) { project in
+          Button(project.name) {
+            Task { await model.assignGenerations(ids: ids, projectID: project.id) }
+          }
+        }
+      }
+    }
   }
 }

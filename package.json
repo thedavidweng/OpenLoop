@@ -10,7 +10,7 @@
     "website:build": "pnpm --filter openloop-website build",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "release:check": "swift build --package-path native -Xswiftc -warnings-as-errors && swift test --package-path native -Xswiftc -warnings-as-errors && node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs",
+    "release:check": "swift build --package-path native --jobs 2 -Xswiftc -warnings-as-errors && swift test --package-path native --jobs 2 -Xswiftc -warnings-as-errors && node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs",
     "release:build": "pnpm prepare:sidecars && python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --dmg native/dist/OpenLoop.dmg && python3 native/scripts/smoke-cli.py",
     "validate:readme": "node scripts/validate-readme.mjs",
     "validate:release-notes": "node scripts/validate-release-notes.mjs",

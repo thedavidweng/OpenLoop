@@ -190,6 +190,8 @@ public final class WorkspaceModel {
           request.engineOptions.values.removeValue(forKey: "thinking")
         }
         request.selection = selection
+        request.profileID = nil
+        request.profileName = nil
         draft = ComposeRules.sanitized(request, for: capabilities)
       } else {
         draft = GenerationRequest(selection: selection, prompt: "")
@@ -200,6 +202,72 @@ public final class WorkspaceModel {
         try await refresh()
       }
     } catch { self.error = error.localizedDescription }
+  }
+
+  // MARK: Profiles
+
+  public var profiles: [GenerationProfile] {
+    (workspace?.profiles ?? []).sorted {
+      $0.name == $1.name ? $0.id < $1.id : $0.name < $1.name
+    }
+  }
+  public var selectedProfile: GenerationProfile? {
+    guard let draft else { return nil }
+    return profiles.first {
+      $0.id == draft.profileID && $0.selection == draft.selection
+        && $0.duration == draft.duration && $0.audioFormat == draft.audioFormat
+    }
+  }
+  public func chooseProfile(id: String) async {
+    await perform {
+      guard var request = self.draft, !request.isRegionEdit else {
+        throw CoreError.invalid("Profiles apply to new generations, not region edits")
+      }
+      let profile = try await self.core().profile(matching: id)
+      let configuration = try self.catalog.configuration(profile.selection)
+      if request.selection.engineID != profile.selection.engineID {
+        request.engineOptions = .init()
+      }
+      if configuration.languageModel == nil {
+        request.engineOptions.values.removeValue(forKey: "thinking")
+      }
+      request.selection = profile.selection
+      request.duration = profile.duration
+      request.audioFormat = profile.audioFormat
+      request.profileID = profile.id
+      request.profileName = profile.name
+      self.draft = ComposeRules.sanitized(request, for: configuration.capabilities)
+    }
+  }
+  public func createProfile(name: String) async {
+    await perform {
+      guard let draft = self.draft, !draft.isRegionEdit else {
+        throw CoreError.invalid("Profiles apply to new generations, not region edits")
+      }
+      let profile = try await self.core().createProfile(
+        name: name, selection: draft.selection, duration: draft.duration,
+        audioFormat: draft.audioFormat)
+      self.draft?.profileID = profile.id
+      self.draft?.profileName = profile.name
+      try await self.refresh()
+    }
+  }
+  public func renameProfile(id: String, name: String) async {
+    await perform {
+      try await self.core().renameProfile(id: id, name: name)
+      if self.draft?.profileID == id { self.draft?.profileName = name }
+      try await self.refresh()
+    }
+  }
+  public func deleteProfile(id: String) async {
+    await perform {
+      try await self.core().deleteProfile(id: id)
+      if self.draft?.profileID == id {
+        self.draft?.profileID = nil
+        self.draft?.profileName = nil
+      }
+      try await self.refresh()
+    }
   }
 
   // MARK: Projects and Takes

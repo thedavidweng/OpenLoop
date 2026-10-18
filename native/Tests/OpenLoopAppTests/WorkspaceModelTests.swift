@@ -33,6 +33,9 @@ import Testing
 private let selection = Selection(
   engineID: "test", runtimeID: "test/local", modelPackID: "test/pack",
   configurationID: "test/default")
+private let shortSelection = Selection(
+  engineID: "test", runtimeID: "test/local", modelPackID: "test/pack",
+  configurationID: "test/short")
 private let license = License(
   name: "MIT", url: URL(string: "https://example.com/license")!, notice: "Review")
 private let catalog = EngineCatalog(
@@ -60,7 +63,11 @@ private let catalog = EngineCatalog(
         [.lyrics, .reproducibility, .referenceAudio, .repaint, .extend], maximumDuration: 60),
       model: "fake",
       languageModel: nil,
-      thinking: false, recommendedMemoryGB: 1)
+      thinking: false, recommendedMemoryGB: 1),
+    .init(
+      id: "test/short", name: "Short", selection: shortSelection,
+      capabilities: .init([.lyrics, .reproducibility], maximumDuration: 15),
+      model: "fake-short", languageModel: nil, thinking: false, recommendedMemoryGB: 1),
   ])
 
 private struct ScriptedEngine: Engine {
@@ -119,6 +126,91 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
     sanitized.seed == nil && sanitized.bpm == nil && sanitized.key == nil
       && sanitized.timeSignature == nil)
   #expect(sanitized.duration == 30)
+}
+
+@MainActor @Test func profilesManageComposeDefaultsWithoutRewritingHistory() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  model.draft?.duration = 12
+  model.draft?.audioFormat = "flac"
+  await model.createProfile(name: "Draft")
+  let first = try #require(model.selectedProfile)
+  model.draft?.duration = 22
+  model.draft?.audioFormat = "wav"
+  #expect(model.selectedProfile == nil)
+  await model.createProfile(name: "Long")
+  let second = try #require(model.selectedProfile)
+  model.draft?.prompt = "Keep my idea"
+  model.draft?.lyrics = "Keep my lyrics"
+  model.draft?.seed = 42
+  await model.chooseProfile(id: first.id)
+  #expect(model.error == nil)
+  #expect(model.draft?.duration == 12)
+  #expect(model.draft?.audioFormat == "flac")
+  #expect(model.draft?.prompt == "Keep my idea")
+  #expect(model.draft?.lyrics == "Keep my lyrics")
+  #expect(model.draft?.seed == 42)
+  #expect(model.selectedProfile == first)
+  await model.renameProfile(id: first.id, name: "Production")
+  #expect(model.draft?.profileName == "Production")
+  await model.generate()
+  let record = try #require(model.workspace?.history.first)
+  #expect(record.request.profileID == first.id)
+  #expect(record.request.profileName == "Production")
+  await model.renameProfile(id: first.id, name: "Renamed again")
+  await model.deleteProfile(id: first.id)
+  #expect(model.draft?.profileID == nil)
+  #expect(model.draft?.profileName == nil)
+  #expect(model.draft?.duration == 12)
+  #expect(model.workspace?.history.first == record)
+  let reopened = try OpenLoopCore(
+    directory: root, engines: [ScriptedEngine(seed: 7, fails: false)])
+  #expect(try await reopened.workspace().profiles == [second])
+  await model.chooseProfile(id: second.id)
+  await model.chooseConfiguration(id: selection.configurationID)
+  #expect(model.draft?.profileID == nil)
+}
+
+@MainActor @Test func profileSwitchDoesNotChangeARegionEdit() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  await model.createProfile(name: "Default")
+  let profile = try #require(model.selectedProfile)
+  model.draft?.operation = .repaint
+  model.draft?.duration = 40
+  model.draft?.editRegion = .init(start: 10, end: 30)
+  model.draft?.references = [root.appendingPathComponent("source.wav")]
+  let original = model.draft
+  await model.chooseProfile(id: profile.id)
+  #expect(model.error != nil)
+  #expect(model.draft == original)
+  await model.createProfile(name: "Not a generation default")
+  #expect(model.profiles == [profile])
+}
+
+@MainActor @Test func profileSwitchUpdatesConfigurationAndSanitizesUnsupportedControls()
+  async throws
+{
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  await model.chooseConfiguration(id: shortSelection.configurationID)
+  await model.createProfile(name: "Quick")
+  let profile = try #require(model.selectedProfile)
+  await model.chooseConfiguration(id: selection.configurationID)
+  model.draft?.references = [root.appendingPathComponent("reference.wav")]
+  model.draft?.engineOptions.values["thinking"] = .bool(true)
+  model.draft?.prompt = "Keep the idea"
+  await model.chooseProfile(id: profile.id)
+  #expect(model.error == nil)
+  #expect(model.currentConfiguration?.selection == shortSelection)
+  #expect(model.draft?.duration == 15)
+  #expect(model.draft?.references.isEmpty == true)
+  #expect(model.draft?.engineOptions.values["thinking"] == nil)
+  #expect(model.draft?.prompt == "Keep the idea")
+  let original = model.draft
+  await model.chooseProfile(id: "missing")
+  #expect(model.error != nil)
+  #expect(model.draft == original)
 }
 
 @MainActor @Test func generationNeedsSetupUntilRuntimeIsInstalled() async throws {

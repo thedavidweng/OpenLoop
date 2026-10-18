@@ -5,8 +5,12 @@ on:
     inputs:
       tag:
         description: "Release tag, for example v0.3.0-alpha.1"
-        required: true
+        required: false
         type: string
+      verification_only:
+        description: "Build a signed main snapshot as an Actions artifact without publishing a release"
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -27,15 +31,31 @@ jobs:
       contents: write # Creates the draft release and uploads its DMG.
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      VERIFICATION_ONLY: ${{ inputs.verification_only || false }}
       APPLE_SIGNING_IDENTITY: "Developer ID Application: MOE AI LLC (NCFNX3LJ83)"
       APPLE_TEAM_ID: NCFNX3LJ83
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
       APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
     steps:
-      - name: Checkout release tag
+      - name: Validate build mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_REF: ${{ github.ref }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "$VERIFICATION_ONLY" == true ]]; then
+            test "$EVENT_NAME" = workflow_dispatch
+            test "$SOURCE_REF" = refs/heads/main
+            test -z "$INPUT_TAG"
+          elif [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            test -n "$INPUT_TAG"
+          fi
+
+      - name: Checkout source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.verification_only && github.sha || inputs.tag || github.ref }}
           persist-credentials: false
 
       - name: Import Developer ID signing identity
@@ -71,24 +91,32 @@ jobs:
 
       - name: Verify release version
         run: |
+          set -euo pipefail
           PKG_VERSION=$(node -p "require('./package.json').version")
-          test "v${PKG_VERSION}" = "${RELEASE_TAG%%-*}"
-          echo "DMG_PATH=native/dist/OpenLoop_${PKG_VERSION}_aarch64.dmg" >> "$GITHUB_ENV"
+          if [[ "$VERIFICATION_ONLY" == true ]]; then
+            REVISION=$(git rev-parse HEAD)
+            echo "DMG_PATH=native/dist/OpenLoop_${PKG_VERSION}_${REVISION}_acceptance_aarch64.dmg" >> "$GITHUB_ENV"
+            echo "ARTIFACT_NAME=openloop-acceptance-${REVISION}" >> "$GITHUB_ENV"
+          else
+            test "v${PKG_VERSION}" = "${RELEASE_TAG%%-*}"
+            echo "DMG_PATH=native/dist/OpenLoop_${PKG_VERSION}_aarch64.dmg" >> "$GITHUB_ENV"
+            echo "ARTIFACT_NAME=openloop-${RELEASE_TAG}-macos-dmg" >> "$GITHUB_ENV"
+          fi
 
       - name: Validate documentation
         run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs
 
       - name: Native compile check
-        run: swift build --package-path native -Xswiftc -warnings-as-errors
+        run: swift build --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
       - name: Native contracts
-        run: swift test --package-path native -Xswiftc -warnings-as-errors
+        run: swift test --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
       - name: Prepare Apple Silicon sidecar
         run: node scripts/prepare-sidecars.mjs
 
       - name: Test release signing and packaging gates
-        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py
+        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py && python3 native/scripts/test-package-report.py
 
       - name: Package and verify signed native app and DMG
         run: python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --sign "$APPLE_SIGNING_IDENTITY" --notarize --dmg "$DMG_PATH"
@@ -96,14 +124,23 @@ jobs:
       - name: Packaged headless CLI and signature smoke
         run: python3 native/scripts/smoke-cli.py
 
+      - name: Record package size and source
+        run: |
+          python3 native/scripts/package-report.py --bundle native/dist/OpenLoop.app \
+            --dmg "$DMG_PATH" --output native/dist/package-report.json
+          cat native/dist/package-report.json >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload DMG artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: openloop-${{ env.RELEASE_TAG }}-macos-dmg
-          path: ${{ env.DMG_PATH }}
+          name: ${{ env.ARTIFACT_NAME }}
+          path: |
+            ${{ env.DMG_PATH }}
+            native/dist/package-report.json
           if-no-files-found: error
 
       - name: Create draft GitHub release
+        if: ${{ !inputs.verification_only }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

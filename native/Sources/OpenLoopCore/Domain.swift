@@ -203,7 +203,7 @@ public struct Project: Codable, Sendable, Equatable, Identifiable {
   }
 }
 // A profile is deliberately limited to stable generation defaults in this slice.
-// Engine-specific options and GUI editing remain follow-up work for #71.
+// Engine-specific saved options remain follow-up work for #71.
 public struct GenerationProfile: Codable, Sendable, Equatable, Identifiable {
   public var id: String
   public var name: String

@@ -65,6 +65,15 @@ alternative. Historical unsigned release notes retain their original instruction
   credentials or rejected artifacts.
   `pnpm release:build` selects `native/dist/OpenLoop.dmg` for local builds; the
   GitHub workflow names the DMG using package.json version and architecture.
+- The Release workflow's `verification_only` dispatch on `main` (with no `tag`)
+  builds and notarizes an acceptance snapshot using the same signing gates. It
+  uploads an Actions artifact named with the exact source commit and never
+  creates a tag or GitHub Release. The internal app version remains unchanged.
+- `native/scripts/package-report.py --bundle PATH --dmg PATH --output PATH`
+  records the source revision, Swift version, app component bytes/shares and DMG
+  SHA-256/bytes. Symlinks are excluded from logical byte counts. Release CI
+  generates `native/dist/package-report.json` and includes it with the DMG;
+  this is a baseline, not an optimization comparison or latency benchmark.
 - `native/scripts/sign-and-notarize.sh PATH` signs an app or DMG, checks its
   signature/team, waits for Apple acceptance, staples/validates its ticket, and
   assesses Gatekeeper. It requires `APPLE_SIGNING_IDENTITY`, `APPLE_SIGNING_KEYCHAIN`,

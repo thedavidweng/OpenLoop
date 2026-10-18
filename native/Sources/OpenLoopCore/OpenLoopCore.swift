@@ -81,6 +81,14 @@ public actor OpenLoopCore {
     _ = try store.get("profile", id: id, as: GenerationProfile.self)
     try store.remove("profile", id: id)
   }
+  public func renameProfile(id: String, name: String) throws {
+    guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      throw CoreError.invalid("Profile name is required")
+    }
+    var profile = try store.get("profile", id: id, as: GenerationProfile.self)
+    profile.name = name
+    try store.save("profile", id: id, value: profile)
+  }
   public func profile(matching value: String) throws -> GenerationProfile {
     let profiles = try store.all("profile", as: GenerationProfile.self)
     if let profile = profiles.first(where: { $0.id == value }) { return profile }

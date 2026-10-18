@@ -43,14 +43,24 @@ The bounded #71 profile slice persists stable generation defaults:
 ```text
 openloop profiles list
 openloop profiles create NAME [--configuration ID] [--duration SECONDS] [--format wav|mp3|flac]
+openloop profiles rename ID_OR_NAME NAME
 openloop profiles delete ID_OR_NAME
 openloop run --profile ID_OR_NAME --prompt TEXT
 ```
 
 Profile IDs or exact unique names are accepted. A profile supplies the saved
 configuration, duration and format, and the resulting Generation request/history
-records both its profile ID and name. Profile rename, GUI editing and
-engine-specific options remain outside this slice and are the next #71 scope.
+records both its profile ID and name. Rename accepts an exact ID or unique name;
+empty names and ambiguous matches fail. Renaming or deleting a profile leaves
+previous Generation Records and their recorded profile names unchanged.
+
+Compose can save its model, duration and format as a profile, switch saved
+defaults, and rename or delete profiles through Manage Profiles. Switching keeps
+the current prompt and lyrics, subject to the selected Engine's capabilities.
+Custom appears when the saved common defaults no longer match Compose.
+Profiles cannot be applied during Repaint or Extend because those operations
+derive their timeline from source audio. Engine-specific saved options and
+signed-release acceptance remain the next #71 scope.
 
 `run --prompt "New section" --repaint source.wav --start 2 --end 5` repaints a
 region of local source audio. The source's decoded duration defines the full

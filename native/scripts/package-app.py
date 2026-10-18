@@ -26,7 +26,7 @@ if args.notarize:
         parser.error("--sign must match the Developer ID Application identity in APPLE_SIGNING_IDENTITY")
 if not args.uv.is_file():
     parser.error("--uv must point to the prepared sidecar executable")
-subprocess.run(["swift", "build", "--package-path", str(root / "native"), "-c", "release", "--arch", "arm64"], check=True, timeout=900)
+subprocess.run(["swift", "build", "--package-path", str(root / "native"), "--jobs", "2", "-c", "release", "--arch", "arm64"], check=True, timeout=900)
 bin_path = Path(subprocess.check_output(["swift", "build", "--package-path", str(root / "native"), "-c", "release", "--arch", "arm64", "--show-bin-path"], text=True, timeout=30).strip())
 output = args.output.resolve()
 # Refuse to overwrite a bundle; caller explicitly removes a previous build.

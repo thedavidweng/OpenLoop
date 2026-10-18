@@ -42,6 +42,7 @@ public struct OpenLoopScenes: Scene {
 struct RootView: View {
   @Environment(WorkspaceModel.self) private var model
   @Environment(PlaybackModel.self) private var playback
+  @State private var historyFavoritesOnly = false
 
   var body: some View {
     @Bindable var model = model
@@ -61,15 +62,7 @@ struct RootView: View {
           SidebarView()
             .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 320)
         } detail: {
-          switch model.sidebar {
-          case .history: HistoryView()
-          case .unfiled: ProjectWorkspaceView(projectID: nil)
-          case .project(let id): ProjectWorkspaceView(projectID: id).id(id)
-          case nil:
-            ContentUnavailableView(
-              "Choose a Project", systemImage: "music.note.list",
-              description: Text("Select a Project or History in the sidebar."))
-          }
+          WorkspaceDetailView(historyFavoritesOnly: $historyFavoritesOnly)
         }
       }
     }
@@ -113,6 +106,113 @@ struct RootView: View {
   private var deletionTitle: String {
     let count = model.pendingDeletion?.count ?? 0
     return count == 1 ? "Delete this Take?" : "Delete \(count) Takes?"
+  }
+}
+
+private struct WorkspaceDetailView: View {
+  @Environment(WorkspaceModel.self) private var model
+  @Binding var historyFavoritesOnly: Bool
+
+  var body: some View {
+    detail
+      .navigationTitle(title)
+      .navigationSubtitle(subtitle)
+      .inspector(isPresented: inspectorBinding) {
+        WorkspaceInspector()
+      }
+      .toolbar {
+        WorkspaceToolbar(historyFavoritesOnly: $historyFavoritesOnly)
+      }
+  }
+
+  @ViewBuilder
+  private var detail: some View {
+    switch model.sidebar {
+    case .history:
+      HistoryView(favoritesOnly: $historyFavoritesOnly)
+    case .unfiled:
+      ProjectWorkspaceView(projectID: nil)
+    case .project(let id):
+      ProjectWorkspaceView(projectID: id).id(id)
+    case nil:
+      ContentUnavailableView(
+        "Choose a Project", systemImage: "music.note.list",
+        description: Text("Select a Project or History in the sidebar."))
+    }
+  }
+
+  private var title: String {
+    switch model.sidebar {
+    case .history: "History"
+    case .unfiled: model.projectName(nil) ?? "Unfiled Takes"
+    case .project(let id): model.projectName(id) ?? "Project"
+    case nil: "OpenLoop"
+    }
+  }
+
+  private var subtitle: String {
+    switch model.sidebar {
+    case .history:
+      return model.history.count == 1 ? "1 Take" : "\(model.history.count) Takes"
+    case .unfiled, .project:
+      let count = model.takes(projectID: model.sidebar?.projectID).count
+      return count == 1 ? "1 Take" : "\(count) Takes"
+    case nil: return ""
+    }
+  }
+
+  private var inspectorBinding: Binding<Bool> {
+    Binding(
+      get: { model.showsInspector },
+      set: { model.showsInspector = $0 })
+  }
+}
+
+private struct WorkspaceInspector: View {
+  @Environment(WorkspaceModel.self) private var model
+
+  var body: some View {
+    switch model.sidebar {
+    case .history:
+      HistoryInspector()
+    case .unfiled, .project:
+      TakeInspector()
+    case nil:
+      ContentUnavailableView("No Selection", systemImage: "sidebar.trailing")
+    }
+  }
+}
+
+private struct WorkspaceToolbar: ToolbarContent {
+  @Environment(WorkspaceModel.self) private var model
+  @Binding var historyFavoritesOnly: Bool
+
+  @ToolbarContentBuilder
+  var body: some ToolbarContent {
+    if model.sidebar == .history {
+      ToolbarItemGroup {
+        Toggle("Favorites", systemImage: "star", isOn: $historyFavoritesOnly)
+          .help("Show only favorites")
+        Button("Delete", systemImage: "trash") {
+          model.pendingDeletion = model.historySelection
+        }
+        .disabled(model.historySelection.isEmpty)
+        .help("Delete selected Takes and their files")
+        Menu("More", systemImage: "ellipsis.circle") {
+          Button("Clear All History…", role: .destructive) {
+            model.pendingDeletion = Set(model.history.map(\.id))
+          }
+          .disabled(model.history.isEmpty)
+        }
+      }
+    } else {
+      ToolbarItem {
+        Button("Inspector", systemImage: "sidebar.trailing") {
+          model.showsInspector.toggle()
+        }
+        .help("Show or hide the Take inspector")
+      }
+    }
   }
 }
 

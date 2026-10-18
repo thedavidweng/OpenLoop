@@ -142,7 +142,19 @@ public struct EngineCatalog: Codable, Sendable {
       configurations: configs)
   }()
   public static func modelFiles(packID: String) throws -> [ModelFile] {
-    guard let url = Bundle.module.url(forResource: "model-files", withExtension: "json") else {
+    let resources: Bundle
+    if Bundle.main.bundleURL.pathExtension == "app" {
+      // SwiftPM's CLI accessor searches the app root, outside Contents/Resources.
+      let url = Bundle.main.bundleURL.appendingPathComponent(
+        "Contents/Resources/OpenLoop_OpenLoopEngines.bundle")
+      guard let bundle = Bundle(url: url) else {
+        throw CoreError.persistence("Missing bundled Engine resources")
+      }
+      resources = bundle
+    } else {
+      resources = .module
+    }
+    guard let url = resources.url(forResource: "model-files", withExtension: "json") else {
       throw CoreError.persistence("Missing bundled model manifest")
     }
     let files = try JSONDecoder().decode([String: [ModelFile]].self, from: Data(contentsOf: url))

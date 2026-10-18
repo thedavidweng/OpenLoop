@@ -9,11 +9,6 @@ struct SidebarView: View {
 
   var body: some View {
     List(selection: Binding(get: { model.sidebar }, set: { model.select($0) })) {
-      Section("Library") {
-        Label("History", systemImage: "clock.arrow.circlepath")
-          .badge(model.history.count)
-          .tag(SidebarItem.history)
-      }
       Section("Projects") {
         Label("Unfiled Takes", systemImage: "tray")
           .badge(model.takes(projectID: nil).count)
@@ -30,6 +25,11 @@ struct SidebarView: View {
               Button("Delete Project…", role: .destructive) { deleting = project }
             }
         }
+      }
+      Section("Library") {
+        Label("History", systemImage: "clock.arrow.circlepath")
+          .badge(model.history.count)
+          .tag(SidebarItem.history)
       }
     }
     .listStyle(.sidebar)

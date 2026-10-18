@@ -34,6 +34,31 @@ creative intent can also use `--prompt`, `--lyrics`, `--duration`, `--seed`,
 invalid numeric input fail rather than substituting defaults. Advanced settings
 are available in a versioned `engineOptions` object in the request file.
 
+`run --project ID_OR_NAME` assigns new Takes to an existing Project;
+`list --project ID_OR_NAME` filters completed History. Names must match exactly
+and be unique; use the Project ID when names collide.
+
+The bounded #71 profile slice persists stable generation defaults:
+
+```text
+openloop profiles list
+openloop profiles create NAME [--configuration ID] [--duration SECONDS] [--format wav|mp3|flac]
+openloop profiles delete ID_OR_NAME
+openloop run --profile ID_OR_NAME --prompt TEXT
+```
+
+Profile IDs or exact unique names are accepted. A profile supplies the saved
+configuration, duration and format, and the resulting Generation request/history
+records both its profile ID and name. Profile rename, GUI editing and
+engine-specific options remain outside this slice and are the next #71 scope.
+
+`run --prompt "New section" --repaint source.wav --start 2 --end 5` repaints a
+region of local source audio. The source's decoded duration defines the full
+output timeline, so `--duration` is not accepted with `--repaint`. The selected
+Engine must support Repaint and reference audio. A completed edit creates a new
+Take and leaves the source file untouched. The native adapter uses ACE-Step's
+`/release_task` repaint operation; the old proposed `/edit` route is not used.
+
 `settings set FILE.json` replaces a complete Settings value after validation.
 Runtime changes affect the next start. `--data-dir PATH` isolates all state for
 experiments; GUI and CLI normally use the same app-support directory. `--uv PATH`

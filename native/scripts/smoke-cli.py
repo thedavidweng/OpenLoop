@@ -3,6 +3,7 @@
 import argparse
 import json
 import selectors
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -77,7 +78,32 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
                 process.wait()
         assert list((bundle / "Contents/Resources").rglob("model-files.json"))
         assert (bundle / "Contents/MacOS/uv").is_file()
-    finally:
-        server.terminate()
+        # A stopped server forces runtime setup to read the packaged manifest.
+        # CI's build-tree resources must not hide a broken installed-app layout.
+        if server.poll() is None:
+            server.terminate()
         server.wait(timeout=5)
-print("Packaged CLI smoke passed, including SIGINT exit 130 and persisted cancellation.")
+        missing_models = subprocess.run(
+            [str(cli), "--data-dir", directory, "--json", "run",
+             "--configuration", "ace-step/pro", "--prompt", "missing models"],
+            capture_output=True, text=True, timeout=15)
+        assert missing_models.returncode == 1, missing_models
+        error = json.loads(missing_models.stderr)
+        assert error["kind"] == "error" and "Model Pack is incomplete" in str(error["data"]), error
+        probe = root / "ResourceProbe.app/Contents"
+        (probe / "MacOS").mkdir(parents=True)
+        shutil.copy2(cli, probe / "MacOS/openloop-cli")
+        shutil.copy2(bundle / "Contents/MacOS/OpenLoop", probe / "MacOS/OpenLoop")
+        shutil.copy2(bundle / "Contents/Info.plist", probe / "Info.plist")
+        missing_resources = subprocess.run(
+            [str(probe / "MacOS/openloop-cli"), "--uv", str(bundle / "Contents/MacOS/uv"),
+             "--data-dir", directory, "--json", "run", "--configuration", "ace-step/pro",
+             "--prompt", "missing resources"], capture_output=True, text=True, timeout=15)
+        assert missing_resources.returncode == 1, missing_resources
+        error = json.loads(missing_resources.stderr)
+        assert error["kind"] == "error" and "Missing bundled Engine resources" in str(error["data"]), error
+    finally:
+        if server.poll() is None:
+            server.terminate()
+        server.wait(timeout=5)
+print("Packaged CLI smoke passed: SIGINT exit 130, persisted cancellation, and installed-app resources.")

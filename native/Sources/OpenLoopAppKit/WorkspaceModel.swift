@@ -269,6 +269,17 @@ public final class WorkspaceModel {
       try await self.refresh()
     }
   }
+  public func assignGenerations(ids: Set<String>, projectID: String?) async {
+    await perform {
+      try await self.core().assignGenerations(ids: ids, projectID: projectID)
+      try await self.refresh()
+      if let parent = self.draft?.parentTakeID,
+        self.item(takeID: parent)?.take.projectID != self.selectedProjectID
+      {
+        self.clearIteration()
+      }
+    }
+  }
 
   // MARK: Generation
 

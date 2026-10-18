@@ -1,5 +1,29 @@
 # OpenLoop Testing Guide
 
+## Published artifact recheck — 2026-10-18
+
+The published v0.2.2 Apple Silicon DMG from release run
+[39017711757](https://github.com/thedavidweng/OpenLoop/actions/runs/39017711757)
+was downloaded and mounted read-only on macOS 27.0.1. Its SHA-256 is
+`dece62f1352c5ff57eaf769a2a873a76d4ce8fb249dda9138968e8e117677c46`.
+Strict app and nested CLI/uv signature verification passed. The app is signed
+with Developer ID, and `stapler validate` passed for both the app and DMG.
+This supersedes the historical ad-hoc-signing limitation below.
+
+`spctl` reported Notarized Developer ID but also `override=security disabled`.
+That result does not establish enforced Gatekeeper behavior on a clean machine.
+Minimum macOS 15, quarantined installation, auditory quality, real Repaint,
+Finder/DAW drag, notifications, VoiceOver and legacy/native coexistence still
+need their own acceptance evidence.
+
+The published CLI smoke exposed a resource-loading crash when runtime startup
+reads the model manifest outside the original CI build tree. A valid signature
+does not prove this runtime path works. The native catalog now resolves packaged
+resources from `Contents/Resources`; packaged smoke also exercises incomplete
+model installation and rejects missing app resources without borrowing the
+developer build tree. The published v0.2.2 asset remains unchanged and does not
+contain this repair; acceptance of a subsequent release must rerun these checks.
+
 ## Native macOS acceptance — 2026-10-07
 
 **Decision: visual checks passed for the inspected states; native release is not approved.**

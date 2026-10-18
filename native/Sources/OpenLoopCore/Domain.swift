@@ -119,13 +119,16 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
   public var audioFormat: String
   public var engineOptions: EngineOptions
   public var editRegion: EditRegion?
+  public var profileID: String?
+  public var profileName: String?
   public init(
     selection: Selection, prompt: String, lyrics: String = "", duration: Double = 30,
     seed: Int64? = nil, takeCount: Int = 1, projectID: String? = nil,
     parentTakeID: String? = nil, operation: Operation = .generate,
     references: [URL] = [], bpm: Int? = nil, key: String? = nil,
     timeSignature: String? = nil, audioFormat: String = "wav",
-    engineOptions: EngineOptions = .init(), editRegion: EditRegion? = nil
+    engineOptions: EngineOptions = .init(), editRegion: EditRegion? = nil,
+    profileID: String? = nil, profileName: String? = nil
   ) {
     self.selection = selection
     self.prompt = prompt
@@ -143,6 +146,8 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
     self.audioFormat = audioFormat
     self.engineOptions = engineOptions
     self.editRegion = editRegion
+    self.profileID = profileID
+    self.profileName = profileName
   }
   public var isRegionEdit: Bool { [.repaint, .extend].contains(operation) }
   public func validate(capabilities: Capabilities) throws {
@@ -172,7 +177,7 @@ public struct GenerationRequest: Codable, Sendable, Equatable {
       throw CoreError.invalid("Reference artifacts must be local files.")
     }
     if let bpm, bpm <= 0 { throw CoreError.invalid("BPM must be positive.") }
-    if operation != .generate && parentTakeID == nil {
+    if operation != .generate && operation != .repaint && parentTakeID == nil {
       throw CoreError.invalid("Iteration requires a parent Take.")
     }
     if isRegionEdit {
@@ -195,6 +200,25 @@ public struct Project: Codable, Sendable, Equatable, Identifiable {
     self.id = id
     self.name = name
     self.createdAt = createdAt
+  }
+}
+// A profile is deliberately limited to stable generation defaults in this slice.
+// Engine-specific options and GUI editing remain follow-up work for #71.
+public struct GenerationProfile: Codable, Sendable, Equatable, Identifiable {
+  public var id: String
+  public var name: String
+  public var selection: Selection
+  public var duration: Double
+  public var audioFormat: String
+  public init(
+    id: String = UUID().uuidString, name: String, selection: Selection, duration: Double,
+    audioFormat: String
+  ) {
+    self.id = id
+    self.name = name
+    self.selection = selection
+    self.duration = duration
+    self.audioFormat = audioFormat
   }
 }
 public enum ArtifactKind: String, Codable, Sendable {
@@ -312,6 +336,7 @@ public struct ModelInstallation: Codable, Sendable, Equatable, Identifiable {
 }
 public struct Workspace: Sendable {
   public var projects: [Project]
+  public var profiles: [GenerationProfile]
   public var takes: [Take]
   public var history: [GenerationRecord]
   public var tasks: [GenerationTask]

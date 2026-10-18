@@ -33,6 +33,7 @@ public actor OpenLoopCore {
     try Self.recoverInterruptedTasks(store: store, directory: directory)
     return Workspace(
       projects: try store.all("project", as: Project.self),
+      profiles: try store.all("profile", as: GenerationProfile.self),
       takes: try store.all("take", as: Take.self),
       history: try store.all("generation", as: GenerationRecord.self).sorted {
         $0.createdAt > $1.createdAt
@@ -57,6 +58,37 @@ public actor OpenLoopCore {
     let project = Project(name: name)
     try store.save("project", id: project.id, value: project)
     return project
+  }
+  public func createProfile(
+    name: String, selection: Selection, duration: Double, audioFormat: String
+  ) throws -> GenerationProfile {
+    guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      throw CoreError.invalid("Profile name is required")
+    }
+    guard duration.isFinite, duration > 0, ["wav", "mp3", "flac"].contains(audioFormat) else {
+      throw CoreError.invalid("Invalid profile duration or audio format")
+    }
+    let maximumDuration = try capabilities(for: selection).maximumDuration
+    guard duration <= maximumDuration else {
+      throw CoreError.invalid("Profile duration exceeds the selected Engine limit")
+    }
+    let profile = GenerationProfile(
+      name: name, selection: selection, duration: duration, audioFormat: audioFormat)
+    try store.save("profile", id: profile.id, value: profile)
+    return profile
+  }
+  public func deleteProfile(id: String) throws {
+    _ = try store.get("profile", id: id, as: GenerationProfile.self)
+    try store.remove("profile", id: id)
+  }
+  public func profile(matching value: String) throws -> GenerationProfile {
+    let profiles = try store.all("profile", as: GenerationProfile.self)
+    if let profile = profiles.first(where: { $0.id == value }) { return profile }
+    let matches = profiles.filter { $0.name == value }
+    guard matches.count == 1, let profile = matches.first else {
+      throw CoreError.invalid("Profile not found or name is ambiguous; use a Profile ID: \(value)")
+    }
+    return profile
   }
   public func renameProject(id: String, name: String) throws {
     guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -88,6 +120,29 @@ public actor OpenLoopCore {
   }
   public func capabilities(for selection: Selection) throws -> Capabilities {
     try engine(selection.engineID).capabilities(for: selection)
+  }
+  public func assignGenerations(ids: Set<String>, projectID: String?) throws {
+    try store.transaction {
+      if let projectID { _ = try store.get("project", id: projectID, as: Project.self) }
+      let takes = try store.all("take", as: Take.self).filter { ids.contains($0.generationID) }
+      let takeIDs = Set(takes.map(\.id))
+      guard
+        try store.all("task", as: GenerationTask.self).allSatisfy({ task in
+          guard [.queued, .running].contains(task.state), let parent = task.request.parentTakeID
+          else { return true }
+          return !takeIDs.contains(parent)
+        })
+      else { throw CoreError.conflict("A Generation Task is using one of these Takes") }
+      for id in ids {
+        var record = try store.get("generation", id: id, as: GenerationRecord.self)
+        record.request.projectID = projectID
+        try store.save("generation", id: id, value: record)
+      }
+      for var take in takes {
+        take.projectID = projectID
+        try store.save("take", id: take.id, value: take)
+      }
+    }
   }
   private func engine(_ id: String) throws -> any Engine {
     guard let engine = engines[id] else { throw CoreError.invalid("No bound Engine: \(id)") }

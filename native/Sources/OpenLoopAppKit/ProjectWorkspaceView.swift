@@ -18,22 +18,6 @@ struct ProjectWorkspaceView: View {
       }
       .frame(minWidth: 380)
     }
-    .navigationTitle(model.projectName(projectID) ?? "Unfiled Takes")
-    .navigationSubtitle(subtitle)
-    .inspector(isPresented: $model.showsInspector) {
-      TakeInspector()
-        .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
-    }
-    .toolbar {
-      ToolbarItem {
-        Button("Inspector", systemImage: "sidebar.trailing") { model.showsInspector.toggle() }
-          .help("Show or hide the Take inspector")
-      }
-    }
-  }
-  private var subtitle: String {
-    let count = model.takes(projectID: projectID).count
-    return count == 1 ? "1 Take" : "\(count) Takes"
   }
 }
 

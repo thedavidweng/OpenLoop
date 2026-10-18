@@ -3,10 +3,10 @@ import SwiftUI
 
 // Cross-project view of completed Generation Records only; failed/cancelled tasks never appear.
 struct HistoryView: View {
+  @Binding var favoritesOnly: Bool
   @Environment(WorkspaceModel.self) private var model
   @Environment(PlaybackModel.self) private var playback
   @State private var search = ""
-  @State private var favoritesOnly = false
   @State private var sortOrder = [KeyPathComparator(\GenerationRecord.createdAt, order: .reverse)]
 
   var body: some View {
@@ -80,39 +80,7 @@ struct HistoryView: View {
       Divider()
       TransportBar(comparison: false)
     }
-    .navigationTitle("History")
-    .navigationSubtitle(model.history.count == 1 ? "1 Take" : "\(model.history.count) Takes")
     .searchable(text: $search, prompt: "Search prompts and lyrics")
-    .toolbar {
-      ToolbarItemGroup {
-        Toggle("Favorites", systemImage: "star", isOn: $favoritesOnly)
-          .help("Show only favorites")
-        Button("Delete", systemImage: "trash") { model.pendingDeletion = model.historySelection }
-          .disabled(model.historySelection.isEmpty)
-          .help("Delete selected Takes and their files")
-        Menu("More", systemImage: "ellipsis.circle") {
-          Button("Clear All History…", role: .destructive) {
-            model.pendingDeletion = Set(model.history.map(\.id))
-          }
-          .disabled(model.history.isEmpty)
-        }
-      }
-    }
-    .inspector(isPresented: $model.showsInspector) {
-      Group {
-        if model.historySelection.count == 1, let id = model.historySelection.first,
-          let item = model.item(takeID: model.takeID(forRecord: id))
-        {
-          RecordDetails(item: item)
-        } else {
-          ContentUnavailableView(
-            model.historySelection.count > 1
-              ? "\(model.historySelection.count) Takes Selected" : "No Selection",
-            systemImage: "clock")
-        }
-      }
-      .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
-    }
   }
 
   private var rows: [GenerationRecord] {
@@ -123,6 +91,26 @@ struct HistoryView: View {
           || record.request.lyrics.localizedCaseInsensitiveContains(query))
     }
     .sorted(using: sortOrder)
+  }
+}
+
+struct HistoryInspector: View {
+  @Environment(WorkspaceModel.self) private var model
+
+  var body: some View {
+    Group {
+      if model.historySelection.count == 1, let id = model.historySelection.first,
+        let item = model.item(takeID: model.takeID(forRecord: id))
+      {
+        RecordDetails(item: item)
+      } else {
+        ContentUnavailableView(
+          model.historySelection.count > 1
+            ? "\(model.historySelection.count) Takes Selected" : "No Selection",
+          systemImage: "clock")
+      }
+    }
+    .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
   }
 }
 

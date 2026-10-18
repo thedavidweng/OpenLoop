@@ -60,6 +60,7 @@ public struct OpenLoopCLI: Sendable {
       status | catalog | list [--project ID_OR_NAME] | ps
       project list | create NAME | rename ID NAME | delete ID
       profiles list | create NAME [--configuration ID] [--duration SECONDS] [--format FORMAT]
+          [--engine-options FILE.json]
           | rename ID_OR_NAME NAME | delete ID_OR_NAME
       settings get | set FILE.json
       setup --accept-license
@@ -142,10 +143,18 @@ public struct OpenLoopCLI: Sendable {
         let duration = try numericOption(
           &args, "--duration", default: settings.defaultDuration, parse: Double.init)
         let format = try args.option("--format") ?? settings.defaultAudioFormat
+        let options: EngineOptions
+        if let path = try args.option("--engine-options") {
+          options = try JSONDecoder().decode(
+            EngineOptions.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+        } else {
+          options = .init()
+        }
         try args.finish()
         try await result(
           await core.createProfile(
-            name: name, selection: selection, duration: duration, audioFormat: format), emit)
+            name: name, selection: selection, duration: duration, audioFormat: format,
+            engineOptions: options), emit)
       case "rename":
         let value = try args.positional()
         let name = try args.positional()
@@ -227,6 +236,10 @@ public struct OpenLoopCLI: Sendable {
         } else {
           throw CoreError.invalid("Choose a configuration with --configuration or Settings")
         }
+        guard profile == nil || profile?.selection == selection else {
+          throw CoreError.invalid(
+            "A profile's Engine options require its saved configuration; omit --configuration")
+        }
         guard let prompt = try args.option("--prompt") else {
           throw CoreError.invalid("--prompt is required")
         }
@@ -266,6 +279,7 @@ public struct OpenLoopCLI: Sendable {
           operation: repaint == nil ? .generate : .repaint, references: references,
           audioFormat: args.option("--format") ?? profile?.audioFormat
             ?? settings.defaultAudioFormat,
+          engineOptions: profile?.engineOptions ?? .init(),
           editRegion: region, profileID: profile?.id, profileName: profile?.name)
       }
       try args.finish()

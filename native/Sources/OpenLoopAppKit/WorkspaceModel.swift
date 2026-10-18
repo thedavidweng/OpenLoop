@@ -216,6 +216,7 @@ public final class WorkspaceModel {
     return profiles.first {
       $0.id == draft.profileID && $0.selection == draft.selection
         && $0.duration == draft.duration && $0.audioFormat == draft.audioFormat
+        && $0.engineOptions == draft.engineOptions
     }
   }
   public func chooseProfile(id: String) async {
@@ -225,12 +226,7 @@ public final class WorkspaceModel {
       }
       let profile = try await self.core().profile(matching: id)
       let configuration = try self.catalog.configuration(profile.selection)
-      if request.selection.engineID != profile.selection.engineID {
-        request.engineOptions = .init()
-      }
-      if configuration.languageModel == nil {
-        request.engineOptions.values.removeValue(forKey: "thinking")
-      }
+      request.engineOptions = profile.engineOptions
       request.selection = profile.selection
       request.duration = profile.duration
       request.audioFormat = profile.audioFormat
@@ -246,7 +242,7 @@ public final class WorkspaceModel {
       }
       let profile = try await self.core().createProfile(
         name: name, selection: draft.selection, duration: draft.duration,
-        audioFormat: draft.audioFormat)
+        audioFormat: draft.audioFormat, engineOptions: draft.engineOptions)
       self.draft?.profileID = profile.id
       self.draft?.profileName = profile.name
       try await self.refresh()

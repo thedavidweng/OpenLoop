@@ -202,23 +202,36 @@ public struct Project: Codable, Sendable, Equatable, Identifiable {
     self.createdAt = createdAt
   }
 }
-// A profile is deliberately limited to stable generation defaults in this slice.
-// Engine-specific saved options remain follow-up work for #71.
 public struct GenerationProfile: Codable, Sendable, Equatable, Identifiable {
   public var id: String
   public var name: String
   public var selection: Selection
   public var duration: Double
   public var audioFormat: String
+  public var engineOptions: EngineOptions
   public init(
     id: String = UUID().uuidString, name: String, selection: Selection, duration: Double,
-    audioFormat: String
+    audioFormat: String, engineOptions: EngineOptions = .init()
   ) {
     self.id = id
     self.name = name
     self.selection = selection
     self.duration = duration
     self.audioFormat = audioFormat
+    self.engineOptions = engineOptions
+  }
+  private enum CodingKeys: String, CodingKey {
+    case id, name, selection, duration, audioFormat, engineOptions
+  }
+  public init(from decoder: any Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    id = try values.decode(String.self, forKey: .id)
+    name = try values.decode(String.self, forKey: .name)
+    selection = try values.decode(Selection.self, forKey: .selection)
+    duration = try values.decode(Double.self, forKey: .duration)
+    audioFormat = try values.decode(String.self, forKey: .audioFormat)
+    engineOptions =
+      try values.decodeIfPresent(EngineOptions.self, forKey: .engineOptions) ?? .init()
   }
 }
 public enum ArtifactKind: String, Codable, Sendable {

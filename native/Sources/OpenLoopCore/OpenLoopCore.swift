@@ -60,7 +60,8 @@ public actor OpenLoopCore {
     return project
   }
   public func createProfile(
-    name: String, selection: Selection, duration: Double, audioFormat: String
+    name: String, selection: Selection, duration: Double, audioFormat: String,
+    engineOptions: EngineOptions = .init()
   ) throws -> GenerationProfile {
     guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
       throw CoreError.invalid("Profile name is required")
@@ -72,8 +73,13 @@ public actor OpenLoopCore {
     guard duration <= maximumDuration else {
       throw CoreError.invalid("Profile duration exceeds the selected Engine limit")
     }
+    try engine(selection.engineID).validate(
+      GenerationRequest(
+        selection: selection, prompt: "Profile validation", duration: duration,
+        audioFormat: audioFormat, engineOptions: engineOptions))
     let profile = GenerationProfile(
-      name: name, selection: selection, duration: duration, audioFormat: audioFormat)
+      name: name, selection: selection, duration: duration, audioFormat: audioFormat,
+      engineOptions: engineOptions)
     try store.save("profile", id: profile.id, value: profile)
     return profile
   }

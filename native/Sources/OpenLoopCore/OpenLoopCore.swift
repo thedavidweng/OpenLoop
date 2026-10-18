@@ -133,6 +133,13 @@ public actor OpenLoopCore {
           return !takeIDs.contains(parent)
         })
       else { throw CoreError.conflict("A Generation Task is using one of these Takes") }
+      for var task in try store.all("task", as: GenerationTask.self)
+      where [.failed, .cancelled].contains(task.state)
+        && task.request.parentTakeID.map({ takeIDs.contains($0) }) == true
+      {
+        task.request.projectID = projectID
+        try store.save("task", id: task.id, value: task)
+      }
       for id in ids {
         var record = try store.get("generation", id: id, as: GenerationRecord.self)
         record.request.projectID = projectID

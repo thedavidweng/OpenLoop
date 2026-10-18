@@ -84,7 +84,7 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
             server.terminate()
         server.wait(timeout=5)
         missing_models = subprocess.run(
-            [str(cli), "--data-dir", directory, "--json", "run",
+            [str(linked_cli), "--data-dir", directory, "--json", "run",
              "--configuration", "ace-step/pro", "--prompt", "missing models"],
             capture_output=True, text=True, timeout=15)
         assert missing_models.returncode == 1, missing_models

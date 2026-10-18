@@ -159,6 +159,10 @@ actor WaitingEngine: Engine {
   for try await _ in try await core.run(taskID: task.id) {}
   let original = try await core.workspace()
   let ids = Set(original.history.map(\.id))
+  let firstTake = try #require(original.takes.first)
+  let staleRetry = try await core.submit(
+    core.requestForTake(id: firstTake.id, reproduce: false))
+  try await core.cancel(taskID: staleRetry.id)
   try await core.assignGenerations(ids: ids, projectID: project.id)
   let reopened = try OpenLoopCore(directory: root, engines: [FakeEngine()])
   let assigned = try await reopened.workspace()
@@ -174,6 +178,9 @@ actor WaitingEngine: Engine {
   await #expect(throws: CoreError.self) {
     try await core.assignGenerations(ids: ids, projectID: "missing")
   }
+  #expect(
+    try await reopened.workspace().tasks.first(where: { $0.id == staleRetry.id })?.request.projectID
+      == project.id)
   let take = try #require(assigned.takes.first)
   let variation = try await core.submit(core.requestForTake(id: take.id, reproduce: false))
   await #expect(throws: CoreError.self) {

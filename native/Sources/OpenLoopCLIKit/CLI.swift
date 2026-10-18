@@ -65,7 +65,8 @@ public struct OpenLoopCLI: Sendable {
       setup --accept-license
       models list | install PACK --accept-license | delete PACK --yes
       run --prompt TEXT [--configuration ID] [--lyrics TEXT] [--duration SECONDS]
-          [--seed INTEGER] [--takes COUNT] [--project ID_OR_NAME] [--format wav|mp3|flac] [--accept-license]
+          [--profile ID_OR_NAME] [--seed INTEGER] [--takes COUNT] [--project ID_OR_NAME]
+          [--format wav|mp3|flac] [--accept-license]
           [--repaint FILE --start SECONDS --end SECONDS]
       run --request FILE.json
       retry TASK_ID | stop TASK_ID

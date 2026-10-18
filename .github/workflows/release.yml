@@ -83,12 +83,6 @@ jobs:
           echo "APPLE_SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
           echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/notary-key.p8" >> "$GITHUB_ENV"
 
-      - name: Setup Node for verified uv sidecar
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          package-manager-cache: false
-
       - name: Verify release version
         run: |
           set -euo pipefail
@@ -106,20 +100,29 @@ jobs:
       - name: Validate documentation
         run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs
 
+      - name: Setup Node for verified uv sidecar
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Prepare Apple Silicon sidecar
+        run: node scripts/prepare-sidecars.mjs
+
       - name: Native compile check
         run: swift build --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
       - name: Native contracts
         run: swift test --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
-      - name: Prepare Apple Silicon sidecar
-        run: node scripts/prepare-sidecars.mjs
-
       - name: Test release signing and packaging gates
-        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py && python3 native/scripts/test-package-report.py
+        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py && python3 native/scripts/test-audio-encoder.py && python3 native/scripts/test-package-report.py
 
       - name: Package and verify signed native app and DMG
         run: python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --sign "$APPLE_SIGNING_IDENTITY" --notarize --dmg "$DMG_PATH"
+
+      - name: Packaged local audio export contracts
+        run: python3 native/scripts/test-audio-exports.py
 
       - name: Packaged headless CLI and signature smoke
         run: python3 native/scripts/smoke-cli.py

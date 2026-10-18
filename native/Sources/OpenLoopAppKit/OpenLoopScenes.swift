@@ -193,6 +193,10 @@ private struct WorkspaceToolbar: ToolbarContent {
       ToolbarItemGroup {
         Toggle("Favorites", systemImage: "star", isOn: $historyFavoritesOnly)
           .help("Show only favorites")
+        Button("Export Selected…", systemImage: "square.and.arrow.up") {
+          Task { await Platform.exportSelected(ids: model.historySelection, model: model) }
+        }
+        .disabled(model.historySelection.isEmpty)
         Button("Delete", systemImage: "trash") {
           model.pendingDeletion = model.historySelection
         }

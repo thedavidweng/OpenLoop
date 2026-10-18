@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import OpenLoopAudio
 import OpenLoopCore
@@ -91,7 +92,10 @@ private struct ScriptedEngine: Engine {
 }
 
 @MainActor
-private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool = true) async throws
+private func makeModel(
+  seed: Int64? = 7, fails: Bool = false, provisioned: Bool = true,
+  audioEncoder: URL = AudioConverter.bundledExecutable
+) async throws
   -> (WorkspaceModel, URL)
 {
   let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -101,7 +105,9 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
     try FileManager.default.createDirectory(at: runtime, withIntermediateDirectories: true)
     try Data().write(to: runtime.appendingPathComponent("pyproject.toml"))
   }
-  let core = try OpenLoopCore(directory: root, engines: [ScriptedEngine(seed: seed, fails: fails)])
+  let core = try OpenLoopCore(
+    directory: root, engines: [ScriptedEngine(seed: seed, fails: fails)], audioEncoder: audioEncoder
+  )
   try await core.recordInstallation(.init(id: "test/pack", state: .installed, directory: root))
   let runtime = AceRuntime(
     directory: root, bundledUV: root, settingsProvider: { try await core.settings() })
@@ -429,4 +435,44 @@ private func makeModel(seed: Int64? = 7, fails: Bool = false, provisioned: Bool 
   model.clearIteration()
   #expect(model.draft?.operation == .generate && model.draft?.editRegion == nil)
   #expect(model.draft?.references.isEmpty == true)
+}
+
+@MainActor @Test(arguments: AudioExportPreset.allCases)
+func exportUIModelConvertsSingleAndSelectedTakesWithMetadata(preset: AudioExportPreset) async throws
+{
+  let encoder = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    .appendingPathComponent("binaries/audio-encoder/ffmpeg")
+  let (model, root) = try await makeModel(audioEncoder: encoder)
+  defer { try? FileManager.default.removeItem(at: root) }
+  model.draft?.prompt = "Batch export piano"
+  model.draft?.lyrics = "Batch export lyrics"
+  model.draft?.takeCount = 2
+  await model.generate()
+  #expect(model.error == nil)
+  #expect(model.history.count == 2)
+  let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1))
+  let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 4410))
+  buffer.frameLength = 4410
+  for index in 0..<4410 { buffer.floatChannelData![0][index] = 0 }
+  for record in model.history {
+    let audio = try #require(record.artifacts.first { $0.kind == .audio })
+    let file = try AVAudioFile(forWriting: audio.url, settings: format.settings)
+    try file.write(from: buffer)
+  }
+  let record = try #require(model.history.first)
+  let audio = try #require(record.artifacts.first { $0.kind == .audio })
+  let source = try Data(contentsOf: audio.url)
+  let single = root.appendingPathComponent("single.\(preset.format)")
+  await model.export(generationID: record.id, artifactID: audio.id, to: single, preset: preset)
+  #expect(model.error == nil)
+  #expect(try Data(contentsOf: single).range(of: Data("Batch export lyrics".utf8)) != nil)
+  let batch = root.appendingPathComponent("batch")
+  try FileManager.default.createDirectory(at: batch, withIntermediateDirectories: false)
+  await model.exportGenerations(ids: Set(model.history.map(\.id)), to: batch, preset: preset)
+  #expect(model.error == nil)
+  #expect(try FileManager.default.contentsOfDirectory(atPath: batch.path).count == 2)
+  #expect(model.notice == "Exported 2 of 2 Takes")
+  #expect(try Data(contentsOf: audio.url) == source)
+  #expect(model.history.count == 2)
 }

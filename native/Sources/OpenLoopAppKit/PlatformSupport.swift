@@ -12,21 +12,58 @@ enum Platform {
 
   @MainActor
   static func export(_ artifact: Artifact, record: GenerationRecord, model: WorkspaceModel) async {
+    var preset: AudioExportPreset?
+    if artifact.kind == .audio {
+      guard let choice = chooseExportPreset(allowOriginal: true) else { return }
+      if choice > 0 { preset = AudioExportPreset.allCases[choice - 1] }
+    }
     let panel = NSSavePanel()
     panel.canCreateDirectories = true
-    panel.nameFieldStringValue = suggestedName(for: artifact, record: record)
-    if let type = UTType(filenameExtension: artifact.url.pathExtension) {
+    let name = suggestedName(for: artifact, record: record)
+    panel.nameFieldStringValue =
+      preset.map {
+        (name as NSString).deletingPathExtension + "." + $0.format
+      } ?? name
+    if let type = UTType(filenameExtension: preset?.format ?? artifact.url.pathExtension) {
       panel.allowedContentTypes = [type]
     }
     guard panel.runModal() == .OK, let destination = panel.url else { return }
-    // The save panel has already asked the user to confirm replacing an existing file.
-    if FileManager.default.fileExists(atPath: destination.path) {
-      do { try FileManager.default.trashItem(at: destination, resultingItemURL: nil) } catch {
-        model.error = error.localizedDescription
-        return
-      }
-    }
-    await model.export(generationID: record.id, artifactID: artifact.id, to: destination)
+    // NSSavePanel confirms replacement; Core publishes only after conversion succeeds.
+    await model.export(
+      generationID: record.id, artifactID: artifact.id, to: destination, preset: preset,
+      replaceExisting: true)
+  }
+
+  @MainActor
+  static func exportSelected(ids: Set<String>, model: WorkspaceModel) async {
+    guard let choice = chooseExportPreset(allowOriginal: false) else { return }
+    let preset = AudioExportPreset.allCases[choice]
+    let panel = NSOpenPanel()
+    panel.message = "Choose a folder for the selected Takes"
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.canCreateDirectories = true
+    guard panel.runModal() == .OK, let directory = panel.url else { return }
+    await model.exportGenerations(ids: ids, to: directory, preset: preset)
+  }
+
+  @MainActor
+  private static func chooseExportPreset(allowOriginal: Bool) -> Int? {
+    let alert = NSAlert()
+    alert.messageText = "Export audio"
+    alert.informativeText =
+      "Convert locally with Generation Record metadata. FLAC stores integer PCM; floating-point WAV is quantized. Original file preserves all source bytes."
+    alert.addButton(withTitle: "Continue")
+    alert.addButton(withTitle: "Cancel")
+    let choices =
+      (allowOriginal ? ["Original file (no conversion)"] : [])
+      + AudioExportPreset.allCases.map(\.title)
+    let picker = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 340, height: 28))
+    picker.addItems(withTitles: choices)
+    picker.setAccessibilityLabel("Export format and preset")
+    alert.accessoryView = picker
+    guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+    return picker.indexOfSelectedItem
   }
 
   static func suggestedName(for artifact: Artifact, record: GenerationRecord) -> String {

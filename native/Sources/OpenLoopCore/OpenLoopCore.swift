@@ -4,13 +4,17 @@ public actor OpenLoopCore {
   public nonisolated let directory: URL
   private let store: Persistence
   private let engines: [String: any Engine]
+  private let audioConverter: AudioConverter
   private var lease: GenerationLease?
   private var workers: [String: Task<Void, Never>] = [:]
   public static var defaultDirectory: URL {
     FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
       "Library/Application Support/com.openmusic.openloop")
   }
-  public init(directory: URL = OpenLoopCore.defaultDirectory, engines: [any Engine]) throws {
+  public init(
+    directory: URL = OpenLoopCore.defaultDirectory, engines: [any Engine],
+    audioEncoder: URL = AudioConverter.bundledExecutable
+  ) throws {
     guard Set(engines.map(\.id)).count == engines.count else {
       throw CoreError.invalid("Duplicate Engine IDs")
     }
@@ -18,6 +22,7 @@ public actor OpenLoopCore {
     self.directory = directory
     self.store = persistence
     self.engines = Dictionary(uniqueKeysWithValues: engines.map { ($0.id, $0) })
+    self.audioConverter = AudioConverter(executable: audioEncoder)
     try Self.recoverInterruptedTasks(store: persistence, directory: directory)
   }
   private static func recoverInterruptedTasks(store: Persistence, directory: URL) throws {
@@ -362,12 +367,50 @@ public actor OpenLoopCore {
       }
     }
   }
-  public func exportArtifact(generationID: String, artifactID: String, destination: URL) throws {
+  public func exportArtifact(
+    generationID: String, artifactID: String, destination: URL,
+    preset: AudioExportPreset? = nil, replaceExisting: Bool = false
+  ) async throws {
     let record = try store.get("generation", id: generationID, as: GenerationRecord.self)
     guard let artifact = record.artifacts.first(where: { $0.id == artifactID }), artifact.exists,
       destination.isFileURL
     else { throw CoreError.invalid("Artifact or destination is unavailable") }
-    try FileManager.default.copyItem(at: artifact.url, to: destination)
+    try validateExportDestination(destination)
+    if let preset {
+      guard artifact.kind == .audio else { throw CoreError.invalid("Only audio can be converted") }
+      try await audioConverter.convert(
+        input: artifact.url, destination: destination, preset: preset,
+        metadata: record.exportMetadata,
+        replaceExisting: replaceExisting)
+    } else if replaceExisting && FileManager.default.fileExists(atPath: destination.path) {
+      let staged = destination.deletingLastPathComponent()
+        .appendingPathComponent(".openloop-export-\(UUID().uuidString)")
+      try FileManager.default.copyItem(at: artifact.url, to: staged)
+      defer { try? FileManager.default.removeItem(at: staged) }
+      _ = try FileManager.default.replaceItemAt(destination, withItemAt: staged)
+    } else {
+      try FileManager.default.copyItem(at: artifact.url, to: destination)
+    }
+  }
+  public func convertFile(input: URL, destination: URL, preset: AudioExportPreset) async throws {
+    try validateExportDestination(destination)
+    let record = try store.all("generation", as: GenerationRecord.self).first { record in
+      record.artifacts.contains {
+        $0.kind == .audio && $0.url.resolvingSymlinksInPath() == input.resolvingSymlinksInPath()
+      }
+    }
+    try await audioConverter.convert(
+      input: input, destination: destination, preset: preset,
+      metadata: record?.exportMetadata ?? ["title": input.deletingPathExtension().lastPathComponent]
+    )
+  }
+  private func validateExportDestination(_ destination: URL) throws {
+    let owned = try store.all("generation", as: GenerationRecord.self).flatMap(\.artifacts)
+    guard destination.isFileURL,
+      !owned.contains(where: {
+        $0.url.resolvingSymlinksInPath() == destination.resolvingSymlinksInPath()
+      })
+    else { throw CoreError.invalid("Export must not replace a Generation Record's Artifact") }
   }
   public func shutdown() async throws {
     for id in Array(workers.keys) { try await cancel(taskID: id) }

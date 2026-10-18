@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Check release packaging order without building Swift or contacting Apple."""
 import os
+import hashlib
+import json
 from pathlib import Path
 import runpy
 import subprocess
@@ -11,11 +13,24 @@ from unittest.mock import patch
 
 
 class ReleasePackagingTests(unittest.TestCase):
-    def package(self, identity="Developer ID Application: Test (TESTTEAM)", key="test.p8", notarize=True):
+    def package(self, identity="Developer ID Application: Test (TESTTEAM)", key="test.p8", notarize=True,
+                corrupt=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for name in ("OpenLoop", "openloop-cli", "uv"):
+            for name in ("OpenLoop", "openloop-cli", "uv", "ffmpeg"):
                 (root / name).write_text("test executable")
+            encoder = root / "encoder"
+            encoder.mkdir()
+            (encoder / "ffmpeg").write_bytes((root / "ffmpeg").read_bytes())
+            (encoder / "Source").mkdir()
+            (encoder / "Source/source.tar.xz").write_bytes(b"source")
+            (encoder / "manifest.json").write_text(json.dumps({
+                "binary_sha256": hashlib.sha256((encoder / "ffmpeg").read_bytes()).hexdigest(),
+                "sources": [{"url": "https://example.com/source.tar.xz",
+                             "sha256": hashlib.sha256(b"source").hexdigest()}],
+            }))
+            if corrupt:
+                (encoder / corrupt).write_bytes(b"corrupted")
             output = root / "OpenLoop.app"
             dmg = root / "OpenLoop.dmg"
             calls = []
@@ -28,7 +43,7 @@ class ReleasePackagingTests(unittest.TestCase):
                        APPLE_SIGNING_KEYCHAIN="test.keychain-db", APPLE_TEAM_ID="TESTTEAM",
                        APPLE_API_KEY_PATH=key, APPLE_API_KEY_ID="KEYID", APPLE_API_ISSUER="issuer")
             argv = ["package-app.py", "--uv", str(root / "uv"), "--output", str(output),
-                    "--dmg", str(dmg), "--sign", identity]
+                    "--dmg", str(dmg), "--sign", identity, "--encoder-directory", str(encoder)]
             if notarize:
                 argv.append("--notarize")
             with patch.dict(os.environ, env, clear=True), patch.object(sys, "argv", argv), \
@@ -52,7 +67,8 @@ class ReleasePackagingTests(unittest.TestCase):
         self.assertTrue(calls[submissions[0]][-1].endswith("OpenLoop.app"))
         self.assertTrue(calls[submissions[1]][-1].endswith("OpenLoop.dmg"))
         nested = [call for call in calls if "--identifier" in call]
-        self.assertEqual(len(nested), 2)
+        self.assertEqual(len(nested), 3)
+        self.assertTrue(any(call[-1].endswith("/ffmpeg") for call in nested))
         for call in nested:
             self.assertIn("--timestamp", call)
             self.assertIn("runtime", call)
@@ -75,6 +91,14 @@ class ReleasePackagingTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertTrue(exists)
         self.assertFalse(any(call[0] == "bash" for call in calls))
+
+    def test_encoder_and_source_corruption_fail_before_build(self):
+        for path in ("ffmpeg", "Source/source.tar.xz"):
+            with self.subTest(path=path):
+                status, calls, exists = self.package(corrupt=path)
+                self.assertNotEqual(status, 0)
+                self.assertEqual(calls, [])
+                self.assertFalse(exists)
 
 
 if __name__ == "__main__":

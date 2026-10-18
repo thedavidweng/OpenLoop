@@ -75,7 +75,8 @@ public struct OpenLoopCLI: Sendable {
       delete GENERATION_ID --yes | clear --yes
       favorite GENERATION_ID [--off]
       export GENERATION_ID ARTIFACT_ID DESTINATION
-    Global executable options: --data-dir PATH, --uv PATH, --json
+      files convert INPUT --format mp3|flac|ogg [--output PATH] [--preset mp3|podcast|lossless|ogg]
+    Global executable options: --data-dir PATH, --uv PATH, --encoder PATH, --json
     """
   public func execute(arguments: [String], emit: @escaping CLIEventSink) async throws {
     var args = Arguments(values: arguments)
@@ -323,6 +324,21 @@ public struct OpenLoopCLI: Sendable {
       try args.finish()
       try await core.setFavorite(generationID: id, favorite: favorite)
       try await result("Favorite updated", emit)
+    case "files":
+      guard try args.positional() == "convert" else {
+        throw CoreError.invalid("Unknown files command")
+      }
+      let input = URL(fileURLWithPath: try args.positional())
+      guard let format = try args.option("--format") else {
+        throw CoreError.invalid("files convert requires --format mp3|flac|ogg")
+      }
+      let preset = try AudioExportPreset.select(format: format, preset: args.option("--preset"))
+      let destination =
+        try args.option("--output").map { URL(fileURLWithPath: $0) }
+        ?? input.deletingPathExtension().appendingPathExtension(format)
+      try args.finish()
+      try await core.convertFile(input: input, destination: destination, preset: preset)
+      try await result(destination.path, emit)
     case "export":
       let generation = try args.positional()
       let artifact = try args.positional()
@@ -379,9 +395,12 @@ public struct OpenLoopCLI: Sendable {
   }
 }
 
-public func openEnvironment(directory: URL?, uv: URL) async throws -> OpenLoopEnvironment {
+public func openEnvironment(
+  directory: URL?, uv: URL, audioEncoder: URL = AudioConverter.bundledExecutable
+) async throws -> OpenLoopEnvironment {
   try await OpenLoopEnvironment.open(
-    directory: directory ?? OpenLoopCore.defaultDirectory, bundledUV: uv)
+    directory: directory ?? OpenLoopCore.defaultDirectory, bundledUV: uv, audioEncoder: audioEncoder
+  )
 }
 
 extension CLIEvent {

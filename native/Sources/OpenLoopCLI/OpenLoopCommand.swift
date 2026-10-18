@@ -12,6 +12,7 @@ struct OpenLoopCommand {
         URL(fileURLWithPath: $0)
       }
       let uvPath = try removeOption("--uv", from: &arguments)
+      let encoderPath = try removeOption("--encoder", from: &arguments)
       if arguments.isEmpty || arguments == ["--help"] || arguments == ["help"] {
         if json {
           let event = CLIEvent(kind: "result", data: .string(OpenLoopCLI.usage))
@@ -25,7 +26,11 @@ struct OpenLoopCommand {
       let uv =
         uvPath.map { URL(fileURLWithPath: $0) }
         ?? executable.deletingLastPathComponent().appendingPathComponent("uv")
-      let environment = try await openEnvironment(directory: directory, uv: uv)
+      let encoder =
+        encoderPath.map { URL(fileURLWithPath: $0) }
+        ?? executable.deletingLastPathComponent().appendingPathComponent("ffmpeg")
+      let environment = try await openEnvironment(
+        directory: directory, uv: uv, audioEncoder: encoder)
       let cli = OpenLoopCLI(environment: environment)
       let execution = Task {
         try await cli.execute(arguments: arguments) { event in

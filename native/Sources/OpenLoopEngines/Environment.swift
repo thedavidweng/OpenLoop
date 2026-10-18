@@ -12,7 +12,10 @@ public struct OpenLoopEnvironment: Sendable {
     self.runtime = runtime
     self.installer = ModelInstaller(core: core, catalog: catalog)
   }
-  public static func open(directory: URL = OpenLoopCore.defaultDirectory, bundledUV: URL)
+  public static func open(
+    directory: URL = OpenLoopCore.defaultDirectory, bundledUV: URL,
+    audioEncoder: URL = AudioConverter.bundledExecutable
+  )
     async throws -> OpenLoopEnvironment
   {
     let catalog = EngineCatalog.firstParty
@@ -21,7 +24,8 @@ public struct OpenLoopEnvironment: Sendable {
       directory: directory, bundledUV: bundledUV,
       settingsProvider: { try await sharedState.settings() }, catalog: catalog)
     let adapter = AceStepEngine(runtime: runtime, catalog: catalog)
-    let core = try OpenLoopCore(directory: directory, engines: [adapter])
+    let core = try OpenLoopCore(
+      directory: directory, engines: [adapter], audioEncoder: audioEncoder)
     return OpenLoopEnvironment(core: core, catalog: catalog, runtime: runtime)
   }
 }

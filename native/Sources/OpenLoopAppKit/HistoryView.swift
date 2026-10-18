@@ -137,6 +137,9 @@ struct HistoryActions: View {
         Button("Delete…", role: .destructive) { model.pendingDeletion = [id] }
       }
     } else if !ids.isEmpty {
+      Button("Export \(ids.count) Takes…") {
+        Task { await Platform.exportSelected(ids: ids, model: model) }
+      }
       Button("Add to Favorites") {
         Task { for id in ids { await model.setFavorite(id: id, favorite: true) } }
       }

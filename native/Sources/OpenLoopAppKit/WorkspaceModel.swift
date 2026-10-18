@@ -96,7 +96,12 @@ public final class WorkspaceModel {
       ?? processEnvironment["OPENLOOP_UV"].map { URL(fileURLWithPath: $0) }
       ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/uv")
     do {
-      try await connect(environment: OpenLoopEnvironment.open(directory: directory, bundledUV: uv))
+      let encoder =
+        processEnvironment["OPENLOOP_AUDIO_ENCODER"].map { URL(fileURLWithPath: $0) }
+        ?? AudioConverter.bundledExecutable
+      try await connect(
+        environment: OpenLoopEnvironment.open(
+          directory: directory, bundledUV: uv, audioEncoder: encoder))
     } catch {
       connectionError = error.localizedDescription
     }
@@ -512,10 +517,34 @@ public final class WorkspaceModel {
       try await self.refresh()
     }
   }
-  public func export(generationID: String, artifactID: String, to destination: URL) async {
+  public func export(
+    generationID: String, artifactID: String, to destination: URL,
+    preset: AudioExportPreset? = nil, replaceExisting: Bool = false
+  ) async {
     await perform {
       try await self.core().exportArtifact(
-        generationID: generationID, artifactID: artifactID, destination: destination)
+        generationID: generationID, artifactID: artifactID, destination: destination,
+        preset: preset, replaceExisting: replaceExisting)
+      self.notice = "Exported \(destination.lastPathComponent)"
+    }
+  }
+  public func exportGenerations(ids: Set<String>, to directory: URL, preset: AudioExportPreset)
+    async
+  {
+    await perform {
+      let records = self.history.filter { ids.contains($0.id) }.sorted { $0.id < $1.id }
+      var completed = 0
+      for record in records {
+        guard let audio = record.artifacts.first(where: { $0.kind == .audio }) else {
+          throw CoreError.invalid("Take \(record.id) has no audio Artifact")
+        }
+        let name = audio.url.deletingPathExtension().lastPathComponent
+        let destination = directory.appendingPathComponent("\(name)-\(record.id).\(preset.format)")
+        try await self.core().exportArtifact(
+          generationID: record.id, artifactID: audio.id, destination: destination, preset: preset)
+        completed += 1
+        self.notice = "Exported \(completed) of \(records.count) Takes"
+      }
     }
   }
 

@@ -80,12 +80,13 @@ See the [CLI guide](docs/cli.md) and the [NDJSON v2 contract](docs/specs/native-
 
 ## Build from source
 
-Requires Apple Silicon, macOS 15+, Swift 6.2+, and Node.js 24+.
+Requires Apple Silicon, macOS 15+, Swift 6.2+, Node.js 24+, Python 3, make and
+pkg-config. Prepare the pinned encoder before running real conversion tests.
 
 ```sh
-swift build --package-path native
-swift test --package-path native
 node scripts/prepare-sidecars.mjs
+swift build --package-path native --jobs 2
+swift test --package-path native --jobs 2
 python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
 ```
 

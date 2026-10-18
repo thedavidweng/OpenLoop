@@ -140,8 +140,10 @@ the duplicated catalog, legacy tests, and build dependencies are removed.
 The native model manifest is authoritative. Historical acceptance runs above
 remain evidence of the migration, not commands supported by current main.
 
-`pnpm release:check` runs native compile/tests, documentation and CLA contracts.
-`pnpm release:build` prepares verified uv, packages the signed native app and
+Run `pnpm prepare:sidecars` first: native audio export tests use the actual pinned
+encoder, not a system tool or mock. `pnpm release:check` then runs native
+compile/tests, documentation and CLA contracts.
+`pnpm release:build` prepares verified uv and the local encoder, packages the signed native app and
 `native/dist/OpenLoop.dmg`, and runs packaged smoke. Existing outputs are never
 overwritten; remove a previous local candidate explicitly before rebuilding.
 Manual hardware/distribution publication gates above remain open.

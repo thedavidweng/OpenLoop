@@ -60,7 +60,7 @@ public struct OpenLoopCLI: Sendable {
       status | catalog | list [--project ID_OR_NAME] | ps
       project list | create NAME | rename ID NAME | delete ID
       profiles list | create NAME [--configuration ID] [--duration SECONDS] [--format FORMAT]
-          | delete ID_OR_NAME
+          | rename ID_OR_NAME NAME | delete ID_OR_NAME
       settings get | set FILE.json
       setup --accept-license
       models list | install PACK --accept-license | delete PACK --yes
@@ -146,6 +146,13 @@ public struct OpenLoopCLI: Sendable {
         try await result(
           await core.createProfile(
             name: name, selection: selection, duration: duration, audioFormat: format), emit)
+      case "rename":
+        let value = try args.positional()
+        let name = try args.positional()
+        try args.finish()
+        let profile = try await core.profile(matching: value)
+        try await core.renameProfile(id: profile.id, name: name)
+        try await result("Profile renamed", emit)
       case "delete":
         let value = try args.positional()
         try args.finish()

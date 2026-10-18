@@ -148,16 +148,41 @@ actor EventLog {
   #expect(record.request.duration == 17)
   #expect(record.request.audioFormat == "flac")
 
+  try await cli.execute(arguments: ["profiles", "rename", profile.name, "Production"]) { _ in }
+  var renamed = profile
+  renamed.name = "Production"
+  let reopened = try OpenLoopCore(directory: root, engines: [FakeEngine()])
+  #expect(try await reopened.profile(matching: "Production") == renamed)
+  #expect(try await reopened.workspace().history.first?.request.profileName == profile.name)
+  for arguments in [
+    ["profiles", "rename", profile.id, " \n"],
+    ["profiles", "rename", "missing", "New"],
+    ["profiles", "rename", profile.id],
+    ["profiles", "rename", profile.id, "New", "--unknown"],
+  ] {
+    await #expect(throws: CoreError.self) {
+      try await cli.execute(arguments: arguments) { _ in }
+    }
+  }
+  #expect(try await core.profile(matching: profile.id) == renamed)
   let second = try await core.createProfile(
-    name: profile.name, selection: testSelection, duration: 18, audioFormat: "wav")
+    name: renamed.name, selection: testSelection, duration: 18, audioFormat: "wav")
   await #expect(throws: CoreError.self) {
-    try await cli.execute(arguments: ["run", "--profile", profile.name, "--prompt", "ambiguous"]) {
+    try await cli.execute(arguments: ["run", "--profile", renamed.name, "--prompt", "ambiguous"]) {
       _ in
     }
   }
+  await #expect(throws: CoreError.self) {
+    try await cli.execute(arguments: ["profiles", "rename", renamed.name, "Ambiguous"]) { _ in }
+  }
+  try await cli.execute(arguments: ["profiles", "rename", profile.id, "By ID"]) { _ in }
+  renamed.name = "By ID"
   try await cli.execute(arguments: ["profiles", "delete", second.id]) { _ in }
-  let reopened = try OpenLoopCore(directory: root, engines: [FakeEngine()])
-  #expect(try await reopened.workspace().profiles == [profile])
+  #expect(try await reopened.workspace().profiles == [renamed])
+  try await cli.execute(arguments: ["run", "--profile", renamed.name, "--prompt", "new name"]) {
+    _ in
+  }
+  #expect(try await core.workspace().history.first?.request.profileName == renamed.name)
 }
 
 @Test func cliRepaintsAnExternalFileAndKeepsTheSourceUnchanged() async throws {

@@ -18,6 +18,7 @@ struct ComposeView: View {
       Form {
         engineSection
         if model.draft != nil {
+          ProfileSection()
           iterationBanner
           if isRegionEdit { editRegionSection }
           ideaSection

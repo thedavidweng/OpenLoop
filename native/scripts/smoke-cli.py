@@ -52,6 +52,13 @@ with tempfile.TemporaryDirectory(prefix="openloop-cli-smoke-") as directory:
                        check=True, capture_output=True, text=True, timeout=15)
         run("project", "create", "Packaged idea")
         assert run("project", "list")[0]["data"][0]["name"] == "Packaged idea"
+        profile = run("profiles", "create", "Draft", "--configuration", "ace-step/pro",
+                      "--duration", "10", "--format", "flac")[0]["data"]
+        run("profiles", "rename", "Draft", "Production")
+        saved = run("profiles", "list")[0]["data"]
+        assert saved == [dict(profile, name="Production")], saved
+        run("profiles", "delete", profile["id"])
+        assert run("profiles", "list")[0]["data"] == []
         settings = run("settings", "get")[0]["data"]
         settings["backendPort"] = port
         path = root / "settings.json"

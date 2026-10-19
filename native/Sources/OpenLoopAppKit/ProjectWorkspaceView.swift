@@ -22,7 +22,7 @@ struct ProjectWorkspaceView: View {
           .frame(width: columns.divider)
           .contentShape(Rectangle())
           .gesture(
-            DragGesture()
+            DragGesture(coordinateSpace: .global)
               .updating($dragOffset) { value, offset, _ in offset = value.translation.width }
               .onEnded { value in
                 composeWidth =

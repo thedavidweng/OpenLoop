@@ -9,7 +9,8 @@ from pathlib import Path
 
 
 def breakdown(bundle):
-    sizes = dict(gui=0, cli=0, uv=0, resources=0, icons=0, other=0)
+    sizes = dict(gui=0, cli=0, uv=0, encoder=0, encoder_compliance=0,
+                 resources=0, icons=0, other=0)
     for path in bundle.rglob("*"):
         if path.is_symlink() or not path.is_file():
             continue
@@ -20,6 +21,10 @@ def breakdown(bundle):
             category = "cli"
         elif relative == "Contents/MacOS/uv":
             category = "uv"
+        elif relative == "Contents/MacOS/ffmpeg":
+            category = "encoder"
+        elif relative.startswith("Contents/Resources/AudioEncoder/"):
+            category = "encoder_compliance"
         elif path.suffix == ".icns":
             category = "icons"
         elif any(part.endswith(".bundle") for part in path.relative_to(bundle).parts):

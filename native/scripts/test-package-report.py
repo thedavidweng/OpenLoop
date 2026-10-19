@@ -16,6 +16,9 @@ class PackageReportTests(unittest.TestCase):
                 "Contents/MacOS/OpenLoop": 10,
                 "Contents/MacOS/openloop-cli": 20,
                 "Contents/MacOS/uv": 30,
+                "Contents/MacOS/ffmpeg": 70,
+                "Contents/Resources/AudioEncoder/sources/ffmpeg.tar.xz": 80,
+                "Contents/Resources/AudioEncoder/licenses/COPYING.LGPLv2.1": 90,
                 "Contents/Resources/Engine.bundle/catalog.json": 40,
                 "Contents/Resources/OpenLoop.icns": 50,
                 "Contents/Info.plist": 60,
@@ -26,11 +29,14 @@ class PackageReportTests(unittest.TestCase):
                 path.write_bytes(b"x" * size)
             (bundle / "Contents/MacOS/Engine.bundle").symlink_to("../Resources/Engine.bundle")
             (bundle / "Contents/Resources/icon-link").symlink_to("OpenLoop.icns")
+            (bundle / "Contents/Resources/AudioEncoder/source-link").symlink_to(
+                "sources/ffmpeg.tar.xz")
             report = breakdown(bundle)
-            self.assertEqual(report["app_bytes"], 210)
+            self.assertEqual(report["app_bytes"], 450)
             self.assertEqual(
                 {key: value["bytes"] for key, value in report["components"].items()},
-                dict(gui=10, cli=20, uv=30, resources=40, icons=50, other=60))
+                dict(gui=10, cli=20, uv=30, encoder=70, encoder_compliance=170,
+                     resources=40, icons=50, other=60))
             self.assertAlmostEqual(
                 sum(value["percent"] for value in report["components"].values()), 100, places=2)
 

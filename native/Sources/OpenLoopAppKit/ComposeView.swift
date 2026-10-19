@@ -54,6 +54,12 @@ struct ComposeView: View {
       set: { model.draft?[keyPath: keyPath] = $0 })
   }
 
+  static func fixedSeedBinding(for model: WorkspaceModel) -> Binding<Bool> {
+    Binding(
+      get: { model.draft?.seed != nil },
+      set: { model.setFixedSeed($0) })
+  }
+
   @ViewBuilder private var engineSection: some View {
     Section {
       Picker(
@@ -277,12 +283,7 @@ struct ComposeView: View {
       if shows(.reproducibility) {
         Toggle(
           "Fixed seed",
-          isOn: Binding(
-            get: { model.draft?.seed != nil },
-            set: {
-              model.draft?.seed =
-                $0 ? (model.draft?.seed ?? Int64.random(in: 0...Int64(Int32.max))) : nil
-            })
+          isOn: Self.fixedSeedBinding(for: model)
         )
         .help("Use the same seed and settings to reproduce a Take exactly")
         if model.draft?.seed != nil {

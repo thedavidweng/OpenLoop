@@ -134,6 +134,34 @@ private func makeModel(
   #expect(sanitized.duration == 30)
 }
 
+@MainActor @Test func fixedSeedBindingPreservesExistingSeedAndOtherDraftFields() async throws {
+  let (model, root) = try await makeModel()
+  defer { try? FileManager.default.removeItem(at: root) }
+  model.draft?.prompt = "Keep my idea"
+  model.draft?.lyrics = "Keep my lyrics"
+  model.draft?.seed = 42
+  let original = model.draft
+  let binding = ComposeView.fixedSeedBinding(for: model)
+  #expect(binding.wrappedValue)
+  binding.wrappedValue = true
+  #expect(model.draft == original)
+  binding.wrappedValue = false
+  #expect(!binding.wrappedValue)
+  #expect(model.draft?.seed == nil)
+  binding.wrappedValue = true
+  let generated = try #require(model.draft?.seed)
+  #expect((0...Int64(Int32.max)).contains(generated))
+  binding.wrappedValue = true
+  #expect(model.draft?.seed == generated)
+  #expect(model.draft?.prompt == original?.prompt)
+  #expect(model.draft?.lyrics == original?.lyrics)
+  #expect(model.draft?.selection == original?.selection)
+  model.draft = nil
+  binding.wrappedValue = true
+  binding.wrappedValue = false
+  #expect(model.draft == nil)
+}
+
 @MainActor @Test func profilesManageComposeDefaultsWithoutRewritingHistory() async throws {
   let (model, root) = try await makeModel()
   defer { try? FileManager.default.removeItem(at: root) }

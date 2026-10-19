@@ -279,10 +279,7 @@ struct ComposeView: View {
           "Fixed seed",
           isOn: Binding(
             get: { model.draft?.seed != nil },
-            set: {
-              model.draft?.seed =
-                $0 ? (model.draft?.seed ?? Int64.random(in: 0...Int64(Int32.max))) : nil
-            })
+            set: { model.setFixedSeed($0) })
         )
         .help("Use the same seed and settings to reproduce a Take exactly")
         if model.draft?.seed != nil {

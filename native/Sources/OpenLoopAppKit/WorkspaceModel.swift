@@ -209,6 +209,12 @@ public final class WorkspaceModel {
     } catch { self.error = error.localizedDescription }
   }
 
+  public func setFixedSeed(_ enabled: Bool) {
+    // Finish reading the observed draft before starting its optional writeback.
+    let seed = enabled ? (draft?.seed ?? Int64.random(in: 0...Int64(Int32.max))) : nil
+    draft?.seed = seed
+  }
+
   // MARK: Profiles
 
   public var profiles: [GenerationProfile] {

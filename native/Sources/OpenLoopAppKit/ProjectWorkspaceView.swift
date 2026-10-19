@@ -5,19 +5,66 @@ struct ProjectWorkspaceView: View {
   let projectID: String?
   @Environment(WorkspaceModel.self) private var model
   @Environment(PlaybackModel.self) private var playback
+  @State private var composeWidth: CGFloat = 370
+  @GestureState private var dragOffset: CGFloat = 0
 
   var body: some View {
-    @Bindable var model = model
-    HSplitView {
-      ComposeView()
-        .frame(minWidth: 320, idealWidth: 370, maxWidth: 520)
-      VStack(spacing: 0) {
-        TakesList(projectID: projectID)
+    // A nested NSSplitView feeds its intrinsic minimum back into the inspector
+    // split on macOS 26. Size these columns from the parent's proposal instead.
+    GeometryReader { geometry in
+      let base = WorkspaceColumns(width: geometry.size.width, preferred: composeWidth)
+      let columns = WorkspaceColumns(
+        width: geometry.size.width, preferred: base.compose + dragOffset)
+      HStack(spacing: 0) {
+        ComposeView().frame(width: columns.compose)
         Divider()
-        TransportBar(comparison: true)
+          .padding(.horizontal, 3)
+          .frame(width: columns.divider)
+          .contentShape(Rectangle())
+          .gesture(
+            DragGesture(coordinateSpace: .global)
+              .updating($dragOffset) { value, offset, _ in offset = value.translation.width }
+              .onEnded { value in
+                composeWidth =
+                  WorkspaceColumns(
+                    width: geometry.size.width, preferred: base.compose + value.translation.width
+                  ).compose
+              }
+          )
+          .accessibilityLabel("Compose width")
+          .accessibilityValue("\(Int(columns.compose)) points")
+          .accessibilityAdjustableAction { direction in
+            let step: CGFloat = direction == .increment ? 20 : -20
+            composeWidth =
+              WorkspaceColumns(
+                width: geometry.size.width, preferred: columns.compose + step
+              ).compose
+          }
+          .help("Drag to resize Compose and Takes")
+        VStack(spacing: 0) {
+          TakesList(projectID: projectID)
+          Divider()
+          TransportBar(comparison: true)
+        }
+        .frame(width: columns.takes)
       }
-      .frame(minWidth: 380)
     }
+  }
+}
+
+struct WorkspaceColumns {
+  let compose: CGFloat
+  let takes: CGFloat
+  let divider: CGFloat
+
+  init(width: CGFloat, preferred: CGFloat) {
+    let width = max(0, width)
+    divider = min(7, width)
+    let available = width - divider
+    let maximum = min(520, max(0, available - 380))
+    let minimum = min(320, maximum)
+    compose = min(maximum, max(minimum, preferred))
+    takes = available - compose
   }
 }
 

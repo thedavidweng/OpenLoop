@@ -12,8 +12,9 @@ struct ProjectWorkspaceView: View {
     // A nested NSSplitView feeds its intrinsic minimum back into the inspector
     // split on macOS 26. Size these columns from the parent's proposal instead.
     GeometryReader { geometry in
+      let base = WorkspaceColumns(width: geometry.size.width, preferred: composeWidth)
       let columns = WorkspaceColumns(
-        width: geometry.size.width, preferred: composeWidth + dragOffset)
+        width: geometry.size.width, preferred: base.compose + dragOffset)
       HStack(spacing: 0) {
         ComposeView().frame(width: columns.compose)
         Divider()
@@ -26,7 +27,7 @@ struct ProjectWorkspaceView: View {
               .onEnded { value in
                 composeWidth =
                   WorkspaceColumns(
-                    width: geometry.size.width, preferred: composeWidth + value.translation.width
+                    width: geometry.size.width, preferred: base.compose + value.translation.width
                   ).compose
               }
           )

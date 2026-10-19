@@ -385,8 +385,8 @@ public actor OpenLoopCore {
     } else if replaceExisting && FileManager.default.fileExists(atPath: destination.path) {
       let staged = destination.deletingLastPathComponent()
         .appendingPathComponent(".openloop-export-\(UUID().uuidString)")
-      try FileManager.default.copyItem(at: artifact.url, to: staged)
       defer { try? FileManager.default.removeItem(at: staged) }
+      try FileManager.default.copyItem(at: artifact.url, to: staged)
       _ = try FileManager.default.replaceItemAt(destination, withItemAt: staged)
     } else {
       try FileManager.default.copyItem(at: artifact.url, to: destination)

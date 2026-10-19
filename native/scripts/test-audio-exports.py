@@ -43,14 +43,14 @@ def main():
             stream.writeframes(pcm)
         original = source.read_bytes()
         # Conversion must not depend on Homebrew/PATH tools or the inference runtime.
-        env = dict(os.environ, PATH="/usr/bin:/bin")
+        env = dict(os.environ, PATH=f"{root}:/usr/bin:/bin")
         linked = root / "openloop"
         linked.symlink_to(cli)
 
         def run(*arguments, success=True):
             result = subprocess.run(
-                [str(linked), "--data-dir", str(root / "library"), "--json", *arguments],
-                env=env, capture_output=True, text=True, timeout=30)
+                [linked.name, "--data-dir", str(root / "library"), "--json", *arguments],
+                cwd="/", env=env, capture_output=True, text=True, timeout=30)
             assert (result.returncode == 0) == success, (arguments, result.stdout, result.stderr)
             events = [json.loads(line) for line in (result.stdout if success else result.stderr).splitlines()]
             assert events and all(event["v"] == 2 for event in events), result

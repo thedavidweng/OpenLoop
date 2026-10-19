@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 class ReleasePackagingTests(unittest.TestCase):
     def package(self, identity="Developer ID Application: Test (TESTTEAM)", key="test.p8", notarize=True,
-                corrupt=None):
+                corrupt=None, sources=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for name in ("OpenLoop", "openloop-cli", "uv", "ffmpeg"):
@@ -24,10 +24,11 @@ class ReleasePackagingTests(unittest.TestCase):
             (encoder / "ffmpeg").write_bytes((root / "ffmpeg").read_bytes())
             (encoder / "Source").mkdir()
             (encoder / "Source/source.tar.xz").write_bytes(b"source")
+            pinned = [{"url": "https://example.com/source.tar.xz",
+                       "sha256": hashlib.sha256(b"source").hexdigest()}]
             (encoder / "manifest.json").write_text(json.dumps({
                 "binary_sha256": hashlib.sha256((encoder / "ffmpeg").read_bytes()).hexdigest(),
-                "sources": [{"url": "https://example.com/source.tar.xz",
-                             "sha256": hashlib.sha256(b"source").hexdigest()}],
+                "sources": pinned if sources is None else sources,
             }))
             if corrupt:
                 (encoder / corrupt).write_bytes(b"corrupted")
@@ -46,7 +47,15 @@ class ReleasePackagingTests(unittest.TestCase):
                     "--dmg", str(dmg), "--sign", identity, "--encoder-directory", str(encoder)]
             if notarize:
                 argv.append("--notarize")
+            run_path = runpy.run_path
+
+            def load(path, **kwargs):
+                if str(path).endswith("prepare-audio-encoder.py"):
+                    return {"SOURCES": [(s["url"], s["sha256"]) for s in pinned]}
+                return run_path(path, **kwargs)
+
             with patch.dict(os.environ, env, clear=True), patch.object(sys, "argv", argv), \
+                    patch("runpy.run_path", side_effect=load), \
                     patch("subprocess.run", side_effect=run), \
                     patch("subprocess.check_output", return_value=str(root)):
                 try:
@@ -99,6 +108,13 @@ class ReleasePackagingTests(unittest.TestCase):
                 self.assertNotEqual(status, 0)
                 self.assertEqual(calls, [])
                 self.assertFalse(exists)
+
+    def test_missing_or_extra_sources_fail_before_build(self):
+        for sources in ([], [{"url": "https://example.com/other.tar.xz", "sha256": "0" * 64}]):
+            status, calls, exists = self.package(sources=sources)
+            self.assertNotEqual(status, 0)
+            self.assertEqual(calls, [])
+            self.assertFalse(exists)
 
 
 if __name__ == "__main__":

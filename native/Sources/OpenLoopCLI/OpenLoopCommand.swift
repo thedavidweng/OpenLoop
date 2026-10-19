@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import OpenLoopCLIKit
+import OpenLoopCore
 
 @main
 struct OpenLoopCommand {
@@ -22,13 +23,15 @@ struct OpenLoopCommand {
         }
         return
       }
-      let executable = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath()
+      let executable =
+        (Bundle.main.executableURL ?? URL(fileURLWithPath: CommandLine.arguments[0]))
+        .resolvingSymlinksInPath()
       let uv =
         uvPath.map { URL(fileURLWithPath: $0) }
         ?? executable.deletingLastPathComponent().appendingPathComponent("uv")
       let encoder =
         encoderPath.map { URL(fileURLWithPath: $0) }
-        ?? executable.deletingLastPathComponent().appendingPathComponent("ffmpeg")
+        ?? AudioConverter.bundledExecutable
       let environment = try await openEnvironment(
         directory: directory, uv: uv, audioEncoder: encoder)
       let cli = OpenLoopCLI(environment: environment)

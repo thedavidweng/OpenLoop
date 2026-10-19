@@ -31,16 +31,28 @@ def verify(path, expected):
         raise ValueError(f"SHA-256 mismatch for {path.name}: expected {expected}, got {actual}")
 
 
+def download(url, archive, digest):
+    if archive.exists():
+        verify(archive, digest)
+        return
+    with tempfile.NamedTemporaryFile(dir=archive.parent, delete=False) as stream:
+        staged = Path(stream.name)
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            staged.write_bytes(response.read())
+        verify(staged, digest)
+        staged.replace(archive)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
 def build(sources, output):
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise RuntimeError("Audio encoder packaging requires Apple Silicon macOS")
     sources.mkdir(parents=True, exist_ok=True)
     for url, digest in SOURCES:
         archive = sources / url.rsplit("/", 1)[1]
-        if not archive.exists():
-            with urllib.request.urlopen(url, timeout=30) as response:
-                archive.write_bytes(response.read())
-        verify(archive, digest)
+        download(url, archive, digest)
 
     # Serialize compiler work with the other native implementation worker.
     with open("/tmp/openloop-heavy-build.lock", "a") as lock:

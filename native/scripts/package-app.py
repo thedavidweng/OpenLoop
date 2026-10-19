@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import plistlib
+import runpy
 import shutil
 import subprocess
 import tempfile
@@ -34,6 +35,10 @@ encoder = args.encoder_directory
 if not (encoder / "manifest.json").is_file() or not (encoder / "ffmpeg").is_file():
     parser.error("Prepare the pinned audio encoder with scripts/prepare-audio-encoder.py")
 manifest = json.loads((encoder / "manifest.json").read_text())
+expected_sources = [{"url": url, "sha256": digest} for url, digest in
+                    runpy.run_path(str(root / "scripts/prepare-audio-encoder.py"))["SOURCES"]]
+if manifest.get("sources") != expected_sources:
+    parser.error("Audio encoder sources must match all repository-pinned archives")
 if hashlib.sha256((encoder / "ffmpeg").read_bytes()).hexdigest() != manifest["binary_sha256"]:
     parser.error("Audio encoder SHA-256 mismatch")
 for source in manifest["sources"]:

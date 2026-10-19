@@ -70,12 +70,13 @@ CLI=/Applications/OpenLoop.app/Contents/MacOS/openloop-cli
 
 ## 从源码构建
 
-需要 Apple Silicon、macOS 15+、Swift 6.2+ 和 Node.js 24+。
+需要 Apple Silicon、macOS 15+、Swift 6.2+、Node.js 24+、Python 3、make 和
+pkg-config。真实转换测试前需先准备固定版本的 encoder。
 
 ```sh
-swift build --package-path native
-swift test --package-path native
 node scripts/prepare-sidecars.mjs
+swift build --package-path native --jobs 2
+swift test --package-path native --jobs 2
 python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
 ```
 

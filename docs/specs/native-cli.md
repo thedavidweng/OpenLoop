@@ -80,6 +80,34 @@ Runtime changes affect the next start. `--data-dir PATH` isolates all state for
 experiments; GUI and CLI normally use the same app-support directory. `--uv PATH`
 is a developer override for the bundled executable, not a system-Python fallback.
 
+## Local audio conversion
+
+```sh
+openloop files convert take.wav --format mp3
+openloop files convert take.wav --format flac --output archive.flac
+openloop files convert take.wav --format mp3 --preset podcast --output podcast.mp3
+openloop files convert take.wav --format ogg
+```
+
+`--format` is required (`mp3`, `flac`, `ogg`). The default destination replaces
+the input extension; `--output` must have the selected format's extension and
+its parent directory must exist. Presets are `mp3` (192 kb/s, default for MP3),
+`podcast` (MP3 mono, 44.1 kHz, 96 kb/s), `lossless` (FLAC, default for FLAC), and
+`ogg` (Vorbis quality 5, default for OGG). A preset must match `--format`.
+CLI conversion never overwrites an existing destination or a stored Artifact.
+On success the v2 `result.data` is the destination path. Invalid options, missing
+encoder, malformed audio and encoder failures produce a nonzero exit and v2
+`error` on stderr; there is no system encoder or alternate-format fallback.
+
+When the input path matches a Generation Record's audio Artifact, conversion
+includes its title/artist/genre, prompt and lyrics. Standalone files use their
+filename as title. Source files and Generation Records are never rewritten.
+The bundled encoder works offline without an inference runtime. Development
+builds require explicit `--encoder native/binaries/audio-encoder/ffmpeg`; the
+packaged CLI resolves its own symlink before locating the adjacent encoder.
+See [audio export and distribution](../audio-exports.md) for tag mapping,
+FLAC precision, licenses, source pins and rebuilding.
+
 `delete`, `clear`, and model deletion require `--yes`; export refuses to overwrite
 a destination. Project deletion keeps completed Takes in cross-project History.
 `stop TASK_ID` and Ctrl-C cancel the current Generation Task. Interrupted tasks

@@ -10,18 +10,25 @@ the native import still supports existing user libraries.
 ## Build and test
 
 ```sh
-swift build --package-path native -Xswiftc -warnings-as-errors
-swift test --package-path native
+pnpm prepare:sidecars
+swift build --package-path native --jobs 2 -Xswiftc -warnings-as-errors
+swift test --package-path native --jobs 2
 swift run --package-path native openloop-cli help
 python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin
+python3 native/scripts/test-audio-exports.py
 python3 native/scripts/smoke-cli.py
 ```
+
+Sidecar preparation builds the hash-pinned local audio encoder from source;
+real conversion tests require it. On FileProvider-managed directories, use a
+scratch directory outside that provider (for example `--scratch-path /tmp/openloop-build`)
+if generated test bundles acquire FinderInfo attributes that prevent signing.
 
 Use `--data-dir /tmp/openloop-native-test` while evaluating migration/builds.
 The GUI accepts the same overrides through `OPENLOOP_DATA_DIR` and `OPENLOOP_UV`
 (for example `open -n --env OPENLOOP_DATA_DIR=/tmp/openloop-native-test
 native/dist/OpenLoop.app`). The bundle contains `OpenLoop` (GUI), `openloop-cli`
-and `uv`; the CLI keeps its `-cli` suffix because a case-insensitive volume would
+`uv` and `ffmpeg`; the CLI keeps its `-cli` suffix because a case-insensitive volume would
 otherwise let `openloop` replace the GUI executable.
 Stop the legacy app before first native launch and back up its database. Native
 GUI and CLI share `~/Library/Application Support/com.openmusic.openloop/openloop.sqlite3`.
@@ -62,8 +69,8 @@ validated by `AceStepEngine`, not arbitrary form schemas.
 
 ## Runtime operation
 
-Prepare the verified uv sidecar with the existing `pnpm prepare:sidecars` script
-before packaging. The app bundles it next to GUI/CLI executables; developer CLI
+Prepare the verified uv and audio sidecars with the existing `pnpm prepare:sidecars` script
+before packaging. The app bundles them next to GUI/CLI executables; developer CLI
 runs can specify `--uv PATH`. No system uv/Python lookup is used for inference.
 
 ```sh
@@ -96,6 +103,17 @@ ACE-Step has no server cancellation endpoint: cancellation stops waiting and
 publication of late outputs while computation may continue. Backend-impacting
 Settings take effect on the next runtime start; stop/reopen the owned runtime
 before using new runtime settings. No automatic restart is implied.
+
+## Local audio export
+
+The existing Take/History Export action offers original-file copy or local
+MP3, FLAC and Ogg Vorbis conversion. History also exports selected Takes to a
+folder with a shared preset. Conversion uses Generation Record tags and never
+changes the source audio or History. The Podcast preset creates mono 96 kb/s MP3;
+Lossless archive creates FLAC (floating-point sources are quantized, not
+bit-preserved). `files convert INPUT --format mp3|flac|ogg` exposes the same
+Core path headlessly. See [audio exports](../docs/audio-exports.md) for the full
+contract, developer encoder override, source pins, licenses and rebuilding.
 
 ## Parity boundary
 

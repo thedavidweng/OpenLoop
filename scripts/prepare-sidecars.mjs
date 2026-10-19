@@ -5,7 +5,7 @@ import { get } from "node:https";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFile } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 
 const UV_VERSION = process.env.OPENLOOP_UV_VERSION ?? "0.11.7";
 const ROOT_DIR = fileURLToPath(new URL("..", import.meta.url));
@@ -46,6 +46,12 @@ try {
   rmSync(extractDir, { recursive: true, force: true });
 }
 
+const audio = spawnSync("python3", [join(ROOT_DIR, "scripts", "prepare-audio-encoder.py")], {
+  stdio: "inherit",
+});
+if (audio.error) throw audio.error;
+if (audio.status !== 0) throw new Error(`Audio encoder preparation exited ${audio.status}`);
+
 function download(url, destination) {
   return new Promise((resolve, reject) => {
     const request = get(url, (response) => {
@@ -73,6 +79,7 @@ function download(url, destination) {
       });
       file.on("error", reject);
     });
+    request.setTimeout(30_000, () => request.destroy(new Error(`Download timed out: ${url}`)));
     request.on("error", reject);
   });
 }

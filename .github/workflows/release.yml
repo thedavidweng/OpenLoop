@@ -106,20 +106,23 @@ jobs:
       - name: Validate documentation
         run: node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs && node scripts/check-cla.test.cjs
 
+      - name: Prepare Apple Silicon sidecar
+        run: node scripts/prepare-sidecars.mjs
+
       - name: Native compile check
         run: swift build --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
       - name: Native contracts
         run: swift test --package-path native --jobs 2 -Xswiftc -warnings-as-errors
 
-      - name: Prepare Apple Silicon sidecar
-        run: node scripts/prepare-sidecars.mjs
-
       - name: Test release signing and packaging gates
-        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py && python3 native/scripts/test-package-report.py
+        run: python3 native/scripts/test-notarization.py && python3 native/scripts/test-package-app.py && python3 native/scripts/test-audio-encoder.py && python3 native/scripts/test-package-report.py
 
       - name: Package and verify signed native app and DMG
         run: python3 native/scripts/package-app.py --uv native/binaries/uv-aarch64-apple-darwin --sign "$APPLE_SIGNING_IDENTITY" --notarize --dmg "$DMG_PATH"
+
+      - name: Packaged local audio export contracts
+        run: python3 native/scripts/test-audio-exports.py
 
       - name: Packaged headless CLI and signature smoke
         run: python3 native/scripts/smoke-cli.py

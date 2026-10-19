@@ -5,16 +5,31 @@ run it, and when to run it.
 
 ## `prepare-sidecars.mjs`
 
-Downloads and stages the `uv` sidecar binaries that the Python backend needs at
-runtime.
+Downloads and stages verified `uv`, then builds the pinned local audio encoder.
 
 - **Input:** none (pins `uv` version via `OPENLOOP_UV_VERSION`, default
   `0.11.7`)
 - **Output:** verified `uv` binaries under `native/binaries/`, with archive
-  downloads cached in `native/binaries/.cache`
+  downloads cached in `native/binaries/.cache`, plus the audio output below
 - **Run:** `node scripts/prepare-sidecars.mjs` or `pnpm prepare:sidecars`
 - **When to run:** before native packaging; CI and release workflows verify the sidecar
 - **Failure:** exits non-zero if a download or checksum verification fails
+
+## `prepare-audio-encoder.py`
+
+Builds the local-only arm64 FFmpeg/LAME/Vorbis sidecar, not a system-tool lookup.
+
+- **Input:** four official source archives with fixed SHA-256 pins; Apple Silicon
+  macOS, Xcode tools, Python 3, make and pkg-config
+- **Output:** `native/binaries/audio-encoder/ffmpeg`, licenses, full source
+  archives and rebuild recipe in `Source/`; generated `manifest.json` records
+  pins, binary hash/bytes, compiler/configuration and system-only dylibs
+- **Run:** `python3 scripts/prepare-audio-encoder.py`; explicit `--sources DIR
+  --output DIR` supports offline rebuilding from the app's bundled sources
+- **When to run:** before native tests or packaging; holds the shared heavy-build
+  lock and uses make -j2. Source hashes and non-system linkage failures are fatal.
+- **Policy:** [audio exports](../docs/audio-exports.md) documents source pins,
+  license/source delivery, component sizes, nested signing and upgrade checks.
 
 ## `validate-readme.mjs`
 
@@ -54,12 +69,15 @@ alternative. Historical unsigned release notes retain their original instruction
   for the test process with `-NSRequiresAquaSystemAppearance YES`.
 - `native/scripts/package-app.py --uv PATH` builds an ad-hoc signed Apple Silicon
   `native/dist/OpenLoop.app`, including the Swift CLI, model resource bundle,
-  existing icon, and verified uv sidecar. It generates `Contents/Info.plist` from
+  existing icon, verified uv and pinned audio encoder. `--encoder-directory DIR`
+  selects the prepared encoder directory (default `native/binaries/audio-encoder`).
+  It verifies encoder/source hashes and includes sources/licenses in Resources.
+  It generates `Contents/Info.plist` from
   the root package version. It signs nested executables before sealing the app
   and verifies the result. `--sign IDENTITY` selects Developer ID signing;
   `--dmg PATH` generates an installable DMG containing an Applications shortcut.
   `--notarize --sign "$APPLE_SIGNING_IDENTITY"` requires the release signing
-  environment, signs both nested tools using its keychain, notarizes/staples the app
+  environment, signs all three nested tools using its keychain, notarizes/staples the app
   before packaging, then signs/notarizes/staples the DMG. Existing outputs must be
   removed explicitly. The release workflow requires this mode and fails on missing
   credentials or rejected artifacts.
@@ -80,6 +98,10 @@ alternative. Historical unsigned release notes retain their original instruction
   `APPLE_TEAM_ID`, `APPLE_API_KEY_PATH`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`.
   `native/scripts/test-notarization.py` and `native/scripts/test-package-app.py`
   exercise failures and packaging order with controlled external tools; CI runs both.
+- `native/scripts/test-audio-encoder.py` checks the source-pin contract without
+  compiling. `native/scripts/test-audio-exports.py --bundle PATH` tests only the
+  packaged local conversion/metadata/distribution contract, without inference,
+  network access or the broader CLI smoke. Both report pass/fail on stdout.
 - `native/scripts/smoke-cli.py` accepts `--bundle PATH`, verifies app/helper signatures and bundled uv
   execution, then exercises that packaged CLI against a temporary
   local HTTP fixture, including SIGINT exit status and persisted cancellation.

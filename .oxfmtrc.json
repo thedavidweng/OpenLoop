@@ -5,6 +5,7 @@
   "printWidth": 100,
   "ignorePatterns": [
     "node_modules",
+    "pnpm-lock.yaml",
     "docs",
     "native/.build",
     "native/dist",

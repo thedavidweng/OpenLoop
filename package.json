@@ -20,8 +20,8 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "lefthook": "^2.2.1",
-    "oxfmt": "^0.72.0"
+    "lefthook": "^2.2.2",
+    "oxfmt": "^0.74.0"
   },
   "engines": {
     "node": ">=24"

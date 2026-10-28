@@ -154,3 +154,8 @@ headless CLI/SIGINT smoke passed without any Rust or frontend build.
 
 CodeQL uses the committed advanced workflow for native Swift, repository
 JavaScript and GitHub Actions; the previous default Rust configuration is retired.
+
+Native CI runs the macOS contracts and packaged smoke on pull requests. Main
+pushes run the tooling and workflow checks without repeating the macOS job.
+Branch protection must require `Validate` and up-to-date branches so the native
+checks pass on the merge candidate before this change is merged.

@@ -157,5 +157,5 @@ JavaScript and GitHub Actions; the previous default Rust configuration is retire
 
 Native CI runs the macOS contracts and packaged smoke on pull requests. Main
 pushes run the tooling and workflow checks without repeating the macOS job.
-Branch protection must require `Validate` and up-to-date branches so the native
-checks pass on the merge candidate before this change is merged.
+Branch protection requires `Validate`. PR checks run on the merge ref against
+the latest `main`, so a conflict between two merged PRs fails the next PR's CI.

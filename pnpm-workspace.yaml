@@ -1,6 +1,2 @@
 packages:
   - website
-onlyBuiltDependencies:
-  - lefthook
-allowBuilds:
-  lefthook: true

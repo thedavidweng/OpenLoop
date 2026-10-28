@@ -1,3 +1,8 @@
 [tools]
 node = "lts"
 pnpm = "12.15.0"
+hk = "2.9.0"
+"github:oxc-project/oxc" = { version = "0.75.0", version_prefix = "oxfmt_v", matching = "oxfmt" }
+
+[hooks]
+postinstall = "hk install --mise"

@@ -34,6 +34,7 @@ jobs:
 
   native:
     name: Native Swift
+    if: github.event_name == 'pull_request'
     runs-on: macos-26
     timeout-minutes: 15
     steps:
@@ -120,9 +121,15 @@ jobs:
           NATIVE_RESULT: ${{ needs.native.result }}
           WORKFLOW_RESULT: ${{ needs['workflow-lint'].result }}
           PR_RESULT: ${{ needs['pr-lint'].result }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           test "$TOOLING_RESULT" = success
-          test "$NATIVE_RESULT" = success
+          # Native checks run on PRs; protected main requires an up-to-date PR.
+          if [ "$EVENT_NAME" = pull_request ]; then
+            test "$NATIVE_RESULT" = success
+          else
+            test "$NATIVE_RESULT" = skipped
+          fi
           test "$WORKFLOW_RESULT" = success
           # PR title checks do not run on main pushes.
           if [ "$PR_RESULT" != skipped ]; then

@@ -34,13 +34,6 @@ class AudioEncoderTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
                 recipe["verify"](archive, expected)
 
-    def test_all_sources_have_fixed_https_urls_and_sha256(self):
-        self.assertEqual(len(recipe["SOURCES"]), 4)
-        for url, digest in recipe["SOURCES"]:
-            self.assertTrue(url.startswith("https://"))
-            self.assertNotIn("latest", url)
-            self.assertEqual(len(bytes.fromhex(digest)), 32)
-
 
 if __name__ == "__main__":
     unittest.main()

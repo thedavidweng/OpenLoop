@@ -98,8 +98,8 @@ alternative. Historical unsigned release notes retain their original instruction
   `APPLE_TEAM_ID`, `APPLE_API_KEY_PATH`, `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`.
   `native/scripts/test-notarization.py` and `native/scripts/test-package-app.py`
   exercise failures and packaging order with controlled external tools; CI runs both.
-- `native/scripts/test-audio-encoder.py` checks the source-pin contract without
-  compiling. `native/scripts/test-audio-exports.py --bundle PATH` tests only the
+- `native/scripts/test-audio-encoder.py` checks archive integrity and retry behavior
+  without compiling. `native/scripts/test-audio-exports.py --bundle PATH` tests only the
   packaged local conversion/metadata/distribution contract, without inference,
   network access or the broader CLI smoke. Both report pass/fail on stdout.
 - `native/scripts/smoke-cli.py` accepts `--bundle PATH`, verifies app/helper signatures and bundled uv

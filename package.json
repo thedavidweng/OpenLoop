@@ -16,11 +16,9 @@
     "validate:release-notes": "node scripts/validate-release-notes.mjs",
     "validate:docs": "node scripts/validate-readme.mjs && node scripts/validate-release-notes.mjs",
     "changelog": "git cliff -o CHANGELOG.md",
-    "changelog:preview": "git cliff --latest",
-    "prepare": "lefthook install"
+    "changelog:preview": "git cliff --latest"
   },
   "devDependencies": {
-    "lefthook": "^2.2.2",
     "oxfmt": "^0.75.0"
   },
   "engines": {

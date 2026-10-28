@@ -1,0 +1,25 @@
+amends "package://github.com/jdx/hk/releases/download/v2.9.0/hk@2.9.0#/Config.pkl"
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    steps {
+      ["oxfmt"] {
+        glob = List("*.{ts,tsx,js,jsx,mjs,cjs,json,css,html,yml,yaml}")
+        exclude = List("pnpm-lock.yaml", "docs/**")
+        fix = "pnpm exec oxfmt {{files}}"
+      }
+      ["swift-format"] {
+        glob = List("native/**/*.swift")
+        fix = "swift format format --in-place {{files}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["format-check"] { check = "node --run format:check" }
+      ["native-check"] { check = "pnpm release:check" }
+    }
+  }
+}

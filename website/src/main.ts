@@ -52,6 +52,7 @@ function fitStage(frame: HTMLElement, mock: HTMLElement): void {
   const resize = () => {
     const width = frame.clientWidth;
     const narrow = window.matchMedia("(max-width: 640px)").matches;
+    frame.tabIndex = narrow ? 0 : -1;
     // On phones the window keeps a desktop layout and bleeds off the right edge.
     const scale = narrow
       ? Math.min(1, (width * 1.7) / MOCK_WIDTH)

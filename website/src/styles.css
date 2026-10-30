@@ -2289,6 +2289,14 @@ button.mock-tool:hover {
   .stage-frame {
     width: calc(100% - var(--gutter));
     margin-left: var(--gutter);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .mock-ab button,
+  .mock-clear-ab {
+    width: 60px;
+    height: 60px;
   }
 
   .stage-caption {

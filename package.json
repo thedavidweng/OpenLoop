@@ -19,7 +19,7 @@
     "changelog:preview": "git cliff --latest"
   },
   "devDependencies": {
-    "oxfmt": "^0.75.0"
+    "oxfmt": "^0.77.0"
   },
   "engines": {
     "node": ">=24"
